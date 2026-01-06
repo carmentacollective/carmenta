@@ -9,7 +9,7 @@
  * Uses consistent icon sizing with other connection actions.
  */
 
-import { Star } from "@phosphor-icons/react";
+import { StarIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
@@ -112,7 +112,7 @@ export function StarButton({
                     ))}
                 </span>
             )}
-            <Star
+            <StarIcon
                 weight={isStarred ? "fill" : "regular"}
                 className={cn(
                     iconSize,

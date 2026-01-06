@@ -7,7 +7,12 @@
  * Uses shadcn Dialog (Radix) for proper modal behavior.
  */
 
-import { Clock, Trophy, WarningCircle, Handshake } from "@phosphor-icons/react";
+import {
+    ClockIcon,
+    TrophyIcon,
+    WarningCircleIcon,
+    HandshakeIcon,
+} from "@phosphor-icons/react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { QueryResult, PairwiseResult } from "@/lib/benchmarks/types";
@@ -96,7 +101,7 @@ export function QueryDetailModal({
                                         Carmenta
                                     </h3>
                                     <div className="text-muted-foreground flex items-center gap-1 text-sm">
-                                        <Clock className="h-3 w-3" />
+                                        <ClockIcon className="h-3 w-3" />
                                         {formatLatency(
                                             query.carmentaResponse.latencyMs
                                         )}
@@ -117,7 +122,7 @@ export function QueryDetailModal({
                                     </h3>
                                     {competitorResponse && (
                                         <div className="text-muted-foreground flex items-center gap-1 text-sm">
-                                            <Clock className="h-3 w-3" />
+                                            <ClockIcon className="h-3 w-3" />
                                             {formatLatency(
                                                 competitorResponse.latencyMs
                                             )}
@@ -145,11 +150,11 @@ function WinnerIcon({ winner }: { winner: "carmenta" | "competitor" | "tie" }) {
 
     switch (winner) {
         case "carmenta":
-            return <Trophy className={`${iconClass} text-green-500`} />;
+            return <TrophyIcon className={`${iconClass} text-green-500`} />;
         case "competitor":
-            return <WarningCircle className={`${iconClass} text-red-500`} />;
+            return <WarningCircleIcon className={`${iconClass} text-red-500`} />;
         case "tie":
-            return <Handshake className={`${iconClass} text-yellow-500`} />;
+            return <HandshakeIcon className={`${iconClass} text-yellow-500`} />;
     }
 }
 

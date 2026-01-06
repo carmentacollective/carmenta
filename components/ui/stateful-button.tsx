@@ -3,11 +3,16 @@
 import * as React from "react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CircleNotch, Check, WarningCircle, FloppyDisk } from "@phosphor-icons/react";
+import {
+    CircleNotchIcon,
+    CheckIcon,
+    WarningCircleIcon,
+    FloppyDiskIcon,
+} from "@phosphor-icons/react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
-// Re-export FloppyDisk for convenience when using StatefulButton as a save button
-export { FloppyDisk };
+// Re-export FloppyDiskIcon for convenience when using StatefulButton as a save button
+export { FloppyDiskIcon };
 import { Button, buttonVariants, type ButtonProps } from "./button";
 import { cn } from "@/lib/utils";
 import { transitions } from "@/lib/motion/presets";
@@ -281,7 +286,7 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
                                 transition={transitions.quick}
                                 className="inline-flex"
                             >
-                                <CircleNotch
+                                <CircleNotchIcon
                                     className={cn(
                                         iconSize,
                                         !prefersReducedMotion && "animate-spin"
@@ -300,7 +305,7 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
                                 transition={transitions.quick}
                                 className="inline-flex text-green-600"
                             >
-                                <Check className={iconSize} aria-hidden="true" />
+                                <CheckIcon className={iconSize} aria-hidden="true" />
                             </motion.span>
                         )}
                         {showError && (
@@ -313,7 +318,7 @@ export const StatefulButton = React.forwardRef<HTMLButtonElement, StatefulButton
                                 transition={transitions.quick}
                                 className="inline-flex text-red-600"
                             >
-                                <WarningCircle
+                                <WarningCircleIcon
                                     className={iconSize}
                                     aria-hidden="true"
                                 />

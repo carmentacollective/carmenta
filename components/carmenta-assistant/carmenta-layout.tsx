@@ -24,7 +24,7 @@ import {
     useEffect,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkle, CaretLeft, Trash } from "@phosphor-icons/react";
+import { SparkleIcon, CaretLeftIcon, TrashIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -207,7 +207,10 @@ function DesktopPanel({
             <header className="border-foreground/[0.08] flex shrink-0 items-center justify-between border-b px-4 py-3">
                 <div className="flex items-center gap-2.5">
                     <div className="bg-primary/20 flex h-8 w-8 items-center justify-center rounded-full">
-                        <Sparkle className="text-primary h-4 w-4" weight="duotone" />
+                        <SparkleIcon
+                            className="text-primary h-4 w-4"
+                            weight="duotone"
+                        />
                     </div>
                     <div>
                         <h2 className="text-foreground text-sm font-medium">
@@ -227,7 +230,7 @@ function DesktopPanel({
                             aria-label="Clear conversation"
                             title="Clear conversation"
                         >
-                            <Trash className="h-4 w-4" />
+                            <TrashIcon className="h-4 w-4" />
                         </button>
                     )}
                     <button
@@ -235,7 +238,7 @@ function DesktopPanel({
                         className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/60 flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors"
                         aria-label="Collapse panel"
                     >
-                        <CaretLeft className="h-4 w-4" />
+                        <CaretLeftIcon className="h-4 w-4" />
                     </button>
                 </div>
             </header>

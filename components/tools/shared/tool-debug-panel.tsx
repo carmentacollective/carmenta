@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Wrench, CaretDown } from "@phosphor-icons/react";
+import { WrenchIcon, CaretDownIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -78,8 +78,8 @@ export function ToolDebugPanel({
                     "hover:bg-muted/30"
                 )}
             >
-                <Wrench className="h-3 w-3" />
-                <CaretDown
+                <WrenchIcon className="h-3 w-3" />
+                <CaretDownIcon
                     className={cn(
                         "h-2.5 w-2.5 transition-transform duration-200",
                         isOpen ? "rotate-180" : "rotate-0"

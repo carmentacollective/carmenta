@@ -11,7 +11,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CircleNotch } from "@phosphor-icons/react";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface PullToRefreshIndicatorProps {
@@ -59,7 +59,7 @@ export function PullToRefreshIndicator({
                         : "text-foreground/70 border border-white/20 bg-white/20 dark:bg-white/10"
                 )}
             >
-                <CircleNotch
+                <CircleNotchIcon
                     className={cn("h-5 w-5", isRefreshing && "animate-spin")}
                     style={{
                         opacity: isRefreshing ? 1 : 0.4 + progress * 0.6,

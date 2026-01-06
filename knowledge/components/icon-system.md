@@ -1,6 +1,7 @@
 # Icon System
 
-**Current**: Lucide React (v0.562.0) - 117 imports across 115 files
+**Current**: Phosphor Icons (v2.1.10+) - All icons use the `Icon` suffix naming
+convention (e.g., `ArrowRightIcon`, `CheckIcon`, `SparkleIcon`)
 
 ## Why This Matters
 
@@ -50,7 +51,7 @@ consistent styling trivial.
 </IconContext.Provider>
 
 // Duotone example - depth without complexity
-<Cube color="teal" weight="duotone" />
+<CubeIcon color="teal" weight="duotone" />
 ```
 
 ### Other Options Considered
@@ -186,7 +187,8 @@ Systematic find-replace:
 
 ```
 // Pattern: import { IconName } from "lucide-react"
-// Replace: import { IconName } from "@phosphor-icons/react"
+// Replace: import { IconNameIcon } from "@phosphor-icons/react"
+// Note: Phosphor Icons v2.1.8+ requires the "Icon" suffix for all icon components
 ```
 
 Most icons have direct equivalents. Handle edge cases manually.

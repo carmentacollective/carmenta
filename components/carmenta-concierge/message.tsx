@@ -9,7 +9,12 @@
 
 import { motion } from "framer-motion";
 import type { UIMessage } from "@ai-sdk/react";
-import { CircleNotch, Wrench, CheckCircle, XCircle } from "@phosphor-icons/react";
+import {
+    CircleNotchIcon,
+    WrenchIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { getToolDisplayName } from "@/lib/ai-team/dcos/tool-display";
@@ -51,7 +56,7 @@ export function ConciergeMessage({ message, isLoading }: ConciergeMessageProps) 
                 {/* Loading indicator for streaming */}
                 {!isUser && isLoading && message.parts.length === 0 && (
                     <div className="text-foreground/60 flex items-center gap-2">
-                        <CircleNotch className="h-3.5 w-3.5 animate-spin" />
+                        <CircleNotchIcon className="h-3.5 w-3.5 animate-spin" />
                         <span className="text-xs">Thinking...</span>
                     </div>
                 )}
@@ -125,11 +130,11 @@ function ToolPart({ part }: { part: Record<string, unknown> }) {
             )}
         >
             {isError ? (
-                <XCircle className="h-3 w-3 flex-shrink-0" weight="fill" />
+                <XCircleIcon className="h-3 w-3 flex-shrink-0" weight="fill" />
             ) : isComplete ? (
-                <CheckCircle className="h-3 w-3 flex-shrink-0" weight="fill" />
+                <CheckCircleIcon className="h-3 w-3 flex-shrink-0" weight="fill" />
             ) : (
-                <Wrench className="h-3 w-3 flex-shrink-0 animate-pulse" />
+                <WrenchIcon className="h-3 w-3 flex-shrink-0 animate-pulse" />
             )}
             <span className="truncate">{displayName}</span>
         </div>

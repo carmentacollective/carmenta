@@ -16,19 +16,19 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import Link from "next/link";
 import {
-    Plug,
-    X,
-    CaretDown,
-    CaretUp,
-    Spinner,
-    Check,
-    Warning,
-    ArrowLeft,
-    Trash,
-    Power,
-    CircleNotch,
-    PlugsConnected,
-    Plugs,
+    PlugIcon,
+    XIcon,
+    CaretDownIcon,
+    CaretUpIcon,
+    SpinnerIcon,
+    CheckIcon,
+    WarningIcon,
+    ArrowLeftIcon,
+    TrashIcon,
+    PowerIcon,
+    CircleNotchIcon,
+    PlugsConnectedIcon,
+    PlugsIcon,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Sentry from "@sentry/nextjs";
@@ -67,50 +67,50 @@ interface ToolPart {
 }
 
 function getToolDisplay(toolName: string): {
-    icon: typeof Plug;
+    icon: typeof PlugIcon;
     label: string;
     verb: string;
 } {
     switch (toolName) {
         case "parseConfig":
             return {
-                icon: Plug,
+                icon: PlugIcon,
                 label: "Parse",
                 verb: "Parsing configuration",
             };
         case "testConnection":
             return {
-                icon: PlugsConnected,
+                icon: PlugsConnectedIcon,
                 label: "Test",
                 verb: "Testing connection",
             };
         case "saveServer":
             return {
-                icon: Check,
+                icon: CheckIcon,
                 label: "Save",
                 verb: "Saving server",
             };
         case "listServers":
             return {
-                icon: Plugs,
+                icon: PlugsIcon,
                 label: "List",
                 verb: "Listing servers",
             };
         case "removeServer":
             return {
-                icon: Trash,
+                icon: TrashIcon,
                 label: "Remove",
                 verb: "Removing server",
             };
         case "updateServer":
             return {
-                icon: Power,
+                icon: PowerIcon,
                 label: "Update",
                 verb: "Updating server",
             };
         default:
             return {
-                icon: Plug,
+                icon: PlugIcon,
                 label: "Action",
                 verb: "Processing",
             };
@@ -149,11 +149,13 @@ function McpToolActivityItem({ part }: { part: ToolPart }) {
                 )}
             >
                 {!isComplete && !hasError && (
-                    <Spinner className="h-3 w-3 animate-spin" />
+                    <SpinnerIcon className="h-3 w-3 animate-spin" />
                 )}
-                {isComplete && success && <Check className="h-3 w-3" weight="bold" />}
-                {isComplete && !success && <Warning className="h-3 w-3" />}
-                {hasError && <Warning className="h-3 w-3" />}
+                {isComplete && success && (
+                    <CheckIcon className="h-3 w-3" weight="bold" />
+                )}
+                {isComplete && !success && <WarningIcon className="h-3 w-3" />}
+                {hasError && <WarningIcon className="h-3 w-3" />}
             </span>
 
             <Icon
@@ -345,7 +347,7 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
         >
             <form onSubmit={handleSubmit} className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                    <Plug className="h-5 w-5 text-emerald-500" weight="duotone" />
+                    <PlugIcon className="h-5 w-5 text-emerald-500" weight="duotone" />
                 </div>
 
                 <input
@@ -364,10 +366,10 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
                 />
 
                 {isLoading && (
-                    <Spinner className="h-4 w-4 animate-spin text-emerald-500" />
+                    <SpinnerIcon className="h-4 w-4 animate-spin text-emerald-500" />
                 )}
                 {isComplete && (
-                    <Check className="h-4 w-4 text-green-500" weight="bold" />
+                    <CheckIcon className="h-4 w-4 text-green-500" weight="bold" />
                 )}
 
                 {hasResponse && !isLoading && (
@@ -377,9 +379,9 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
                         className="text-foreground/40 hover:text-foreground/60 transition-colors"
                     >
                         {isExpanded ? (
-                            <CaretUp className="h-4 w-4" />
+                            <CaretUpIcon className="h-4 w-4" />
                         ) : (
-                            <CaretDown className="h-4 w-4" />
+                            <CaretDownIcon className="h-4 w-4" />
                         )}
                     </button>
                 )}
@@ -390,7 +392,7 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
                         onClick={handleDismiss}
                         className="text-foreground/40 hover:text-foreground/60 transition-colors"
                     >
-                        <X className="h-4 w-4" />
+                        <XIcon className="h-4 w-4" />
                     </button>
                 )}
             </form>
@@ -427,7 +429,7 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
 
                             {isLoading && !responseText && toolParts.length === 0 && (
                                 <p className="text-foreground/50 flex items-center gap-2 text-sm">
-                                    <Spinner className="h-3 w-3 animate-spin" />
+                                    <SpinnerIcon className="h-3 w-3 animate-spin" />
                                     Connecting...
                                 </p>
                             )}
@@ -485,7 +487,7 @@ function ServerList({ servers, loading, className }: ServerListProps) {
                     className
                 )}
             >
-                <CircleNotch className="text-foreground/40 h-6 w-6 animate-spin" />
+                <CircleNotchIcon className="text-foreground/40 h-6 w-6 animate-spin" />
                 <p className="text-foreground/50 mt-2 text-sm">Loading servers...</p>
             </div>
         );
@@ -499,7 +501,7 @@ function ServerList({ servers, loading, className }: ServerListProps) {
                     className
                 )}
             >
-                <Plugs className="text-foreground/20 mx-auto h-10 w-10" />
+                <PlugsIcon className="text-foreground/20 mx-auto h-10 w-10" />
                 <h3 className="text-foreground/60 mt-3 text-sm font-medium">
                     No servers connected
                 </h3>
@@ -590,13 +592,13 @@ export default function McpConfigPage() {
                     href="/integrations"
                     className="text-foreground/50 hover:text-foreground/70 inline-flex items-center gap-1 text-sm transition-colors"
                 >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeftIcon className="h-4 w-4" />
                     Back to Integrations
                 </Link>
 
                 <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-emerald-500/20 p-3">
-                        <Plug className="h-6 w-6 text-emerald-500" />
+                        <PlugIcon className="h-6 w-6 text-emerald-500" />
                     </div>
                     <div>
                         <h1 className="text-foreground text-3xl font-light tracking-tight">

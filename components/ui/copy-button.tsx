@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Copy, Check, CaretDown } from "@phosphor-icons/react";
+import { CopyIcon, CheckIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { transitions } from "@/lib/motion/presets";
@@ -248,7 +248,7 @@ export function CopyButton({
             >
                 {copied ? (
                     <>
-                        <Check className={cn(iconSize, "flex-shrink-0")} />
+                        <CheckIcon className={cn(iconSize, "flex-shrink-0")} />
                         <motion.span
                             initial={{ opacity: 0, width: 0 }}
                             animate={{ opacity: 1, width: "auto" }}
@@ -261,7 +261,7 @@ export function CopyButton({
                         </motion.span>
                     </>
                 ) : (
-                    <Copy className={iconSize} />
+                    <CopyIcon className={iconSize} />
                 )}
             </motion.button>
         );
@@ -284,7 +284,7 @@ export function CopyButton({
                 >
                     {copied ? (
                         <>
-                            <Check className={cn(iconSize, "flex-shrink-0")} />
+                            <CheckIcon className={cn(iconSize, "flex-shrink-0")} />
                             <motion.span
                                 initial={{ opacity: 0, width: 0 }}
                                 animate={{ opacity: 1, width: "auto" }}
@@ -297,7 +297,7 @@ export function CopyButton({
                             </motion.span>
                         </>
                     ) : (
-                        <Copy className={iconSize} />
+                        <CopyIcon className={iconSize} />
                     )}
                 </motion.button>
 
@@ -310,7 +310,7 @@ export function CopyButton({
                             "rounded-r-md border-l border-white/20 px-1"
                         )}
                     >
-                        <CaretDown className={chevronSize} />
+                        <CaretDownIcon className={chevronSize} />
                     </button>
                 </DropdownMenuTrigger>
             </div>

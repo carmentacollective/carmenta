@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-    ArrowLeft,
-    FloppyDisk,
-    Trash,
-    WarningCircle,
-    Play,
-    Sparkle,
+    ArrowLeftIcon,
+    FloppyDiskIcon,
+    TrashIcon,
+    WarningCircleIcon,
+    PlayIcon,
+    SparkleIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -261,7 +261,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                         onClick={() => router.push("/ai-team")}
                         className="text-foreground/60 hover:text-foreground p-1 transition-colors"
                     >
-                        <ArrowLeft className="h-5 w-5" />
+                        <ArrowLeftIcon className="h-5 w-5" />
                     </button>
                     <div>
                         <h1 className="text-foreground text-xl font-medium">
@@ -280,7 +280,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                 >
                     {error && (
                         <div className="flex items-center gap-2 rounded-xl bg-red-500/10 p-4 text-red-500">
-                            <WarningCircle className="h-5 w-5" />
+                            <WarningCircleIcon className="h-5 w-5" />
                             <span>{error}</span>
                         </div>
                     )}
@@ -337,7 +337,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                             disabled={deleting}
                             className="flex items-center gap-2 rounded-xl px-4 py-2 text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                         >
-                            <Trash className="h-4 w-4" />
+                            <TrashIcon className="h-4 w-4" />
                             {deleting ? "Deleting..." : "Delete"}
                         </button>
 
@@ -359,9 +359,9 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                                 className="border-foreground/10 text-foreground hover:bg-foreground/5 flex items-center gap-2 rounded-xl border px-4 py-2 font-medium transition-colors disabled:opacity-50"
                             >
                                 {triggering ? (
-                                    <Sparkle className="h-4 w-4 animate-pulse" />
+                                    <SparkleIcon className="h-4 w-4 animate-pulse" />
                                 ) : (
-                                    <Play className="h-4 w-4" />
+                                    <PlayIcon className="h-4 w-4" />
                                 )}
                                 {triggering ? "Starting..." : "Try it"}
                             </button>
@@ -370,7 +370,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                                 disabled={saving || !hasChanges}
                                 className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-6 py-2 font-medium transition-colors disabled:opacity-50"
                             >
-                                <FloppyDisk className="h-4 w-4" />
+                                <FloppyDiskIcon className="h-4 w-4" />
                                 {saving ? "Saving..." : "Save Changes"}
                             </button>
                         </div>
@@ -399,7 +399,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                             onClick={handleDelete}
                             className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 font-medium text-white transition-colors hover:bg-red-600"
                         >
-                            <Trash className="h-4 w-4" />
+                            <TrashIcon className="h-4 w-4" />
                             Delete
                         </button>
                     </DialogFooter>

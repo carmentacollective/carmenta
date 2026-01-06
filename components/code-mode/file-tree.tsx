@@ -17,7 +17,7 @@ import {
     type KeyboardEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CaretRight } from "@phosphor-icons/react";
+import { CaretRightIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -26,13 +26,13 @@ import {
     formatFileSize,
 } from "@/lib/code-mode/file-utils";
 import {
-    File,
-    FileCode,
-    FileJs,
-    FileText,
-    Image as FileImage,
-    Folder,
-    FolderOpen,
+    FileIcon as FileIconPhosphor,
+    FileCodeIcon,
+    FileJsIcon,
+    FileTextIcon,
+    ImageIcon as FileImage,
+    FolderIcon,
+    FolderOpenIcon,
 } from "@phosphor-icons/react";
 
 interface FileTreeProps {
@@ -145,20 +145,20 @@ function FileIcon({
 }) {
     if (file.type === "directory") {
         return isOpen ? (
-            <FolderOpen className={className} />
+            <FolderOpenIcon className={className} />
         ) : (
-            <Folder className={className} />
+            <FolderIcon className={className} />
         );
     }
 
     const ext = file.extension?.toLowerCase() ?? "";
 
-    if (CODE_EXTENSIONS.has(ext)) return <FileCode className={className} />;
-    if (CONFIG_EXTENSIONS.has(ext)) return <FileJs className={className} />;
-    if (TEXT_EXTENSIONS.has(ext)) return <FileText className={className} />;
+    if (CODE_EXTENSIONS.has(ext)) return <FileCodeIcon className={className} />;
+    if (CONFIG_EXTENSIONS.has(ext)) return <FileJsIcon className={className} />;
+    if (TEXT_EXTENSIONS.has(ext)) return <FileTextIcon className={className} />;
     if (IMAGE_EXTENSIONS.has(ext)) return <FileImage className={className} />;
 
-    return <File className={className} />;
+    return <FileIconPhosphor className={className} />;
 }
 
 /**
@@ -276,7 +276,7 @@ const FileTreeItem = memo(function FileTreeItem({
                         transition={{ duration: 0.15 }}
                         className="flex-shrink-0"
                     >
-                        <CaretRight className="text-muted-foreground h-3.5 w-3.5" />
+                        <CaretRightIcon className="text-muted-foreground h-3.5 w-3.5" />
                     </motion.div>
                 )}
 

@@ -24,7 +24,7 @@ const TIPS_DISABLED = true;
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight } from "@phosphor-icons/react";
+import { XIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -311,7 +311,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                                         className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/60 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all"
                                         aria-label="Dismiss"
                                     >
-                                        <X className="h-3 w-3" />
+                                        <XIcon className="h-3 w-3" />
                                     </button>
                                 </div>
 
@@ -348,7 +348,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                                                         className="group/cta bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all"
                                                     >
                                                         {tip.cta.label}
-                                                        <ArrowRight className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />
+                                                        <ArrowRightIcon className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />
                                                     </Link>
                                                 )}
                                             {tip.cta.action === "settings" && (
@@ -358,7 +358,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                                                     className="group/cta bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all"
                                                 >
                                                     {tip.cta.label}
-                                                    <ArrowRight className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />
+                                                    <ArrowRightIcon className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />
                                                 </button>
                                             )}
                                         </>

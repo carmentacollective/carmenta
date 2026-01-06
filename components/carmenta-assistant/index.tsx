@@ -40,7 +40,7 @@
  * ```
  */
 
-import { Sparkle } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 // Export components
@@ -93,7 +93,7 @@ export function CarmentaToggle({
             aria-label={isOpen ? "Close Carmenta" : "Open Carmenta"}
             aria-expanded={isOpen}
         >
-            <Sparkle
+            <SparkleIcon
                 className={cn("h-5 w-5", isOpen && "text-primary")}
                 weight={isOpen ? "fill" : "duotone"}
             />

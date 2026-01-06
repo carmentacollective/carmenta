@@ -15,7 +15,14 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Book, X, CaretDown, CaretUp, Spinner, Check } from "@phosphor-icons/react";
+import {
+    BookIcon,
+    XIcon,
+    CaretDownIcon,
+    CaretUpIcon,
+    SpinnerIcon,
+    CheckIcon,
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -164,7 +171,7 @@ export function LibrarianTaskBar({
             {/* Input row - always visible */}
             <form onSubmit={handleSubmit} className="flex items-center gap-3 p-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/10">
-                    <Book className="h-4 w-4 text-violet-500" weight="duotone" />
+                    <BookIcon className="h-4 w-4 text-violet-500" weight="duotone" />
                 </div>
 
                 <input
@@ -184,10 +191,10 @@ export function LibrarianTaskBar({
 
                 {/* Status indicator */}
                 {isLoading && (
-                    <Spinner className="h-4 w-4 animate-spin text-violet-500" />
+                    <SpinnerIcon className="h-4 w-4 animate-spin text-violet-500" />
                 )}
                 {isComplete && (
-                    <Check className="h-4 w-4 text-green-500" weight="bold" />
+                    <CheckIcon className="h-4 w-4 text-green-500" weight="bold" />
                 )}
 
                 {/* Expand/collapse toggle */}
@@ -199,9 +206,9 @@ export function LibrarianTaskBar({
                         aria-label={isExpanded ? "Collapse" : "Expand"}
                     >
                         {isExpanded ? (
-                            <CaretUp className="h-4 w-4" />
+                            <CaretUpIcon className="h-4 w-4" />
                         ) : (
-                            <CaretDown className="h-4 w-4" />
+                            <CaretDownIcon className="h-4 w-4" />
                         )}
                     </button>
                 )}
@@ -214,7 +221,7 @@ export function LibrarianTaskBar({
                         className="text-foreground/40 hover:text-foreground/60 transition-colors"
                         aria-label="Dismiss"
                     >
-                        <X className="h-4 w-4" />
+                        <XIcon className="h-4 w-4" />
                     </button>
                 )}
             </form>
@@ -256,7 +263,7 @@ export function LibrarianTaskBar({
                             {/* Loading state when no content yet */}
                             {isLoading && !responseText && toolParts.length === 0 && (
                                 <p className="text-foreground/50 flex items-center gap-2 text-sm">
-                                    <Spinner className="h-3 w-3 animate-spin" />
+                                    <SpinnerIcon className="h-3 w-3 animate-spin" />
                                     Looking...
                                 </p>
                             )}

@@ -22,7 +22,7 @@ import {
     type ComponentProps,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Square, ArrowElbowDownLeft, Plus } from "@phosphor-icons/react";
+import { SquareIcon, ArrowElbowDownLeftIcon, PlusIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useMessageQueue, type QueuedMessage } from "@/lib/hooks/use-message-queue";
@@ -793,7 +793,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="send-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <ArrowElbowDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                                <ArrowElbowDownLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                             </ComposerButton>
                         ) : input.trim() ? (
                             <ComposerButton
@@ -819,7 +819,10 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="queue-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <Plus className="h-5 w-5 sm:h-6 sm:w-6" weight="bold" />
+                                <PlusIcon
+                                    className="h-5 w-5 sm:h-6 sm:w-6"
+                                    weight="bold"
+                                />
                             </ComposerButton>
                         ) : (
                             <ComposerButton
@@ -831,7 +834,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="stop-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <Square className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <SquareIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                             </ComposerButton>
                         )}
                         <VoiceInputButton
@@ -980,7 +983,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
         // Queue and Send variants use children (passed as props)
         const getIcon = () => {
             if (variant === "stop") {
-                return <Square className="h-4 w-4 sm:h-5 sm:w-5" />;
+                return <SquareIcon className="h-4 w-4 sm:h-5 sm:w-5" />;
             }
             // Send, queue, and ghost variants use children
             return children;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 
 import type { CategoryScore, QueryResult } from "@/lib/benchmarks/types";
 import {
@@ -61,9 +61,9 @@ export function CategoryBreakdown({
                         >
                             <div className="flex items-center gap-3">
                                 {isExpanded ? (
-                                    <CaretUp className="text-foreground/40 h-4 w-4" />
+                                    <CaretUpIcon className="text-foreground/40 h-4 w-4" />
                                 ) : (
-                                    <CaretDown className="text-foreground/40 h-4 w-4" />
+                                    <CaretDownIcon className="text-foreground/40 h-4 w-4" />
                                 )}
                                 <div>
                                     <span className="text-foreground font-medium">

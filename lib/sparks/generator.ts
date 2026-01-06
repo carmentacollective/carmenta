@@ -1,16 +1,16 @@
 import {
-    Calendar,
-    Envelope,
-    Chat,
-    Star,
-    Clock,
-    Sparkle,
-    MagnifyingGlass,
-    Brain,
-    Plug,
-    FileText,
-    TrendUp,
-    Microphone,
+    CalendarIcon,
+    EnvelopeIcon,
+    ChatIcon,
+    StarIcon,
+    ClockIcon,
+    SparkleIcon,
+    MagnifyingGlassIcon,
+    BrainIcon,
+    PlugIcon,
+    FileTextIcon,
+    TrendUpIcon,
+    MicrophoneIcon,
     type Icon,
 } from "@phosphor-icons/react";
 
@@ -135,22 +135,22 @@ const DISCOVERY_SPARKS: Array<{ label: string; prompt: string; icon: Icon }> = [
     {
         label: "Help me brainstorm ideas",
         prompt: "I want to brainstorm some ideas. Let's start with...",
-        icon: Brain,
+        icon: BrainIcon,
     },
     {
         label: "Search the web for...",
         prompt: "Search the web for ",
-        icon: MagnifyingGlass,
+        icon: MagnifyingGlassIcon,
     },
     {
         label: "Draft something for me",
         prompt: "Help me draft ",
-        icon: FileText,
+        icon: FileTextIcon,
     },
     {
         label: "Analyze this data",
         prompt: "I have some data I'd like to analyze: ",
-        icon: TrendUp,
+        icon: TrendUpIcon,
     },
 ];
 
@@ -159,17 +159,17 @@ const DISCOVERY_SPARKS: Array<{ label: string; prompt: string; icon: Icon }> = [
  */
 function getIconForService(serviceId: string): Icon {
     const iconMap: Record<string, Icon> = {
-        gmail: Envelope,
-        "google-calendar-contacts": Calendar,
-        slack: Chat,
-        notion: FileText,
-        clickup: Clock,
-        fireflies: Microphone,
-        limitless: Microphone,
-        coinmarketcap: TrendUp,
-        twitter: Chat,
+        gmail: EnvelopeIcon,
+        "google-calendar-contacts": CalendarIcon,
+        slack: ChatIcon,
+        notion: FileTextIcon,
+        clickup: ClockIcon,
+        fireflies: MicrophoneIcon,
+        limitless: MicrophoneIcon,
+        coinmarketcap: TrendUpIcon,
+        twitter: ChatIcon,
     };
-    return iconMap[serviceId] ?? Sparkle;
+    return iconMap[serviceId] ?? SparkleIcon;
 }
 
 /**
@@ -225,7 +225,7 @@ function generateOnboardingSpark(connectedCount: number): Spark {
     return {
         id: "onboarding-integrations",
         label,
-        icon: Plug,
+        icon: PlugIcon,
         category: "setup",
         action: {
             type: "navigate",
@@ -278,7 +278,7 @@ function generateRecentThreadSpark(thread: RecentThread): Spark {
     return {
         id: `recent-${thread.id}`,
         label: `Continue: ${displayTitle}`,
-        icon: Clock,
+        icon: ClockIcon,
         category: "continue",
         action: {
             type: "deeplink",
@@ -301,7 +301,7 @@ function generateStarredThreadSparks(
         return {
             id: `starred-${thread.id}`,
             label: displayTitle,
-            icon: Star,
+            icon: StarIcon,
             category: "continue",
             action: {
                 type: "deeplink",

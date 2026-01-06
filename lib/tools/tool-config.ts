@@ -1,26 +1,26 @@
 import {
-    Table,
-    MagnifyingGlass,
-    Globe,
-    Brain,
-    CloudSun,
-    BookOpen,
-    Sparkle,
-    Calculator,
-    FileText,
-    PencilSimple,
-    Pencil,
-    Terminal,
-    FolderOpen,
-    FileMagnifyingGlass,
-    Robot,
-    ListChecks,
-    Code,
-    Notebook,
-    ChatCircleDots,
-    Link,
-    Question,
-    Heart,
+    TableIcon,
+    MagnifyingGlassIcon,
+    GlobeIcon,
+    BrainIcon,
+    CloudSunIcon,
+    BookOpenIcon,
+    SparkleIcon,
+    CalculatorIcon,
+    FileTextIcon,
+    PencilSimpleIcon,
+    PencilIcon,
+    TerminalIcon,
+    FolderOpenIcon,
+    FileMagnifyingGlassIcon,
+    RobotIcon,
+    ListChecksIcon,
+    CodeIcon,
+    NotebookIcon,
+    ChatCircleDotsIcon,
+    LinkIcon,
+    QuestionIcon,
+    HeartIcon,
     type Icon,
 } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
@@ -71,7 +71,7 @@ export interface ToolConfig {
 export const TOOL_CONFIG: Record<string, ToolConfig> = {
     compareOptions: {
         displayName: "Comparison",
-        icon: Table,
+        icon: TableIcon,
         getDescription: (args) => {
             const title = args.title as string | undefined;
             return title ? truncate(title, 40) : undefined;
@@ -89,7 +89,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     webSearch: {
         displayName: "Web Search",
-        icon: MagnifyingGlass,
+        icon: MagnifyingGlassIcon,
         getDescription: (args) => {
             const query = args.query as string | undefined;
             return query ? truncate(query, 50) : undefined;
@@ -107,7 +107,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     fetchPage: {
         displayName: "Fetch Page",
-        icon: Globe,
+        icon: GlobeIcon,
         getDescription: (args) => {
             const url = args.url as string | undefined;
             if (!url) return undefined;
@@ -130,7 +130,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     deepResearch: {
         displayName: "Deep Research",
-        icon: Brain,
+        icon: BrainIcon,
         getDescription: (args) => {
             const topic = args.topic as string | undefined;
             return topic ? truncate(topic, 50) : undefined;
@@ -148,7 +148,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     getWeather: {
         displayName: "Weather",
-        icon: CloudSun,
+        icon: CloudSunIcon,
         getDescription: (args) => {
             const location = args.location as string | undefined;
             return location ? truncate(location, 30) : undefined;
@@ -166,7 +166,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     searchKnowledge: {
         displayName: "Knowledge Base",
-        icon: BookOpen,
+        icon: BookOpenIcon,
         getDescription: (args) => {
             const query = args.query as string | undefined;
             return query ? truncate(query, 50) : undefined;
@@ -185,7 +185,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     // Discovery tools - progressive context building
     updateDiscovery: {
         displayName: "Discovery",
-        icon: Sparkle,
+        icon: SparkleIcon,
         getDescription: (args) => {
             const key = args.key as string | undefined;
             return key ? truncate(key, 30) : undefined;
@@ -203,7 +203,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     completeDiscovery: {
         displayName: "Discovery",
-        icon: Sparkle,
+        icon: SparkleIcon,
         messages: {
             pending: "Getting ready...",
             running: "Completing discovery...",
@@ -216,7 +216,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     skipDiscovery: {
         displayName: "Discovery",
-        icon: Sparkle,
+        icon: SparkleIcon,
         messages: {
             pending: "Getting ready...",
             running: "Skipping discovery...",
@@ -245,7 +245,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     // Service integrations (alphabetical order)
     calculate: {
         displayName: "Calculator",
-        icon: Calculator,
+        icon: CalculatorIcon,
         messages: {
             pending: "Getting ready...",
             running: "Crunching numbers...",
@@ -479,7 +479,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Read: {
         displayName: "Read File",
-        icon: FileText,
+        icon: FileTextIcon,
         getDescription: (args) => {
             const filePath = args.file_path as string | undefined;
             if (!filePath) return undefined;
@@ -500,7 +500,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Write: {
         displayName: "Write File",
-        icon: PencilSimple,
+        icon: PencilSimpleIcon,
         getDescription: (args) => {
             const filePath = args.file_path as string | undefined;
             if (!filePath) return undefined;
@@ -521,7 +521,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Edit: {
         displayName: "Edit File",
-        icon: Pencil,
+        icon: PencilIcon,
         getDescription: (args) => {
             const filePath = args.file_path as string | undefined;
             if (!filePath) return undefined;
@@ -542,7 +542,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Bash: {
         displayName: "Run Command",
-        icon: Terminal,
+        icon: TerminalIcon,
         getDescription: (args) => {
             const command = args.command as string | undefined;
             if (!command) return undefined;
@@ -566,7 +566,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Glob: {
         displayName: "Find Files",
-        icon: FolderOpen,
+        icon: FolderOpenIcon,
         getDescription: (args) => {
             const pattern = args.pattern as string | undefined;
             return pattern ? truncate(pattern, 40) : undefined;
@@ -585,7 +585,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Grep: {
         displayName: "Search Code",
-        icon: FileMagnifyingGlass,
+        icon: FileMagnifyingGlassIcon,
         getDescription: (args) => {
             const pattern = args.pattern as string | undefined;
             return pattern ? truncate(`"${pattern}"`, 40) : undefined;
@@ -604,7 +604,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     Task: {
         displayName: "Sub-Agent",
-        icon: Robot,
+        icon: RobotIcon,
         getDescription: (args) => {
             const agentType = args.subagent_type as string | undefined;
             const description = args.description as string | undefined;
@@ -623,7 +623,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     TodoWrite: {
         displayName: "Task List",
-        icon: ListChecks,
+        icon: ListChecksIcon,
         messages: {
             pending: "Getting ready...",
             running: "Updating tasks...",
@@ -638,7 +638,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     LSP: {
         displayName: "Code Intelligence",
-        icon: Code,
+        icon: CodeIcon,
         getDescription: (args) => {
             const operation = args.operation as string | undefined;
             return operation;
@@ -657,7 +657,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     NotebookEdit: {
         displayName: "Edit Notebook",
-        icon: Notebook,
+        icon: NotebookIcon,
         messages: {
             pending: "Getting ready...",
             running: "Editing notebook...",
@@ -672,7 +672,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     WebFetch: {
         displayName: "Fetch Page",
-        icon: Globe,
+        icon: GlobeIcon,
         getDescription: (args) => {
             const url = args.url as string | undefined;
             if (!url) return undefined;
@@ -696,7 +696,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
 
     WebSearch: {
         displayName: "Web Search",
-        icon: MagnifyingGlass,
+        icon: MagnifyingGlassIcon,
         getDescription: (args) => {
             const query = args.query as string | undefined;
             return query ? truncate(query, 50) : undefined;
@@ -715,7 +715,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     // Post-response enhancement tools
     suggestQuestions: {
         displayName: "Follow-ups",
-        icon: ChatCircleDots,
+        icon: ChatCircleDotsIcon,
         getDescription: (args) => {
             const suggestions = args.suggestions as
                 | Array<{ prompt: string }>
@@ -735,7 +735,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     showReferences: {
         displayName: "Sources",
-        icon: Link,
+        icon: LinkIcon,
         getDescription: (args) => {
             const refs = args.references as Array<{ title: string }> | undefined;
             if (!refs?.length) return undefined;
@@ -753,7 +753,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     askUserInput: {
         displayName: "Question",
-        icon: Question,
+        icon: QuestionIcon,
         getDescription: (args) => {
             const question = args.question as string | undefined;
             return question ? truncate(question, 40) : undefined;
@@ -767,7 +767,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     },
     acknowledge: {
         displayName: "Appreciation",
-        icon: Heart,
+        icon: HeartIcon,
         messages: {
             pending: "Getting ready...",
             running: "Thinking...",
@@ -785,7 +785,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
  */
 export const DEFAULT_TOOL_CONFIG: ToolConfig = {
     displayName: "Tool",
-    icon: MagnifyingGlass,
+    icon: MagnifyingGlassIcon,
     messages: {
         pending: "Getting ready...",
         running: "Working through this...",

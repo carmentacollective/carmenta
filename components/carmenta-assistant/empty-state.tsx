@@ -8,7 +8,7 @@
  */
 
 import { motion } from "framer-motion";
-import { Sparkle } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 
 interface EmptyStateProps {
     pageContext?: string;
@@ -46,7 +46,7 @@ export function EmptyState({ pageContext }: EmptyStateProps) {
             className="flex h-full flex-col items-center justify-center p-6 text-center"
         >
             <div className="bg-primary/10 mb-4 flex h-14 w-14 items-center justify-center rounded-full">
-                <Sparkle className="text-primary/50 h-7 w-7" weight="duotone" />
+                <SparkleIcon className="text-primary/50 h-7 w-7" weight="duotone" />
             </div>
             <p className="text-foreground/50 max-w-[280px] text-sm leading-relaxed">
                 {hint}

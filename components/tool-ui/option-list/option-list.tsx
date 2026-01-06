@@ -6,7 +6,7 @@ import type { OptionListProps, OptionListSelection, OptionListOption } from "./s
 import { ActionButtons, normalizeActionsConfig } from "../shared";
 import type { Action } from "../shared";
 import { cn, Button, Separator } from "./_adapter";
-import { Check } from "@phosphor-icons/react";
+import { CheckIcon } from "@phosphor-icons/react";
 import { glass, border } from "@/lib/design-tokens";
 
 function parseSelectionToIdSet(
@@ -63,7 +63,7 @@ function SelectionIndicator({ mode, isSelected, disabled }: SelectionIndicatorPr
                 disabled && "opacity-50"
             )}
         >
-            {mode === "multi" && isSelected && <Check className="size-3" />}
+            {mode === "multi" && isSelected && <CheckIcon className="size-3" />}
             {mode === "single" && isSelected && (
                 <span className="size-2 rounded-full bg-current" />
             )}
@@ -186,7 +186,7 @@ function OptionListConfirmation({
                         {index > 0 && <Separator orientation="horizontal" />}
                         <div className="flex items-start gap-3 py-1">
                             <span className="flex h-6 items-center">
-                                <Check className="text-primary size-4 shrink-0" />
+                                <CheckIcon className="text-primary size-4 shrink-0" />
                             </span>
                             {option.icon && (
                                 <span className="flex h-6 items-center">

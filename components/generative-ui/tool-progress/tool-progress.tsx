@@ -12,7 +12,12 @@
  */
 
 import { useMemo } from "react";
-import { Circle, CircleNotch, CheckCircle, XCircle } from "@phosphor-icons/react";
+import {
+    CircleIcon,
+    CircleNotchIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type {
     ToolProgressState,
@@ -78,14 +83,14 @@ function DeterminateBar({
 function StepIcon({ status }: { status: ToolProgressStepStatus }) {
     switch (status) {
         case "completed":
-            return <CheckCircle className="size-3.5 text-emerald-500" />;
+            return <CheckCircleIcon className="size-3.5 text-emerald-500" />;
         case "active":
-            return <CircleNotch className="text-primary size-3.5 animate-spin" />;
+            return <CircleNotchIcon className="text-primary size-3.5 animate-spin" />;
         case "error":
-            return <XCircle className="text-destructive size-3.5" />;
+            return <XCircleIcon className="text-destructive size-3.5" />;
         case "pending":
         default:
-            return <Circle className="text-muted-foreground/40 size-3.5" />;
+            return <CircleIcon className="text-muted-foreground/40 size-3.5" />;
     }
 }
 

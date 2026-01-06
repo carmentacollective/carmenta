@@ -20,7 +20,7 @@
  */
 
 import * as React from "react";
-import { Question } from "@phosphor-icons/react";
+import { QuestionIcon } from "@phosphor-icons/react";
 
 import { Popover, PopoverTrigger, PopoverContent } from "./popover";
 import { cn } from "@/lib/utils";
@@ -73,7 +73,7 @@ export function Toggletip({
                     )}
                     aria-label="More information"
                 >
-                    <Question size={iconSize} weight="bold" />
+                    <QuestionIcon size={iconSize} weight="bold" />
                 </button>
             </PopoverTrigger>
             <PopoverContent
@@ -132,7 +132,7 @@ export function InlineToggletip({
                     )}
                     aria-label="More information"
                 >
-                    <Question size={12} weight="bold" />
+                    <QuestionIcon size={12} weight="bold" />
                 </Trigger>
             </PopoverTrigger>
             <PopoverContent

@@ -2,7 +2,13 @@
 
 import { useState, useActionState } from "react";
 import Image from "next/image";
-import { ArrowSquareOut, CircleNotch, Eye, EyeSlash, Key } from "@phosphor-icons/react";
+import {
+    ArrowSquareOutIcon,
+    CircleNotchIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    KeyIcon,
+} from "@phosphor-icons/react";
 import {
     Dialog,
     DialogContent,
@@ -114,9 +120,9 @@ export function ApiKeyModal({
                                 rel="noopener noreferrer"
                                 className="text-primary decoration-primary/30 hover:decoration-primary inline-flex items-center gap-1.5 text-sm underline transition-colors"
                             >
-                                <Key className="h-3.5 w-3.5" />
+                                <KeyIcon className="h-3.5 w-3.5" />
                                 Get your API key
-                                <ArrowSquareOut className="h-3 w-3" />
+                                <ArrowSquareOutIcon className="h-3 w-3" />
                             </a>
                         </div>
                     )}
@@ -154,9 +160,9 @@ export function ApiKeyModal({
                                 }
                             >
                                 {showKey ? (
-                                    <EyeSlash className="h-4 w-4" />
+                                    <EyeSlashIcon className="h-4 w-4" />
                                 ) : (
-                                    <Eye className="h-4 w-4" />
+                                    <EyeIcon className="h-4 w-4" />
                                 )}
                             </button>
                         </div>
@@ -186,7 +192,7 @@ export function ApiKeyModal({
                         >
                             {isPending ? (
                                 <>
-                                    <CircleNotch className="h-4 w-4 animate-spin" />
+                                    <CircleNotchIcon className="h-4 w-4 animate-spin" />
                                     Connecting...
                                 </>
                             ) : (

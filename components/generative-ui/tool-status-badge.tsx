@@ -1,6 +1,11 @@
 "use client";
 
-import { Circle, Clock, CheckCircle, XCircle } from "@phosphor-icons/react";
+import {
+    CircleIcon,
+    ClockIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -51,16 +56,18 @@ function StatusIcon({ status }: { status: ToolStatus }) {
 
     switch (status) {
         case "pending":
-            return <Circle className={cn(iconClass, "text-muted-foreground/60")} />;
+            return <CircleIcon className={cn(iconClass, "text-muted-foreground/60")} />;
         case "running":
-            return <Clock className={cn(iconClass, "text-primary/70 animate-pulse")} />;
+            return (
+                <ClockIcon className={cn(iconClass, "text-primary/70 animate-pulse")} />
+            );
         case "completed":
             return (
-                <CheckCircle
+                <CheckCircleIcon
                     className={cn(iconClass, "text-green-600 dark:text-green-400")}
                 />
             );
         case "error":
-            return <XCircle className={cn(iconClass, "text-red-500")} />;
+            return <XCircleIcon className={cn(iconClass, "text-red-500")} />;
     }
 }
