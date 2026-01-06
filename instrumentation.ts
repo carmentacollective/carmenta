@@ -27,6 +27,12 @@ export async function onRequestError(
         revalidateReason?: "on-demand" | "stale" | undefined;
     }
 ) {
+    // Only report to Sentry in production - the dynamic import can cause
+    // Turbopack to hang in an infinite error loop during development
+    if (process.env.NODE_ENV !== "production") {
+        return;
+    }
+
     // Skip errors that occur after response is already sent
     if (error.message?.includes("Cannot append headers")) {
         return;

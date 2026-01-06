@@ -15,17 +15,15 @@ const isTest = process.env.NODE_ENV === "test";
  * ```
  *
  * First argument is always a context object, second is the message.
+ *
+ * IMPORTANT: We avoid using pino-pretty's transport API in dev mode because the
+ * worker thread it spawns can cause 100% CPU infinite loops when exceptions occur
+ * during logging (error handler tries to log → triggers another error → recursion).
+ * See: https://github.com/vercel/next.js/issues/86099
+ *
+ * For pretty dev logs, pipe through pino-pretty CLI:
+ *   pnpm dev 2>&1 | pnpm pino-pretty
  */
 export const logger = pino({
     level: isTest ? "silent" : isProduction ? "info" : "debug",
-    transport: isProduction
-        ? undefined
-        : {
-              target: "pino-pretty",
-              options: {
-                  colorize: true,
-                  translateTime: "SYS:standard",
-                  ignore: "pid,hostname",
-              },
-          },
 });
