@@ -139,6 +139,15 @@ export function usePullToRefresh({
         }
     }, [enabled, isRefreshing, pullDistance, threshold, triggerHaptic, onRefresh]);
 
+    // Reset state when disabled mid-gesture (e.g., streaming starts while pulling)
+    useEffect(() => {
+        if (!enabled && isPulling) {
+            pullDistanceRef.current = 0;
+            setPullDistance(0);
+            setIsPulling(false);
+        }
+    }, [enabled, isPulling]);
+
     // Attach listeners
     useEffect(() => {
         if (!enabled) return;

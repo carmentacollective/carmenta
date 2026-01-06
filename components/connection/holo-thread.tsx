@@ -18,9 +18,12 @@ import {
     memo,
     type KeyboardEvent,
 } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { CaretDown, X, Pencil, Check } from "@phosphor-icons/react";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
+import { usePullToRefresh } from "@/lib/hooks/use-pull-to-refresh";
+import { PullToRefreshIndicator } from "@/components/pwa/pull-to-refresh-indicator";
 import { toast } from "sonner";
 import type { UIMessage } from "@ai-sdk/react";
 
@@ -112,6 +115,7 @@ export function HoloThread() {
 }
 
 function HoloThreadInner() {
+    const router = useRouter();
     const { messages, isLoading, setInput, append } = useChatContext();
     const { addFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
@@ -120,6 +124,18 @@ function HoloThreadInner() {
     // Chat scroll behavior - auto-scroll during streaming, pause on user scroll-up
     const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useChatScroll({
         isStreaming: isLoading,
+    });
+
+    // Pull-to-refresh for PWA - triggers page refresh when pulled past threshold
+    const {
+        pullDistance,
+        isRefreshing,
+        isPulling,
+        progress: pullProgress,
+    } = usePullToRefresh({
+        onRefresh: () => router.refresh(),
+        containerRef: scrollRef as React.RefObject<HTMLElement>,
+        enabled: !isLoading, // Disable during streaming to avoid accidental refreshes
     });
 
     // Track if we've done the initial scroll positioning
@@ -203,6 +219,14 @@ function HoloThreadInner() {
 
     return (
         <div className="flex h-full flex-col bg-transparent" role="log">
+            {/* Pull-to-refresh indicator for PWA */}
+            <PullToRefreshIndicator
+                progress={pullProgress}
+                isRefreshing={isRefreshing}
+                isPulling={isPulling}
+                pullDistance={pullDistance}
+            />
+
             {/* Full-viewport drag-drop overlay */}
             <DragDropOverlay isActive={isDragging} />
 
