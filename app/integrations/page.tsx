@@ -9,7 +9,6 @@ import {
     XCircle,
     X,
     ArrowCounterClockwise,
-    ChatCircle,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -29,19 +28,23 @@ import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
 import { useOAuthFlowRecovery } from "@/lib/hooks/use-oauth-flow-recovery";
 import { analytics } from "@/lib/analytics/events";
-import { CarmentaConcierge, useConcierge } from "@/components/carmenta-concierge";
+import {
+    CarmentaLayout,
+    CarmentaToggle,
+    useCarmentaLayout,
+} from "@/components/carmenta-assistant";
 
 /**
  * IntegrationsContent - Component that uses useSearchParams()
  * Extracted to allow Suspense boundary wrapping
  */
-function IntegrationsContent() {
+function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
     const searchParams = useSearchParams();
     const [services, setServices] = useState<GroupedService[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Concierge state
-    const concierge = useConcierge();
+    // Carmenta layout state
+    const carmenta = useCarmentaLayout();
 
     // OAuth flow recovery - detects abandoned OAuth attempts
     const {
@@ -97,7 +100,7 @@ function IntegrationsContent() {
 
     useEffect(() => {
         loadServices();
-    }, [loadServices]);
+    }, [loadServices, refreshKey]);
 
     // Handle OAuth callback results from URL params
     useEffect(() => {
@@ -457,14 +460,12 @@ function IntegrationsContent() {
                         </div>
                     </div>
 
-                    {/* Ask Carmenta button */}
-                    <button
-                        onClick={concierge.open}
-                        className="glass-card hover:bg-foreground/5 flex items-center gap-2 rounded-xl px-4 py-2.5 transition-colors"
-                    >
-                        <ChatCircle className="text-primary h-5 w-5" weight="duotone" />
-                        <span className="text-sm font-medium">Connect with us</span>
-                    </button>
+                    {/* Ask Carmenta toggle */}
+                    <CarmentaToggle
+                        isOpen={carmenta.isOpen}
+                        onClick={carmenta.toggle}
+                        label="Connect with us"
+                    />
                 </div>
             </section>
 
@@ -624,15 +625,34 @@ function IntegrationsContent() {
                 }}
                 onSubmit={handleConnectSubmit}
             />
-
-            {/* Carmenta Concierge */}
-            <CarmentaConcierge
-                isOpen={concierge.isOpen}
-                onClose={concierge.close}
-                pageContext="We're on the integrations page together. We can connect new services, test existing connections, or troubleshoot issues."
-                placeholder="What should we connect?"
-            />
         </StandardPageLayout>
+    );
+}
+
+/**
+ * Page context for Carmenta
+ */
+const PAGE_CONTEXT =
+    "We're on the integrations page together. We can connect new services, test existing connections, or troubleshoot issues.";
+
+/**
+ * Wrapper that provides CarmentaLayout context
+ */
+function IntegrationsWithCarmenta() {
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const handleChangesComplete = useCallback(() => {
+        setRefreshKey((prev) => prev + 1);
+    }, []);
+
+    return (
+        <CarmentaLayout
+            pageContext={PAGE_CONTEXT}
+            onChangesComplete={handleChangesComplete}
+            placeholder="What should we connect?"
+        >
+            <IntegrationsContent refreshKey={refreshKey} />
+        </CarmentaLayout>
     );
 }
 
@@ -656,7 +676,7 @@ export default function IntegrationsPage() {
                 </StandardPageLayout>
             }
         >
-            <IntegrationsContent />
+            <IntegrationsWithCarmenta />
         </Suspense>
     );
 }
