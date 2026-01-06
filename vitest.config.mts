@@ -16,7 +16,11 @@ import os from "os";
  * Testing showed optimal results at ~50-55% of cores when load ≈ cores.
  * At low load, using all cores is optimal.
  */
-function calculateOptimalWorkers(): { workers: number; cpuCount: number; loadAvg: number } {
+function calculateOptimalWorkers(): {
+    workers: number;
+    cpuCount: number;
+    loadAvg: number;
+} {
     const cpuCount = os.cpus().length;
     const MIN_WORKERS = 2;
 
