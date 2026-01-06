@@ -1,3 +1,10 @@
+---
+# prettier-ignore
+description: Research the current LLM landscape and update Carmenta's model routing rubrics with latest models, capabilities, and pricing
+version: 1.2.0
+model: inherit
+---
+
 # Update Model Rubric
 
 Research the current LLM landscape and update Carmenta's model routing rubrics. This is

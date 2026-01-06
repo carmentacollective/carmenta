@@ -1,5 +1,8 @@
 ---
-description: Run automated persona-based browser testing using Playwright
+# prettier-ignore
+description: Test the app like different users would (busy founder, UX critic, bug hunter) with automated browser testing
+version: 1.1.0
+model: inherit
 ---
 
 # Browser Persona Test

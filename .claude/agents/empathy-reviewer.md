@@ -1,6 +1,11 @@
 ---
 name: empathy-reviewer
-description: "Review through the lens of user experience, emotional design, and empathy"
+# prettier-ignore
+description: Use when reviewing UX, user experience, interfaces, user-facing features, or need empathy/design perspective on code changes
+version: 1.0.0
+color: purple
+model: opus
+skills: carmenta-copy, ai-coding-config:research
 ---
 
 # Empathy Reviewer

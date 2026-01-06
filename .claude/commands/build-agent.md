@@ -1,5 +1,8 @@
 ---
-description: Create a new specialized subagent for DCOS orchestration
+# prettier-ignore
+description: Create a specialized AI agent to handle specific tasks autonomously (like code review, research, or testing)
+version: 1.0.0
+model: inherit
 ---
 
 # Build Agent Command

@@ -1,7 +1,9 @@
 ---
-description: Autonomously triage and resolve GitHub issues from analysis to merged PR
+# prettier-ignore
+description: Autonomously triage and resolve a GitHub issue from analysis to merged PR - handles investigation, fixes, testing, and PR workflow
 argument-hint: [issue-number]
 version: 1.0.0
+model: inherit
 ---
 
 # /do-issue - Autonomous Issue Resolution

@@ -1,5 +1,8 @@
 ---
-description: Interactive design exploration with varied options and iteration support
+# prettier-ignore
+description: Explore design options side-by-side - generate UI variations, compare them visually, iterate based on feedback
+version: 1.0.0
+model: inherit
 ---
 
 # Design Lab

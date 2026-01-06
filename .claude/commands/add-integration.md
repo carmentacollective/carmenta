@@ -1,5 +1,8 @@
 ---
-description: Create a new external service integration
+# prettier-ignore
+description: Add support for a new service (like Slack, Notion, or GitHub) with full OAuth and API integration
+version: 2.1.0
+model: inherit
 ---
 
 # Add Integration Command

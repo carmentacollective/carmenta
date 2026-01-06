@@ -1,5 +1,8 @@
 ---
-description: Identify and build the next valuable piece of work together
+# prettier-ignore
+description: Figure out what to build next, then build it together - collaborative product planning and execution
+version: 2.1.0
+model: inherit
 ---
 
 # Build Next
