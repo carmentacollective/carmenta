@@ -195,6 +195,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 
             setInput(newValue);
 
+            // Auto-dismiss draft recovery banner when user pastes content
+            // (pasting means they've accepted the recovered draft)
+            if (hasRecoveredDraft) {
+                dismissRecovery();
+            }
+
             // Position cursor after inserted text
             setTimeout(() => {
                 const newPosition = start + text.length;
@@ -202,7 +208,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 inputRef.current?.focus();
             }, 0);
         },
-        [setInput]
+        [setInput, hasRecoveredDraft, dismissRecovery]
     );
 
     // Paste handler - detect images and large text from clipboard
