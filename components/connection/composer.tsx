@@ -22,7 +22,7 @@ import {
     type ComponentProps,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Square, ArrowElbowDownLeft, Plus } from "@phosphor-icons/react";
+import { SquareIcon, ArrowElbowDownLeftIcon, PlusIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useMessageQueue, type QueuedMessage } from "@/lib/hooks/use-message-queue";
@@ -135,16 +135,21 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         window.dispatchEvent(new CustomEvent(USER_ENGAGED_EVENT));
     }, []);
 
-    // Wrap handleInputChange to detect first keystroke (dismisses feature tips)
+    // Wrap handleInputChange to detect first keystroke (dismisses feature tips and draft banner)
     const handleInputChangeWithEngagement = useCallback(
         (e: React.ChangeEvent<HTMLTextAreaElement>) => {
             // Emit engagement on first character typed
             if (e.target.value.length > 0) {
                 emitUserEngaged();
             }
+            // Auto-dismiss draft recovery banner when user starts typing
+            // (typing means they've accepted the recovered draft)
+            if (hasRecoveredDraft) {
+                dismissRecovery();
+            }
             handleInputChange(e);
         },
-        [handleInputChange, emitUserEngaged]
+        [handleInputChange, emitUserEngaged, hasRecoveredDraft, dismissRecovery]
     );
 
     // Voice input: track prefix text when session starts to preserve existing input
@@ -167,8 +172,13 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             const fullText = voicePrefixRef.current + transcript;
             setInput(fullText);
             emitUserEngaged();
+            // Auto-dismiss draft recovery banner when user speaks
+            // (voice input means they've accepted the recovered draft)
+            if (hasRecoveredDraft) {
+                dismissRecovery();
+            }
         },
-        [setInput, emitUserEngaged]
+        [setInput, emitUserEngaged, hasRecoveredDraft, dismissRecovery]
     );
 
     // Helper to insert text at cursor position and update input
@@ -185,6 +195,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 
             setInput(newValue);
 
+            // Auto-dismiss draft recovery banner when user pastes content
+            // (pasting means they've accepted the recovered draft)
+            if (hasRecoveredDraft) {
+                dismissRecovery();
+            }
+
             // Position cursor after inserted text
             setTimeout(() => {
                 const newPosition = start + text.length;
@@ -192,7 +208,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 inputRef.current?.focus();
             }, 0);
         },
-        [setInput]
+        [setInput, hasRecoveredDraft, dismissRecovery]
     );
 
     // Paste handler - detect images and large text from clipboard
@@ -777,7 +793,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="send-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <ArrowElbowDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                                <ArrowElbowDownLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                             </ComposerButton>
                         ) : input.trim() ? (
                             <ComposerButton
@@ -803,7 +819,10 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="queue-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <Plus className="h-5 w-5 sm:h-6 sm:w-6" weight="bold" />
+                                <PlusIcon
+                                    className="h-5 w-5 sm:h-6 sm:w-6"
+                                    weight="bold"
+                                />
                             </ComposerButton>
                         ) : (
                             <ComposerButton
@@ -815,7 +834,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="stop-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <Square className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <SquareIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                             </ComposerButton>
                         )}
                         <VoiceInputButton
@@ -964,7 +983,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
         // Queue and Send variants use children (passed as props)
         const getIcon = () => {
             if (variant === "stop") {
-                return <Square className="h-4 w-4 sm:h-5 sm:w-5" />;
+                return <SquareIcon className="h-4 w-4 sm:h-5 sm:w-5" />;
             }
             // Send, queue, and ghost variants use children
             return children;

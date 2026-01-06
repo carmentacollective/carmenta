@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRightIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
@@ -134,7 +134,7 @@ function SparkPill({ spark, onClick, index }: SparkPillProps) {
             />
             <span className="max-w-[200px] truncate">{spark.label}</span>
             {(isNavigate || isDeeplink) && (
-                <ArrowRight className="text-foreground/30 group-hover:text-foreground/50 h-3.5 w-3.5 transition-all group-hover:translate-x-0.5" />
+                <ArrowRightIcon className="text-foreground/30 group-hover:text-foreground/50 h-3.5 w-3.5 transition-all group-hover:translate-x-0.5" />
             )}
         </motion.button>
     );

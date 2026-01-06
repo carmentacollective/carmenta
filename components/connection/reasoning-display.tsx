@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useState, useId, useRef, useMemo } from "react";
-import { Brain, CaretDown } from "@phosphor-icons/react";
+import { BrainIcon, CaretDownIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -246,7 +246,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                 )}
                 data-testid="reasoning-trigger"
             >
-                <Brain
+                <BrainIcon
                     className={cn(
                         "h-3.5 w-3.5 text-blue-500/70",
                         isStreaming && "animate-pulse"
@@ -262,7 +262,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                 >
                     {statusMessage}
                 </span>
-                <CaretDown
+                <CaretDownIcon
                     className={cn(
                         "h-4 w-4 shrink-0 transition-transform duration-200",
                         isNested && "text-foreground/40",

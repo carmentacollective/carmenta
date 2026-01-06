@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ArrowClockwise, CaretDown, Check } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, CaretDownIcon, CheckIcon } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MODELS, type ModelId } from "@/lib/model-config";
@@ -159,7 +159,7 @@ export function RegenerateMenu({
                                 opacity: { duration: 0.15 },
                             }}
                         >
-                            <ArrowClockwise className="h-4 w-4" />
+                            <ArrowClockwiseIcon className="h-4 w-4" />
                         </motion.div>
                     ) : (
                         <motion.div
@@ -169,7 +169,7 @@ export function RegenerateMenu({
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
                         >
-                            <ArrowClockwise className="h-4 w-4" />
+                            <ArrowClockwiseIcon className="h-4 w-4" />
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -192,7 +192,7 @@ export function RegenerateMenu({
                                 : "text-foreground/60 hover:text-foreground/90"
                         )}
                     >
-                        <CaretDown
+                        <CaretDownIcon
                             className={cn(
                                 "h-4 w-4 transition-transform",
                                 isOpen && "rotate-180"
@@ -239,7 +239,7 @@ export function RegenerateMenu({
                                                     {model.displayName}
                                                 </span>
                                                 {isActive && (
-                                                    <Check className="text-primary h-3.5 w-3.5" />
+                                                    <CheckIcon className="text-primary h-3.5 w-3.5" />
                                                 )}
                                             </button>
                                         );

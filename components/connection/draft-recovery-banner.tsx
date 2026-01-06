@@ -5,9 +5,11 @@
  * message has been recovered from localStorage.
  *
  * Copy:
- * - "We kept your message safe."
- * - Continue (keep text)
+ * - "We saved your message—pick up where we left off?"
+ * - Keep going (keep text)
  * - Start fresh (clear text)
+ *
+ * Auto-dismisses when user starts typing (implicit acceptance).
  *
  * @see knowledge/users-should-feel.md - "Memory is relationship"
  */
@@ -15,12 +17,12 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ClockCounterClockwise } from "@phosphor-icons/react";
+import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 
 interface DraftRecoveryBannerProps {
     /** Whether to show the banner */
     show: boolean;
-    /** Called when user clicks "Continue" - keeps the text */
+    /** Called when user clicks "Keep going" - keeps the text */
     onContinue: () => void;
     /** Called when user clicks "Start fresh" - clears the text */
     onStartFresh: () => void;
@@ -42,14 +44,15 @@ export function DraftRecoveryBanner({
                         type: "spring",
                         damping: 25,
                         stiffness: 300,
+                        delay: 0.15, // Brief delay so user notices the banner appearing
                     }}
                     className="overflow-hidden"
                 >
                     <div className="bg-primary/10 mb-3 flex items-center justify-between rounded-xl px-4 py-3">
                         <div className="flex items-center gap-2">
-                            <ClockCounterClockwise className="text-primary h-4 w-4" />
+                            <ClockCounterClockwiseIcon className="text-primary h-4 w-4" />
                             <span className="text-foreground/80 text-sm">
-                                We kept your message safe.
+                                We saved your message—pick up where we left off?
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -63,7 +66,7 @@ export function DraftRecoveryBanner({
                                 onClick={onContinue}
                                 className="bg-primary/20 text-primary hover:bg-primary/30 rounded-lg px-3 py-1 text-sm transition-colors"
                             >
-                                Continue
+                                Keep going
                             </button>
                         </div>
                     </div>

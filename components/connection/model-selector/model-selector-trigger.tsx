@@ -10,7 +10,7 @@
  * other components (like feature tips) can also trigger the modal.
  */
 
-import { Sparkle } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 
 import { MODELS, type ModelConfig } from "@/lib/model-config";
 import { ProviderIcon } from "@/components/icons/provider-icons";
@@ -85,7 +85,7 @@ export function ModelSelectorTrigger({
                 {/* showLabel mode: sparkles (+ optional label), otherwise provider icon */}
                 {showLabel ? (
                     <>
-                        <Sparkle
+                        <SparkleIcon
                             className={cn(
                                 "h-5 w-5 transition-colors",
                                 labelText
@@ -112,7 +112,7 @@ export function ModelSelectorTrigger({
                         )}
                     />
                 ) : (
-                    <Sparkle className="text-primary/70 group-hover:text-primary h-5 w-5 transition-colors sm:h-6 sm:w-6" />
+                    <SparkleIcon className="text-primary/70 group-hover:text-primary h-5 w-5 transition-colors sm:h-6 sm:w-6" />
                 )}
             </button>
 

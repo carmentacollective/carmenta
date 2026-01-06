@@ -8,7 +8,7 @@
  */
 
 import { useRef } from "react";
-import { Paperclip } from "@phosphor-icons/react";
+import { PaperclipIcon } from "@phosphor-icons/react";
 import { useFileAttachments } from "./file-attachment-context";
 import { ALLOWED_MIME_TYPES } from "@/lib/storage/file-config";
 import { cn } from "@/lib/utils";
@@ -47,7 +47,7 @@ export function FilePickerButton({ className }: FilePickerButtonProps) {
                 data-tooltip-content="Add files · up to 10MB"
                 aria-label="Attach file"
             >
-                <Paperclip className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6" />
+                <PaperclipIcon className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6" />
             </button>
             <input
                 ref={inputRef}

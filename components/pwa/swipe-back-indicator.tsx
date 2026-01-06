@@ -10,7 +10,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { CaretLeft } from "@phosphor-icons/react";
+import { CaretLeftIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface SwipeBackIndicatorProps {
@@ -50,7 +50,7 @@ export function SwipeBackIndicator({
                                 : "bg-background/80 text-foreground/60"
                         )}
                     >
-                        <CaretLeft
+                        <CaretLeftIcon
                             className={cn(
                                 "h-6 w-6 transition-transform",
                                 isTriggered && "scale-110"

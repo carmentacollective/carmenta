@@ -20,7 +20,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { CaretDown, X, Pencil, Check } from "@phosphor-icons/react";
+import { CaretDownIcon, XIcon, PencilIcon, CheckIcon } from "@phosphor-icons/react";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
 import { usePullToRefresh } from "@/lib/hooks/use-pull-to-refresh";
 import { PullToRefreshIndicator } from "@/components/pwa/pull-to-refresh-indicator";
@@ -336,7 +336,7 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton({
             className="btn-glass-interactive z-sticky absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
             aria-label="Scroll to bottom"
         >
-            <CaretDown className="text-foreground/70 h-5 w-5" />
+            <CaretDownIcon className="text-foreground/70 h-5 w-5" />
         </button>
     );
 });
@@ -1376,7 +1376,7 @@ function MessageActions({
                         "text-foreground/60 hover:text-foreground/90"
                     )}
                 >
-                    <Pencil className="h-4 w-4" />
+                    <PencilIcon className="h-4 w-4" />
                 </button>
             )}
             <CopyButton
@@ -1606,7 +1606,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                         isSubmitting && "cursor-not-allowed opacity-50"
                                     )}
                                 >
-                                    <X className="h-3 w-3" />
+                                    <XIcon className="h-3 w-3" />
                                     Cancel
                                 </button>
                                 <button
@@ -1624,7 +1624,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                                             "cursor-not-allowed opacity-50"
                                     )}
                                 >
-                                    <Check className="h-3 w-3" />
+                                    <CheckIcon className="h-3 w-3" />
                                     {isSubmitting ? "Saving..." : "Save & Regenerate"}
                                 </button>
                             </div>

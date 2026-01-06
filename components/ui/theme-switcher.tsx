@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Moon, Sun } from "@phosphor-icons/react";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 
 import { cn } from "@/lib/utils";
@@ -50,13 +50,13 @@ export function ThemeSwitcher({
                 className="relative"
                 aria-label="Toggle theme"
             >
-                <Sun className="text-foreground/70 size-4" />
+                <SunIcon className="text-foreground/70 size-4" />
             </Button>
         );
     }
 
     const isDark = resolvedTheme === "dark";
-    const Icon = isDark ? Moon : Sun;
+    const Icon = isDark ? MoonIcon : SunIcon;
 
     return (
         <Button

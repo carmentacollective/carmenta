@@ -9,7 +9,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkle } from "@phosphor-icons/react";
+import { SparkleIcon, ChatCircleIcon } from "@phosphor-icons/react";
 
 import { KnowledgeViewer } from "./index";
 import { LibrarianTaskBar } from "./librarian-task-bar";
@@ -42,7 +42,7 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
                     className="glass-card hover:bg-foreground/5 flex items-center gap-2 rounded-xl px-4 py-2.5 transition-colors"
                     title="Work with Carmenta to organize your knowledge"
                 >
-                    <Sparkle className="text-primary h-5 w-5" weight="duotone" />
+                    <ChatCircleIcon className="text-primary h-5 w-5" weight="duotone" />
                     <span className="hidden text-sm font-medium sm:inline">
                         Organize together
                     </span>
@@ -53,7 +53,7 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
             <section className="min-h-[500px] flex-1">
                 {initialFolders.length === 0 ? (
                     <div className="border-foreground/5 bg-foreground/[0.02] flex h-full flex-col items-center justify-center rounded-2xl border py-16 text-center">
-                        <Sparkle className="text-foreground/30 mb-4 h-12 w-12" />
+                        <SparkleIcon className="text-foreground/30 mb-4 h-12 w-12" />
                         <h3 className="text-foreground/80 text-lg font-medium">
                             We're setting up your knowledge base
                         </h3>

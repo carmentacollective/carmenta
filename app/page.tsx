@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { ArrowRightIcon, CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
@@ -220,7 +220,7 @@ export default function HomePage() {
                             className="hover:ring-primary/40 focus:ring-primary/40 mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3.5 text-lg font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] focus:scale-105 focus:shadow-2xl focus:ring-[3px] focus:outline-none active:translate-y-0.5 active:shadow-sm"
                         >
                             Connect to AI
-                            <ArrowRight className="h-5 w-5" />
+                            <ArrowRightIcon className="h-5 w-5" />
                         </Link>
                     </motion.div>
 
@@ -294,7 +294,7 @@ export default function HomePage() {
                                 className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/70 rounded-full p-2 transition-all hover:scale-110"
                                 aria-label="Previous slide"
                             >
-                                <CaretLeft className="h-4 w-4" />
+                                <CaretLeftIcon className="h-4 w-4" />
                             </button>
                             <div className="flex items-center gap-2">
                                 {shuffledFeatures.map((_, i) => (
@@ -316,7 +316,7 @@ export default function HomePage() {
                                 className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/70 rounded-full p-2 transition-all hover:scale-110"
                                 aria-label="Next slide"
                             >
-                                <CaretRight className="h-4 w-4" />
+                                <CaretRightIcon className="h-4 w-4" />
                             </button>
                         </div>
                     </motion.div>

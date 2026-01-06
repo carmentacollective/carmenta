@@ -16,7 +16,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { FolderSimple, ArrowRight, CircleNotch } from "@phosphor-icons/react";
+import {
+    FolderSimpleIcon,
+    ArrowRightIcon,
+    CircleNotchIcon,
+} from "@phosphor-icons/react";
 
 import Image from "next/image";
 
@@ -102,7 +106,7 @@ export default function CodePage() {
                                 animate={{ opacity: 1, height: "auto" }}
                             >
                                 <div className="flex items-start gap-3">
-                                    <FolderSimple className="mt-0.5 h-5 w-5 text-purple-600 dark:text-purple-400" />
+                                    <FolderSimpleIcon className="mt-0.5 h-5 w-5 text-purple-600 dark:text-purple-400" />
                                     <div className="min-w-0 flex-1">
                                         <p className="font-medium text-purple-900 dark:text-purple-100">
                                             {selectedProject.name}
@@ -134,13 +138,13 @@ export default function CodePage() {
                     >
                         {isNavigating ? (
                             <>
-                                <CircleNotch className="h-5 w-5 animate-spin" />
+                                <CircleNotchIcon className="h-5 w-5 animate-spin" />
                                 Starting session...
                             </>
                         ) : (
                             <>
                                 Start Coding
-                                <ArrowRight className="h-5 w-5" />
+                                <ArrowRightIcon className="h-5 w-5" />
                             </>
                         )}
                     </button>

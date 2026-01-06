@@ -3,12 +3,12 @@
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-    Plug,
-    Sparkle,
-    CheckCircle,
-    XCircle,
-    X,
-    ArrowCounterClockwise,
+    PlugIcon,
+    SparkleIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+    XIcon,
+    ArrowCounterClockwiseIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -456,7 +456,7 @@ function IntegrationsContent({
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="bg-primary/20 rounded-xl p-3">
-                            <Plug className="text-primary h-6 w-6" />
+                            <PlugIcon className="text-primary h-6 w-6" />
                         </div>
                         <div>
                             <h1 className="text-foreground text-3xl font-light tracking-tight">
@@ -488,9 +488,9 @@ function IntegrationsContent({
                 >
                     <div className="flex items-center gap-3">
                         {globalMessage.type === "success" ? (
-                            <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                            <CheckCircleIcon className="h-5 w-5 flex-shrink-0" />
                         ) : (
-                            <XCircle className="h-5 w-5 flex-shrink-0" />
+                            <XCircleIcon className="h-5 w-5 flex-shrink-0" />
                         )}
                         <span className="text-sm font-medium">
                             {globalMessage.text}
@@ -501,7 +501,7 @@ function IntegrationsContent({
                         className="hover:bg-foreground/10 rounded-lg p-1"
                         aria-label="Dismiss message"
                     >
-                        <X className="h-4 w-4" />
+                        <XIcon className="h-4 w-4" />
                     </button>
                 </div>
             )}
@@ -510,7 +510,7 @@ function IntegrationsContent({
             {abandonedService && !globalMessage && (
                 <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-500/10 p-4 text-amber-700 dark:text-amber-400">
                     <div className="flex items-center gap-3">
-                        <ArrowCounterClockwise className="h-5 w-5 flex-shrink-0" />
+                        <ArrowCounterClockwiseIcon className="h-5 w-5 flex-shrink-0" />
                         <span className="text-sm font-medium">
                             Didn't finish connecting {abandonedServiceName}?
                         </span>
@@ -527,7 +527,7 @@ function IntegrationsContent({
                             className="hover:bg-foreground/10 rounded-lg p-1"
                             aria-label="Dismiss"
                         >
-                            <X className="h-4 w-4" />
+                            <XIcon className="h-4 w-4" />
                         </button>
                     </div>
                 </div>
@@ -536,13 +536,13 @@ function IntegrationsContent({
             {loading ? (
                 <div className="flex items-center justify-center py-24">
                     <div className="flex flex-col items-center gap-4">
-                        <Sparkle className="text-primary h-8 w-8 animate-pulse" />
+                        <SparkleIcon className="text-primary h-8 w-8 animate-pulse" />
                         <p className="text-foreground/60">Loading integrations...</p>
                     </div>
                 </div>
             ) : services.length === 0 ? (
                 <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-16 text-center">
-                    <Plug className="text-foreground/30 mb-4 h-12 w-12" />
+                    <PlugIcon className="text-foreground/30 mb-4 h-12 w-12" />
                     <h3 className="text-foreground/80 text-lg font-medium">
                         No connections yet
                     </h3>
@@ -675,7 +675,7 @@ export default function IntegrationsPage() {
                 <StandardPageLayout maxWidth="standard" contentClassName="py-12">
                     <div className="flex items-center justify-center py-24">
                         <div className="flex flex-col items-center gap-4">
-                            <Sparkle className="text-primary h-8 w-8 animate-pulse" />
+                            <SparkleIcon className="text-primary h-8 w-8 animate-pulse" />
                             <p className="text-foreground/60">
                                 Loading integrations...
                             </p>

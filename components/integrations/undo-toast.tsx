@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUUpLeft } from "@phosphor-icons/react";
+import { ArrowUUpLeftIcon } from "@phosphor-icons/react";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 
 export interface UndoToastProps {
@@ -36,7 +36,7 @@ export function UndoToast({ service, onUndo, visible }: UndoToastProps) {
                             onClick={onUndo}
                             className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-white/20"
                         >
-                            <ArrowUUpLeft className="h-3.5 w-3.5" />
+                            <ArrowUUpLeftIcon className="h-3.5 w-3.5" />
                             Undo
                         </button>
                     </div>

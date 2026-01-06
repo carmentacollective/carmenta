@@ -16,7 +16,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkle, ArrowRight } from "@phosphor-icons/react";
+import { XIcon, SparkleIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -79,7 +79,7 @@ export function FeatureTip({ className }: FeatureTipProps) {
                             <div className="mb-2 flex items-start justify-between gap-3">
                                 <div className="flex items-center gap-2">
                                     <div className="bg-primary/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full">
-                                        <Sparkle className="text-primary h-3.5 w-3.5" />
+                                        <SparkleIcon className="text-primary h-3.5 w-3.5" />
                                     </div>
                                     <h3 className="text-foreground/90 text-sm font-semibold">
                                         {tip.tipTitle}
@@ -92,7 +92,7 @@ export function FeatureTip({ className }: FeatureTipProps) {
                                     className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/60 focus-visible:bg-foreground/10 focus-visible:text-foreground/60 focus-visible:ring-primary/50 flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2"
                                     aria-label="Dismiss tip"
                                 >
-                                    <X className="h-3.5 w-3.5" />
+                                    <XIcon className="h-3.5 w-3.5" />
                                 </button>
                             </div>
 
@@ -138,7 +138,7 @@ export function FeatureTip({ className }: FeatureTipProps) {
                                             className="btn-glass-interactive text-foreground/80 hover:text-foreground inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
                                         >
                                             {tip.cta.label}
-                                            <ArrowRight className="h-3.5 w-3.5" />
+                                            <ArrowRightIcon className="h-3.5 w-3.5" />
                                         </Link>
                                     )}
                                     {tip.cta.action === "settings" && (
@@ -148,7 +148,7 @@ export function FeatureTip({ className }: FeatureTipProps) {
                                             className="btn-glass-interactive text-foreground/80 hover:text-foreground inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
                                         >
                                             {tip.cta.label}
-                                            <ArrowRight className="h-3.5 w-3.5" />
+                                            <ArrowRightIcon className="h-3.5 w-3.5" />
                                         </button>
                                     )}
                                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, ArrowSquareOut } from "@phosphor-icons/react";
+import { FileTextIcon, ArrowSquareOutIcon } from "@phosphor-icons/react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { ToolRenderer } from "./tool-renderer";
@@ -65,7 +65,7 @@ function FetchPageContent({
         <div className="max-w-2xl">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                    <FileText className="text-primary h-4 w-4" />
+                    <FileTextIcon className="text-primary h-4 w-4" />
                     <span className="text-foreground font-medium">
                         {title || "Page Content"}
                     </span>
@@ -77,7 +77,7 @@ function FetchPageContent({
                     className="text-muted-foreground hover:text-primary flex items-center gap-1 text-xs"
                 >
                     <span className="hidden sm:inline">Open</span>
-                    <ArrowSquareOut className="h-3 w-3" />
+                    <ArrowSquareOutIcon className="h-3 w-3" />
                 </a>
             </div>
 

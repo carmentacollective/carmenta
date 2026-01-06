@@ -11,7 +11,12 @@
  */
 
 import { memo } from "react";
-import { Upload, Image, FileText, MusicNote } from "@phosphor-icons/react";
+import {
+    UploadIcon,
+    ImageIcon,
+    FileTextIcon,
+    MusicNoteIcon,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface DragDropOverlayProps {
@@ -115,7 +120,7 @@ export const DragDropOverlay = memo(function DragDropOverlay({
                                 isActive && "scale-110"
                             )}
                         >
-                            <Upload
+                            <UploadIcon
                                 className={cn(
                                     "text-primary h-10 w-10 transition-transform duration-300",
                                     isActive && "-translate-y-1"
@@ -136,9 +141,9 @@ export const DragDropOverlay = memo(function DragDropOverlay({
 
                     {/* Supported file types row */}
                     <div className="mt-6 flex items-center gap-4">
-                        <FileTypeIndicator icon={Image} label="Images" />
-                        <FileTypeIndicator icon={FileText} label="PDFs" />
-                        <FileTypeIndicator icon={MusicNote} label="Audio" />
+                        <FileTypeIndicator icon={ImageIcon} label="Images" />
+                        <FileTypeIndicator icon={FileTextIcon} label="PDFs" />
+                        <FileTypeIndicator icon={MusicNoteIcon} label="Audio" />
                     </div>
                 </div>
             </div>
@@ -151,7 +156,7 @@ function FileTypeIndicator({
     icon: Icon,
     label,
 }: {
-    icon: typeof Image;
+    icon: typeof ImageIcon;
     label: string;
 }) {
     return (

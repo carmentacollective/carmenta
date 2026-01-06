@@ -5,13 +5,13 @@
  */
 
 import {
-    File,
-    FileCode,
-    FileJs,
-    FileText,
-    FileImage,
-    Folder,
-    FolderOpen,
+    FileIcon,
+    FileCodeIcon,
+    FileJsIcon,
+    FileTextIcon,
+    ImageIcon as FileImageIcon,
+    FolderIcon,
+    FolderOpenIcon,
     type Icon,
 } from "@phosphor-icons/react";
 
@@ -108,17 +108,17 @@ const IMAGE_EXTENSIONS = new Set([
  */
 export function getFileIcon(entry: FileEntry, isOpen?: boolean): Icon {
     if (entry.type === "directory") {
-        return isOpen ? FolderOpen : Folder;
+        return isOpen ? FolderOpenIcon : FolderIcon;
     }
 
     const ext = entry.extension?.toLowerCase() ?? "";
 
-    if (CODE_EXTENSIONS.has(ext)) return FileCode;
-    if (CONFIG_EXTENSIONS.has(ext)) return FileJs;
-    if (TEXT_EXTENSIONS.has(ext)) return FileText;
-    if (IMAGE_EXTENSIONS.has(ext)) return FileImage;
+    if (CODE_EXTENSIONS.has(ext)) return FileCodeIcon;
+    if (CONFIG_EXTENSIONS.has(ext)) return FileJsIcon;
+    if (TEXT_EXTENSIONS.has(ext)) return FileTextIcon;
+    if (IMAGE_EXTENSIONS.has(ext)) return FileImageIcon;
 
-    return File;
+    return FileIcon;
 }
 
 /**

@@ -9,7 +9,7 @@
 
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { Sparkle } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
@@ -110,7 +110,7 @@ export const ThinkingBubble = memo(function ThinkingBubble({
                 )}
                 <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-3">
                     <div className="text-foreground/60 flex items-center gap-2 text-sm">
-                        <Sparkle className="h-4 w-4 animate-pulse" />
+                        <SparkleIcon className="h-4 w-4 animate-pulse" />
                         <span>{message}</span>
                     </div>
                 </div>

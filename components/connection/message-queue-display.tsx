@@ -15,7 +15,7 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, PencilSimple, Lightning } from "@phosphor-icons/react";
+import { XIcon, PencilSimpleIcon, LightningIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { QueuedMessage } from "@/lib/hooks/use-message-queue";
@@ -169,7 +169,7 @@ export function MessageQueueDisplay({
                                             )}
                                             title="Send now (interrupts current)"
                                         >
-                                            <Lightning
+                                            <LightningIcon
                                                 className="h-3.5 w-3.5"
                                                 weight="fill"
                                             />
@@ -186,7 +186,7 @@ export function MessageQueueDisplay({
                                         )}
                                         title="Edit message"
                                     >
-                                        <PencilSimple className="h-3.5 w-3.5" />
+                                        <PencilSimpleIcon className="h-3.5 w-3.5" />
                                     </button>
 
                                     {/* Remove button */}
@@ -199,7 +199,7 @@ export function MessageQueueDisplay({
                                         )}
                                         title="Remove from queue"
                                     >
-                                        <X className="h-3.5 w-3.5" />
+                                        <XIcon className="h-3.5 w-3.5" />
                                     </button>
                                 </div>
                             )}

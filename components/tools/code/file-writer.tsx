@@ -14,14 +14,14 @@
 
 import { useState, useMemo, useCallback } from "react";
 import {
-    FilePlus,
-    CheckCircle,
-    Copy,
-    Check,
-    CaretDown,
-    CaretUp,
-    CircleNotch,
-    GitDiff,
+    FilePlusIcon,
+    CheckCircleIcon,
+    CopyIcon,
+    CheckIcon,
+    CaretDownIcon,
+    CaretUpIcon,
+    CircleNotchIcon,
+    GitDiffIcon,
 } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
@@ -175,9 +175,9 @@ export function FileWriter({
             <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
                     {isCompleted && !error ? (
-                        <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
+                        <CheckCircleIcon className="h-4 w-4 shrink-0 text-green-500" />
                     ) : (
-                        <FilePlus className="text-muted-foreground h-4 w-4 shrink-0" />
+                        <FilePlusIcon className="text-muted-foreground h-4 w-4 shrink-0" />
                     )}
                     <span className="text-foreground truncate font-mono text-sm">
                         {fileName}
@@ -192,7 +192,7 @@ export function FileWriter({
                 <div className="flex items-center gap-2">
                     {/* Loading indicator */}
                     {isRunning && (
-                        <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
+                        <CircleNotchIcon className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
 
                     {/* Show diff button - on demand comparison to git HEAD */}
@@ -204,9 +204,9 @@ export function FileWriter({
                             aria-label="Show diff against previous version"
                         >
                             {isLoadingDiff ? (
-                                <CircleNotch className="h-3 w-3 animate-spin" />
+                                <CircleNotchIcon className="h-3 w-3 animate-spin" />
                             ) : (
-                                <GitDiff className="h-3 w-3" />
+                                <GitDiffIcon className="h-3 w-3" />
                             )}
                             <span>Show diff</span>
                         </button>
@@ -230,9 +230,9 @@ export function FileWriter({
                             aria-label="Copy content"
                         >
                             {isCopied ? (
-                                <Check className="h-4 w-4 text-green-500" />
+                                <CheckIcon className="h-4 w-4 text-green-500" />
                             ) : (
-                                <Copy className="h-4 w-4" />
+                                <CopyIcon className="h-4 w-4" />
                             )}
                         </button>
                     )}
@@ -262,7 +262,7 @@ export function FileWriter({
                 {/* Loading state */}
                 {isRunning && (
                     <div className="text-muted-foreground flex items-center gap-2 p-4">
-                        <FilePlus className="h-4 w-4 animate-pulse" />
+                        <FilePlusIcon className="h-4 w-4 animate-pulse" />
                         <span className="text-sm">Writing file...</span>
                     </div>
                 )}
@@ -272,7 +272,7 @@ export function FileWriter({
                     <div className="p-2">
                         {isNewFile ? (
                             <div className="text-muted-foreground flex items-center gap-2 px-2 py-3 text-sm">
-                                <FilePlus className="h-4 w-4 text-green-500" />
+                                <FilePlusIcon className="h-4 w-4 text-green-500" />
                                 <span>New file - no previous version to compare</span>
                             </div>
                         ) : (
@@ -321,12 +321,12 @@ export function FileWriter({
                 >
                     {isCollapsed ? (
                         <>
-                            <CaretDown className="h-4 w-4" />
+                            <CaretDownIcon className="h-4 w-4" />
                             Show all {lineCount} lines
                         </>
                     ) : (
                         <>
-                            <CaretUp className="h-4 w-4" />
+                            <CaretUpIcon className="h-4 w-4" />
                             Collapse
                         </>
                     )}

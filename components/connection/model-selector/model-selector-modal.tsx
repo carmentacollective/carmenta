@@ -10,7 +10,12 @@
  */
 
 import { useRef, useState, useEffect } from "react";
-import { Sparkle, Check, Info, CircleNotch } from "@phosphor-icons/react";
+import {
+    SparkleIcon,
+    CheckIcon,
+    InfoIcon,
+    CircleNotchIcon,
+} from "@phosphor-icons/react";
 
 import {
     Dialog,
@@ -211,9 +216,9 @@ export function ModelSelectorModal({
                         </span>
                         <div className="from-primary flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br to-purple-500 shadow-lg">
                             {switchingTo === "auto" ? (
-                                <CircleNotch className="h-7 w-7 animate-spin text-white" />
+                                <CircleNotchIcon className="h-7 w-7 animate-spin text-white" />
                             ) : (
-                                <Sparkle className="h-7 w-7 text-white" />
+                                <SparkleIcon className="h-7 w-7 text-white" />
                             )}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -238,7 +243,7 @@ export function ModelSelectorModal({
                         </div>
                         {overrides.modelId === null && (
                             <div className="bg-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-md">
-                                <Check className="h-5 w-5 text-white" />
+                                <CheckIcon className="h-5 w-5 text-white" />
                             </div>
                         )}
                     </button>
@@ -273,11 +278,11 @@ export function ModelSelectorModal({
                                         data-tooltip-html={getModelTooltipHtml(model)}
                                         onClick={(e) => e.stopPropagation()}
                                     >
-                                        <Info className="text-foreground/40 hover:text-foreground/70 h-3.5 w-3.5 transition-colors" />
+                                        <InfoIcon className="text-foreground/40 hover:text-foreground/70 h-3.5 w-3.5 transition-colors" />
                                     </div>
                                     <div className="relative mt-0.5 h-6 w-6 shrink-0">
                                         {isSwitching ? (
-                                            <CircleNotch className="text-primary h-6 w-6 animate-spin" />
+                                            <CircleNotchIcon className="text-primary h-6 w-6 animate-spin" />
                                         ) : (
                                             <ProviderIcon
                                                 provider={model.provider}
@@ -324,7 +329,7 @@ export function ModelSelectorModal({
                                     </div>
                                     {isSelected && (
                                         <div className="bg-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-sm">
-                                            <Check className="h-4 w-4 text-white" />
+                                            <CheckIcon className="h-4 w-4 text-white" />
                                         </div>
                                     )}
                                 </button>
@@ -386,7 +391,7 @@ export function ModelSelectorModal({
                             }}
                             className="text-muted-foreground hover:text-primary hover:bg-primary/10 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-all"
                         >
-                            <Sparkle className="h-3 w-3" />
+                            <SparkleIcon className="h-3 w-3" />
                             Let Carmenta decide automagically
                         </button>
                     </div>

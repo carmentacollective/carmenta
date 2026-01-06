@@ -22,6 +22,7 @@ import { logger } from "@/lib/client-logger";
 const DRAFT_KEY_PREFIX = "carmenta:draft:";
 const NEW_CONNECTION_KEY = "new";
 const DEBOUNCE_MS = 500;
+const MIN_DRAFT_LENGTH = 30; // Don't save drafts shorter than this (roughly 5-7 words)
 
 export interface UseDraftPersistenceOptions {
     /** Connection ID to scope the draft to (uses "new" fallback for new connections) */
@@ -57,7 +58,7 @@ function getSavedDraft(key: string): string | null {
     try {
         const storageKey = getDraftKey(key);
         const savedDraft = localStorage.getItem(storageKey);
-        if (savedDraft && savedDraft.trim().length > 0) {
+        if (savedDraft && savedDraft.trim().length >= MIN_DRAFT_LENGTH) {
             return savedDraft;
         }
     } catch (error) {
@@ -139,10 +140,10 @@ export function useDraftPersistence({
             try {
                 const key = getDraftKey(effectiveKey);
 
-                if (input.trim().length > 0) {
+                if (input.trim().length >= MIN_DRAFT_LENGTH) {
                     localStorage.setItem(key, input);
                 } else {
-                    // Clear empty drafts
+                    // Clear drafts that are too short or empty
                     localStorage.removeItem(key);
                 }
             } catch (error) {

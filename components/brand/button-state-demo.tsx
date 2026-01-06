@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Sparkle } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { triggerHaptic } from "@/lib/hooks/use-haptic-feedback";
 import { createRipple, getTapPosition } from "@/lib/hooks/use-tap-feedback";
@@ -100,7 +100,7 @@ export function ButtonStateDemo({ variant }: { variant: string }) {
                 )}
 
                 {/* Icon */}
-                <Sparkle
+                <SparkleIcon
                     className={cn(
                         "relative z-10 h-5 w-5 transition-colors",
                         variant === "hover"

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Heart, Sparkle, Confetti } from "@phosphor-icons/react";
+import { HeartIcon, SparkleIcon, ConfettiIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -16,19 +16,19 @@ interface AcknowledgeResultProps {
 
 const typeConfig = {
     gratitude: {
-        icon: Heart,
+        icon: HeartIcon,
         bg: "bg-holo-mint/20",
         border: "border-l-emerald-400/50",
         iconColor: "text-emerald-500",
     },
     encouragement: {
-        icon: Sparkle,
+        icon: SparkleIcon,
         bg: "bg-holo-lavender/20",
         border: "border-l-violet-400/50",
         iconColor: "text-violet-500",
     },
     celebration: {
-        icon: Confetti,
+        icon: ConfettiIcon,
         bg: "bg-holo-gold/20",
         border: "border-l-amber-400/50",
         iconColor: "text-amber-500",

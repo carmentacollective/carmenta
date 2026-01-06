@@ -14,7 +14,7 @@
  */
 
 import { useRef, useEffect, useCallback } from "react";
-import { ArrowElbowDownLeft, Square } from "@phosphor-icons/react";
+import { ArrowElbowDownLeftIcon, SquareIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 
@@ -131,9 +131,9 @@ export function SimpleComposer({
                 aria-label={isLoading ? "Stop" : "Send message"}
             >
                 {isLoading ? (
-                    <Square className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <SquareIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 ) : (
-                    <ArrowElbowDownLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <ArrowElbowDownLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                 )}
             </button>
         </div>

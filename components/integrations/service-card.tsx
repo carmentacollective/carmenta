@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Check, WarningCircle, Clock } from "@phosphor-icons/react";
+import { CheckIcon, WarningCircleIcon, ClockIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition, RolloutStatus } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
@@ -19,7 +19,7 @@ function StatusBadge({ status }: { status: RolloutStatus | IntegrationStatus }) 
     if (status === "connected") {
         return (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-400">
-                <Check className="h-3 w-3" />
+                <CheckIcon className="h-3 w-3" />
                 Connected
             </span>
         );
@@ -28,7 +28,7 @@ function StatusBadge({ status }: { status: RolloutStatus | IntegrationStatus }) 
     if (status === "error") {
         return (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400">
-                <WarningCircle className="h-3 w-3" />
+                <WarningCircleIcon className="h-3 w-3" />
                 Error
             </span>
         );
@@ -37,7 +37,7 @@ function StatusBadge({ status }: { status: RolloutStatus | IntegrationStatus }) 
     if (status === "expired") {
         return (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
-                <Clock className="h-3 w-3" />
+                <ClockIcon className="h-3 w-3" />
                 Expired
             </span>
         );
