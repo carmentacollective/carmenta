@@ -2,15 +2,16 @@
  * Pull-to-Refresh Indicator Component
  *
  * Visual feedback for pull-to-refresh gesture.
- * Shows a spinner that fills up as user pulls down.
+ * Glassy spinner that fades in as user pulls down.
  *
- * @see knowledge/components/pwa-mobile-enhancements.md
+ * Design: Liquid Glass aesthetic with Carmenta brand accent.
+ * Simpler than progress ring - just opacity scaling + indigo trigger.
  */
 
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowClockwise, CircleNotch } from "@phosphor-icons/react";
+import { CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface PullToRefreshIndicatorProps {
@@ -47,52 +48,27 @@ export function PullToRefreshIndicator({
             }}
             exit={{ opacity: 0, scale: 0.5 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="z-modal pointer-events-none fixed top-0 left-1/2 -translate-x-1/2"
+            className="z-sticky pointer-events-none fixed top-[env(safe-area-inset-top)] left-1/2 -translate-x-1/2"
         >
             <div
                 className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full shadow-lg backdrop-blur-sm transition-colors",
+                    "flex h-11 w-11 items-center justify-center rounded-full",
+                    "shadow-lg shadow-black/10 backdrop-blur-xl transition-colors",
                     isTriggered || isRefreshing
-                        ? "bg-indigo-500/90 text-white"
-                        : "bg-background/90 text-foreground/60"
+                        ? "border border-indigo-400/30 bg-indigo-500/80 text-white"
+                        : "text-foreground/70 border border-white/20 bg-white/20 dark:bg-white/10"
                 )}
             >
-                {isRefreshing ? (
-                    <CircleNotch className="h-5 w-5 animate-spin" />
-                ) : (
-                    <motion.div
-                        animate={{ rotate: progress * 180 }}
-                        transition={{ type: "spring", damping: 20 }}
-                    >
-                        <ArrowClockwise
-                            className={cn("h-5 w-5", isTriggered && "text-white")}
-                            style={{ opacity: 0.4 + progress * 0.6 }}
-                        />
-                    </motion.div>
-                )}
+                <CircleNotch
+                    className={cn("h-5 w-5", isRefreshing && "animate-spin")}
+                    style={{
+                        opacity: isRefreshing ? 1 : 0.4 + progress * 0.6,
+                        transform: isRefreshing
+                            ? undefined
+                            : `rotate(${progress * 360}deg)`,
+                    }}
+                />
             </div>
-
-            {/* Progress ring */}
-            {!isRefreshing && (
-                <svg
-                    className="absolute inset-0 h-10 w-10 -rotate-90"
-                    viewBox="0 0 40 40"
-                >
-                    <circle
-                        cx="20"
-                        cy="20"
-                        r="18"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeDasharray={`${progress * 113} 113`}
-                        className={cn(
-                            "transition-colors",
-                            isTriggered ? "text-white" : "text-indigo-500"
-                        )}
-                    />
-                </svg>
-            )}
         </motion.div>
     );
 }
