@@ -54,7 +54,24 @@ export function KnowledgeViewer({
 }: KnowledgeViewerProps) {
     const isMobile = useMediaQuery("(max-width: 767px)");
 
-    const [folders, setFolders] = useState<KBFolder[]>(initialFolders);
+    // Use initialFolders directly - parent component (KBPageContent) handles refresh via router.refresh()
+    // Local state is only needed for optimistic updates during direct editing
+    const [localFolderUpdates, setLocalFolderUpdates] = useState<
+        Map<string, Partial<KBDocument>>
+    >(new Map());
+
+    // Merge server data with local optimistic updates
+    const folders = useMemo(() => {
+        if (localFolderUpdates.size === 0) return initialFolders;
+        return initialFolders.map((folder) => ({
+            ...folder,
+            documents: folder.documents.map((doc) => {
+                const update = localFolderUpdates.get(doc.path);
+                return update ? { ...doc, ...update } : doc;
+            }),
+        }));
+    }, [initialFolders, localFolderUpdates]);
+
     const [selectedPath, setSelectedPath] = useState<string | null>(
         initialFolders[0]?.documents[0]?.path ?? null
     );
@@ -96,16 +113,13 @@ export function KnowledgeViewer({
         return null;
     }, [mobileSearchQuery, mobileView, folders, currentFolder]);
 
-    // Handle document update
+    // Handle document update (optimistic local update while server syncs)
     const handleDocumentUpdate = useCallback((path: string, updatedDoc: KBDocument) => {
-        setFolders((prev) =>
-            prev.map((folder) => ({
-                ...folder,
-                documents: folder.documents.map((doc) =>
-                    doc.path === path ? updatedDoc : doc
-                ),
-            }))
-        );
+        setLocalFolderUpdates((prev) => {
+            const next = new Map(prev);
+            next.set(path, updatedDoc);
+            return next;
+        });
     }, []);
 
     // Handle desktop sidebar selection
