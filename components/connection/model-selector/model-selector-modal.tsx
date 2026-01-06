@@ -27,6 +27,7 @@ import {
     type ModelTag,
 } from "@/lib/model-config";
 import { ProviderIcon } from "@/components/icons/provider-icons";
+import { InlineToggletip } from "@/components/ui/toggletip";
 import { cn } from "@/lib/utils";
 import { SteppedSlider } from "./stepped-slider";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
@@ -226,8 +227,13 @@ export function ModelSelectorModal({
                             >
                                 Automagically
                             </span>
-                            <p className="text-foreground/60 mt-1 text-sm">
+                            <p className="text-foreground/60 mt-1 flex items-center gap-0.5 text-sm">
                                 Picks the best model for your message
+                                <InlineToggletip side="bottom" align="start" asChild>
+                                    We read your message and pick the best
+                                    model—balancing speed, capability, and cost. Works
+                                    beautifully for most work.
+                                </InlineToggletip>
                             </p>
                         </div>
                         {overrides.modelId === null && (
@@ -333,6 +339,12 @@ export function ModelSelectorModal({
                         <div className="flex-1 p-4">
                             <SteppedSlider
                                 label="Creativity"
+                                helpContent={
+                                    <InlineToggletip side="top" align="start">
+                                        How adventurous we get. Precise sticks to facts.
+                                        Creative explores unexpected territory.
+                                    </InlineToggletip>
+                                }
                                 value={creativityIndex >= 0 ? creativityIndex : 1}
                                 onChange={handleCreativityChange}
                                 presets={CREATIVITY_SLIDER_PRESETS}
@@ -347,6 +359,13 @@ export function ModelSelectorModal({
                         <div className="flex-1 p-4">
                             <SteppedSlider
                                 label="Reasoning"
+                                helpContent={
+                                    <InlineToggletip side="top" align="start">
+                                        How deeply we think before responding. Quick for
+                                        simple questions. Thorough for complex
+                                        analysis—takes longer, but worth it.
+                                    </InlineToggletip>
+                                }
                                 value={reasoningIndex >= 0 ? reasoningIndex : 0}
                                 onChange={handleReasoningChange}
                                 presets={REASONING_SLIDER_PRESETS}

@@ -11,6 +11,8 @@
  * - Haptic feedback on selection changes
  */
 
+import type { ReactNode } from "react";
+
 import { cn } from "@/lib/utils";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 
@@ -25,6 +27,8 @@ interface SteppedSliderProps {
     theme?: "primary" | "secondary";
     /** Label for the slider */
     label: string;
+    /** Optional help content shown via toggletip next to label */
+    helpContent?: ReactNode;
     /** Whether the slider is disabled */
     disabled?: boolean;
     /**
@@ -40,6 +44,7 @@ export function SteppedSlider({
     presets,
     theme = "primary",
     label,
+    helpContent,
     disabled,
     progressMode = false,
 }: SteppedSliderProps) {
@@ -56,9 +61,12 @@ export function SteppedSlider({
     return (
         <div>
             <div className="mb-2 flex items-center justify-between">
-                <label className="text-foreground/60 text-xs font-medium">
-                    {label}
-                </label>
+                <div className="flex items-center gap-0.5">
+                    <label className="text-foreground/60 text-xs font-medium">
+                        {label}
+                    </label>
+                    {helpContent}
+                </div>
                 <span
                     className={cn(
                         "rounded-full px-2 py-0.5 text-[10px] font-medium",
