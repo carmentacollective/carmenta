@@ -47,7 +47,7 @@ function describeOperations(): SubagentDescription {
         id: LIBRARIAN_ID,
         name: "Knowledge Librarian",
         summary:
-            "Manages the knowledge base - searches existing knowledge, extracts new knowledge from conversations, retrieves specific documents.",
+            "Manages the knowledge base - search, create, update, rename, move, and delete documents. Organize knowledge structure.",
         operations: [
             {
                 name: "search",
@@ -69,6 +69,119 @@ function describeOperations(): SubagentDescription {
                 ],
             },
             {
+                name: "list",
+                description:
+                    "List all documents in the knowledge base, optionally under a path prefix.",
+                params: [
+                    {
+                        name: "pathPrefix",
+                        type: "string",
+                        description:
+                            "Optional path prefix to filter (e.g., 'profile' for all profile docs)",
+                        required: false,
+                    },
+                ],
+            },
+            {
+                name: "retrieve",
+                description: "Get a specific document by its path",
+                params: [
+                    {
+                        name: "path",
+                        type: "string",
+                        description:
+                            "Document path (e.g., 'profile.identity', 'knowledge.people.Sarah')",
+                        required: true,
+                    },
+                ],
+            },
+            {
+                name: "create",
+                description: "Create a new document in the knowledge base",
+                params: [
+                    {
+                        name: "path",
+                        type: "string",
+                        description:
+                            "Document path (e.g., 'knowledge.projects.Carmenta')",
+                        required: true,
+                    },
+                    {
+                        name: "name",
+                        type: "string",
+                        description: "Display name for the document",
+                        required: true,
+                    },
+                    {
+                        name: "content",
+                        type: "string",
+                        description: "Document content",
+                        required: true,
+                    },
+                    {
+                        name: "description",
+                        type: "string",
+                        description: "Brief description of what this document contains",
+                        required: false,
+                    },
+                ],
+            },
+            {
+                name: "update",
+                description: "Update an existing document's content, name, or tags",
+                params: [
+                    {
+                        name: "path",
+                        type: "string",
+                        description: "Document path to update",
+                        required: true,
+                    },
+                    {
+                        name: "content",
+                        type: "string",
+                        description: "New content (omit to keep existing)",
+                        required: false,
+                    },
+                    {
+                        name: "name",
+                        type: "string",
+                        description: "New name (omit to keep existing)",
+                        required: false,
+                    },
+                ],
+            },
+            {
+                name: "move",
+                description:
+                    "Move/rename a document to a new path (creates new, deletes old)",
+                params: [
+                    {
+                        name: "fromPath",
+                        type: "string",
+                        description: "Current document path",
+                        required: true,
+                    },
+                    {
+                        name: "toPath",
+                        type: "string",
+                        description: "New document path",
+                        required: true,
+                    },
+                ],
+            },
+            {
+                name: "delete",
+                description: "Delete a document from the knowledge base",
+                params: [
+                    {
+                        name: "path",
+                        type: "string",
+                        description: "Document path to delete",
+                        required: true,
+                    },
+                ],
+            },
+            {
                 name: "extract",
                 description:
                     "Run the full extraction agent on conversation content. The agent analyzes the content and saves any worth-preserving knowledge to the KB.",
@@ -85,19 +198,6 @@ function describeOperations(): SubagentDescription {
                         type: "string",
                         description: "Optional title for topic context",
                         required: false,
-                    },
-                ],
-            },
-            {
-                name: "retrieve",
-                description: "Get a specific document by its path",
-                params: [
-                    {
-                        name: "path",
-                        type: "string",
-                        description:
-                            "Document path (e.g., 'profile.identity', 'knowledge.people.Sarah')",
-                        required: true,
                     },
                 ],
             },
@@ -327,6 +427,67 @@ Focus on durable information: facts about the user, decisions made, people menti
 }
 
 /**
+ * List result from librarian
+ */
+interface ListData {
+    documents: Array<{
+        path: string;
+        name: string;
+        description: string | null;
+    }>;
+    totalCount: number;
+}
+
+/**
+ * Execute list action
+ */
+async function executeList(
+    params: { pathPrefix?: string },
+    context: SubagentContext
+): Promise<SubagentResult<ListData>> {
+    try {
+        const docs = params.pathPrefix
+            ? await kb.readFolder(context.userId, params.pathPrefix)
+            : await kb.listAll(context.userId);
+
+        const data: ListData = {
+            documents: docs.map((d) => ({
+                path: d.path,
+                name: d.name,
+                description: d.description,
+            })),
+            totalCount: docs.length,
+        };
+
+        logger.info(
+            {
+                userId: context.userId,
+                pathPrefix: params.pathPrefix,
+                count: data.totalCount,
+            },
+            "📚 Librarian list completed"
+        );
+
+        return successResult(data);
+    } catch (error) {
+        logger.error(
+            { error, userId: context.userId, pathPrefix: params.pathPrefix },
+            "📚 Librarian list failed"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "librarian", action: "list" },
+            extra: { userId: context.userId, pathPrefix: params.pathPrefix },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "List failed"
+        );
+    }
+}
+
+/**
  * Retrieve result from librarian
  */
 interface RetrieveData {
@@ -386,6 +547,235 @@ async function executeRetrieve(
 }
 
 /**
+ * Create result from librarian
+ */
+interface CreateData {
+    created: boolean;
+    path: string;
+    name: string;
+}
+
+/**
+ * Execute create action
+ */
+async function executeCreate(
+    params: { path: string; name: string; content: string; description?: string },
+    context: SubagentContext
+): Promise<SubagentResult<CreateData>> {
+    try {
+        const doc = await kb.create(context.userId, {
+            path: params.path,
+            name: params.name,
+            content: params.content,
+            description: params.description,
+        });
+
+        logger.info(
+            { userId: context.userId, path: doc.path, name: doc.name },
+            "📚 Librarian create completed"
+        );
+
+        return successResult<CreateData>({
+            created: true,
+            path: doc.path,
+            name: doc.name,
+        });
+    } catch (error) {
+        logger.error(
+            { error, userId: context.userId, path: params.path },
+            "📚 Librarian create failed"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "librarian", action: "create" },
+            extra: { userId: context.userId, path: params.path },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Create failed"
+        );
+    }
+}
+
+/**
+ * Update result from librarian
+ */
+interface UpdateData {
+    updated: boolean;
+    path: string;
+}
+
+/**
+ * Execute update action
+ */
+async function executeUpdate(
+    params: { path: string; content?: string; name?: string },
+    context: SubagentContext
+): Promise<SubagentResult<UpdateData>> {
+    try {
+        const updates: { content?: string; name?: string } = {};
+        if (params.content !== undefined) updates.content = params.content;
+        if (params.name !== undefined) updates.name = params.name;
+
+        const doc = await kb.update(context.userId, params.path, updates);
+
+        if (!doc) {
+            return errorResult("VALIDATION", `Document not found: ${params.path}`);
+        }
+
+        logger.info(
+            { userId: context.userId, path: params.path },
+            "📚 Librarian update completed"
+        );
+
+        return successResult<UpdateData>({
+            updated: true,
+            path: doc.path,
+        });
+    } catch (error) {
+        logger.error(
+            { error, userId: context.userId, path: params.path },
+            "📚 Librarian update failed"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "librarian", action: "update" },
+            extra: { userId: context.userId, path: params.path },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Update failed"
+        );
+    }
+}
+
+/**
+ * Move result from librarian
+ */
+interface MoveData {
+    moved: boolean;
+    fromPath: string;
+    toPath: string;
+}
+
+/**
+ * Execute move action - reads old doc, creates at new path, deletes old
+ */
+async function executeMove(
+    params: { fromPath: string; toPath: string },
+    context: SubagentContext
+): Promise<SubagentResult<MoveData>> {
+    try {
+        // Read existing document
+        const oldDoc = await kb.read(context.userId, params.fromPath);
+        if (!oldDoc) {
+            return errorResult("VALIDATION", `Document not found: ${params.fromPath}`);
+        }
+
+        // Create at new path
+        await kb.create(context.userId, {
+            path: params.toPath,
+            name: oldDoc.name,
+            content: oldDoc.content,
+            description: oldDoc.description ?? undefined,
+        });
+
+        // Delete old document
+        await kb.remove(context.userId, params.fromPath);
+
+        logger.info(
+            {
+                userId: context.userId,
+                fromPath: params.fromPath,
+                toPath: params.toPath,
+            },
+            "📚 Librarian move completed"
+        );
+
+        return successResult<MoveData>({
+            moved: true,
+            fromPath: params.fromPath,
+            toPath: params.toPath,
+        });
+    } catch (error) {
+        logger.error(
+            {
+                error,
+                userId: context.userId,
+                fromPath: params.fromPath,
+                toPath: params.toPath,
+            },
+            "📚 Librarian move failed"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "librarian", action: "move" },
+            extra: {
+                userId: context.userId,
+                fromPath: params.fromPath,
+                toPath: params.toPath,
+            },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Move failed"
+        );
+    }
+}
+
+/**
+ * Delete result from librarian
+ */
+interface DeleteData {
+    deleted: boolean;
+    path: string;
+}
+
+/**
+ * Execute delete action
+ */
+async function executeDelete(
+    params: { path: string },
+    context: SubagentContext
+): Promise<SubagentResult<DeleteData>> {
+    try {
+        const deleted = await kb.remove(context.userId, params.path);
+
+        if (!deleted) {
+            return errorResult("VALIDATION", `Document not found: ${params.path}`);
+        }
+
+        logger.info(
+            { userId: context.userId, path: params.path },
+            "📚 Librarian delete completed"
+        );
+
+        return successResult<DeleteData>({
+            deleted: true,
+            path: params.path,
+        });
+    } catch (error) {
+        logger.error(
+            { error, userId: context.userId, path: params.path },
+            "📚 Librarian delete failed"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "librarian", action: "delete" },
+            extra: { userId: context.userId, path: params.path },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Delete failed"
+        );
+    }
+}
+
+/**
  * Librarian action parameter schema
  */
 const librarianActionSchema = z.discriminatedUnion("action", [
@@ -398,13 +788,44 @@ const librarianActionSchema = z.discriminatedUnion("action", [
         maxResults: z.number().optional().describe("Maximum results (default: 5)"),
     }),
     z.object({
-        action: z.literal("extract"),
-        conversationContent: z.string().describe("Conversation content to analyze"),
-        conversationTitle: z.string().optional().describe("Topic context"),
+        action: z.literal("list"),
+        pathPrefix: z
+            .string()
+            .optional()
+            .describe("Path prefix filter (e.g., 'profile')"),
     }),
     z.object({
         action: z.literal("retrieve"),
         path: z.string().describe("Document path to retrieve"),
+    }),
+    z.object({
+        action: z.literal("create"),
+        path: z
+            .string()
+            .describe("Document path (e.g., 'knowledge.projects.Carmenta')"),
+        name: z.string().describe("Display name"),
+        content: z.string().describe("Document content"),
+        description: z.string().optional().describe("Brief description"),
+    }),
+    z.object({
+        action: z.literal("update"),
+        path: z.string().describe("Document path to update"),
+        content: z.string().optional().describe("New content"),
+        name: z.string().optional().describe("New name"),
+    }),
+    z.object({
+        action: z.literal("move"),
+        fromPath: z.string().describe("Current document path"),
+        toPath: z.string().describe("New document path"),
+    }),
+    z.object({
+        action: z.literal("delete"),
+        path: z.string().describe("Document path to delete"),
+    }),
+    z.object({
+        action: z.literal("extract"),
+        conversationContent: z.string().describe("Conversation content to analyze"),
+        conversationTitle: z.string().optional().describe("Topic context"),
     }),
 ]);
 
@@ -418,7 +839,7 @@ type LibrarianAction = z.infer<typeof librarianActionSchema>;
 export function createLibrarianTool(context: SubagentContext) {
     return tool({
         description:
-            "Knowledge management - search KB, extract knowledge from conversations, retrieve documents. Use action='describe' for operations.",
+            "Knowledge base management - search, list, create, update, move, delete documents. Use action='describe' for operations.",
         inputSchema: librarianActionSchema,
         execute: async (params: LibrarianAction) => {
             if (params.action === "describe") {
@@ -434,10 +855,20 @@ export function createLibrarianTool(context: SubagentContext) {
                     switch (params.action) {
                         case "search":
                             return executeSearch(params, ctx);
-                        case "extract":
-                            return executeExtract(params, ctx);
+                        case "list":
+                            return executeList(params, ctx);
                         case "retrieve":
                             return executeRetrieve(params, ctx);
+                        case "create":
+                            return executeCreate(params, ctx);
+                        case "update":
+                            return executeUpdate(params, ctx);
+                        case "move":
+                            return executeMove(params, ctx);
+                        case "delete":
+                            return executeDelete(params, ctx);
+                        case "extract":
+                            return executeExtract(params, ctx);
                         default:
                             return errorResult(
                                 "VALIDATION",

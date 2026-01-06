@@ -464,7 +464,7 @@ function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
                     <CarmentaToggle
                         isOpen={carmenta.isOpen}
                         onClick={carmenta.toggle}
-                        label="Connect with us"
+                        label="Configure together"
                     />
                 </div>
             </section>
