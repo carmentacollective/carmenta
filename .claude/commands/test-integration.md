@@ -1,5 +1,8 @@
 ---
-description: Test a service integration through the chat interface
+# prettier-ignore
+description: Test a service integration through the chat interface - verifies operations work correctly and identifies adapter bugs
+version: 1.0.0
+model: inherit
 ---
 
 # Test Integration Command

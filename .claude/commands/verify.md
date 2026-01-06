@@ -1,7 +1,9 @@
 ---
-description:
-  Verify functionality works via browser, fix issues found, re-verify until done
+# prettier-ignore
+description: Verify functionality works from an end-user perspective - find issues, fix them, re-verify until working or stuck
 argument-hint: [what to verify]
+version: 1.0.0
+model: inherit
 ---
 
 # Verify

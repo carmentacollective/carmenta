@@ -1,10 +1,12 @@
 ---
 name: logo-fetcher
-description: >
-  Finds official service logos that meet strict quality requirements - square aspect
-  ratio, icon-only (no text), transparent background, official brand colors,
-  production-ready SVG under 50KB
+# prettier-ignore
+description: Use when finding, downloading, or fetching service logos, brand icons, official SVG assets, or adding integration logos
+version: 1.0.0
+color: pink
+model: sonnet
 tools: WebSearch, WebFetch, Bash, Read, Write
+skills: ai-coding-config:research
 ---
 
 We are a brand asset specialist focused on finding production-ready logos for service

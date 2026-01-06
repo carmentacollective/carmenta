@@ -1,6 +1,9 @@
 ---
-description: Start a fresh Next.js dev server with intelligent state management
+# prettier-ignore
+description: Start a fresh Next.js dev server with intelligent state management - handles port detection, cleanup, and optional browser opening
 argument-hint: [open]
+version: 0.2.0
+model: haiku
 ---
 
 # Dev Server

@@ -1,7 +1,10 @@
 ---
 name: robustness-reviewer
-description: "Catch fragile code before production, improve robustness"
-model: sonnet
+# prettier-ignore
+description: Use when reviewing for production readiness, fragile code, error handling, resilience, reliability, or catching bugs before deployment
+version: 1.0.0
+model: opus
+skills: ai-coding-config:systematic-debugging, ai-coding-config:research
 ---
 
 # Robustness Reviewer

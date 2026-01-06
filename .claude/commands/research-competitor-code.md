@@ -1,7 +1,9 @@
 ---
-description:
-  Research how competitors implement specific features by exploring their codebases
+# prettier-ignore
+description: See how other products implement a feature by analyzing their code - research competitor implementation patterns
 argument-hint: "[topic] [optional: specific competitors]"
+version: 1.0.0
+model: inherit
 ---
 
 # /research-competitor-code - Implementation Research

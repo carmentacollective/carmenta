@@ -1,7 +1,11 @@
 ---
 name: browser-verifier
-description: "Browser verification agent for end-user functionality testing"
+# prettier-ignore
+description: Use when testing in browser, verifying UI works, checking end-user functionality, visual verification, cross-browser checks, or need automated browser testing
+version: 1.0.0
+color: purple
 model: sonnet
+skills: carmenta-copy
 ---
 
 # Browser Verifier

@@ -1,7 +1,9 @@
 ---
-description: Best-in-class feature research - analyze landscape, then envision the ideal
+# prettier-ignore
+description: Research how the best products handle a feature, analyze their approaches, then design our ideal version
 argument-hint: "[feature-area]"
 version: 1.0.0
+model: inherit
 ---
 
 # /best-of - Best-in-Class Feature Research

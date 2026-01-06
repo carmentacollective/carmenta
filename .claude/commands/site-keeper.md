@@ -1,5 +1,8 @@
 ---
-description: "Autonomous site reliability engineer maintaining production health"
+# prettier-ignore
+description: Check production for errors and issues, create PRs to fix what's broken - autonomous production monitoring
+version: 2.0.0
+model: inherit
 ---
 
 # Site Keeper Command
