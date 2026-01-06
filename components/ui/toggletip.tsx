@@ -98,18 +98,28 @@ export function Toggletip({
  * Inline toggletip for use within text or labels
  *
  * Smaller, designed to sit next to form labels or inline text.
+ * When nested in interactive elements, use asChild to render as span.
  */
 export function InlineToggletip({
     children,
     className,
     side = "top",
     align = "center",
-}: Omit<ToggletipProps, "iconSize" | "alwaysVisible">) {
+    asChild = false,
+}: Omit<ToggletipProps, "iconSize" | "alwaysVisible"> & {
+    /** Render trigger as a span instead of button (for nesting in interactive elements) */
+    asChild?: boolean;
+}) {
+    const Trigger = asChild ? "span" : "button";
+    const triggerProps = asChild
+        ? { role: "button", tabIndex: 0 }
+        : { type: "button" as const };
+
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <button
-                    type="button"
+                <Trigger
+                    {...triggerProps}
                     className={cn(
                         "inline-flex items-center justify-center",
                         "text-foreground/30 hover:text-foreground/70",
@@ -117,12 +127,13 @@ export function InlineToggletip({
                         "hover:scale-110",
                         "focus-visible:ring-accent/50 focus:outline-none focus-visible:rounded-full focus-visible:ring-1",
                         "-mr-0.5 ml-1",
+                        asChild && "cursor-pointer",
                         className
                     )}
                     aria-label="More information"
                 >
                     <Question size={12} weight="bold" />
-                </button>
+                </Trigger>
             </PopoverTrigger>
             <PopoverContent
                 side={side}

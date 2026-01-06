@@ -229,7 +229,7 @@ export function ModelSelectorModal({
                             </span>
                             <p className="text-foreground/60 mt-1 flex items-center gap-0.5 text-sm">
                                 Picks the best model for your message
-                                <InlineToggletip side="bottom" align="start">
+                                <InlineToggletip side="bottom" align="start" asChild>
                                     We read your message and pick the best
                                     model—balancing speed, capability, and cost. Works
                                     beautifully for most work.
