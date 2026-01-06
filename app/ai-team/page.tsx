@@ -21,11 +21,7 @@ import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
 import { LabelToggle } from "@/components/ui/label-toggle";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import {
-    CarmentaLayout,
-    CarmentaToggle,
-    useCarmentaLayout,
-} from "@/components/carmenta-assistant";
+import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -78,9 +74,15 @@ interface Notification {
 const PAGE_CONTEXT = `User is on the AI Team page. They manage automated agents that run on schedules. They can ask to update agent configurations and prompts, run jobs manually, enable/disable automations, configure SMS notifications, or troubleshoot issues with their agents. Available automations and recent activity are shown on this page.`;
 
 /**
- * Content component with all the UI logic (inside CarmentaLayout)
+ * Content component with all the UI logic
  */
-function AITeamContent({ refreshKey }: { refreshKey: number }) {
+function AITeamContent({
+    refreshKey,
+    onChangesComplete,
+}: {
+    refreshKey: number;
+    onChangesComplete: () => void;
+}) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [automations, setAutomations] = useState<Automation[]>([]);
@@ -91,8 +93,8 @@ function AITeamContent({ refreshKey }: { refreshKey: number }) {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [viewingActivity, setViewingActivity] = useState<ActivityItem | null>(null);
 
-    // Carmenta state from layout context
-    const carmenta = useCarmentaLayout();
+    // Carmenta sheet state
+    const [carmentaOpen, setCarmentaOpen] = useState(false);
 
     // Handle success states from redirects
     useEffect(() => {
@@ -312,8 +314,8 @@ function AITeamContent({ refreshKey }: { refreshKey: number }) {
                     </div>
                     <div className="flex items-center gap-3">
                         <CarmentaToggle
-                            isOpen={carmenta.isOpen}
-                            onClick={carmenta.toggle}
+                            isOpen={carmentaOpen}
+                            onClick={() => setCarmentaOpen(!carmentaOpen)}
                             label="Ask Carmenta"
                         />
                         <Link
@@ -524,12 +526,21 @@ function AITeamContent({ refreshKey }: { refreshKey: number }) {
                     onClose={() => setViewingActivity(null)}
                 />
             )}
+
+            {/* Carmenta Sheet for DCOS assistance */}
+            <CarmentaSheet
+                open={carmentaOpen}
+                onOpenChange={setCarmentaOpen}
+                pageContext={PAGE_CONTEXT}
+                onChangesComplete={onChangesComplete}
+                placeholder="Update an agent, run a job, configure notifications..."
+            />
         </StandardPageLayout>
     );
 }
 
 /**
- * Wrapper that provides CarmentaLayout context
+ * Wrapper that handles refresh after Carmenta makes changes
  */
 function AITeamWithCarmenta() {
     const [refreshKey, setRefreshKey] = useState(0);
@@ -540,13 +551,10 @@ function AITeamWithCarmenta() {
     }, []);
 
     return (
-        <CarmentaLayout
-            pageContext={PAGE_CONTEXT}
+        <AITeamContent
+            refreshKey={refreshKey}
             onChangesComplete={handleChangesComplete}
-            placeholder="Update an agent, run a job, configure notifications..."
-        >
-            <AITeamContent refreshKey={refreshKey} />
-        </CarmentaLayout>
+        />
     );
 }
 
