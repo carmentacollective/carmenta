@@ -7,7 +7,12 @@
  * and last edited date. Links to the actual Notion page.
  */
 
-import { ArrowSquareOut, FileText, Database, Calendar } from "@phosphor-icons/react";
+import {
+    ArrowSquareOutIcon,
+    FileTextIcon,
+    DatabaseIcon,
+    CalendarIcon,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 
@@ -28,7 +33,7 @@ interface NotionPageCardProps {
  * Display a single Notion page/database result as a clickable card.
  */
 export function NotionPageCard({ page, className }: NotionPageCardProps) {
-    const Icon = page.type === "database" ? Database : FileText;
+    const Icon = page.type === "database" ? DatabaseIcon : FileTextIcon;
     const formattedDate = page.last_edited
         ? formatRelativeDate(page.last_edited)
         : null;
@@ -56,7 +61,7 @@ export function NotionPageCard({ page, className }: NotionPageCardProps) {
                         <>
                             <span>·</span>
                             <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
+                                <CalendarIcon className="h-3 w-3" />
                                 {formattedDate}
                             </span>
                         </>
@@ -64,7 +69,7 @@ export function NotionPageCard({ page, className }: NotionPageCardProps) {
                 </div>
             </div>
 
-            <ArrowSquareOut className="text-muted-foreground h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+            <ArrowSquareOutIcon className="text-muted-foreground h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
         </a>
     );
 }

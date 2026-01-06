@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { ArrowSquareOut, Copy, Check } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CopyIcon, CheckIcon } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
 import { cn } from "@/lib/utils";
@@ -180,9 +180,9 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
                         data-tooltip-content="Copy link"
                     >
                         {copied ? (
-                            <Check className="h-4 w-4" />
+                            <CheckIcon className="h-4 w-4" />
                         ) : (
-                            <Copy className="h-4 w-4" />
+                            <CopyIcon className="h-4 w-4" />
                         )}
                     </button>
                     <a
@@ -194,7 +194,7 @@ export function GifCard({ gif, compact = false, className }: GifCardProps) {
                         data-tooltip-content="Open in Giphy"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <ArrowSquareOut className="h-4 w-4" />
+                        <ArrowSquareOutIcon className="h-4 w-4" />
                     </a>
                 </div>
 

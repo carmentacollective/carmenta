@@ -26,7 +26,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, House } from "@phosphor-icons/react";
+import { XIcon, HouseIcon } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
 
 const VISIT_COUNT_KEY = "carmenta-visit-count";
@@ -155,13 +155,13 @@ export function InstallPrompt() {
                             className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/60 absolute top-1 right-1 flex h-11 w-11 items-center justify-center rounded-full transition-colors active:scale-95"
                             aria-label="Dismiss install prompt"
                         >
-                            <X className="h-4 w-4" />
+                            <XIcon className="h-4 w-4" />
                         </button>
 
                         {/* Header with icon */}
                         <div className="mb-4 flex items-center gap-3">
                             <div className="from-primary/20 to-primary/10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br">
-                                <House className="text-primary h-6 w-6" />
+                                <HouseIcon className="text-primary h-6 w-6" />
                             </div>
                             <div>
                                 <h3 className="text-foreground font-semibold">

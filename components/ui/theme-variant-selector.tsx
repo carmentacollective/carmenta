@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Palette } from "@phosphor-icons/react";
+import { CheckIcon, PaletteIcon } from "@phosphor-icons/react";
 import {
     useThemeVariant,
     getCurrentHoliday,
@@ -81,7 +81,7 @@ export function ThemeVariantSelector() {
                     "hover:bg-foreground/5 focus:ring-primary/40 focus:ring-2 focus:outline-none"
                 )}
             >
-                <Palette className="text-foreground/60 h-4 w-4" />
+                <PaletteIcon className="text-foreground/60 h-4 w-4" />
                 <span className="text-foreground/90">{currentTheme?.label}</span>
             </Popover.Trigger>
 
@@ -105,7 +105,7 @@ export function ThemeVariantSelector() {
                             >
                                 <div className="flex h-5 w-5 shrink-0 items-center justify-center">
                                     {themeVariant === theme.value && (
-                                        <Check className="h-4 w-4" />
+                                        <CheckIcon className="h-4 w-4" />
                                     )}
                                 </div>
                                 <div className="flex-1 space-y-0.5">

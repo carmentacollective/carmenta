@@ -20,18 +20,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-    Plus,
-    Users,
-    Compass,
-    Heart,
-    Code,
-    GithubLogo,
-    Shield,
-    FileText,
-    Lock,
-    ArrowSquareOut,
-    House,
-    Sparkle,
+    PlusIcon,
+    UsersIcon,
+    CompassIcon,
+    HeartIcon,
+    CodeIcon,
+    GithubLogoIcon,
+    ShieldIcon,
+    FileTextIcon,
+    LockIcon,
+    ArrowSquareOutIcon,
+    HouseIcon,
+    SparkleIcon,
 } from "@phosphor-icons/react";
 
 import { useCarmentaModal } from "@/hooks/use-carmenta-modal";
@@ -165,7 +165,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <House className="text-foreground/60 relative h-4 w-4" />
+                                          <HouseIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Home</span>
                                       </Link>
 
@@ -176,7 +176,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all"
                                       >
                                           <div className="bg-primary/10 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Plus className="text-primary relative h-4 w-4" />
+                                          <PlusIcon className="text-primary relative h-4 w-4" />
                                           <span className="relative">
                                               New Connection
                                           </span>
@@ -192,7 +192,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                       >
                                           <div className="bg-primary/10 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <span className="relative flex items-center gap-3">
-                                              <Sparkle
+                                              <SparkleIcon
                                                   className="text-primary h-4 w-4"
                                                   weight="duotone"
                                               />
@@ -208,7 +208,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                       {/* Carmenta Features */}
                                       <div className="text-foreground/40 flex w-full cursor-not-allowed items-center justify-between px-4 py-2.5 text-sm">
                                           <span className="flex items-center gap-3">
-                                              <Users className="h-4 w-4" />
+                                              <UsersIcon className="h-4 w-4" />
                                               AI Team
                                           </span>
                                           <span className="bg-foreground/5 text-foreground/50 rounded-full px-2 py-0.5 text-[10px] font-medium">
@@ -222,7 +222,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Compass className="text-foreground/60 relative h-4 w-4" />
+                                          <CompassIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Guide</span>
                                       </Link>
 
@@ -235,7 +235,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Heart
+                                          <HeartIcon
                                               className="text-primary relative h-4 w-4"
                                               weight="fill"
                                           />
@@ -250,7 +250,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Code className="text-foreground/60 relative h-4 w-4" />
+                                          <CodeIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">How We Build</span>
                                       </Link>
 
@@ -262,10 +262,10 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <GithubLogo className="text-foreground/60 relative h-4 w-4" />
+                                          <GithubLogoIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative flex items-center gap-1">
                                               Source Code
-                                              <ArrowSquareOut className="h-3 w-3 opacity-50" />
+                                              <ArrowSquareOutIcon className="h-3 w-3 opacity-50" />
                                           </span>
                                       </Link>
 
@@ -277,7 +277,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                                   onClick={() => setIsOpen(false)}
                                                   className="hover:text-foreground/80 flex items-center gap-1 transition-colors"
                                               >
-                                                  <Lock className="h-3 w-3" />
+                                                  <LockIcon className="h-3 w-3" />
                                                   Privacy
                                               </Link>
                                               <span className="text-foreground/20">
@@ -288,7 +288,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                                   onClick={() => setIsOpen(false)}
                                                   className="hover:text-foreground/80 flex items-center gap-1 transition-colors"
                                               >
-                                                  <FileText className="h-3 w-3" />
+                                                  <FileTextIcon className="h-3 w-3" />
                                                   Terms
                                               </Link>
                                               <span className="text-foreground/20">
@@ -299,7 +299,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                                   onClick={() => setIsOpen(false)}
                                                   className="hover:text-foreground/80 flex items-center gap-1 transition-colors"
                                               >
-                                                  <Shield className="h-3 w-3" />
+                                                  <ShieldIcon className="h-3 w-3" />
                                                   Security
                                               </Link>
                                           </div>

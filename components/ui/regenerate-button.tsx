@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ArrowClockwise } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
@@ -111,7 +111,7 @@ export function RegenerateButton({
                             opacity: { duration: 0.15 },
                         }}
                     >
-                        <ArrowClockwise className="h-3.5 w-3.5" />
+                        <ArrowClockwiseIcon className="h-3.5 w-3.5" />
                     </motion.div>
                 ) : (
                     <motion.div
@@ -121,7 +121,7 @@ export function RegenerateButton({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.15 }}
                     >
-                        <ArrowClockwise className="h-3.5 w-3.5" />
+                        <ArrowClockwiseIcon className="h-3.5 w-3.5" />
                     </motion.div>
                 )}
             </AnimatePresence>

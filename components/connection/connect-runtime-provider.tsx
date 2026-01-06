@@ -24,7 +24,7 @@ import {
 } from "react";
 import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport, generateId } from "ai";
-import { WarningCircle, ArrowsClockwise, X } from "@phosphor-icons/react";
+import { WarningCircleIcon, ArrowsClockwiseIcon, XIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 import { logger } from "@/lib/client-logger";
@@ -398,7 +398,7 @@ function RuntimeErrorBanner({
             )}
             role="alert"
         >
-            <WarningCircle className="h-5 w-5 shrink-0 text-red-500" />
+            <WarningCircleIcon className="h-5 w-5 shrink-0 text-red-500" />
             <div className="flex-1">
                 <p className="text-sm font-medium text-red-800">{displayMessage}</p>
             </div>
@@ -408,14 +408,14 @@ function RuntimeErrorBanner({
                     className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
                     aria-label="Retry"
                 >
-                    <ArrowsClockwise className="h-4 w-4" />
+                    <ArrowsClockwiseIcon className="h-4 w-4" />
                 </button>
                 <button
                     onClick={onDismiss}
                     className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
                     aria-label="Dismiss"
                 >
-                    <X className="h-4 w-4" />
+                    <XIcon className="h-4 w-4" />
                 </button>
             </div>
         </div>

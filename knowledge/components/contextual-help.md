@@ -198,14 +198,15 @@ reveal). If it's just a label, ensure the icon is obvious or add text.
 
 ### ✅ Help Icon Design
 
-**Decision**: Use `Question` from Phosphor Icons, 12-14px, 30-40% opacity until hover.
+**Decision**: Use `QuestionIcon` from Phosphor Icons, 12-14px, 30-40% opacity until
+hover.
 
 **Rationale**: Help icons should be present but not prominent. They're for users who
 need them, invisible to those who don't. The subtle treatment keeps the UI clean while
 making help discoverable.
 
 ```tsx
-<Question
+<QuestionIcon
   size={12}
   weight="bold"
   className="opacity-30 transition-opacity hover:opacity-70"

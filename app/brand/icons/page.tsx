@@ -14,169 +14,169 @@
 import { useState } from "react";
 import {
     // New Connection options
-    Plus,
-    PlusCircle,
-    ChatCircle,
-    Sparkle,
-    Lightning,
-    MagicWand,
-    Chats,
+    PlusIcon,
+    PlusCircleIcon,
+    ChatCircleIcon,
+    SparkleIcon,
+    LightningIcon,
+    MagicWandIcon,
+    ChatsIcon,
 
     // Save options
-    FloppyDisk,
-    CloudArrowUp,
-    Check,
-    CheckCircle,
-    DownloadSimple,
+    FloppyDiskIcon,
+    CloudArrowUpIcon,
+    CheckIcon,
+    CheckCircleIcon,
+    DownloadSimpleIcon,
 
     // User avatar options
-    UserCircle,
-    User,
-    UserFocus,
-    Person,
-    Smiley,
+    UserCircleIcon,
+    UserIcon,
+    UserFocusIcon,
+    PersonIcon,
+    SmileyIcon,
 
     // Heart options
-    Heart,
-    HeartStraight,
-    Heartbeat,
+    HeartIcon,
+    HeartStraightIcon,
+    HeartbeatIcon,
 
     // Home options
-    House,
-    HouseSimple,
-    Buildings,
-    Storefront,
+    HouseIcon,
+    HouseSimpleIcon,
+    BuildingsIcon,
+    StorefrontIcon,
 
     // Settings/Integrations options
-    Gear,
-    GearSix,
-    Sliders,
-    SlidersHorizontal,
-    Plug,
-    PlugsConnected,
-    Wrench,
+    GearIcon,
+    GearSixIcon,
+    SlidersIcon,
+    SlidersHorizontalIcon,
+    PlugIcon,
+    PlugsConnectedIcon,
+    WrenchIcon,
 
     // Send message options
-    PaperPlaneTilt,
-    PaperPlane,
-    ArrowRight,
-    ArrowCircleRight,
-    NavigationArrow,
+    PaperPlaneTiltIcon,
+    PaperPlaneIcon,
+    ArrowRightIcon,
+    ArrowCircleRightIcon,
+    NavigationArrowIcon,
 
     // Microphone options
-    Microphone,
-    Waveform,
-    SpeakerHigh,
-    Record,
+    MicrophoneIcon,
+    WaveformIcon,
+    SpeakerHighIcon,
+    RecordIcon,
 
     // Copy options
-    Copy,
-    CopySimple,
-    Clipboard,
-    ClipboardText,
+    CopyIcon,
+    CopySimpleIcon,
+    ClipboardIcon,
+    ClipboardTextIcon,
 
     // External link options
-    ArrowSquareOut,
-    ArrowUpRight,
-    Link,
-    LinkSimple,
+    ArrowSquareOutIcon,
+    ArrowUpRightIcon,
+    LinkIcon,
+    LinkSimpleIcon,
 
     // Menu/Navigation options
-    List,
-    DotsThree,
-    DotsThreeVertical,
-    CaretDown,
-    CaretRight,
+    ListIcon,
+    DotsThreeIcon,
+    DotsThreeVerticalIcon,
+    CaretDownIcon,
+    CaretRightIcon,
 
     // File/Document options
-    File,
-    FileText,
-    Files,
-    FolderOpen,
-    Folder,
+    FileIcon,
+    FileTextIcon,
+    FilesIcon,
+    FolderOpenIcon,
+    FolderIcon,
 
     // Search options
-    MagnifyingGlass,
-    Binoculars,
+    MagnifyingGlassIcon,
+    BinocularsIcon,
 
     // Close/Dismiss options
-    X,
-    XCircle,
+    XIcon,
+    XCircleIcon,
 
     // Warning/Error options
-    Warning,
-    WarningCircle,
-    Info,
+    WarningIcon,
+    WarningCircleIcon,
+    InfoIcon,
 
     // Refresh/Retry options
-    ArrowsClockwise,
-    ArrowClockwise,
-    ArrowCounterClockwise,
-    CircleNotch,
+    ArrowsClockwiseIcon,
+    ArrowClockwiseIcon,
+    ArrowCounterClockwiseIcon,
+    CircleNotchIcon,
 
     // Star/Favorite options
-    Star,
-    Bookmark,
-    BookmarkSimple,
+    StarIcon,
+    BookmarkIcon,
+    BookmarkSimpleIcon,
 
     // Trash/Delete options
-    Trash,
-    TrashSimple,
+    TrashIcon,
+    TrashSimpleIcon,
 
     // Edit options
-    PencilSimple,
-    Pencil,
-    NotePencil,
+    PencilSimpleIcon,
+    PencilIcon,
+    NotePencilIcon,
 
     // Calendar options
-    Calendar,
-    CalendarBlank,
-    Clock,
+    CalendarIcon,
+    CalendarBlankIcon,
+    ClockIcon,
 
     // Communication options
-    ChatTeardrop,
-    ChatText,
-    Chat,
-    Envelope,
-    EnvelopeSimple,
+    ChatTeardropIcon,
+    ChatTextIcon,
+    ChatIcon,
+    EnvelopeIcon,
+    EnvelopeSimpleIcon,
 
     // Code options
-    Code,
-    Terminal,
-    BracketsCurly,
-    CodeBlock,
+    CodeIcon,
+    TerminalIcon,
+    BracketsCurlyIcon,
+    CodeBlockIcon,
 
     // Brain/AI options
-    Brain,
-    Robot,
-    Atom,
-    Cpu,
+    BrainIcon,
+    RobotIcon,
+    AtomIcon,
+    CpuIcon,
 
     // Compass/Guide options
-    Compass,
-    Signpost,
-    Path,
-    MapTrifold,
+    CompassIcon,
+    SignpostIcon,
+    PathIcon,
+    MapTrifoldIcon,
 
     // Lock/Security options
-    Lock,
-    LockSimple,
-    Shield,
-    ShieldCheck,
+    LockIcon,
+    LockSimpleIcon,
+    ShieldIcon,
+    ShieldCheckIcon,
 
     // Play/Media options
-    Play,
-    Pause,
-    Stop,
+    PlayIcon,
+    PauseIcon,
+    StopIcon,
 
     // Expand/Collapse options
-    ArrowsOut,
-    ArrowsIn,
-    CaretDoubleDown,
-    CaretDoubleUp,
+    ArrowsOutIcon,
+    ArrowsInIcon,
+    CaretDoubleDownIcon,
+    CaretDoubleUpIcon,
 
     // GitHub option
-    GithubLogo,
+    GithubLogoIcon,
 } from "@phosphor-icons/react";
 import type { IconWeight } from "@phosphor-icons/react";
 
@@ -204,29 +204,29 @@ const categories: IconCategory[] = [
         description: "Starting a new conversation with Carmenta",
         semanticQuestion: "Is this about creation (+), conversation (chat), or magic?",
         options: [
-            { name: "Plus", icon: Plus, note: "Universal 'new' action" },
-            { name: "PlusCircle", icon: PlusCircle, note: "Softer, contained" },
+            { name: "Plus", icon: PlusIcon, note: "Universal 'new' action" },
+            { name: "PlusCircle", icon: PlusCircleIcon, note: "Softer, contained" },
             {
                 name: "ChatCircle",
-                icon: ChatCircle,
+                icon: ChatCircleIcon,
                 note: "Emphasizes conversation",
             },
             {
                 name: "Sparkle",
-                icon: Sparkle,
+                icon: SparkleIcon,
                 note: "Magic/AI feel, but might be overused",
             },
             {
                 name: "Lightning",
-                icon: Lightning,
+                icon: LightningIcon,
                 note: "Energy, speed",
             },
             {
                 name: "MagicWand",
-                icon: MagicWand,
+                icon: MagicWandIcon,
                 note: "Explicit magic metaphor",
             },
-            { name: "Chats", icon: Chats, note: "Multiple conversations" },
+            { name: "Chats", icon: ChatsIcon, note: "Multiple conversations" },
         ],
         recommendation:
             "Plus is clear and universal. ChatCircle with duotone could add warmth while conveying 'conversation'.",
@@ -238,13 +238,13 @@ const categories: IconCategory[] = [
         options: [
             {
                 name: "UserCircle",
-                icon: UserCircle,
+                icon: UserCircleIcon,
                 note: "Classic, works with duotone",
             },
-            { name: "User", icon: User, note: "Simpler, no container" },
-            { name: "UserFocus", icon: UserFocus, note: "More dynamic" },
-            { name: "Person", icon: Person, note: "Full body silhouette" },
-            { name: "Smiley", icon: Smiley, note: "Friendly, playful" },
+            { name: "User", icon: UserIcon, note: "Simpler, no container" },
+            { name: "UserFocus", icon: UserFocusIcon, note: "More dynamic" },
+            { name: "Person", icon: PersonIcon, note: "Full body silhouette" },
+            { name: "Smiley", icon: SmileyIcon, note: "Friendly, playful" },
         ],
         recommendation:
             "UserCircle with duotone - the inner fill adds life without being cartoonish.",
@@ -254,15 +254,15 @@ const categories: IconCategory[] = [
         description: "Heart-centered AI link",
         semanticQuestion: "Fill conveys love. Duotone adds dimension.",
         options: [
-            { name: "Heart", icon: Heart, note: "Classic heart shape" },
+            { name: "Heart", icon: HeartIcon, note: "Classic heart shape" },
             {
                 name: "HeartStraight",
-                icon: HeartStraight,
+                icon: HeartStraightIcon,
                 note: "More geometric",
             },
             {
                 name: "Heartbeat",
-                icon: Heartbeat,
+                icon: HeartbeatIcon,
                 note: "Living, dynamic",
             },
         ],
@@ -274,14 +274,14 @@ const categories: IconCategory[] = [
         description: "Navigation to home/landing",
         semanticQuestion: "House is literal. Could be more abstract?",
         options: [
-            { name: "House", icon: House, note: "Classic home" },
-            { name: "HouseSimple", icon: HouseSimple, note: "Cleaner lines" },
+            { name: "House", icon: HouseIcon, note: "Classic home" },
+            { name: "HouseSimple", icon: HouseSimpleIcon, note: "Cleaner lines" },
             {
                 name: "Buildings",
-                icon: Buildings,
+                icon: BuildingsIcon,
                 note: "More urban/professional",
             },
-            { name: "Storefront", icon: Storefront, note: "Inviting entry" },
+            { name: "Storefront", icon: StorefrontIcon, note: "Inviting entry" },
         ],
         recommendation: "House with regular weight - familiar and clear.",
     },
@@ -292,19 +292,19 @@ const categories: IconCategory[] = [
         options: [
             {
                 name: "PaperPlaneTilt",
-                icon: PaperPlaneTilt,
+                icon: PaperPlaneTiltIcon,
                 note: "Dynamic, taking flight",
             },
-            { name: "PaperPlane", icon: PaperPlane, note: "More static" },
-            { name: "ArrowRight", icon: ArrowRight, note: "Pure direction" },
+            { name: "PaperPlane", icon: PaperPlaneIcon, note: "More static" },
+            { name: "ArrowRight", icon: ArrowRightIcon, note: "Pure direction" },
             {
                 name: "ArrowCircleRight",
-                icon: ArrowCircleRight,
+                icon: ArrowCircleRightIcon,
                 note: "Contained arrow",
             },
             {
                 name: "NavigationArrow",
-                icon: NavigationArrow,
+                icon: NavigationArrowIcon,
                 note: "GPS/direction feel",
             },
         ],
@@ -316,13 +316,13 @@ const categories: IconCategory[] = [
         description: "Microphone button for voice mode",
         semanticQuestion: "Recording vs. speaking vs. audio?",
         options: [
-            { name: "Microphone", icon: Microphone, note: "Universal voice" },
+            { name: "Microphone", icon: MicrophoneIcon, note: "Universal voice" },
             {
                 name: "Waveform",
-                icon: Waveform,
+                icon: WaveformIcon,
                 note: "Audio/sound visualization",
             },
-            { name: "Record", icon: Record, note: "Recording action" },
+            { name: "Record", icon: RecordIcon, note: "Recording action" },
         ],
         recommendation:
             "Microphone - universally understood. Could animate to Waveform when active.",
@@ -332,12 +332,12 @@ const categories: IconCategory[] = [
         description: "Copy button on code blocks, messages",
         semanticQuestion: "Clipboard metaphor vs. document duplication?",
         options: [
-            { name: "Copy", icon: Copy, note: "Two overlapping documents" },
-            { name: "CopySimple", icon: CopySimple, note: "Cleaner version" },
-            { name: "Clipboard", icon: Clipboard, note: "Physical clipboard" },
+            { name: "Copy", icon: CopyIcon, note: "Two overlapping documents" },
+            { name: "CopySimple", icon: CopySimpleIcon, note: "Cleaner version" },
+            { name: "Clipboard", icon: ClipboardIcon, note: "Physical clipboard" },
             {
                 name: "ClipboardText",
-                icon: ClipboardText,
+                icon: ClipboardTextIcon,
                 note: "Clipboard with content",
             },
         ],
@@ -351,12 +351,12 @@ const categories: IconCategory[] = [
         options: [
             {
                 name: "ArrowSquareOut",
-                icon: ArrowSquareOut,
+                icon: ArrowSquareOutIcon,
                 note: "Arrow leaving box",
             },
-            { name: "ArrowUpRight", icon: ArrowUpRight, note: "Directional" },
-            { name: "Link", icon: Link, note: "Chain link" },
-            { name: "LinkSimple", icon: LinkSimple, note: "Simplified link" },
+            { name: "ArrowUpRight", icon: ArrowUpRightIcon, note: "Directional" },
+            { name: "Link", icon: LinkIcon, note: "Chain link" },
+            { name: "LinkSimple", icon: LinkSimpleIcon, note: "Simplified link" },
         ],
         recommendation: "ArrowSquareOut - clearly indicates 'leaving this context'.",
     },
@@ -366,18 +366,18 @@ const categories: IconCategory[] = [
         semanticQuestion:
             "Mechanical (gear) vs. adjustment (sliders) vs. connection (plug)?",
         options: [
-            { name: "Gear", icon: Gear, note: "Classic settings" },
-            { name: "GearSix", icon: GearSix, note: "More detail" },
-            { name: "Sliders", icon: Sliders, note: "Adjustment metaphor" },
+            { name: "Gear", icon: GearIcon, note: "Classic settings" },
+            { name: "GearSix", icon: GearSixIcon, note: "More detail" },
+            { name: "Sliders", icon: SlidersIcon, note: "Adjustment metaphor" },
             {
                 name: "SlidersHorizontal",
-                icon: SlidersHorizontal,
+                icon: SlidersHorizontalIcon,
                 note: "Horizontal variant",
             },
-            { name: "Plug", icon: Plug, note: "Connection focus" },
+            { name: "Plug", icon: PlugIcon, note: "Connection focus" },
             {
                 name: "PlugsConnected",
-                icon: PlugsConnected,
+                icon: PlugsConnectedIcon,
                 note: "Active connection",
             },
         ],
@@ -391,18 +391,18 @@ const categories: IconCategory[] = [
         options: [
             {
                 name: "Compass",
-                icon: Compass,
+                icon: CompassIcon,
                 note: "Finding direction",
             },
             {
                 name: "Signpost",
-                icon: Signpost,
+                icon: SignpostIcon,
                 note: "Showing the way",
             },
-            { name: "Path", icon: Path, note: "Journey metaphor" },
+            { name: "Path", icon: PathIcon, note: "Journey metaphor" },
             {
                 name: "MapTrifold",
-                icon: MapTrifold,
+                icon: MapTrifoldIcon,
                 note: "Overview/planning",
             },
         ],
@@ -413,10 +413,10 @@ const categories: IconCategory[] = [
         description: "How We Build, code mode",
         semanticQuestion: "Brackets vs. terminal vs. abstract?",
         options: [
-            { name: "Code", icon: Code, note: "Angle brackets < />" },
-            { name: "Terminal", icon: Terminal, note: "Command line" },
-            { name: "BracketsCurly", icon: BracketsCurly, note: "{ } focus" },
-            { name: "CodeBlock", icon: CodeBlock, note: "Block of code" },
+            { name: "Code", icon: CodeIcon, note: "Angle brackets < />" },
+            { name: "Terminal", icon: TerminalIcon, note: "Command line" },
+            { name: "BracketsCurly", icon: BracketsCurlyIcon, note: "{ } focus" },
+            { name: "CodeBlock", icon: CodeBlockIcon, note: "Block of code" },
         ],
         recommendation: "Code - universally recognized for development.",
     },
@@ -425,10 +425,10 @@ const categories: IconCategory[] = [
         description: "Autonomous agents working for you",
         semanticQuestion: "Team (people) vs. AI (robot/brain) vs. capability?",
         options: [
-            { name: "Robot", icon: Robot, note: "AI/automation feel" },
-            { name: "Brain", icon: Brain, note: "Intelligence" },
-            { name: "Atom", icon: Atom, note: "Science/capability" },
-            { name: "Cpu", icon: Cpu, note: "Processing/compute" },
+            { name: "Robot", icon: RobotIcon, note: "AI/automation feel" },
+            { name: "Brain", icon: BrainIcon, note: "Intelligence" },
+            { name: "Atom", icon: AtomIcon, note: "Science/capability" },
+            { name: "Cpu", icon: CpuIcon, note: "Processing/compute" },
         ],
         recommendation:
             "Tricky - Robot might feel cold. Brain is too biological. Consider keeping Users icon to emphasize 'team' over 'AI'.",
@@ -440,15 +440,15 @@ const categories: IconCategory[] = [
         options: [
             {
                 name: "ChatTeardrop",
-                icon: ChatTeardrop,
+                icon: ChatTeardropIcon,
                 note: "Softer, friendly",
             },
-            { name: "ChatText", icon: ChatText, note: "With text lines" },
-            { name: "Chat", icon: Chat, note: "Simple bubble" },
-            { name: "Envelope", icon: Envelope, note: "Email specific" },
+            { name: "ChatText", icon: ChatTextIcon, note: "With text lines" },
+            { name: "Chat", icon: ChatIcon, note: "Simple bubble" },
+            { name: "Envelope", icon: EnvelopeIcon, note: "Email specific" },
             {
                 name: "EnvelopeSimple",
-                icon: EnvelopeSimple,
+                icon: EnvelopeSimpleIcon,
                 note: "Cleaner envelope",
             },
         ],
@@ -460,10 +460,10 @@ const categories: IconCategory[] = [
         description: "Saving content or confirming action",
         semanticQuestion: "Disk (legacy) vs. cloud (modern) vs. check (done)?",
         options: [
-            { name: "FloppyDisk", icon: FloppyDisk, note: "Classic save icon" },
-            { name: "CloudArrowUp", icon: CloudArrowUp, note: "Cloud save" },
-            { name: "Check", icon: Check, note: "Confirmation" },
-            { name: "CheckCircle", icon: CheckCircle, note: "Complete/success" },
+            { name: "FloppyDisk", icon: FloppyDiskIcon, note: "Classic save icon" },
+            { name: "CloudArrowUp", icon: CloudArrowUpIcon, note: "Cloud save" },
+            { name: "Check", icon: CheckIcon, note: "Confirmation" },
+            { name: "CheckCircle", icon: CheckCircleIcon, note: "Complete/success" },
         ],
         recommendation:
             "Check for confirmation, FloppyDisk only if explicitly 'saving'. Consider auto-save to eliminate the icon entirely.",
@@ -475,18 +475,18 @@ const categories: IconCategory[] = [
         options: [
             {
                 name: "CircleNotch",
-                icon: CircleNotch,
+                icon: CircleNotchIcon,
                 note: "Animatable spinner",
             },
-            { name: "ArrowsClockwise", icon: ArrowsClockwise, note: "Refresh" },
+            { name: "ArrowsClockwise", icon: ArrowsClockwiseIcon, note: "Refresh" },
             {
                 name: "ArrowClockwise",
-                icon: ArrowClockwise,
+                icon: ArrowClockwiseIcon,
                 note: "Single direction",
             },
             {
                 name: "ArrowCounterClockwise",
-                icon: ArrowCounterClockwise,
+                icon: ArrowCounterClockwiseIcon,
                 note: "Undo",
             },
         ],
@@ -498,8 +498,8 @@ const categories: IconCategory[] = [
         description: "Destructive actions",
         semanticQuestion: "Trash can is universal. Should look serious.",
         options: [
-            { name: "Trash", icon: Trash, note: "Detailed trash can" },
-            { name: "TrashSimple", icon: TrashSimple, note: "Simpler version" },
+            { name: "Trash", icon: TrashIcon, note: "Detailed trash can" },
+            { name: "TrashSimple", icon: TrashSimpleIcon, note: "Simpler version" },
         ],
         recommendation: "Trash - the detail helps convey the seriousness.",
     },
@@ -508,8 +508,8 @@ const categories: IconCategory[] = [
         description: "Closing modals, dismissing notifications",
         semanticQuestion: "X is universal. Circle variant is softer.",
         options: [
-            { name: "X", icon: X, note: "Universal close" },
-            { name: "XCircle", icon: XCircle, note: "Contained, softer" },
+            { name: "X", icon: XIcon, note: "Universal close" },
+            { name: "XCircle", icon: XCircleIcon, note: "Contained, softer" },
         ],
         recommendation: "X for inline close, XCircle for dismissing errors.",
     },
@@ -518,9 +518,9 @@ const categories: IconCategory[] = [
         description: "Alerts and error states",
         semanticQuestion: "Triangle is serious. Circle is informational.",
         options: [
-            { name: "Warning", icon: Warning, note: "Triangle alert" },
-            { name: "WarningCircle", icon: WarningCircle, note: "Circle alert" },
-            { name: "Info", icon: Info, note: "Informational" },
+            { name: "Warning", icon: WarningIcon, note: "Triangle alert" },
+            { name: "WarningCircle", icon: WarningCircleIcon, note: "Circle alert" },
+            { name: "Info", icon: InfoIcon, note: "Informational" },
         ],
         recommendation:
             "Warning for errors/serious. Info for tips. WarningCircle for moderate alerts.",
@@ -536,12 +536,12 @@ function IconGrid({
 }) {
     return (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {icons.map(({ name, icon: Icon, note }) => (
+            {icons.map(({ name, icon: IconIcon, note }) => (
                 <div
                     key={name}
                     className="bg-card hover:bg-card/80 flex flex-col items-center gap-2 rounded-xl border p-4 transition-colors"
                 >
-                    <Icon weight={selectedWeight} className="h-8 w-8" />
+                    <IconIcon weight={selectedWeight} className="h-8 w-8" />
                     <span className="text-sm font-medium">{name}</span>
                     {note && (
                         <span className="text-muted-foreground text-center text-xs">

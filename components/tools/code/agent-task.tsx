@@ -7,7 +7,12 @@
  * to handle complex work. Shows agent type, description, and result.
  */
 
-import { Robot, CheckCircle, WarningCircle, CircleNotch } from "@phosphor-icons/react";
+import {
+    RobotIcon,
+    CheckCircleIcon,
+    WarningCircleIcon,
+    CircleNotchIcon,
+} from "@phosphor-icons/react";
 import { useState } from "react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -83,11 +88,11 @@ export function AgentTask({
             >
                 {/* Status icon */}
                 {isRunning ? (
-                    <CircleNotch className="h-4 w-4 animate-spin text-purple-400" />
+                    <CircleNotchIcon className="h-4 w-4 animate-spin text-purple-400" />
                 ) : status === "error" ? (
-                    <WarningCircle className="h-4 w-4 text-red-400" />
+                    <WarningCircleIcon className="h-4 w-4 text-red-400" />
                 ) : (
-                    <Robot className="h-4 w-4 text-purple-400" />
+                    <RobotIcon className="h-4 w-4 text-purple-400" />
                 )}
 
                 {/* Agent info */}
@@ -97,7 +102,7 @@ export function AgentTask({
                             {displayName}
                         </span>
                         {status === "completed" && (
-                            <CheckCircle className="h-3.5 w-3.5 text-green-400" />
+                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-400" />
                         )}
                     </div>
                     {description && (

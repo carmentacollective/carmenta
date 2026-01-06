@@ -18,7 +18,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CaretRight, CaretDown } from "@phosphor-icons/react";
+import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { ToolIcon } from "../shared";
@@ -374,9 +374,9 @@ function ToolActivityRow({ part }: { part: ToolPart }) {
 
                 {/* Expand chevron */}
                 {expanded ? (
-                    <CaretDown className="text-muted-foreground/40 h-3.5 w-3.5 shrink-0" />
+                    <CaretDownIcon className="text-muted-foreground/40 h-3.5 w-3.5 shrink-0" />
                 ) : (
-                    <CaretRight className="text-muted-foreground/40 group-hover:text-muted-foreground/60 h-3.5 w-3.5 shrink-0" />
+                    <CaretRightIcon className="text-muted-foreground/40 group-hover:text-muted-foreground/60 h-3.5 w-3.5 shrink-0" />
                 )}
             </button>
 

@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    BookOpen,
-    ArrowSquareOut,
-    WarningCircle,
-    CheckCircle,
-    Question,
+    BookOpenIcon,
+    ArrowSquareOutIcon,
+    WarningCircleIcon,
+    CheckCircleIcon,
+    QuestionIcon,
 } from "@phosphor-icons/react";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
@@ -81,7 +81,7 @@ function ResearchInProgress({
 
             {/* Header */}
             <div className="relative flex items-center gap-2">
-                <BookOpen className="text-primary h-4 w-4 animate-pulse" />
+                <BookOpenIcon className="text-primary h-4 w-4 animate-pulse" />
                 <span className="text-foreground text-sm">
                     Conducting {depthLabel} research...
                 </span>
@@ -166,11 +166,11 @@ interface DeepResearchResultProps {
 const ConfidenceIcon = ({ confidence }: { confidence: string }) => {
     switch (confidence) {
         case "high":
-            return <CheckCircle className="h-3 w-3 text-green-500" />;
+            return <CheckCircleIcon className="h-3 w-3 text-green-500" />;
         case "medium":
-            return <Question className="h-3 w-3 text-yellow-500" />;
+            return <QuestionIcon className="h-3 w-3 text-yellow-500" />;
         default:
-            return <Question className="text-muted-foreground h-3 w-3" />;
+            return <QuestionIcon className="text-muted-foreground h-3 w-3" />;
     }
 };
 
@@ -198,7 +198,7 @@ export function DeepResearchResult({
         return (
             <div className="glass-card border-destructive/50 bg-destructive/10 max-w-2xl">
                 <div className="flex items-center gap-2">
-                    <WarningCircle className="text-destructive h-4 w-4" />
+                    <WarningCircleIcon className="text-destructive h-4 w-4" />
                     <p className="text-destructive text-sm">
                         {error || "Research didn't complete. Try again?"}
                     </p>
@@ -214,7 +214,7 @@ export function DeepResearchResult({
     return (
         <div className="glass-card max-w-2xl">
             <div className="flex items-center gap-2">
-                <BookOpen className="text-primary h-4 w-4" />
+                <BookOpenIcon className="text-primary h-4 w-4" />
                 <span className="text-foreground font-medium">Research Complete</span>
             </div>
 
@@ -260,7 +260,7 @@ export function DeepResearchResult({
                                     className="group text-muted-foreground hover:text-primary flex items-center gap-1 text-xs"
                                 >
                                     <span className="truncate">{source.title}</span>
-                                    <ArrowSquareOut className="h-2.5 w-2.5 flex-shrink-0 opacity-0 group-hover:opacity-100" />
+                                    <ArrowSquareOutIcon className="h-2.5 w-2.5 flex-shrink-0 opacity-0 group-hover:opacity-100" />
                                 </a>
                             </li>
                         ))}

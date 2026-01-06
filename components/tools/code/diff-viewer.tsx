@@ -14,15 +14,15 @@
 
 import { useMemo, useState, useCallback } from "react";
 import {
-    PencilSimpleLine,
-    Minus,
-    Plus,
-    ArrowRight,
-    Copy,
-    Check,
-    CaretDown,
-    CaretUp,
-    CircleNotch,
+    PencilSimpleLineIcon,
+    MinusIcon,
+    PlusIcon,
+    ArrowRightIcon,
+    CopyIcon,
+    CheckIcon,
+    CaretDownIcon,
+    CaretUpIcon,
+    CircleNotchIcon,
 } from "@phosphor-icons/react";
 import ReactDiffViewer, { DiffMethod } from "react-diff-viewer-continued";
 import { useTheme } from "next-themes";
@@ -266,7 +266,7 @@ export function DiffViewer({
             {/* Header */}
             <div className="border-border bg-muted/50 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <PencilSimpleLine className="h-4 w-4 shrink-0 text-amber-500" />
+                    <PencilSimpleLineIcon className="h-4 w-4 shrink-0 text-amber-500" />
                     <span className="text-foreground truncate font-mono text-sm">
                         {fileName}
                     </span>
@@ -285,7 +285,7 @@ export function DiffViewer({
                 <div className="flex items-center gap-2">
                     {/* Loading indicator */}
                     {isRunning && (
-                        <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
+                        <CircleNotchIcon className="text-muted-foreground h-4 w-4 animate-spin" />
                     )}
 
                     {/* Copy new content */}
@@ -296,9 +296,9 @@ export function DiffViewer({
                             aria-label="Copy new content"
                         >
                             {isCopied ? (
-                                <Check className="h-4 w-4 text-green-500" />
+                                <CheckIcon className="h-4 w-4 text-green-500" />
                             ) : (
-                                <Copy className="h-4 w-4" />
+                                <CopyIcon className="h-4 w-4" />
                             )}
                         </button>
                     )}
@@ -319,13 +319,13 @@ export function DiffViewer({
                 <div className="border-border bg-muted/20 flex items-center gap-3 border-b px-3 py-1.5 text-xs">
                     {deletions > 0 && (
                         <span className="flex items-center gap-1 text-red-500">
-                            <Minus className="h-3 w-3" />
+                            <MinusIcon className="h-3 w-3" />
                             {deletions}
                         </span>
                     )}
                     {additions > 0 && (
                         <span className="flex items-center gap-1 text-green-500">
-                            <Plus className="h-3 w-3" />
+                            <PlusIcon className="h-3 w-3" />
                             {additions}
                         </span>
                     )}
@@ -340,7 +340,7 @@ export function DiffViewer({
                 {/* Loading state */}
                 {isRunning && (
                     <div className="text-muted-foreground flex items-center gap-2 p-4">
-                        <PencilSimpleLine className="h-4 w-4 animate-pulse" />
+                        <PencilSimpleLineIcon className="h-4 w-4 animate-pulse" />
                         <span className="text-sm">Editing file...</span>
                     </div>
                 )}
@@ -356,7 +356,7 @@ export function DiffViewer({
                                     <code className="rounded bg-red-100 px-2 py-1 text-red-700 line-through dark:bg-red-900/30 dark:text-red-300">
                                         {oldContent || "(empty)"}
                                     </code>
-                                    <ArrowRight className="text-muted-foreground h-4 w-4 shrink-0" />
+                                    <ArrowRightIcon className="text-muted-foreground h-4 w-4 shrink-0" />
                                     <code className="rounded bg-green-100 px-2 py-1 text-green-700 dark:bg-green-900/30 dark:text-green-300">
                                         {newContent || "(empty)"}
                                     </code>
@@ -415,7 +415,7 @@ export function DiffViewer({
                 >
                     {!isExpanded ? (
                         <>
-                            <CaretDown className="h-4 w-4" />
+                            <CaretDownIcon className="h-4 w-4" />
                             Show full diff
                             <span className="text-muted-foreground/60">
                                 ({additions + deletions} changes)
@@ -423,7 +423,7 @@ export function DiffViewer({
                         </>
                     ) : (
                         <>
-                            <CaretUp className="h-4 w-4" />
+                            <CaretUpIcon className="h-4 w-4" />
                             Collapse
                         </>
                     )}

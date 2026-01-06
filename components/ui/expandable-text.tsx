@@ -11,7 +11,7 @@
  */
 
 import { useState, useRef, useLayoutEffect, type ReactNode } from "react";
-import { CaretDown } from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -126,7 +126,7 @@ export function ExpandableText({
                     "focus:ring-primary/60 focus:ring-2 focus:outline-none"
                 )}
             >
-                <CaretDown
+                <CaretDownIcon
                     className={cn(
                         "h-4 w-4 text-white transition-transform duration-300",
                         isExpanded && "rotate-180"

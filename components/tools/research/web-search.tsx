@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowSquareOut, CaretDown, CaretUp } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { glass, border } from "@/lib/design-tokens";
@@ -115,12 +115,12 @@ function SearchResultsList({ results }: { results: SearchResultItem[] }) {
                                     className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
                                     aria-label={`Open ${item.title} in new tab`}
                                 >
-                                    <ArrowSquareOut className="h-3.5 w-3.5" />
+                                    <ArrowSquareOutIcon className="h-3.5 w-3.5" />
                                 </a>
                                 {isResultExpanded ? (
-                                    <CaretUp className="text-muted-foreground h-4 w-4" />
+                                    <CaretUpIcon className="text-muted-foreground h-4 w-4" />
                                 ) : (
-                                    <CaretDown className="text-muted-foreground h-4 w-4" />
+                                    <CaretDownIcon className="text-muted-foreground h-4 w-4" />
                                 )}
                             </div>
                         </button>

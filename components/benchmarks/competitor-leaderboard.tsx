@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Fragment } from "react";
-import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 
 import type {
     CompetitorScore,
@@ -87,9 +87,9 @@ export function CompetitorLeaderboard({
                                         <td className="px-4 py-4">
                                             <div className="flex items-center gap-2">
                                                 {isExpanded ? (
-                                                    <CaretUp className="text-foreground/40 h-4 w-4" />
+                                                    <CaretUpIcon className="text-foreground/40 h-4 w-4" />
                                                 ) : (
-                                                    <CaretDown className="text-foreground/40 h-4 w-4" />
+                                                    <CaretDownIcon className="text-foreground/40 h-4 w-4" />
                                                 )}
                                                 <span className="text-foreground font-medium">
                                                     {competitor.competitor}

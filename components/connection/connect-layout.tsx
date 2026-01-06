@@ -27,7 +27,11 @@
 
 import { type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Plus, CircleNotch, FolderSimpleDashed } from "@phosphor-icons/react";
+import {
+    PlusIcon,
+    CircleNotchIcon,
+    FolderSimpleDashedIcon,
+} from "@phosphor-icons/react";
 
 import { ConnectionProvider, useConnection } from "./connection-context";
 import { ConnectRuntimeProvider, useCodeMode } from "./connect-runtime-provider";
@@ -91,7 +95,7 @@ function CodeModeIndicator() {
             animate={{ opacity: 1, scale: 1 }}
             title={`Code mode: ${projectPath}`}
         >
-            <FolderSimpleDashed className="h-4 w-4" />
+            <FolderSimpleDashedIcon className="h-4 w-4" />
             <span className="max-w-[120px] truncate">{projectName}</span>
         </motion.div>
     );
@@ -199,9 +203,9 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                                         aria-label="New connection"
                                     >
                                         {isPending ? (
-                                            <CircleNotch className="h-4 w-4 animate-spin" />
+                                            <CircleNotchIcon className="h-4 w-4 animate-spin" />
                                         ) : (
-                                            <Plus className="h-4 w-4" />
+                                            <PlusIcon className="h-4 w-4" />
                                         )}
                                         <span className="text-sm font-medium">
                                             New Connection

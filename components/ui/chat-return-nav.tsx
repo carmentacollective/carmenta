@@ -15,7 +15,7 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChatCircle } from "@phosphor-icons/react";
+import { ArrowLeftIcon, ChatCircleIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useLastConnection } from "@/lib/hooks/use-last-connection";
@@ -60,7 +60,7 @@ export function ChatReturnNav({ className, compact = false }: ChatReturnNavProps
                             compact ? "px-2.5 py-1.5 text-xs" : "px-3 py-1.5 text-sm"
                         )}
                     >
-                        <ArrowLeft
+                        <ArrowLeftIcon
                             className={cn(
                                 "transition-transform group-hover:-translate-x-0.5",
                                 compact ? "h-3 w-3" : "h-3.5 w-3.5"
@@ -78,7 +78,7 @@ export function ChatReturnNav({ className, compact = false }: ChatReturnNavProps
                                 </span>
                             ) : (
                                 <>
-                                    <ChatCircle
+                                    <ChatCircleIcon
                                         className={compact ? "h-3 w-3" : "h-3.5 w-3.5"}
                                     />
                                     <span className="font-medium">Back to chat</span>

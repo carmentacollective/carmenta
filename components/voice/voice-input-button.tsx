@@ -17,7 +17,11 @@ import {
     useState,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Microphone, MicrophoneSlash, CircleNotch } from "@phosphor-icons/react";
+import {
+    MicrophoneIcon,
+    MicrophoneSlashIcon,
+    CircleNotchIcon,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/lib/hooks/use-voice-input";
@@ -206,7 +210,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                             exit={{ opacity: 0, scale: 0.8 }}
                             transition={{ duration: 0.15 }}
                         >
-                            <CircleNotch className="h-5 w-5 animate-spin sm:h-6 sm:w-6" />
+                            <CircleNotchIcon className="h-5 w-5 animate-spin sm:h-6 sm:w-6" />
                         </motion.div>
                     ) : isListening ? (
                         <motion.div
@@ -217,7 +221,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                             transition={{ duration: 0.15 }}
                             className="relative"
                         >
-                            <Microphone className="text-primary-foreground h-5 w-5 sm:h-6 sm:w-6" />
+                            <MicrophoneIcon className="text-primary-foreground h-5 w-5 sm:h-6 sm:w-6" />
                             {/* Pulsing ring animation */}
                             <motion.div
                                 className="border-primary-foreground/60 absolute inset-0 rounded-full border-2"
@@ -238,7 +242,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                             exit={{ opacity: 0, scale: 0.8 }}
                             transition={{ duration: 0.15 }}
                         >
-                            <MicrophoneSlash className="h-5 w-5 sm:h-6 sm:w-6" />
+                            <MicrophoneSlashIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                         </motion.div>
                     ) : (
                         <motion.div
@@ -248,7 +252,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                             exit={{ opacity: 0, scale: 0.8 }}
                             transition={{ duration: 0.15 }}
                         >
-                            <Microphone
+                            <MicrophoneIcon
                                 className={cn(
                                     "h-5 w-5 transition-colors sm:h-6 sm:w-6",
                                     variant === "primary"

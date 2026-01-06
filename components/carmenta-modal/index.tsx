@@ -12,7 +12,7 @@
 
 import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkle } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -63,7 +63,7 @@ export function CarmentaModal() {
             >
                 {/* Header */}
                 <div className="border-foreground/10 flex items-center gap-2 border-b px-4 py-3">
-                    <Sparkle
+                    <SparkleIcon
                         weight="duotone"
                         className="text-primary h-5 w-5 animate-pulse"
                     />
@@ -134,7 +134,7 @@ function EmptyState() {
             animate={{ opacity: 1, y: 0 }}
             className="flex h-full flex-col items-center justify-center py-8 text-center"
         >
-            <Sparkle weight="duotone" className="text-primary/30 mb-3 h-12 w-12" />
+            <SparkleIcon weight="duotone" className="text-primary/30 mb-3 h-12 w-12" />
             <p className="text-foreground/60 max-w-xs text-sm">
                 We're here to help. Ask about your knowledge base, connected services,
                 or anything else.

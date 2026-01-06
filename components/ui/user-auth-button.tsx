@@ -2,16 +2,16 @@
 
 import { useAuth, useUser, useClerk } from "@clerk/nextjs";
 import {
-    User,
-    SignOut,
-    Moon,
-    Sun,
-    UserCircle,
-    Monitor,
-    Plug,
-    Plus,
-    BookOpen,
-    ChatTeardrop,
+    UserIcon,
+    SignOutIcon,
+    MoonIcon,
+    SunIcon,
+    UserCircleIcon,
+    MonitorIcon,
+    PlugIcon,
+    PlusIcon,
+    BookOpenIcon,
+    ChatTeardropIcon,
 } from "@phosphor-icons/react";
 
 import { AnimatePresence, motion } from "framer-motion";
@@ -123,9 +123,9 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     const email = user.primaryEmailAddress?.emailAddress;
 
     const themeOptions = [
-        { value: "light", label: "Light", icon: Sun },
-        { value: "dark", label: "Dark", icon: Moon },
-        { value: "system", label: "System", icon: Monitor },
+        { value: "light", label: "Light", icon: SunIcon },
+        { value: "dark", label: "Dark", icon: MoonIcon },
+        { value: "system", label: "System", icon: MonitorIcon },
     ] as const;
 
     // Theme variants with primary color for swatch preview
@@ -247,7 +247,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           className="group text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all"
                                       >
                                           <div className="bg-primary/10 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Plus className="text-primary relative h-4 w-4" />
+                                          <PlusIcon className="text-primary relative h-4 w-4" />
                                           <span className="relative">
                                               New Connection
                                           </span>
@@ -262,7 +262,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <BookOpen className="text-foreground/60 relative h-4 w-4" />
+                                          <BookOpenIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">
                                               Knowledge Base
                                           </span>
@@ -274,7 +274,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <Plug className="text-foreground/60 relative h-4 w-4" />
+                                          <PlugIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Integrations</span>
                                       </Link>
 
@@ -284,7 +284,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <ChatTeardrop className="text-foreground/60 relative h-4 w-4" />
+                                          <ChatTeardropIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">
                                               Communication
                                           </span>
@@ -301,7 +301,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <User className="text-foreground/60 relative h-4 w-4" />
+                                          <UserIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Account</span>
                                       </button>
 
@@ -415,7 +415,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <SignOut className="text-foreground/60 relative h-4 w-4" />
+                                          <SignOutIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Exit</span>
                                       </Link>
                                   </div>
@@ -439,7 +439,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                 data-tooltip-id="tip"
                 data-tooltip-content="Settings & integrations"
             >
-                <UserCircle
+                <UserCircleIcon
                     className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6 md:h-7 md:w-7"
                     weight="duotone"
                 />

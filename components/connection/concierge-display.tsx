@@ -1,7 +1,11 @@
 "use client";
 
 import { memo, useState } from "react";
-import { CaretDown, CircleNotch, ArrowsLeftRight } from "@phosphor-icons/react";
+import {
+    CaretDownIcon,
+    CircleNotchIcon,
+    ArrowsLeftRightIcon,
+} from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
@@ -216,7 +220,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                 <span className="text-foreground/90 text-sm">
                                     {selectingMessage}
                                 </span>
-                                <CircleNotch className="text-foreground/50 h-3.5 w-3.5 animate-spin" />
+                                <CircleNotchIcon className="text-foreground/50 h-3.5 w-3.5 animate-spin" />
                             </motion.div>
                         )}
 
@@ -323,12 +327,12 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                         }}
                                         className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5"
                                     >
-                                        <ArrowsLeftRight className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                        <ArrowsLeftRightIcon className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                                     </motion.div>
                                 )}
 
                                 {/* Expand chevron - appears on hover */}
-                                <CaretDown
+                                <CaretDownIcon
                                     className={cn(
                                         "text-foreground/25 ml-auto h-4 w-4 shrink-0 transition-all duration-200",
                                         "opacity-0 group-hover:opacity-100",
@@ -382,7 +386,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                             {/* Auto-switch notice */}
                             {autoSwitched && autoSwitchReason && (
                                 <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                                    <ArrowsLeftRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                    <ArrowsLeftRightIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                                     <p className="text-amber-700 dark:text-amber-300">
                                         {autoSwitchReason}
                                     </p>

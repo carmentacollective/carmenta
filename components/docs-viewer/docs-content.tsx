@@ -6,7 +6,7 @@
  * Read-only display for documentation with markdown rendering.
  */
 
-import { FileText, BookOpen } from "@phosphor-icons/react";
+import { FileTextIcon, BookOpenIcon } from "@phosphor-icons/react";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import type { KBDocument } from "@/lib/kb/actions";
 
@@ -19,7 +19,7 @@ export function DocsContent({ document: doc }: DocsContentProps) {
         return (
             <main className="glass-card flex h-full max-h-[calc(100vh-16rem)] flex-1 items-center justify-center rounded-xl">
                 <div className="flex flex-col items-center gap-3 text-center">
-                    <BookOpen className="text-foreground/30 h-12 w-12" />
+                    <BookOpenIcon className="text-foreground/30 h-12 w-12" />
                     <p className="text-foreground/40">Select a document to read</p>
                 </div>
             </main>
@@ -34,7 +34,10 @@ export function DocsContent({ document: doc }: DocsContentProps) {
                 aria-label={doc.name}
                 className="border-foreground/5 flex items-center gap-3 border-b px-6 py-4"
             >
-                <FileText className="text-foreground/50 h-5 w-5" aria-hidden="true" />
+                <FileTextIcon
+                    className="text-foreground/50 h-5 w-5"
+                    aria-hidden="true"
+                />
                 <div className="flex flex-col">
                     <h2 className="text-foreground text-lg font-medium">{doc.name}</h2>
                     {doc.description && (

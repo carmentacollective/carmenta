@@ -15,7 +15,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ClockCounterClockwise } from "@phosphor-icons/react";
+import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 
 interface DraftRecoveryBannerProps {
     /** Whether to show the banner */
@@ -47,7 +47,7 @@ export function DraftRecoveryBanner({
                 >
                     <div className="bg-primary/10 mb-3 flex items-center justify-between rounded-xl px-4 py-3">
                         <div className="flex items-center gap-2">
-                            <ClockCounterClockwise className="text-primary h-4 w-4" />
+                            <ClockCounterClockwiseIcon className="text-primary h-4 w-4" />
                             <span className="text-foreground/80 text-sm">
                                 We kept your message safe.
                             </span>

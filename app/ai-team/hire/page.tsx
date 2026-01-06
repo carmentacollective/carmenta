@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkle, ArrowLeft, Clock, CheckCircle } from "@phosphor-icons/react";
+import {
+    SparkleIcon,
+    ArrowLeftIcon,
+    ClockIcon,
+    CheckCircleIcon,
+} from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
@@ -196,7 +201,7 @@ What can we help you with?`,
                             onClick={() => router.push("/ai-team")}
                             className="text-foreground/60 hover:text-foreground p-1 transition-colors"
                         >
-                            <ArrowLeft className="h-5 w-5" />
+                            <ArrowLeftIcon className="h-5 w-5" />
                         </button>
                         <div>
                             <h1 className="text-foreground text-xl font-medium">
@@ -258,7 +263,7 @@ What can we help you with?`,
                             className="border-foreground/10 bg-foreground/[0.01] w-80 flex-shrink-0 rounded-2xl border p-6"
                         >
                             <div className="mb-6 flex items-center gap-2">
-                                <CheckCircle className="text-primary h-5 w-5" />
+                                <CheckCircleIcon className="text-primary h-5 w-5" />
                                 <h2 className="text-foreground font-medium">
                                     Ready to Hire
                                 </h2>
@@ -279,7 +284,7 @@ What can we help you with?`,
                                         Schedule
                                     </p>
                                     <div className="text-foreground flex items-center gap-2">
-                                        <Clock className="h-4 w-4" />
+                                        <ClockIcon className="h-4 w-4" />
                                         <span>{playbook.schedule.displayText}</span>
                                     </div>
                                 </div>
@@ -323,12 +328,12 @@ What can we help you with?`,
                             >
                                 {isHiring ? (
                                     <>
-                                        <Sparkle className="h-4 w-4 animate-pulse" />
+                                        <SparkleIcon className="h-4 w-4 animate-pulse" />
                                         Setting up...
                                     </>
                                 ) : (
                                     <>
-                                        <CheckCircle className="h-4 w-4" />
+                                        <CheckCircleIcon className="h-4 w-4" />
                                         Hire This Team Member
                                     </>
                                 )}
