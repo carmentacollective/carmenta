@@ -322,8 +322,11 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                 onClick={() => setIsOpen(!isOpen)}
                 className="group flex cursor-pointer items-center gap-3"
                 aria-label="Carmenta menu"
-                data-tooltip-id="tip"
-                data-tooltip-content="Carmenta"
+                // Only show tooltip when label is hidden (icon-only state)
+                {...(!showLabel && {
+                    "data-tooltip-id": "tip",
+                    "data-tooltip-content": "Carmenta",
+                })}
             >
                 {/* Oracle orb */}
                 <div className={cn(glassOrbPreset)}>
