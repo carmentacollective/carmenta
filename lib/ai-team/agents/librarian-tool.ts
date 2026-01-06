@@ -777,59 +777,110 @@ async function executeDelete(
 
 /**
  * Librarian action parameter schema
+ *
+ * Flat object schema because discriminatedUnion produces oneOf which
+ * AWS Bedrock doesn't support. All fields except action are optional;
+ * validation happens in execute based on action type.
  */
-const librarianActionSchema = z.discriminatedUnion("action", [
-    z.object({
-        action: z.literal("describe"),
-    }),
-    z.object({
-        action: z.literal("search"),
-        query: z.string().describe("Natural language search query"),
-        maxResults: z.number().optional().describe("Maximum results (default: 5)"),
-    }),
-    z.object({
-        action: z.literal("list"),
-        pathPrefix: z
-            .string()
-            .optional()
-            .describe("Path prefix filter (e.g., 'profile')"),
-    }),
-    z.object({
-        action: z.literal("retrieve"),
-        path: z.string().describe("Document path to retrieve"),
-    }),
-    z.object({
-        action: z.literal("create"),
-        path: z
-            .string()
-            .describe("Document path (e.g., 'knowledge.projects.Carmenta')"),
-        name: z.string().describe("Display name"),
-        content: z.string().describe("Document content"),
-        description: z.string().optional().describe("Brief description"),
-    }),
-    z.object({
-        action: z.literal("update"),
-        path: z.string().describe("Document path to update"),
-        content: z.string().optional().describe("New content"),
-        name: z.string().optional().describe("New name"),
-    }),
-    z.object({
-        action: z.literal("move"),
-        fromPath: z.string().describe("Current document path"),
-        toPath: z.string().describe("New document path"),
-    }),
-    z.object({
-        action: z.literal("delete"),
-        path: z.string().describe("Document path to delete"),
-    }),
-    z.object({
-        action: z.literal("extract"),
-        conversationContent: z.string().describe("Conversation content to analyze"),
-        conversationTitle: z.string().optional().describe("Topic context"),
-    }),
-]);
+const librarianActionSchema = z.object({
+    action: z
+        .enum([
+            "describe",
+            "search",
+            "list",
+            "retrieve",
+            "create",
+            "update",
+            "move",
+            "delete",
+            "extract",
+        ])
+        .describe(
+            "Operation to perform. Use 'describe' to see all available operations."
+        ),
+    // search
+    query: z
+        .string()
+        .optional()
+        .describe("Natural language search query (for 'search')"),
+    maxResults: z
+        .number()
+        .optional()
+        .describe("Maximum results (for 'search', default: 5)"),
+    // list
+    pathPrefix: z.string().optional().describe("Path prefix filter (for 'list')"),
+    // retrieve, create, update, delete
+    path: z.string().optional().describe("Document path"),
+    // create, update
+    name: z.string().optional().describe("Document display name"),
+    content: z.string().optional().describe("Document content"),
+    description: z.string().optional().describe("Document description"),
+    // move
+    fromPath: z.string().optional().describe("Current document path (for 'move')"),
+    toPath: z.string().optional().describe("New document path (for 'move')"),
+    // extract
+    conversationContent: z
+        .string()
+        .optional()
+        .describe("Conversation to analyze (for 'extract')"),
+    conversationTitle: z.string().optional().describe("Topic context (for 'extract')"),
+});
 
 type LibrarianAction = z.infer<typeof librarianActionSchema>;
+
+/**
+ * Validate required fields for each action
+ */
+function validateParams(
+    params: LibrarianAction
+): { valid: true } | { valid: false; error: string } {
+    switch (params.action) {
+        case "describe":
+            return { valid: true };
+        case "search":
+            if (!params.query)
+                return { valid: false, error: "query is required for search" };
+            return { valid: true };
+        case "list":
+            return { valid: true }; // pathPrefix is optional
+        case "retrieve":
+        case "delete":
+            if (!params.path) return { valid: false, error: "path is required" };
+            return { valid: true };
+        case "create":
+            if (!params.path)
+                return { valid: false, error: "path is required for create" };
+            if (!params.name)
+                return { valid: false, error: "name is required for create" };
+            if (!params.content)
+                return { valid: false, error: "content is required for create" };
+            return { valid: true };
+        case "update":
+            if (!params.path)
+                return { valid: false, error: "path is required for update" };
+            if (!params.content && !params.name)
+                return {
+                    valid: false,
+                    error: "content or name is required for update",
+                };
+            return { valid: true };
+        case "move":
+            if (!params.fromPath)
+                return { valid: false, error: "fromPath is required for move" };
+            if (!params.toPath)
+                return { valid: false, error: "toPath is required for move" };
+            return { valid: true };
+        case "extract":
+            if (!params.conversationContent)
+                return {
+                    valid: false,
+                    error: "conversationContent is required for extract",
+                };
+            return { valid: true };
+        default:
+            return { valid: false, error: `Unknown action: ${params.action}` };
+    }
+}
 
 /**
  * Create the librarian tool for DCOS
@@ -846,6 +897,12 @@ export function createLibrarianTool(context: SubagentContext) {
                 return describeOperations();
             }
 
+            // Validate required params for this action
+            const validation = validateParams(params);
+            if (!validation.valid) {
+                return errorResult("VALIDATION", validation.error);
+            }
+
             // Wrap all executions with safety utilities
             // The ctx parameter includes abortSignal for cancellation
             const result = await safeInvoke(
@@ -854,21 +911,48 @@ export function createLibrarianTool(context: SubagentContext) {
                 async (ctx) => {
                     switch (params.action) {
                         case "search":
-                            return executeSearch(params, ctx);
+                            return executeSearch(
+                                { query: params.query!, maxResults: params.maxResults },
+                                ctx
+                            );
                         case "list":
-                            return executeList(params, ctx);
+                            return executeList({ pathPrefix: params.pathPrefix }, ctx);
                         case "retrieve":
-                            return executeRetrieve(params, ctx);
+                            return executeRetrieve({ path: params.path! }, ctx);
                         case "create":
-                            return executeCreate(params, ctx);
+                            return executeCreate(
+                                {
+                                    path: params.path!,
+                                    name: params.name!,
+                                    content: params.content!,
+                                    description: params.description,
+                                },
+                                ctx
+                            );
                         case "update":
-                            return executeUpdate(params, ctx);
+                            return executeUpdate(
+                                {
+                                    path: params.path!,
+                                    content: params.content,
+                                    name: params.name,
+                                },
+                                ctx
+                            );
                         case "move":
-                            return executeMove(params, ctx);
+                            return executeMove(
+                                { fromPath: params.fromPath!, toPath: params.toPath! },
+                                ctx
+                            );
                         case "delete":
-                            return executeDelete(params, ctx);
+                            return executeDelete({ path: params.path! }, ctx);
                         case "extract":
-                            return executeExtract(params, ctx);
+                            return executeExtract(
+                                {
+                                    conversationContent: params.conversationContent!,
+                                    conversationTitle: params.conversationTitle,
+                                },
+                                ctx
+                            );
                         default:
                             return errorResult(
                                 "VALIDATION",

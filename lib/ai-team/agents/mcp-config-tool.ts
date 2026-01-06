@@ -324,26 +324,41 @@ async function executeGuide(
 
 /**
  * MCP Config action parameter schema
+ *
+ * Flat object schema because discriminatedUnion produces oneOf which
+ * AWS Bedrock doesn't support. Validation happens in execute.
  */
-const mcpConfigActionSchema = z.discriminatedUnion("action", [
-    z.object({
-        action: z.literal("describe"),
-    }),
-    z.object({
-        action: z.literal("list"),
-    }),
-    z.object({
-        action: z.literal("test"),
-        serviceId: z.string().describe("Service ID to test"),
-        accountId: z.string().optional().describe("Specific account ID"),
-    }),
-    z.object({
-        action: z.literal("guide"),
-        serviceId: z.string().describe("Service to get setup guidance for"),
-    }),
-]);
+const mcpConfigActionSchema = z.object({
+    action: z
+        .enum(["describe", "list", "test", "guide"])
+        .describe(
+            "Operation to perform. Use 'describe' to see all available operations."
+        ),
+    serviceId: z.string().optional().describe("Service ID (for 'test' and 'guide')"),
+    accountId: z.string().optional().describe("Specific account ID (for 'test')"),
+});
 
 type McpConfigAction = z.infer<typeof mcpConfigActionSchema>;
+
+/**
+ * Validate required fields for each action
+ */
+function validateMcpParams(
+    params: McpConfigAction
+): { valid: true } | { valid: false; error: string } {
+    switch (params.action) {
+        case "describe":
+        case "list":
+            return { valid: true };
+        case "test":
+        case "guide":
+            if (!params.serviceId)
+                return { valid: false, error: "serviceId is required" };
+            return { valid: true };
+        default:
+            return { valid: false, error: `Unknown action: ${params.action}` };
+    }
+}
 
 /**
  * Create the MCP config tool for DCOS
@@ -360,6 +375,12 @@ export function createMcpConfigTool(context: SubagentContext) {
                 return describeOperations();
             }
 
+            // Validate required params for this action
+            const validation = validateMcpParams(params);
+            if (!validation.valid) {
+                return errorResult("VALIDATION", validation.error);
+            }
+
             // Wrap all executions with safety utilities
             // The ctx parameter includes abortSignal for cancellation
             const result = await safeInvoke(
@@ -370,9 +391,15 @@ export function createMcpConfigTool(context: SubagentContext) {
                         case "list":
                             return executeList(ctx);
                         case "test":
-                            return executeTest(params, ctx);
+                            return executeTest(
+                                {
+                                    serviceId: params.serviceId!,
+                                    accountId: params.accountId,
+                                },
+                                ctx
+                            );
                         case "guide":
-                            return executeGuide(params, ctx);
+                            return executeGuide({ serviceId: params.serviceId! }, ctx);
                         default:
                             return errorResult(
                                 "VALIDATION",
