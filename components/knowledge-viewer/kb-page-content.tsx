@@ -7,13 +7,13 @@
  * and KnowledgeViewer, enabling refresh when the librarian makes changes.
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkle, ChatCircle } from "@phosphor-icons/react";
+import { Sparkle } from "@phosphor-icons/react";
 
 import { KnowledgeViewer } from "./index";
 import { LibrarianTaskBar } from "./librarian-task-bar";
-import { CarmentaConcierge, useConcierge } from "@/components/carmenta-concierge";
+import { CarmentaSheet } from "@/components/carmenta-assistant";
 import type { KBFolder } from "@/lib/kb/actions";
 
 interface KBPageContentProps {
@@ -22,29 +22,29 @@ interface KBPageContentProps {
 
 export function KBPageContent({ initialFolders }: KBPageContentProps) {
     const router = useRouter();
-    const concierge = useConcierge();
+    const [sheetOpen, setSheetOpen] = useState(false);
 
-    // Refresh the page when librarian makes changes
+    // Refresh the page when Carmenta makes changes
     const handleChangesComplete = useCallback(() => {
         router.refresh();
     }, [router]);
 
     return (
         <>
-            {/* Librarian Task Bar + Concierge Button */}
+            {/* Librarian Task Bar + Carmenta Button */}
             <div className="mb-4 flex items-start gap-3">
                 <LibrarianTaskBar
                     onChangesComplete={handleChangesComplete}
                     className="flex-1"
                 />
                 <button
-                    onClick={concierge.open}
+                    onClick={() => setSheetOpen(true)}
                     className="glass-card hover:bg-foreground/5 flex items-center gap-2 rounded-xl px-4 py-2.5 transition-colors"
-                    title="Open concierge chat"
+                    title="Work with Carmenta to organize your knowledge"
                 >
-                    <ChatCircle className="text-primary h-5 w-5" weight="duotone" />
+                    <Sparkle className="text-primary h-5 w-5" weight="duotone" />
                     <span className="hidden text-sm font-medium sm:inline">
-                        Search together
+                        Organize together
                     </span>
                 </button>
             </div>
@@ -66,12 +66,14 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
                 )}
             </section>
 
-            {/* Carmenta Concierge */}
-            <CarmentaConcierge
-                isOpen={concierge.isOpen}
-                onClose={concierge.close}
-                pageContext="We're in the knowledge base together. We can search, organize, or extract new knowledge here."
-                placeholder="What are we looking for?"
+            {/* Carmenta Sheet */}
+            <CarmentaSheet
+                open={sheetOpen}
+                onOpenChange={setSheetOpen}
+                pageContext="We're in the knowledge base. The user can reorganize folders, rename documents, create new categories, or ask me to extract insights from their conversations."
+                onChangesComplete={handleChangesComplete}
+                placeholder="Reorganize, rename, create categories..."
+                description="Shaping what we know"
             />
         </>
     );

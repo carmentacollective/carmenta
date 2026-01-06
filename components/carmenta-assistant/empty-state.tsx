@@ -16,23 +16,24 @@ interface EmptyStateProps {
 
 /**
  * Derive contextual hint from page context
+ * Uses "we" language throughout - human and AI working together
  */
 function getHint(pageContext?: string): string {
     const ctx = pageContext?.toLowerCase() ?? "";
 
     if (ctx.includes("ai team")) {
-        return "I can update agent configurations, run jobs, set up notifications, or help troubleshoot issues.";
+        return "We can update agent configurations, run jobs, set up notifications, or troubleshoot issues together.";
     }
 
     if (ctx.includes("knowledge")) {
-        return "I can search what we've saved, organize your knowledge, or help capture something new.";
+        return "We can reorganize folders, rename documents, create new categories, or extract insights from conversations.";
     }
 
     if (ctx.includes("mcp") || ctx.includes("integration")) {
-        return "I can help configure integrations, test connections, or set up new services.";
+        return "We can configure integrations, test connections, or set up new services together.";
     }
 
-    return "Ask me anything. I can search knowledge, update configurations, or help you think through problems.";
+    return "What should we work on? We can search knowledge, update configurations, or think through problems together.";
 }
 
 export function EmptyState({ pageContext }: EmptyStateProps) {
