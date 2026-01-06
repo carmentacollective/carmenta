@@ -2,6 +2,7 @@
 name: production-observability
 # prettier-ignore
 description: Use when adding logging, error monitoring, metrics, Sentry, debugging production issues, or improving observability
+version: 1.0.0
 ---
 
 <objective>

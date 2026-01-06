@@ -2,6 +2,7 @@
 name: testing-methodology
 # prettier-ignore
 description: Use when writing tests, verifying functionality, QA, test scenarios, user testing, or browser automation tests
+version: 1.0.0
 ---
 
 <objective>
