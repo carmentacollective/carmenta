@@ -128,7 +128,7 @@ function describeOperations(): SubagentDescription {
             },
             {
                 name: "update",
-                description: "Update an existing document's content, name, or tags",
+                description: "Update an existing document's content or name",
                 params: [
                     {
                         name: "path",
@@ -678,12 +678,21 @@ async function executeMove(
             return errorResult("VALIDATION", `Document not found: ${params.fromPath}`);
         }
 
-        // Create at new path
+        // Create at new path, preserving all metadata from the original document
         await kb.create(context.userId, {
             path: params.toPath,
             name: oldDoc.name,
             content: oldDoc.content,
             description: oldDoc.description ?? undefined,
+            promptLabel: oldDoc.promptLabel ?? undefined,
+            promptHint: oldDoc.promptHint ?? undefined,
+            promptOrder: oldDoc.promptOrder ?? undefined,
+            alwaysInclude: oldDoc.alwaysInclude ?? undefined,
+            searchable: oldDoc.searchable ?? undefined,
+            editable: oldDoc.editable ?? undefined,
+            sourceType: oldDoc.sourceType ?? undefined,
+            sourceId: oldDoc.sourceId ?? undefined,
+            tags: oldDoc.tags ?? undefined,
         });
 
         // Delete old document

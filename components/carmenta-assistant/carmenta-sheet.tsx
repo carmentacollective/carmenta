@@ -86,7 +86,7 @@ export function CarmentaSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="left" className="flex flex-col p-0">
+            <SheetContent side="left" className="flex flex-col p-0" hideClose>
                 {/* Header */}
                 <SheetHeader className="border-foreground/[0.08] flex-row items-center justify-between space-y-0 border-b px-4 py-3">
                     <div className="flex items-center gap-2.5">
