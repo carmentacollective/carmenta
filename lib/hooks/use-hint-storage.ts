@@ -102,9 +102,20 @@ function setHintState(key: string, state: HintState): void {
  */
 /**
  * Cache for useSyncExternalStore to avoid infinite loops.
- * Keyed by hint key to support multiple hooks.
+ * Keyed by hint key + options to support multiple hooks with different configurations.
  */
-const hintCache = new Map<string, { value: boolean; raw: string | null }>();
+const hintCache = new Map<
+    string,
+    { value: boolean; raw: string | null; maxShows: number; expiresAfterDays?: number }
+>();
+
+/**
+ * Generate cache key including options to prevent sharing cached values
+ * between hooks with different configurations
+ */
+function getCacheKey(key: string, maxShows: number, expiresAfterDays?: number): string {
+    return `${key}:${maxShows}:${expiresAfterDays ?? "none"}`;
+}
 
 /**
  * Subscribe to storage changes for a specific hint key
@@ -130,10 +141,16 @@ function createGetSnapshot(key: string, maxShows: number, expiresAfterDays?: num
 
         const state = getHintState(key);
         const rawValue = localStorage.getItem(`${HINT_PREFIX}${key}`);
+        const cacheKey = getCacheKey(key, maxShows, expiresAfterDays);
 
         // Check cache
-        const cached = hintCache.get(key);
-        if (cached && cached.raw === rawValue) {
+        const cached = hintCache.get(cacheKey);
+        if (
+            cached &&
+            cached.raw === rawValue &&
+            cached.maxShows === maxShows &&
+            cached.expiresAfterDays === expiresAfterDays
+        ) {
             return cached.value;
         }
 
@@ -157,7 +174,12 @@ function createGetSnapshot(key: string, maxShows: number, expiresAfterDays?: num
         }
 
         // Update cache
-        hintCache.set(key, { value: shouldShow, raw: rawValue });
+        hintCache.set(cacheKey, {
+            value: shouldShow,
+            raw: rawValue,
+            maxShows,
+            expiresAfterDays,
+        });
         return shouldShow;
     };
 }
@@ -208,8 +230,9 @@ export function useHintStorage(
 
         setHintState(key, newState);
 
-        // Invalidate cache to trigger re-render
-        hintCache.delete(key);
+        // Invalidate cache to trigger re-render (clear all cache entries for this key)
+        const cacheKey = getCacheKey(key, maxShows, expiresAfterDays);
+        hintCache.delete(cacheKey);
 
         // Dispatch storage event to notify other tabs and trigger re-render
         window.dispatchEvent(
@@ -218,7 +241,7 @@ export function useHintStorage(
                 newValue: JSON.stringify(newState),
             })
         );
-    }, [key]);
+    }, [key, maxShows, expiresAfterDays]);
 
     return [shouldShow, markSeen];
 }
@@ -273,7 +296,25 @@ export function markHintSeen(key: string): void {
  */
 export function resetHint(key: string): void {
     if (typeof window === "undefined") return;
+
     localStorage.removeItem(`${HINT_PREFIX}${key}`);
+
+    // Invalidate all cache entries for this key (all option combinations)
+    const keysToDelete: string[] = [];
+    hintCache.forEach((_, cacheKey) => {
+        if (cacheKey.startsWith(`${key}:`)) {
+            keysToDelete.push(cacheKey);
+        }
+    });
+    keysToDelete.forEach((cacheKey) => hintCache.delete(cacheKey));
+
+    // Dispatch storage event to notify hooks
+    window.dispatchEvent(
+        new StorageEvent("storage", {
+            key: `${HINT_PREFIX}${key}`,
+            newValue: null,
+        })
+    );
 }
 
 /**
@@ -291,4 +332,17 @@ export function resetAllHints(): void {
     }
 
     keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+    // Clear all cache entries
+    hintCache.clear();
+
+    // Dispatch storage events for all removed keys
+    keysToRemove.forEach((key) => {
+        window.dispatchEvent(
+            new StorageEvent("storage", {
+                key,
+                newValue: null,
+            })
+        );
+    });
 }
