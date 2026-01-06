@@ -13,10 +13,6 @@ import { describe, it, expect, beforeAll } from "vitest";
 const temporalConfigured = !!process.env.TEMPORAL_ADDRESS;
 
 describe.skipIf(!temporalConfigured)("Background Response Temporal Integration", () => {
-    beforeAll(() => {
-        console.log("Temporal address:", process.env.TEMPORAL_ADDRESS);
-    });
-
     it("can import Temporal client", async () => {
         const { getTemporalClient } = await import("@/lib/temporal/client");
         expect(getTemporalClient).toBeDefined();

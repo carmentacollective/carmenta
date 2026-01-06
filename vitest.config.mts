@@ -1,6 +1,13 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import os from "os";
+
+// Dynamic worker count based on available cores
+// CI: Use all available cores (typically 2-4)
+// Local: Use 70% of cores to prevent main thread bottleneck
+const cpuCount = os.cpus().length;
+const maxWorkers = process.env.CI ? cpuCount : Math.max(2, Math.floor(cpuCount * 0.7));
 
 export default defineConfig({
     plugins: [react()],
@@ -12,10 +19,14 @@ export default defineConfig({
             "__tests__/integration/**/*.{test,spec}.{ts,tsx}",
         ],
         pool: "threads",
-        threads: {
-            singleThread: false,
-            isolate: true,
+        poolOptions: {
+            threads: {
+                singleThread: false,
+                isolate: true,
+                maxThreads: maxWorkers,
+            },
         },
+        maxWorkers,
         coverage: {
             provider: "v8",
             reporter: ["text", "json", "html"],
@@ -28,6 +39,7 @@ export default defineConfig({
                 "out/",
             ],
         },
+        slowTestThreshold: 10000,
     },
     resolve: {
         alias: {
