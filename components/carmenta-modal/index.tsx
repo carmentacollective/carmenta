@@ -10,9 +10,7 @@
  * Uses shared components from /components/chat for DRY code.
  */
 
-import { useRef, useEffect, useMemo, useState, useCallback } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, generateId } from "ai";
+import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkle } from "@phosphor-icons/react";
 
@@ -26,6 +24,7 @@ import {
     ThinkingBubble,
 } from "@/components/chat";
 import { getMessageText } from "@/components/carmenta-assistant/utils";
+import { useCarmenta } from "@/components/carmenta-assistant";
 
 /**
  * Carmenta Modal Component
@@ -35,50 +34,11 @@ import { getMessageText } from "@/components/carmenta-assistant/utils";
 export function CarmentaModal() {
     const { isOpen, close, pageContext } = useCarmentaModal();
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [input, setInput] = useState("");
 
-    // Generate stable chat ID for this modal session
-    const chatId = useMemo(() => generateId(), []);
-
-    // Create transport for DCOS endpoint
-    const transport = useMemo(
-        () =>
-            new DefaultChatTransport({
-                api: "/api/dcos",
-                prepareSendMessagesRequest(request) {
-                    return {
-                        body: {
-                            id: request.id,
-                            messages: request.messages,
-                            pageContext,
-                            channel: "web",
-                        },
-                    };
-                },
-            }),
-        [pageContext]
-    );
-
-    // Chat state connected to DCOS endpoint
-    const { messages, sendMessage, status, stop } = useChat({
-        id: chatId,
-        transport,
+    // Use shared Carmenta hook for chat state (includes error handling + Sentry)
+    const { messages, input, setInput, sendMessage, stop, isLoading } = useCarmenta({
+        pageContext,
     });
-
-    const isLoading = status === "streaming" || status === "submitted";
-
-    // Send message handler
-    const handleSendMessage = useCallback(async () => {
-        if (!input.trim() || isLoading) return;
-
-        const message = input.trim();
-        setInput("");
-
-        await sendMessage({
-            role: "user",
-            parts: [{ type: "text", text: message }],
-        });
-    }, [input, isLoading, sendMessage]);
 
     // Scroll to bottom on new messages
     useEffect(() => {
@@ -100,7 +60,6 @@ export function CarmentaModal() {
                     "max-h-[70svh] w-full max-w-2xl",
                     "flex flex-col gap-0 overflow-hidden p-0"
                 )}
-                onPointerDownOutside={(e) => e.preventDefault()}
             >
                 {/* Header */}
                 <div className="border-foreground/10 flex items-center gap-2 border-b px-4 py-3">
@@ -153,7 +112,7 @@ export function CarmentaModal() {
                     <SimpleComposer
                         value={input}
                         onChange={setInput}
-                        onSubmit={handleSendMessage}
+                        onSubmit={sendMessage}
                         onStop={stop}
                         isLoading={isLoading}
                         placeholder="Ask anything..."

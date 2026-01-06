@@ -32,12 +32,6 @@ language throughout—dissolving human-machine boundaries.
 Use `AGENTS.md` as the canonical documentation file for AI assistants in each directory.
 Symlink `CLAUDE.md → AGENTS.md` for Claude Code compatibility.
 
-```bash
-# Creating directory documentation
-echo "# Component Name" > AGENTS.md
-ln -s AGENTS.md CLAUDE.md
-```
-
 This pattern provides tool-agnostic documentation while maintaining Claude Code's
 automatic context loading via CLAUDE.md.
 

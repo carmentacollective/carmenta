@@ -14,7 +14,15 @@
  * - Mobile: Focused conversation without fighting for screen space
  */
 
-import { createContext, useContext, useState, useCallback, useMemo } from "react";
+import {
+    createContext,
+    useContext,
+    useState,
+    useCallback,
+    useMemo,
+    useRef,
+    useEffect,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkle, CaretLeft, Trash } from "@phosphor-icons/react";
 
@@ -146,6 +154,8 @@ function DesktopPanel({
     onChangesComplete?: () => void;
     placeholder: string;
 }) {
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
     const { messages, input, setInput, sendMessage, stop, isLoading, clear } =
         useCarmenta({
             pageContext,
@@ -155,6 +165,25 @@ function DesktopPanel({
     const isThinking =
         isLoading &&
         (messages.length === 0 || messages[messages.length - 1]?.role === "user");
+
+    // Scroll to bottom on new messages
+    useEffect(() => {
+        if (messages.length > 0) {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [messages.length]);
+
+    // Handle escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                onClose();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose]);
 
     return (
         <motion.aside
@@ -237,6 +266,7 @@ function DesktopPanel({
                             );
                         })}
                         {isThinking && <ThinkingBubble showAvatar={false} />}
+                        <div ref={messagesEndRef} />
                     </>
                 )}
             </div>
