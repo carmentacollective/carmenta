@@ -135,16 +135,21 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         window.dispatchEvent(new CustomEvent(USER_ENGAGED_EVENT));
     }, []);
 
-    // Wrap handleInputChange to detect first keystroke (dismisses feature tips)
+    // Wrap handleInputChange to detect first keystroke (dismisses feature tips and draft banner)
     const handleInputChangeWithEngagement = useCallback(
         (e: React.ChangeEvent<HTMLTextAreaElement>) => {
             // Emit engagement on first character typed
             if (e.target.value.length > 0) {
                 emitUserEngaged();
             }
+            // Auto-dismiss draft recovery banner when user starts typing
+            // (typing means they've accepted the recovered draft)
+            if (hasRecoveredDraft) {
+                dismissRecovery();
+            }
             handleInputChange(e);
         },
-        [handleInputChange, emitUserEngaged]
+        [handleInputChange, emitUserEngaged, hasRecoveredDraft, dismissRecovery]
     );
 
     // Voice input: track prefix text when session starts to preserve existing input
@@ -167,8 +172,13 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             const fullText = voicePrefixRef.current + transcript;
             setInput(fullText);
             emitUserEngaged();
+            // Auto-dismiss draft recovery banner when user speaks
+            // (voice input means they've accepted the recovered draft)
+            if (hasRecoveredDraft) {
+                dismissRecovery();
+            }
         },
-        [setInput, emitUserEngaged]
+        [setInput, emitUserEngaged, hasRecoveredDraft, dismissRecovery]
     );
 
     // Helper to insert text at cursor position and update input
@@ -185,6 +195,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 
             setInput(newValue);
 
+            // Auto-dismiss draft recovery banner when user pastes content
+            // (pasting means they've accepted the recovered draft)
+            if (hasRecoveredDraft) {
+                dismissRecovery();
+            }
+
             // Position cursor after inserted text
             setTimeout(() => {
                 const newPosition = start + text.length;
@@ -192,7 +208,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 inputRef.current?.focus();
             }, 0);
         },
-        [setInput]
+        [setInput, hasRecoveredDraft, dismissRecovery]
     );
 
     // Paste handler - detect images and large text from clipboard
