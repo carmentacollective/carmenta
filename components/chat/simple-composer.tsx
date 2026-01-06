@@ -22,6 +22,8 @@ export interface SimpleComposerProps {
     value: string;
     onChange: (value: string) => void;
     onSubmit: () => void;
+    /** Stop the current streaming response */
+    onStop?: () => void;
     isLoading?: boolean;
     placeholder?: string;
     disabled?: boolean;
@@ -33,6 +35,7 @@ export function SimpleComposer({
     value,
     onChange,
     onSubmit,
+    onStop,
     isLoading = false,
     placeholder = "Type a message...",
     disabled = false,
@@ -107,11 +110,11 @@ export function SimpleComposer({
             {/* Send/Stop button - matches main Composer styling */}
             <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={isLoading && onStop ? onStop : handleSubmit}
                 disabled={!canSubmit && !isLoading}
                 className={cn(
                     // Base shape matching main Composer button
-                    "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                    "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
                     // Shadow and ring
                     "shadow-xl ring-1 backdrop-blur-xl transition-all",
                     // Hover/focus states
