@@ -16,56 +16,344 @@ The LLM landscape changes weekly. New models release, old ones deprecate, perfor
 characteristics shift. This command addresses static configuration maintenance. For
 runtime discovery, see `knowledge/components/model-discovery/spec.md`.
 
-## Invocation
+This manual process remains valuable for:
+
+- Deep capability analysis that APIs do not expose
+- Routing heuristics based on benchmark nuance
+- Values-aligned decisions (Anthropic preference)
+- Qualitative assessments from community experience
+
+## Avoiding Hallucination
+
+Read @.cursor/rules/trust-and-decision-making.mdc first.
+
+Model names, versions, and capabilities are exactly the kind of specifics where LLMs
+hallucinate. Your parametric knowledge is almost certainly out of date.
+
+- Never trust your training data for model names, versions, or capabilities
+- Verify every model name against current provider documentation
+- Get exact model IDs from OpenRouter's actual model list
+- Cite your source for every claim - "I believe" is not acceptable
+- When uncertain, say so - don't pattern-match to plausible-sounding names
+
+If you cannot verify a model exists from a primary source, do not include it in the
+rubric. A smaller accurate rubric beats a comprehensive hallucinated one.
+
+## Your Mission
+
+You are updating TWO rubric files:
+
+1. **`knowledge/model-rubric.md`** — Slim routing version (~800-1K tokens) used by the
+   Concierge for quick routing decisions. Keep this minimal and focused.
+
+2. **`knowledge/model-rubric-detailed.md`** — Full reference with research basis,
+   detailed model profiles, fallback chains, and update history.
+
+### Why Two Files?
+
+The slim rubric runs on every routing call — it's injected into the Concierge prompt
+that decides which model handles each request. Every token in that file costs latency
+and money at scale. The detailed rubric is reference material for humans and research
+updates.
+
+### Slim Rubric: Token Efficiency Rules
+
+Read @.cursor/rules/prompt-engineering.mdc for full context.
+
+The slim rubric (~800-1K tokens) must be ruthlessly efficient:
+
+**Content to include:**
+
+- User hints (highest priority)
+- Speed routing table (compact)
+- Primary models (one line each: name, context, speed, cost, use cases)
+- Attachment routing (bullet list)
+- Sensitivity routing (one paragraph)
+- Temperature/reasoning (brief bullets)
+- Fallback default
+
+**Token efficiency techniques:**
+
+- No redundant phrasing ("The model is..." → just state the facts)
+- No markdown formatting for decoration — only when it aids parsing (tables, bullets)
+- Combine related information (don't repeat model names across sections)
+- Use abbreviations where clear (t/s, 1M context, $3/$15)
+- One table instead of multiple sections when data overlaps
+- No examples in the slim rubric — the Concierge prompt has examples separately
+- No research citations — those go in the detailed version
+- No update log or version history
+
+**What NOT to include (goes in detailed version):**
+
+- Research basis and source citations
+- Detailed model profiles with benchmark numbers
+- Extended prose explaining decision flows
+- Fallback chain documentation
+- Update log with version history
+- "Why" explanations — just state the rules
+
+Both rubrics must be:
+
+- Current: Reflect the latest models and their actual capabilities
+- Accurate: Based on real benchmark data, not assumptions
+- Verified: Every model name confirmed against primary sources
+- Practical: Guide routing decisions that users will feel as "just works"
+- Speed-aware: Include tokens/second for every model, critical for quick answers
+- Values-aligned: Bias toward Anthropic for their heart-centered approach
+
+Also update `lib/model-config.ts` with the `tokensPerSecond` field for each model. This
+TypeScript config is used by the UI and API.
+
+## Intelligence Gathering
+
+Research each of these sources thoroughly. Use web search and fetch to get current data.
+
+### Tier 1: Authoritative Rankings
+
+LMSYS Chatbot Arena (https://lmarena.ai/)
+
+- Overall ELO rankings
+- Category-specific rankings: Coding, Math, Hard Prompts, Creative Writing
+- Look at the leaderboard, not just top models
+
+Artificial Analysis (https://artificialanalysis.ai/)
+
+- Quality index scores
+- Speed benchmarks (tokens/second) - get output t/s for every model. This is the primary
+  speed metric for routing.
+- Pricing comparisons
+- Context window data
+- Their methodology: https://artificialanalysis.ai/methodology/performance-benchmarking
+- Tests run 8x/day, measures real-world API performance, tokens normalized to GPT-4
+  tokenizer
+
+Speed data is essential. Users who want quick answers need to be routed to fast models.
+A 151 t/s model delivers a 100-token response in 0.7 seconds. A 40 t/s model takes 2.5
+seconds. This difference is visceral.
+
+### Tier 2: Provider Official Sources
+
+For each major provider, find their current model lineup:
+
+Anthropic (https://anthropic.com, https://docs.anthropic.com)
+
+- Claude model family
+- Capabilities (vision, PDFs, tools)
+- Context windows
+- Pricing
+
+OpenAI (https://openai.com, https://platform.openai.com)
+
+- GPT-4 family, GPT-4o variants
+- o1/o3 reasoning models
+- Capabilities and pricing
+
+Google (https://ai.google.dev, https://deepmind.google)
+
+- Gemini family (2.0, 1.5, Flash, Pro)
+- Unique capabilities (audio, video, massive context)
+- Pricing
+
+xAI (https://x.ai)
+
+- Grok models
+- Capabilities and positioning
+
+### Tier 3: Ecosystem Intelligence
+
+OpenRouter API (https://openrouter.ai/api/v1/models)
+
+Use OpenRouter as your primary source for model identifiers. The API returns a large
+JSON file with rich metadata. Download and parse it:
 
 ```bash
-/update-model-rubric
+# Download and save the models list
+curl -s https://openrouter.ai/api/v1/models > /tmp/openrouter-models.json
+
+# Extract Anthropic models with their IDs, pricing, and context
+cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("anthropic/")) | {id, context_length, pricing}'
+
+# Extract OpenAI models
+cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("openai/")) | {id, context_length, pricing}'
+
+# Extract Google models
+cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("google/")) | {id, context_length, pricing}'
+
+# Extract xAI models
+cat /tmp/openrouter-models.json | jq '.data[] | select(.id | startswith("x-ai/")) | {id, context_length, pricing}'
 ```
 
-## Execution
+The OpenRouter API provides extensive metadata per model:
 
-### Research Phase
+- `id`: Exact model identifier (use this in rubric)
+- `context_length`: Maximum context window
+- `pricing`: Input/output costs per token
+- `architecture`: Tokenizer, instruction type, modalities
+- `input_modalities`: What inputs the model accepts (text, image, audio, video)
+- `output_modalities`: What outputs it produces
+- `supported_parameters`: Which API parameters it accepts (tools, temperature, etc.)
+- `top_provider`: Performance data from the fastest provider
 
-Search for current LLM information:
+The model IDs in the rubric should match OpenRouter's API exactly since that's what
+Carmenta uses to route requests. Do not guess or pattern-match model names.
 
-- Latest model releases from OpenAI, Anthropic, Google, Meta, Mistral
-- Model capability benchmarks and comparisons
-- Pricing changes
-- Deprecation notices
+OpenRouter also offers dynamic variants that can inform routing:
 
-Focus on production models available via APIs, not research papers or unreleased models.
+- `:nitro` - Routes to fastest provider (throughput-optimized)
+- `:floor` - Routes to cheapest provider
+- `:thinking` - Enables reasoning by default
+- `:online` - Adds web search to any model
 
-### Analysis
+OpenRouter Website (https://openrouter.ai/models)
 
-Compare findings against current configuration in `lib/model-config.ts`:
+- Popularity/usage trends
+- Provider information
+- Fallback compatibility
 
-- Are our model IDs current?
-- Have capabilities changed?
-- Are there better models for specific use cases?
-- Has pricing shifted decision boundaries?
+Hugging Face Open LLM Leaderboard (for context on open models)
 
-### Update Model Config
+- Only if open models are competitive for our use cases
 
-Update `lib/model-config.ts` with findings:
+### Tier 4: Specialized Benchmarks
 
-- Add new models
-- Deprecate old models
-- Update capability scores
-- Adjust routing rubrics
+Find current benchmark results for task-type specific evaluation:
 
-### Test
+- Code: BigCodeBench, HumanEval, SWE-Bench
+- Reasoning: GPQA, MATH, ARC-Challenge
+- Conversation: MT-Bench, Arena ELO
+- Creative: Arena Creative Writing category
 
-Run model selection locally to verify routing still works:
+## Rubric Structure
 
-```bash
-pnpm test lib/model-config.test.ts
-```
+The rubric should be structured markdown that an LLM (the Concierge) will read to make
+routing decisions. It's a briefing document, not a lookup table.
 
-### Report
+Required sections:
 
-Summarize what changed and why. Include:
+### Decision Context
 
-- New models added
-- Deprecated models removed
-- Routing logic changes
-- Cost implications
+Prose guidance for the Concierge on how to think about model selection. Include:
+
+- Task types and what matters for each
+- Speed-first routing - when users signal speed, route to fastest capable model
+- Attachment handling
+- The Anthropic values-alignment bias
+- Instruction to explain reasoning
+
+### Speed-First Routing
+
+A dedicated section with:
+
+- Speed ranking table (all models sorted by tokens/second)
+- Speed tier definitions (Fast: 100+ t/s, Moderate: 60-99 t/s, Deliberate: <60 t/s)
+- Speed signals to recognize ("quick", "fast", "briefly", etc.)
+- Decision flow for speed-first routing
+- Guidance on disabling reasoning for speed
+
+### Task Type Guidance
+
+For each task type (CODE, REASONING, CONVERSATION, CREATIVE, QUICK, EMOTIONAL,
+TASK_EXEC):
+
+- Best model choice with reasoning
+- Fallback options
+- Notes on what matters for this task type
+
+### Model Profiles
+
+For each model in the rubric:
+
+- Provider (and values alignment note for Anthropic)
+- Context window
+- Speed (tokens/sec) - include for every model
+- Cost (input/output per million tokens)
+- Attachment support (images, PDFs, audio, video)
+- Tool support
+- Strengths and weaknesses
+- When to use / when not to use
+
+### Attachment Routing
+
+Table mapping attachment types to best models:
+
+- PDFs (Claude excels here)
+- Images
+- Audio (Gemini)
+- Video (Gemini)
+- Code files
+
+### Quick Reference Table
+
+Combined reference with Context, Speed, and Best Use Case for each model. This is the
+at-a-glance routing table the Concierge uses for fast decisions.
+
+### Fallback Chains
+
+For each task type, the OpenRouter fallback chain: `primary → fallback1 → fallback2`
+
+### Update Log
+
+Version, date, what changed, sources used.
+
+## Process
+
+- Read current rubrics: `knowledge/model-rubric.md` and
+  `knowledge/model-rubric-detailed.md`
+- Research all sources listed above
+- Compare findings to current rubrics
+- Draft updates for BOTH files
+- Present to user for approval
+- Apply changes if approved
+
+## Output
+
+After research, present:
+
+- Summary of findings: What's new, what changed, what's stable
+- Proposed slim rubric: Token-efficient routing version
+- Proposed detailed rubric: Full reference with research citations
+- Change rationale: Why each significant change was made
+- Sources: Links to data that informed decisions
+
+Wait for user approval before writing the files.
+
+## Important Notes
+
+- This should take 3-5 minutes of thorough research
+- Prefer primary sources over summaries
+- When benchmark data conflicts, note the discrepancy
+- Anthropic models get benefit of the doubt when rankings are close
+- Tool calling is table stakes - all models in rubric should support it
+- Speed (tokens/second) is needed for every model - users need quick answers
+- Focus on output tokens/second for speed, not TTFT (time to first token)
+- Cost is tracked for awareness, not optimized aggressively
+- Update THREE files:
+  - `knowledge/model-rubric.md` (slim routing version)
+  - `knowledge/model-rubric-detailed.md` (full reference)
+  - `lib/model-config.ts` (TypeScript config)
+
+## Relationship to Dynamic Discovery
+
+This manual update process complements future dynamic discovery (see
+`knowledge/components/model-discovery/spec.md`). Static rubrics remain valuable for:
+
+- Routing heuristics requiring human judgment (sensitivity routing, values alignment)
+- Benchmark interpretation that APIs cannot provide
+- Fallback configuration when discovery fails
+- Curated subset from the 500+ models available
+
+Dynamic discovery will eventually provide:
+
+- Model availability checks
+- Real-time pricing updates
+- Capability verification
+- Deprecation detection
+
+The rubric captures judgment. Discovery captures facts. Both are needed.
+
+## Example Invocation
+
+User runs `/update-model-rubric`
+
+You respond with research findings and proposed rubrics (both slim and detailed), then
+wait for approval before writing to both files.
