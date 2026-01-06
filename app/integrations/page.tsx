@@ -28,23 +28,31 @@ import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
 import { useOAuthFlowRecovery } from "@/lib/hooks/use-oauth-flow-recovery";
 import { analytics } from "@/lib/analytics/events";
-import {
-    CarmentaLayout,
-    CarmentaToggle,
-    useCarmentaLayout,
-} from "@/components/carmenta-assistant";
+import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
+
+/**
+ * Page context for Carmenta
+ */
+const PAGE_CONTEXT =
+    "We're on the integrations page together. We can connect new services, test existing connections, or troubleshoot issues.";
 
 /**
  * IntegrationsContent - Component that uses useSearchParams()
  * Extracted to allow Suspense boundary wrapping
  */
-function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
+function IntegrationsContent({
+    refreshKey,
+    onChangesComplete,
+}: {
+    refreshKey: number;
+    onChangesComplete: () => void;
+}) {
     const searchParams = useSearchParams();
     const [services, setServices] = useState<GroupedService[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Carmenta layout state
-    const carmenta = useCarmentaLayout();
+    // Carmenta sheet state
+    const [carmentaOpen, setCarmentaOpen] = useState(false);
 
     // OAuth flow recovery - detects abandoned OAuth attempts
     const {
@@ -462,8 +470,8 @@ function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
 
                     {/* Ask Carmenta toggle */}
                     <CarmentaToggle
-                        isOpen={carmenta.isOpen}
-                        onClick={carmenta.toggle}
+                        isOpen={carmentaOpen}
+                        onClick={() => setCarmentaOpen(!carmentaOpen)}
                         label="Configure together"
                     />
                 </div>
@@ -625,18 +633,21 @@ function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
                 }}
                 onSubmit={handleConnectSubmit}
             />
+
+            {/* Carmenta Sheet for DCOS assistance */}
+            <CarmentaSheet
+                open={carmentaOpen}
+                onOpenChange={setCarmentaOpen}
+                pageContext={PAGE_CONTEXT}
+                onChangesComplete={onChangesComplete}
+                placeholder="What should we connect?"
+            />
         </StandardPageLayout>
     );
 }
 
 /**
- * Page context for Carmenta
- */
-const PAGE_CONTEXT =
-    "We're on the integrations page together. We can connect new services, test existing connections, or troubleshoot issues.";
-
-/**
- * Wrapper that provides CarmentaLayout context
+ * Wrapper that handles refresh after Carmenta makes changes
  */
 function IntegrationsWithCarmenta() {
     const [refreshKey, setRefreshKey] = useState(0);
@@ -646,13 +657,10 @@ function IntegrationsWithCarmenta() {
     }, []);
 
     return (
-        <CarmentaLayout
-            pageContext={PAGE_CONTEXT}
+        <IntegrationsContent
+            refreshKey={refreshKey}
             onChangesComplete={handleChangesComplete}
-            placeholder="What should we connect?"
-        >
-            <IntegrationsContent refreshKey={refreshKey} />
-        </CarmentaLayout>
+        />
     );
 }
 
