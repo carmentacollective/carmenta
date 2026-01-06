@@ -21,6 +21,11 @@ import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
 import { LabelToggle } from "@/components/ui/label-toggle";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import {
+    CarmentaLayout,
+    CarmentaToggle,
+    useCarmentaLayout,
+} from "@/components/carmenta-assistant";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -68,9 +73,14 @@ interface Notification {
 }
 
 /**
- * Content component with all the UI logic
+ * Page context for Carmenta
  */
-function AITeamContent() {
+const PAGE_CONTEXT = `User is on the AI Team page. They manage automated agents that run on schedules. They can ask to update agent configurations and prompts, run jobs manually, enable/disable automations, configure SMS notifications, or troubleshoot issues with their agents. Available automations and recent activity are shown on this page.`;
+
+/**
+ * Content component with all the UI logic (inside CarmentaLayout)
+ */
+function AITeamContent({ refreshKey }: { refreshKey: number }) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [automations, setAutomations] = useState<Automation[]>([]);
@@ -80,6 +90,9 @@ function AITeamContent() {
     const [togglingJobs, setTogglingJobs] = useState<Set<string>>(new Set());
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [viewingActivity, setViewingActivity] = useState<ActivityItem | null>(null);
+
+    // Carmenta state from layout context
+    const carmenta = useCarmentaLayout();
 
     // Handle success states from redirects
     useEffect(() => {
@@ -111,95 +124,98 @@ function AITeamContent() {
         }
     }, [successMessage]);
 
-    const loadData = useCallback(async () => {
-        try {
-            const response = await fetch("/api/jobs");
-            if (!response.ok) throw new Error("Failed to fetch jobs");
-
-            const data = await response.json();
-
-            // Transform jobs to automations
-            const automationList: Automation[] = data.jobs.map(
-                (job: {
-                    id: string;
-                    encodedId: string;
-                    slug: string;
-                    name: string;
-                    prompt: string;
-                    scheduleCron: string;
-                    isActive: boolean;
-                    lastRunAt: string | null;
-                    nextRunAt: string | null;
-                }) => ({
-                    id: job.id,
-                    encodedId: job.encodedId,
-                    slug: job.slug,
-                    name: job.name,
-                    prompt: job.prompt,
-                    scheduleCron: job.scheduleCron,
-                    isActive: job.isActive,
-                    lastRunAt: job.lastRunAt ? new Date(job.lastRunAt) : null,
-                    nextRunAt: job.nextRunAt ? new Date(job.nextRunAt) : null,
-                })
-            );
-
-            // Extract recent activities from job runs
-            const activityList: ActivityItem[] = [];
-            const notificationList: Notification[] = [];
-
-            for (const job of data.jobs) {
-                for (const run of job.runs ?? []) {
-                    activityList.push({
-                        id: run.id,
-                        jobId: job.id,
-                        jobName: job.name,
-                        jobSlug: job.slug,
-                        jobEncodedId: job.encodedId,
-                        summary: run.summary ?? "No summary available",
-                        status: run.status,
-                        completedAt: run.completedAt ? new Date(run.completedAt) : null,
-                        notificationCount: run.notificationsSent ?? 0,
-                        activeStreamId: run.activeStreamId ?? null,
-                    });
-                }
-                for (const notification of job.notifications ?? []) {
-                    notificationList.push({
-                        id: notification.id,
-                        title: notification.title,
-                        body: notification.body,
-                        priority: notification.priority,
-                        jobName: job.name,
-                        createdAt: new Date(notification.createdAt),
-                        readAt: notification.readAt
-                            ? new Date(notification.readAt)
-                            : null,
-                    });
-                }
-            }
-
-            // Sort by most recent
-            activityList.sort((a, b) => {
-                const aTime = a.completedAt?.getTime() ?? 0;
-                const bTime = b.completedAt?.getTime() ?? 0;
-                return bTime - aTime;
-            });
-
-            setAutomations(automationList);
-            setActivities(activityList.slice(0, 10));
-            setNotifications(notificationList.filter((n) => !n.readAt));
-        } catch (error) {
-            logger.error({ error }, "Failed to load AI team data");
-            Sentry.captureException(error, {
-                tags: { component: "ai-team-page", action: "load_data" },
-            });
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
+    // Load data effect
     useEffect(() => {
-        loadData();
-    }, [loadData]);
+        const fetchData = async () => {
+            try {
+                const response = await fetch("/api/jobs");
+                if (!response.ok) throw new Error("Failed to fetch jobs");
+
+                const data = await response.json();
+
+                // Transform jobs to automations
+                const automationList: Automation[] = data.jobs.map(
+                    (job: {
+                        id: string;
+                        encodedId: string;
+                        slug: string;
+                        name: string;
+                        prompt: string;
+                        scheduleCron: string;
+                        isActive: boolean;
+                        lastRunAt: string | null;
+                        nextRunAt: string | null;
+                    }) => ({
+                        id: job.id,
+                        encodedId: job.encodedId,
+                        slug: job.slug,
+                        name: job.name,
+                        prompt: job.prompt,
+                        scheduleCron: job.scheduleCron,
+                        isActive: job.isActive,
+                        lastRunAt: job.lastRunAt ? new Date(job.lastRunAt) : null,
+                        nextRunAt: job.nextRunAt ? new Date(job.nextRunAt) : null,
+                    })
+                );
+
+                // Extract recent activities from job runs
+                const activityList: ActivityItem[] = [];
+                const notificationList: Notification[] = [];
+
+                for (const job of data.jobs) {
+                    for (const run of job.runs ?? []) {
+                        activityList.push({
+                            id: run.id,
+                            jobId: job.id,
+                            jobName: job.name,
+                            jobSlug: job.slug,
+                            jobEncodedId: job.encodedId,
+                            summary: run.summary ?? "No summary available",
+                            status: run.status,
+                            completedAt: run.completedAt
+                                ? new Date(run.completedAt)
+                                : null,
+                            notificationCount: run.notificationsSent ?? 0,
+                            activeStreamId: run.activeStreamId ?? null,
+                        });
+                    }
+                    for (const notification of job.notifications ?? []) {
+                        notificationList.push({
+                            id: notification.id,
+                            title: notification.title,
+                            body: notification.body,
+                            priority: notification.priority,
+                            jobName: job.name,
+                            createdAt: new Date(notification.createdAt),
+                            readAt: notification.readAt
+                                ? new Date(notification.readAt)
+                                : null,
+                        });
+                    }
+                }
+
+                // Sort by most recent
+                activityList.sort((a, b) => {
+                    const aTime = a.completedAt?.getTime() ?? 0;
+                    const bTime = b.completedAt?.getTime() ?? 0;
+                    return bTime - aTime;
+                });
+
+                setAutomations(automationList);
+                setActivities(activityList.slice(0, 10));
+                setNotifications(notificationList.filter((n) => !n.readAt));
+            } catch (error) {
+                logger.error({ error }, "Failed to load AI team data");
+                Sentry.captureException(error, {
+                    tags: { component: "ai-team-page", action: "load_data" },
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [refreshKey]);
 
     const handleToggleAutomation = async (automation: Automation) => {
         const newActiveState = !automation.isActive;
@@ -294,13 +310,20 @@ function AITeamContent() {
                             </p>
                         </div>
                     </div>
-                    <Link
-                        href="/ai-team/hire"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-colors"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Hire
-                    </Link>
+                    <div className="flex items-center gap-3">
+                        <CarmentaToggle
+                            isOpen={carmenta.isOpen}
+                            onClick={carmenta.toggle}
+                            label="Ask Carmenta"
+                        />
+                        <Link
+                            href="/ai-team/hire"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-colors"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Hire
+                        </Link>
+                    </div>
                 </div>
             </section>
 
@@ -506,6 +529,28 @@ function AITeamContent() {
 }
 
 /**
+ * Wrapper that provides CarmentaLayout context
+ */
+function AITeamWithCarmenta() {
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const handleChangesComplete = useCallback(() => {
+        // Increment key to trigger data refresh in AITeamContent
+        setRefreshKey((prev) => prev + 1);
+    }, []);
+
+    return (
+        <CarmentaLayout
+            pageContext={PAGE_CONTEXT}
+            onChangesComplete={handleChangesComplete}
+            placeholder="Update an agent, run a job, configure notifications..."
+        >
+            <AITeamContent refreshKey={refreshKey} />
+        </CarmentaLayout>
+    );
+}
+
+/**
  * AITeamPage - Main export with Suspense boundary
  */
 export default function AITeamPage() {
@@ -524,7 +569,7 @@ export default function AITeamPage() {
                 </StandardPageLayout>
             }
         >
-            <AITeamContent />
+            <AITeamWithCarmenta />
         </Suspense>
     );
 }

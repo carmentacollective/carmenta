@@ -27,6 +27,14 @@ language throughout—dissolving human-machine boundaries.
 
 100x Framework: 1x (clarity/systems), 10x (AI team), 100x (vision execution partner).
 
+## Directory Documentation
+
+Use `AGENTS.md` as the canonical documentation file for AI assistants in each directory.
+Symlink `CLAUDE.md → AGENTS.md` for Claude Code compatibility.
+
+This pattern provides tool-agnostic documentation while maintaining Claude Code's
+automatic context loading via CLAUDE.md.
+
 ## Project Structure
 
 AI-First Development: `knowledge/` IS the product specification. Code is generated from
