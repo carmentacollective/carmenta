@@ -21,7 +21,6 @@
 import { useRef, useEffect } from "react";
 import { Sparkle, Trash } from "@phosphor-icons/react";
 
-import { cn } from "@/lib/utils";
 import {
     Sheet,
     SheetContent,

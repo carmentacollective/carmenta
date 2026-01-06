@@ -56,17 +56,25 @@ export function KnowledgeViewer({
 
     // Use initialFolders directly - parent component (KBPageContent) handles refresh via router.refresh()
     // Local state is only needed for optimistic updates during direct editing
-    const [localFolderUpdates, setLocalFolderUpdates] = useState<
-        Map<string, Partial<KBDocument>>
-    >(new Map());
+    // Key the updates by the initialFolders identity so they reset when server data changes
+    const [localFolderUpdates, setLocalFolderUpdates] = useState<{
+        key: typeof initialFolders;
+        updates: Map<string, Partial<KBDocument>>;
+    }>({ key: initialFolders, updates: new Map() });
 
     // Merge server data with local optimistic updates
+    // If initialFolders changed (server refresh), discard old updates
     const folders = useMemo(() => {
-        if (localFolderUpdates.size === 0) return initialFolders;
+        const currentUpdates =
+            localFolderUpdates.key === initialFolders
+                ? localFolderUpdates.updates
+                : new Map<string, Partial<KBDocument>>();
+
+        if (currentUpdates.size === 0) return initialFolders;
         return initialFolders.map((folder) => ({
             ...folder,
             documents: folder.documents.map((doc) => {
-                const update = localFolderUpdates.get(doc.path);
+                const update = currentUpdates.get(doc.path);
                 return update ? { ...doc, ...update } : doc;
             }),
         }));
@@ -114,13 +122,16 @@ export function KnowledgeViewer({
     }, [mobileSearchQuery, mobileView, folders, currentFolder]);
 
     // Handle document update (optimistic local update while server syncs)
-    const handleDocumentUpdate = useCallback((path: string, updatedDoc: KBDocument) => {
-        setLocalFolderUpdates((prev) => {
-            const next = new Map(prev);
-            next.set(path, updatedDoc);
-            return next;
-        });
-    }, []);
+    const handleDocumentUpdate = useCallback(
+        (path: string, updatedDoc: KBDocument) => {
+            setLocalFolderUpdates((prev) => {
+                const next = new Map(prev.updates);
+                next.set(path, updatedDoc);
+                return { key: initialFolders, updates: next };
+            });
+        },
+        [initialFolders]
+    );
 
     // Handle desktop sidebar selection
     const handleDesktopDocSelect = useCallback(

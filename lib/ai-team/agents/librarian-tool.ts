@@ -662,6 +662,10 @@ interface MoveData {
 
 /**
  * Execute move action - reads old doc, creates at new path, deletes old
+ *
+ * Note: This operation is not atomic. If the delete fails after create succeeds,
+ * the document will exist at both paths. This is a rare edge case since delete
+ * failures are uncommon once create succeeds (both are user-scoped).
  */
 async function executeMove(
     params: { fromPath: string; toPath: string },

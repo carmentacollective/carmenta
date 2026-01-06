@@ -110,7 +110,8 @@ export function useCarmenta(options: UseCarmentaOptions = {}): UseCarmentaReturn
             logger.debug(
                 {
                     hasToolCalls,
-                    partTypes: message.parts?.map((p: { type?: string }) => p.type),
+                    partTypes:
+                        message.parts?.map((p: { type?: string }) => p.type) ?? [],
                     finishReason,
                     pageContext,
                 },
