@@ -172,8 +172,13 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             const fullText = voicePrefixRef.current + transcript;
             setInput(fullText);
             emitUserEngaged();
+            // Auto-dismiss draft recovery banner when user speaks
+            // (voice input means they've accepted the recovered draft)
+            if (hasRecoveredDraft) {
+                dismissRecovery();
+            }
         },
-        [setInput, emitUserEngaged]
+        [setInput, emitUserEngaged, hasRecoveredDraft, dismissRecovery]
     );
 
     // Helper to insert text at cursor position and update input
