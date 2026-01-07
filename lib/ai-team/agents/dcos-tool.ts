@@ -263,8 +263,10 @@ async function executeGet(
             });
         } else if (params.name) {
             // Look up by name (case-insensitive partial match)
-            // Escape SQL wildcards to prevent unexpected pattern matching
-            const escapedName = params.name.replace(/[%_]/g, "\\$&");
+            // Escape SQL wildcards and backslashes for LIKE pattern safety
+            const escapedName = params.name
+                .replace(/\\/g, "\\\\")
+                .replace(/[%_]/g, "\\$&");
             job = await db.query.scheduledJobs.findFirst({
                 where: and(
                     ilike(scheduledJobs.name, `%${escapedName}%`),
