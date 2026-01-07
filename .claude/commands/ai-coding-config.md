@@ -1,9 +1,8 @@
 ---
 # prettier-ignore
-description: Install helpful AI assistants, commands, and coding rules for your editor (Claude Code and Cursor)
+description: "Set up or update AI coding configurations - interactive setup for Claude Code, Cursor, and other AI coding tools"
 argument-hint: [update]
-version: 4.1.0
-model: inherit
+version: 4.1.1
 ---
 
 # AI Coding Configuration

@@ -1,7 +1,8 @@
 ---
-description: Verify a fix actually works before claiming success
+# prettier-ignore
+description: "Verify a fix actually works before claiming success - runs tests, checks live behavior, confirms fixes work from user perspective"
 argument-hint: [description of what to verify]
-version: 1.0.0
+version: 1.0.1
 ---
 
 # Verify Fix Command

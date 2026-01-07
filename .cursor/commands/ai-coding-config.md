@@ -1,7 +1,8 @@
 ---
-description: Set up or update AI coding configurations
+# prettier-ignore
+description: "Set up or update AI coding configurations - interactive setup for Claude Code, Cursor, and other AI coding tools"
 argument-hint: [update]
-version: 4.1.0
+version: 4.1.1
 ---
 
 # AI Coding Configuration

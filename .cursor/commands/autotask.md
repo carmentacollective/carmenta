@@ -1,6 +1,7 @@
 ---
-description: "Execute development task autonomously from description to PR-ready"
-version: 1.2.0
+# prettier-ignore
+description: "Execute development task autonomously from description to PR-ready - handles implementation, testing, and git workflow without supervision"
+version: 1.2.1
 ---
 
 # /autotask - Autonomous Task Execution
@@ -102,10 +103,11 @@ Adapt validation intensity to task risk:
 Default (trust git hooks): Make changes, commit, let hooks validate, fix only if hooks
 fail.
 
-Targeted validation: Run specific tests for changed code, use code-reviewer for
-architecture review if patterns change.
+Targeted validation: Run specific tests for changed code, use /verify-fix to confirm the
+fix works as expected, use code-reviewer for architecture review if patterns change.
 
-Full validation: Comprehensive test suite, multiple agent reviews, security scanning.
+Full validation: /verify-fix + comprehensive test suite, multiple agent reviews,
+security scanning.
 
 Principle: Validation intensity should match task risk. Git hooks handle formatting,
 linting, and tests. Add extra validation only when risk justifies it.
@@ -125,7 +127,7 @@ Match review depth to task risk. Simple changes need a quick pass; architectural
 warrant thorough review. </pre-pr-review>
 
 <create-pr>
-Deliver a well-documented pull request with commits following rules/git-commit-message.mdc.
+Deliver a well-documented pull request with commits following `.cursor/rules/git-commit-message.mdc`.
 
 PR description must include:
 

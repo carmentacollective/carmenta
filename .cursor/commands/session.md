@@ -1,7 +1,8 @@
 ---
-description: "Save and resume development sessions across conversations"
+# prettier-ignore
+description: "Save and resume development sessions across conversations - preserves context, decisions, and progress for continuity"
 argument-hint: "save|resume|list [name]"
-version: 1.0.0
+version: 1.0.1
 ---
 
 <objective>

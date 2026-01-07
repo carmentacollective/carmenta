@@ -1,8 +1,9 @@
 ---
-description: Triage and address PR comments from code review bots intelligently
+# prettier-ignore
+description: "Triage and address PR comments from code review bots - analyzes feedback, prioritizes issues, fixes valid concerns, and declines incorrect suggestions"
 argument-hint: [pr-number]
 model: sonnet
-version: 1.5.0
+version: 1.7.1
 ---
 
 # Address PR Comments
@@ -27,6 +28,26 @@ this specific case, not just that the issue is "minor" or "not blocking." </obje
 <pr-detection>
 Use provided PR number, or detect from current branch. Exit if no PR exists.
 </pr-detection>
+
+<scale-with-complexity>
+Match thoroughness to the PR's actual complexity, not line count. A 500-line generated
+migration is trivial. A 20-line auth change needs careful attention.
+
+Assess complexity by:
+
+- Conceptual scope: Single focused change vs. multiple interrelated concerns
+- Risk/blast radius: Does it touch auth, payments, data migrations, core abstractions?
+- Novelty: Well-trodden patterns vs. new architectural territory
+- Cross-cutting impact: Isolated change vs. affects multiple systems
+
+Simple changes (rename, config tweak, obvious bug fix): Process comments quickly, skip
+productive-waiting, get to completion fast.
+
+Complex changes (new patterns, security-sensitive, architectural): Take time to
+understand context, explore documentation impacts, consider creating follow-up issues.
+
+The goal is always getting the PR merged. Don't let thoroughness become an excuse for
+delay on straightforward changes. </scale-with-complexity>
 
 <conflict-resolution>
 Check if the PR has merge conflicts with its base branch before processing comments.
@@ -64,37 +85,95 @@ Claude Code Review posts here. Username is `claude[bot]`. Only address the most 
 Claude review - older ones reflect outdated code state.
 
 Line-level review comments (pulls endpoint):
-`gh api repos/{owner}/{repo}/pulls/{pr}/comments` Cursor Bugbot posts here as inline
-comments on specific code lines. Username is `cursor[bot]`. Address all Cursor
-comments - each flags a distinct location.
+`gh api repos/{owner}/{repo}/pulls/{pr}/comments` Multiple bots post inline comments on
+specific code lines. Address all line-level bot comments - each flags a distinct
+location.
+
+Supported bots and their usernames:
+
+- `claude[bot]` - Claude Code Review (PR-level)
+- `cursor[bot]` - Cursor Bugbot (line-level)
+- `chatgpt-codex-connector[bot]` - OpenAI Codex (line-level)
+- `greptile[bot]` - Greptile (line-level or PR-level)
+
+New bots may appear - any username containing `[bot]` that posts code review comments
+should be processed. Check the comment body structure to determine if it's a code
+review.
 
 You can also use:
 
 - `gh pr view {number} --comments` for PR-level comments
 - `gh api repos/{owner}/{repo}/pulls/{pr}/reviews` for review status
 
-Identify bot comments by author username. Human comments require different handling -
-flag them for user attention rather than auto-addressing. </comment-sources>
+Identify bot comments by author username containing `[bot]`. Human comments require
+different handling - flag them for user attention rather than auto-addressing.
+</comment-sources>
 
 <execution-model>
 Process bot feedback incrementally as each bot completes. When one bot finishes, address
 its comments immediately while others are still running. Claude Code Review typically
-completes in 1-2 minutes. Cursor Bugbot takes 3-10 minutes. Process fast bots first
-rather than waiting for slow ones.
+completes in 1-2 minutes. Cursor Bugbot and Codex take 3-10 minutes. Greptile can take
+up to 15 minutes. Process fast bots first rather than waiting for slow ones.
 
 Poll check status with `gh pr checks --json name,state,bucket`. Review bots include
-claude-review, Cursor Bugbot, and greptile.
+claude-review, Cursor Bugbot, chatgpt-codex-connector, and greptile.
 
-When bots are still pending, sleep adaptively based on which bots remain. If only Claude
-is pending, sleep 30-60 seconds. If Cursor Bugbot is pending, sleep 2-3 minutes. Check
-status after each sleep and process any newly-completed bots before sleeping again.
+Maximize async throughput: while waiting for slow bots, work on other productive tasks
+in parallel. Only block when you need bot results to continue. See productive-waiting
+for ideas.
+
+Poll bot status every 60-90 seconds while waiting. Check between productive-waiting
+activities rather than sleeping idle. If all remaining bots are slow (Greptile, Codex),
+extend to 2-3 minute intervals to reduce API calls.
 
 After pushing fixes, re-check for merge conflicts (the base branch may have advanced
 while you were working) and return to polling since bots will re-analyze. Exit when all
-review bots have completed and no new actionable feedback remains.
+review bots have completed and no new actionable feedback remains. </execution-model>
 
-Use polling with adaptive sleep intervals to check bot status rather than watch mode.
-</execution-model>
+<productive-waiting>
+Don't just sleep while waiting for bots. Use wait time productively:
+
+Codebase and documentation:
+
+- Check if the PR changes affect documentation elsewhere (README, API docs, comments
+  that reference changed behavior). If updates are needed, offer to make them.
+- Look for interesting patterns or clever solutions in the changed code worth noting
+
+Industry research and fun facts:
+
+Use the PR context to surface relevant external knowledge. Search for interesting facts
+about the technologies, patterns, or domains touched by this PR:
+
+- "This PR adds WebSocket support - did you know Discord handles 5M concurrent WebSocket
+  connections per gateway server?"
+- "You're implementing rate limiting - Stripe's API uses a token bucket algorithm that
+  allows bursts up to 100 requests"
+- "This notification system pattern is similar to how Slack's architecture evolved from
+  polling to push"
+
+Share discoveries as you find them. Waiting time is learning time.
+
+Product thinking (channel your inner AI product manager):
+
+- Brainstorm product ideas inspired by the code you're seeing
+- Spot opportunities the PR enables ("Now that we have this notification system, we
+  could build...")
+- Notice UX improvements or feature extensions worth considering
+- Think about what users might want next given this new capability
+
+Follow-up tracking:
+
+- Draft GitHub issues for follow-up work discovered during review
+- Note technical debt or refactoring opportunities
+
+Share interesting discoveries - "While waiting for Greptile, I noticed this PR removes
+the last usage of the old auth pattern. Want me to create an issue to clean up the
+deprecated code?" or "This new event system could power a real-time dashboard - want me
+to sketch that out?"
+
+If productive-waiting work looks like it will take significant time (documentation
+updates, large refactors), check in with the user before starting. The goal is getting
+the PR merged, not scope creep. </productive-waiting>
 
 <narration>
 While working through the phases, share interesting findings:
@@ -148,25 +227,30 @@ Add reactions via API:
 <addressing-comments>
 Response methods differ by comment type:
 
-PR-level comments (Claude bot): These live in the issues endpoint. Reply with a new
-comment on the PR. Group responses logically - one comment addressing multiple points is
-fine.
+PR-level comments (issues endpoint): Reply with a new comment on the PR. Group responses
+logically - one comment addressing multiple points is fine. Claude bot posts here.
 
-Line-level comments (Cursor bot): These support threaded replies. Reply directly to the
-comment thread:
+Line-level comments (pulls endpoint): These support threaded replies. Reply directly to
+the comment thread:
 `gh api repos/{owner}/{repo}/pulls/{pr}/comments/{comment_id}/replies -f body="..."`
 This keeps the conversation in context. The reply appears under the original comment,
-making it easy for anyone reviewing to see the resolution inline.
+making it easy for anyone reviewing to see the resolution inline. Cursor, Codex, and
+Greptile bots post here.
 
-For each comment:
+For each bot comment, regardless of which bot posted it:
 
-1. Add appropriate reaction first (training signal)
+1. Add appropriate reaction (training signal) - this is always required
 2. Make the fix if addressing, commit the change
-3. Reply acknowledging the change or explaining the decline
+3. Reply only when it adds value
 
-For declined items, reply with a brief, professional explanation referencing project
-standards. The thumbs-down reaction signals disagreement; the reply explains why.
-</addressing-comments>
+Reactions are often sufficient on their own. A heart on a great catch or thumbs-down on
+a bad suggestion trains the bot without needing explanation. Reply when:
+
+- Declining and the reason isn't obvious from context
+- The fix differs from what the bot suggested
+- You want to credit a particularly good catch
+
+Keep replies brief. The reaction is the primary signal. </addressing-comments>
 
 <human-comments>
 Human reviewer comments get flagged for user attention, not auto-handled. Present
@@ -181,6 +265,47 @@ Display prominently:
 - PR URL (most important - user may have multiple sessions)
 - PR title
 - Summary of what was addressed vs declined
+- Links to any follow-up GitHub issues created during the review
+- Any human comments that still need attention
+
+If you created GitHub issues for follow-up work, list them with brief descriptions so
+the user can prioritize them.
 
 Celebrate that the PR is ready to merge. A well-triaged PR is a beautiful thing.
 </completion>
+
+<retrospective>
+After completion, step back and look at the PR holistically. The bot comments and fixes
+reveal patterns about how to improve initial code quality. Ask: what could have caught
+these issues before the PR was created?
+
+Consider improvements across the stack:
+
+Tooling and automation:
+
+- Would a pre-commit hook have caught formatting or linting issues?
+- Could a local test runner have found the bugs before push?
+- Are there IDE plugins that would flag these patterns during development?
+
+Prompting and AI assistance:
+
+- If AI generated this code, what prompt improvements would produce cleaner output?
+- Would a specialized agent or skill have avoided these mistakes?
+- Should the codebase have rules files that guide AI toward better patterns?
+
+Review process:
+
+- Are the right review bots enabled for this type of change?
+- Would a different bot have caught issues earlier?
+- Should CI run additional checks before review bots trigger?
+
+Codebase patterns:
+
+- Do these issues suggest missing abstractions or shared utilities?
+- Would better documentation have prevented confusion?
+- Are there defensive patterns that should be codified as project conventions?
+
+Share your observations thoughtfully. Frame suggestions as opportunities, not criticism.
+The goal is continuous improvement - each PR teaches us something about making the next
+one better. If you identify concrete improvements, offer to create GitHub issues or
+draft the configuration changes. </retrospective>

@@ -1,6 +1,7 @@
 ---
-description: "Generate or update llms.txt to help LLMs understand your site"
-version: 1.0.0
+# prettier-ignore
+description: "Generate or update llms.txt to help LLMs understand your site - standardized file for AI assistants to navigate documentation"
+version: 1.0.1
 ---
 
 # Generate llms.txt
@@ -131,7 +132,7 @@ specialized agents. Plugins maintain single source of truth through symlinks.
 
 - [Creating Plugins](docs/creating-plugins.md): Build your own plugins
 - [Bootstrap Script](scripts/bootstrap.sh): Automated setup
-- [Git Workflow](rules/git-interaction.mdc): Version control standards
+- [Git Workflow](.cursor/rules/git-interaction.mdc): Version control standards
 
 ## Reference
 
@@ -142,7 +143,7 @@ specialized agents. Plugins maintain single source of truth through symlinks.
 ## Optional
 
 - [Contributing](CONTRIBUTING.md): How to contribute
-- [Heart-Centered AI](rules/heart-centered-ai-philosophy.mdc): Philosophy
+- [Heart-Centered AI](.cursor/rules/heart-centered-ai-philosophy.mdc): Philosophy
 ```
 
 Django API project:
