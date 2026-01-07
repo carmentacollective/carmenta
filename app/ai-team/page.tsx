@@ -316,7 +316,7 @@ function AITeamContent({
                         <CarmentaToggle
                             isOpen={carmentaOpen}
                             onClick={() => setCarmentaOpen(!carmentaOpen)}
-                            label="Ask Carmenta"
+                            label="With Carmenta"
                         />
                         <Link
                             href="/ai-team/hire"
@@ -533,7 +533,6 @@ function AITeamContent({
                 onOpenChange={setCarmentaOpen}
                 pageContext={PAGE_CONTEXT}
                 onChangesComplete={onChangesComplete}
-                placeholder="Update an agent, run a job, configure notifications..."
             />
         </StandardPageLayout>
     );
