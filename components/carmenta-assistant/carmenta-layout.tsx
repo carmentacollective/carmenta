@@ -25,10 +25,12 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SparkleIcon, CaretLeftIcon, Trash } from "@phosphor-icons/react";
+import * as Sentry from "@sentry/nextjs";
 
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCarmentaModal } from "@/hooks/use-carmenta-modal";
+import { logger } from "@/lib/client-logger";
 import {
     ConnectionProvider,
     ConnectRuntimeProvider,
@@ -103,14 +105,38 @@ export function CarmentaLayout({
 }: CarmentaLayoutProps) {
     const [isOpen, setIsOpen] = useState(false);
     const isDesktop = useMediaQuery("(min-width: 768px)");
-    const { open: openModal } = useCarmentaModal();
+
+    let openModal: (() => void) | undefined;
+    try {
+        const modalContext = useCarmentaModal();
+        openModal = modalContext.open;
+    } catch (error) {
+        // CarmentaModalProvider is missing - log error to Sentry and create fallback
+        logger.error(
+            { error, component: "CarmentaLayout" },
+            "❌ CarmentaModalProvider not found - modal will be unavailable"
+        );
+        Sentry.captureException(error, {
+            tags: { component: "carmenta-layout", action: "modal_context" },
+            level: "error",
+        });
+        // Fallback: empty function to prevent crashes
+        openModal = () => {
+            logger.warn(
+                { pageContext },
+                "⚠️ Tried to open Carmenta modal but CarmentaModalProvider is not available"
+            );
+        };
+    }
 
     const open = useCallback(() => {
         if (isDesktop) {
             setIsOpen(true);
         } else {
             // On mobile, use the global modal instead
-            openModal();
+            if (openModal) {
+                openModal();
+            }
         }
     }, [isDesktop, openModal]);
 
@@ -122,7 +148,9 @@ export function CarmentaLayout({
         if (isDesktop) {
             setIsOpen((prev) => !prev);
         } else {
-            openModal();
+            if (openModal) {
+                openModal();
+            }
         }
     }, [isDesktop, openModal]);
 
