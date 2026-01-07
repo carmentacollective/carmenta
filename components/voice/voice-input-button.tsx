@@ -184,7 +184,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                 disabled={disabled}
                 className={cn(
                     "group relative flex shrink-0 items-center justify-center rounded-full",
-                    variant === "primary" ? "h-11 w-11" : "h-10 w-10 sm:h-12 sm:w-12",
+                    variant === "primary" ? "h-11 w-11" : "h-10 w-10 @md:h-12 @md:w-12",
                     buttonStyle,
                     showError && "text-amber-500",
                     disabled && "pointer-events-none opacity-50",
