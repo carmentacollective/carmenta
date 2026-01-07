@@ -79,6 +79,7 @@ export default async function KnowledgeBasePage() {
                 name: "about",
                 path: "about",
                 documents: [identityDoc],
+                children: [],
             });
         }
     }
@@ -106,6 +107,7 @@ export default async function KnowledgeBasePage() {
             name: "memories",
             path: "memories",
             documents: knowledgeDocuments.sort((a, b) => a.name.localeCompare(b.name)),
+            children: [],
         });
     } else {
         allFolders.push({
@@ -125,6 +127,7 @@ export default async function KnowledgeBasePage() {
                     updatedAt: new Date(),
                 },
             ],
+            children: [],
         });
     }
 

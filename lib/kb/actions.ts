@@ -70,6 +70,8 @@ export interface KBFolder {
     name: string;
     path: string;
     documents: KBDocument[];
+    /** Nested subfolders for hierarchical display */
+    children: KBFolder[];
 }
 
 // ============================================================================
@@ -77,44 +79,108 @@ export interface KBFolder {
 // ============================================================================
 
 /**
- * Get all KB documents for the current user, organized by folder
+ * Get all KB documents for the current user, organized as a tree
+ *
+ * Builds a hierarchical folder structure from dot-notation paths:
+ * - profile.identity → Profile folder → Identity document
+ * - profile.people.sarah → Profile folder → People subfolder → Sarah document
  */
 export async function getKBFolders(): Promise<KBFolder[]> {
     const userId = await getDbUserId();
 
-    const allDocs = await kb.listAll(userId);
+    try {
+        const allDocs = await kb.listAll(userId);
 
-    // Group documents by their parent folder
-    const folderMap = new Map<string, KBDocument[]>();
+        // Build tree structure from flat document list
+        const rootFolders = new Map<string, KBFolder>();
 
-    for (const doc of allDocs) {
-        const parentPath = kb.getParentPath(doc.path) ?? doc.path;
-        const folderDocs = folderMap.get(parentPath) ?? [];
-        folderDocs.push({
-            id: doc.id,
-            path: doc.path,
-            name: doc.name,
-            content: doc.content,
-            description: doc.description,
-            promptLabel: doc.promptLabel,
-            editable: doc.editable,
-            updatedAt: doc.updatedAt,
+        for (const doc of allDocs) {
+            // Skip malformed documents
+            if (!doc.path || doc.path.trim() === "") {
+                logger.warn(
+                    { docId: doc.id, docName: doc.name },
+                    "KB document has empty path, skipping"
+                );
+                continue;
+            }
+
+            const segments = doc.path.split(".");
+            const rootName = segments[0];
+
+            // Get or create root folder
+            if (!rootFolders.has(rootName)) {
+                rootFolders.set(rootName, {
+                    id: rootName,
+                    name: rootName,
+                    path: rootName,
+                    documents: [],
+                    children: [],
+                });
+            }
+            const rootFolder = rootFolders.get(rootName)!;
+
+            const kbDoc: KBDocument = {
+                id: doc.id,
+                path: doc.path,
+                name: doc.name,
+                content: doc.content,
+                description: doc.description,
+                promptLabel: doc.promptLabel,
+                editable: doc.editable,
+                updatedAt: doc.updatedAt,
+            };
+
+            if (segments.length === 1) {
+                // Single segment path (rare) - treat as document in root
+                rootFolder.documents.push(kbDoc);
+            } else if (segments.length === 2) {
+                // Direct child: profile.identity → add to root folder
+                rootFolder.documents.push(kbDoc);
+            } else {
+                // 3+ segments: navigate/create full folder path, add document at leaf
+                // profile.people.family.sarah → profile > people > family > sarah (doc)
+                let currentFolder = rootFolder;
+                for (let i = 1; i < segments.length - 1; i++) {
+                    const subfolderPath = segments.slice(0, i + 1).join(".");
+                    let subfolder = currentFolder.children.find(
+                        (c) => c.path === subfolderPath
+                    );
+                    if (!subfolder) {
+                        subfolder = {
+                            id: subfolderPath,
+                            name: segments[i],
+                            path: subfolderPath,
+                            documents: [],
+                            children: [],
+                        };
+                        currentFolder.children.push(subfolder);
+                    }
+                    currentFolder = subfolder;
+                }
+                currentFolder.documents.push(kbDoc);
+            }
+        }
+
+        // Sort everything alphabetically
+        const sortFolder = (folder: KBFolder): KBFolder => ({
+            ...folder,
+            documents: folder.documents.sort((a, b) => a.name.localeCompare(b.name)),
+            children: folder.children
+                .map(sortFolder)
+                .sort((a, b) => a.name.localeCompare(b.name)),
         });
-        folderMap.set(parentPath, folderDocs);
-    }
 
-    // Convert to array of folders
-    const folders: KBFolder[] = [];
-    for (const [path, documents] of folderMap) {
-        folders.push({
-            id: path,
-            name: kb.getNameFromPath(path),
-            path,
-            documents: documents.sort((a, b) => a.name.localeCompare(b.name)),
+        return Array.from(rootFolders.values())
+            .map(sortFolder)
+            .sort((a, b) => a.name.localeCompare(b.name));
+    } catch (error) {
+        logger.error({ error, userId }, "Failed to fetch KB folders");
+        Sentry.captureException(error, {
+            tags: { action: "kb_get_folders", component: "kb-actions" },
+            extra: { userId },
         });
+        throw error;
     }
-
-    return folders.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**

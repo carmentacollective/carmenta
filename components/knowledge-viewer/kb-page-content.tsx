@@ -3,8 +3,8 @@
 /**
  * Knowledge Base Page Content
  *
- * Client component wrapper that includes both the LibrarianTaskBar
- * and KnowledgeViewer, enabling refresh when the librarian makes changes.
+ * Client component wrapper that includes the KnowledgeViewer and CarmentaSheet,
+ * enabling refresh when Carmenta makes changes.
  */
 
 import { useCallback, useState } from "react";
@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 import { SparkleIcon } from "@phosphor-icons/react";
 
 import { KnowledgeViewer } from "./index";
-import { LibrarianTaskBar } from "./librarian-task-bar";
 import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
 import type { KBFolder } from "@/lib/kb/actions";
 
@@ -31,16 +30,11 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
 
     return (
         <>
-            {/* Librarian Task Bar + Carmenta Button */}
-            <div className="mb-4 flex items-start gap-3">
-                <LibrarianTaskBar
-                    onChangesComplete={handleChangesComplete}
-                    className="flex-1"
-                />
+            {/* Header with Carmenta button */}
+            <div className="mb-4 flex items-center justify-end">
                 <CarmentaToggle
                     isOpen={sheetOpen}
                     onClick={() => setSheetOpen(!sheetOpen)}
-                    label="With Carmenta"
                 />
             </div>
 

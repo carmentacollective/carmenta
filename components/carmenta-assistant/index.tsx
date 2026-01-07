@@ -40,7 +40,7 @@
  * ```
  */
 
-import { SparkleIcon } from "@phosphor-icons/react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 // Export components
@@ -58,7 +58,7 @@ export type { CarmentaMode, CarmentaPanelProps, CarmentaLayoutProps } from "./ty
 /**
  * Toggle button for Carmenta panel
  *
- * Renders a button to open/close the Carmenta panel.
+ * Renders a button to open/close the Carmenta panel with the Carmenta logo.
  * Use with CarmentaPanel/CarmentaLayout and their hooks.
  */
 interface CarmentaToggleProps {
@@ -66,7 +66,7 @@ interface CarmentaToggleProps {
     isOpen: boolean;
     /** Toggle callback */
     onClick: () => void;
-    /** Optional label to show next to icon */
+    /** Label to show next to logo (defaults to "Let Carmenta Help") */
     label?: string;
     /** Additional CSS classes */
     className?: string;
@@ -75,7 +75,7 @@ interface CarmentaToggleProps {
 export function CarmentaToggle({
     isOpen,
     onClick,
-    label,
+    label = "Let Carmenta Help",
     className,
 }: CarmentaToggleProps) {
     return (
@@ -91,14 +91,20 @@ export function CarmentaToggle({
                 isOpen && "bg-primary/10 border-primary/20 text-primary",
                 className
             )}
-            aria-label={isOpen ? "Close Carmenta" : "Open Carmenta"}
+            aria-label={isOpen ? "Close Carmenta" : "Let Carmenta Help"}
             aria-expanded={isOpen}
         >
-            <SparkleIcon
-                className={cn("h-5 w-5", isOpen && "text-primary")}
-                weight={isOpen ? "fill" : "duotone"}
+            <Image
+                src="/logos/icon-transparent.png"
+                alt=""
+                width={20}
+                height={20}
+                className={cn(
+                    "h-5 w-5 transition-opacity",
+                    isOpen ? "opacity-100" : "opacity-70"
+                )}
             />
-            {label && <span className="text-sm font-medium">{label}</span>}
+            <span className="text-sm font-medium">{label}</span>
         </button>
     );
 }

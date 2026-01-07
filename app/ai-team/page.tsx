@@ -316,7 +316,6 @@ function AITeamContent({
                         <CarmentaToggle
                             isOpen={carmentaOpen}
                             onClick={() => setCarmentaOpen(!carmentaOpen)}
-                            label="With Carmenta"
                         />
                         <Link
                             href="/ai-team/hire"
