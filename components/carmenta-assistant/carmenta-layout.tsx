@@ -39,8 +39,9 @@ import { HolographicBackground } from "@/components/ui/holographic-background";
 import { SiteHeader } from "@/components/site-header";
 import { Footer } from "@/components/footer";
 
-/** Panel width in pixels */
-const PANEL_WIDTH = 400;
+/** Panel widths in pixels - responsive sizing */
+const PANEL_WIDTH_MD = 320; // Tablets (768-1279px)
+const PANEL_WIDTH_XL = 400; // Large desktops (1280px+)
 
 /**
  * Context for Carmenta layout state
@@ -162,15 +163,17 @@ export function CarmentaLayout({
                             )}
                         </AnimatePresence>
 
-                        {/* Main content - constrained width, no centering */}
+                        {/* Main content - constrained width, centered */}
                         <main
                             className={cn(
                                 "w-full px-6 sm:px-8 lg:px-10",
                                 maxWidthClasses[maxWidth],
+                                "mx-auto", // Center content on large viewports
+                                contentClassName,
                                 className
                             )}
                         >
-                            <div className={contentClassName}>{children}</div>
+                            {children}
                         </main>
                     </div>
                 </CarmentaLayoutContext.Provider>
@@ -190,6 +193,9 @@ export function CarmentaLayout({
  */
 function DesktopPanel({ onClose }: { onClose: () => void }) {
     const { messages, setMessages, stop } = useChatContext();
+    const isXLarge = useMediaQuery("(min-width: 1280px)");
+
+    const panelWidth = isXLarge ? PANEL_WIDTH_XL : PANEL_WIDTH_MD;
 
     const handleClear = () => {
         stop();
@@ -216,9 +222,9 @@ function DesktopPanel({ onClose }: { onClose: () => void }) {
                 "bg-background/60 backdrop-blur-xl",
                 "border-foreground/[0.08] border-r"
             )}
-            style={{ width: PANEL_WIDTH, minWidth: PANEL_WIDTH }}
+            style={{ width: panelWidth, minWidth: panelWidth }}
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: PANEL_WIDTH, opacity: 1 }}
+            animate={{ width: panelWidth, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{
                 type: "spring",
