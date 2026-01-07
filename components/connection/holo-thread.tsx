@@ -1554,7 +1554,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
         <div className="my-3 flex w-full justify-end @lg:my-5">
             <div className="group relative max-w-full @lg:max-w-[80%]">
                 {/* User avatar - positioned outside bubble, hidden on mobile */}
-                <div className="absolute top-2 -right-10 hidden sm:block">
+                <div className="absolute top-2 -right-10 hidden @md:block">
                     <UserAvatar />
                 </div>
 
@@ -1764,7 +1764,7 @@ export function AssistantMessage({
                 {showConcierge && hasSelected && hasLlmOutput && (
                     <div className="relative mt-2">
                         {/* Model avatar - positioned outside bubble, hidden on mobile */}
-                        <div className="absolute top-2 -left-10 hidden sm:block">
+                        <div className="absolute top-2 -left-10 hidden @md:block">
                             <ModelAvatar modelId={concierge?.modelId} />
                         </div>
 
@@ -1900,7 +1900,7 @@ export function AssistantMessage({
             {!showConcierge && hasContent && (
                 <div className="group relative max-w-full @lg:max-w-[85%]">
                     {/* Carmenta avatar - positioned outside bubble, hidden on mobile */}
-                    <div className="absolute top-2 -left-10 hidden sm:block">
+                    <div className="absolute top-2 -left-10 hidden @md:block">
                         <CarmentaAvatar size="sm" state="idle" />
                     </div>
 
@@ -2063,7 +2063,7 @@ function PendingAssistantMessage({
                 {hasSelected && (
                     <div className="relative mt-2">
                         {/* Model avatar positioned outside bubble */}
-                        <div className="absolute top-2 -left-10 hidden sm:block">
+                        <div className="absolute top-2 -left-10 hidden @md:block">
                             <ModelAvatar modelId={concierge?.modelId} />
                         </div>
                         <motion.div

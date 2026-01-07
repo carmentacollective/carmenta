@@ -205,7 +205,7 @@ export function CarmentaPanel({
                         </div>
 
                         {/* Input */}
-                        <div className="border-foreground/[0.08] border-t p-3">
+                        <div className="border-foreground/[0.08] @container border-t p-3">
                             <SimpleComposer
                                 value={input}
                                 onChange={setInput}
