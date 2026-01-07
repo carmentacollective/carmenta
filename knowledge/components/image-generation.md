@@ -4,6 +4,62 @@ Create images from conversation. Text prompts become visual output—logos, illu
 diagrams, concept art, social graphics. Carmenta routes to the right image model,
 handles iteration, and persists results as artifacts.
 
+## Architecture Decisions
+
+✅ **Use Vercel AI Gateway `imageModel()`** (decided 2025-01)
+
+The AI Gateway (`@ai-sdk/gateway`) supports image generation via `gateway.imageModel()`.
+This uses our existing `AI_GATEWAY_API_KEY`—no additional API keys needed. Benefits:
+
+- Single API key for LLMs AND image generation
+- Unified billing through Vercel
+- Built-in retry/failover support
+- Consistent with our existing `lib/ai/gateway.ts` pattern
+
+Available image models via Gateway:
+
+- `google/imagen-4.0-generate` - Fast, good quality
+- `google/imagen-4.0-ultra-generate` - Higher quality
+- `bfl/flux-pro-1.1` - Artistic, high-quality
+- `bfl/flux-kontext-pro` - Character consistency
+- `google/gemini-3-pro-image` - Nano Banana Pro (multimodal)
+
+✅ **Primary Model: Imagen 4.0** (decided 2025-01)
+
+Google's Imagen 4.0 via Gateway is our default for speed and reliability. For tasks
+requiring text rendering or character consistency, we route to Gemini 3 Pro Image (Nano
+Banana Pro) or FLUX Kontext.
+
+**Nano Banana Pro (Gemini 3 Pro Image)** is available for advanced use cases:
+
+- State-of-the-art text rendering in images (industry-leading)
+- Character consistency across multiple images (up to 5 characters)
+- Multi-step editing with reasoning ("thinking" mode)
+- 4K output resolution support
+- Competitive pricing (~$0.134/image standard, ~$0.24/4K)
+
+✅ **Tool-based Architecture** (decided 2025-01)
+
+Image generation is a built-in tool in `lib/tools/built-in.ts`, not a service adapter.
+This matches our pattern for capabilities that are conversation-native (like calculate,
+webSearch, giphy). The tool returns generated image data that renders inline.
+
+✅ **Async Generation with Progress** (decided 2025-01)
+
+Image generation takes 5-30 seconds. The Vercel AI Gateway's `generateImage` API is
+fire-and-wait (no streaming progress events), so we use simulated progress indicators
+following the deepResearch pattern:
+
+- Rotating tips that provide value during the wait
+- Elapsed time counter (appears after 5s)
+- Animated indeterminate progress bar
+- Prompt context displayed during generation
+
+**Research finding**: Competitor analysis (LibreChat, LobeChat, Open WebUI) confirmed
+this is industry standard. LibreChat uses sophisticated canvas-based "PixelCard"
+animations to make waits feel shorter, but all progress is simulated - the API provides
+no real-time progress data.
+
 ## Why This Exists
 
 AI image generation has become essential creative infrastructure. People generate
@@ -128,21 +184,63 @@ from first attempt to final result.
 
 Default: automatic routing based on request analysis.
 
-Available models (initial set, expands over time):
+**Primary Model (2025)**:
 
-- **DALL-E 3**: Strong prompt adherence, good for specific compositions
-- **Midjourney**: Distinctive aesthetic, strong for artistic output
-- **Stable Diffusion XL**: Open model, customizable, good baseline
-- **Flux**: Emerging capability, evaluate and integrate as appropriate
+- **Gemini 3 Pro Image (Nano Banana Pro)**: Our default. Best-in-class text rendering,
+  character consistency, 4K output, reasoning-enabled editing. Available via Vercel AI
+  SDK's Google provider.
 
-Model selection factors:
+**Alternative Models** (via Vercel AI SDK providers):
 
-- Task type (photorealism, illustration, diagram, logo)
-- Speed requirements (fast preview vs high quality)
-- Style consistency (matching previous generations)
+- **GPT Image 1 (OpenAI)**: Strong prompt adherence, good for specific compositions.
+  Available via `@ai-sdk/openai`.
+- **FLUX.2 (Black Forest Labs)**: High-quality diffusion model, excellent for artistic
+  output. Available via `@ai-sdk/replicate` or `@ai-sdk/fal`.
+- **Imagen 4 (Google)**: Fast generation, good baseline. Available via `@ai-sdk/google`.
+
+**Model Routing Factors**:
+
+- Task type (photorealism → Nano Banana Pro, artistic → FLUX, fast preview → Imagen)
+- Text rendering needs (Nano Banana Pro excels here)
+- Speed requirements (Imagen fastest, Nano Banana Pro slower but higher quality)
 - Cost optimization (route appropriately based on user tier)
 
-Users can specify model directly: "use Midjourney for this" overrides routing.
+Users can specify model directly: "use FLUX for this" overrides routing.
+
+### API Integration
+
+We use Vercel AI Gateway with `generateImage`:
+
+```typescript
+import { generateImage } from "ai";
+import { getGatewayClient } from "@/lib/ai/gateway";
+
+const gateway = getGatewayClient();
+
+// Default: Imagen 4.0 (fast, reliable)
+const { image } = await generateImage({
+  model: gateway.imageModel("google/imagen-4.0-generate"),
+  prompt: userPrompt,
+  aspectRatio: "16:9",
+});
+
+// For text-heavy images: Nano Banana Pro
+const { image: textImage } = await generateImage({
+  model: gateway.imageModel("google/gemini-3-pro-image"),
+  prompt: "Logo with text: 'Morning Ritual Coffee'",
+  aspectRatio: "1:1",
+});
+
+// For artistic work: FLUX
+const { image: artImage } = await generateImage({
+  model: gateway.imageModel("bfl/flux-pro-1.1"),
+  prompt: "Watercolor sunset over mountains",
+  aspectRatio: "16:9",
+});
+```
+
+The response includes `image.uint8Array` (raw bytes) or `image.base64` for
+storage/display. No additional API keys needed—uses existing `AI_GATEWAY_API_KEY`.
 
 ### Prompt Engineering
 
@@ -291,34 +389,118 @@ technical complexity.
 **Collaborative generation**: Multiple users iterating on same image? Version control
 implications?
 
-## Competitor Landscape
+## Competitor Landscape (Updated 2025-01)
 
-### ChatGPT with DALL-E
+### ChatGPT with GPT Image 1
 
-Tight integration within conversation. Generates well, iterates poorly. No persistent
-storage—images live in conversation context only. Limited customization. Sets baseline
-expectation for "AI that can make images."
+Tight integration within conversation. GPT Image 1 (April 2025) brought major
+improvements in instruction following and text rendering. Still limited iteration UX.
+Images live in conversation context with some persistence. Sets baseline expectation.
+
+### Gemini with Nano Banana Pro
+
+Google's December 2025 release of Gemini 3 Pro Image set a new bar: 4K output, character
+consistency, reasoning-enabled editing. Available in Gemini app, Google AI Studio, and
+via API. Strong for text-in-image tasks. Our primary model.
 
 ### Midjourney
 
-Best aesthetic quality. Discord-based interface is limiting. Strong community creates
-style vocabulary. Subscription model works. Shows what's possible for artistic output.
+Best aesthetic quality for artistic output. Now has web UI (moved beyond Discord).
+Strong community creates style vocabulary. V7 (2025) improved prompt adherence.
+Subscription model proven.
+
+### FLUX.2 (Black Forest Labs)
+
+Open-weight diffusion model with excellent quality. Available via multiple providers
+(Replicate, fal.ai, Cloudflare Workers AI). Good for artistic/creative work. Supports
+multi-reference image inputs for consistency.
 
 ### Adobe Firefly
 
 Enterprise-focused. Training data provenance matters for commercial use. Integration
-with Creative Cloud valuable. Shows commercial viability concerns.
+with Creative Cloud valuable. Firefly 3 (2025) competitive on quality.
 
-### Canva AI
+### LibreChat / LobeChat / Open WebUI
 
-Design context, not chat context. Images generated within specific layouts. Different
-use case but demonstrates image generation as feature within broader creative tool.
+Open-source competitors support image generation via tools. LibreChat uses DALL-E and
+FLUX. LobeChat supports DALL-E 3 and Pollinations. Open WebUI supports DALL-E,
+AUTOMATIC1111, ComfyUI. None have the iteration loop UX we're building.
+
+**Progress/Loading UX Research (2025-01)**:
+
+**LibreChat** (most sophisticated):
+
+- Canvas-based "PixelCard" animation - radial pixel reveal from center outward
+- Quality-based timing estimates: Low (10s), Medium (20s), High (50s) with ±30% jitter
+- Multi-layer progress: PixelCard + shimmer text + progress circle
+- Files: `PixelCard.tsx`, `OpenAIImageGen.tsx`, `ProgressText.tsx`
+
+**LobeChat**:
+
+- State-based rendering (LoadingState/SuccessState/ErrorState components)
+- Elapsed time counter during generation
+- Skeleton grid for initial page load
+- Direct swap from loading to image (no progressive reveal)
+
+**Open WebUI**:
+
+- Simple multi-circle spinner during generation
+- No skeleton/placeholder - direct image render
+- Fire-and-wait API pattern
+
+**Key insight**: All competitors simulate progress because image generation APIs provide
+no real-time streaming events. LibreChat's sophisticated animations make waits _feel_
+shorter but don't show actual generation progress.
 
 ### Opportunity
 
-No unified interface does it all. ChatGPT has generation but poor persistence and
-iteration. Midjourney has quality but terrible UX. Firefly has commercial clarity but
-limited capability. Canva has context but is design-specific.
+No unified interface does it all well. ChatGPT has generation but limited iteration.
+Midjourney has quality but is a separate app. Google has the best model but basic UX.
+Open-source projects have tools but no polished iteration experience.
 
 Carmenta integrates generation into the broader AI interface—with memory, voice,
-artifacts, and AG-UI. The image becomes part of the conversation, not a side tool.
+artifacts, AG-UI, and a true iteration loop. The image becomes part of the conversation,
+refineable through natural dialogue.
+
+## Implementation Milestones
+
+### Phase 1: Basic Generation (MVP) ✅
+
+- [x] Add `createImage` tool to `lib/tools/built-in.ts`
+- [x] Add tool config to `lib/tools/tool-config.ts` with delight messages
+- [x] Use existing Gateway (`gateway.imageModel()`) - no new API keys needed
+- [x] Return base64 image data for inline display
+- [x] Add image rendering component (`components/tools/integrations/create-image.tsx`)
+- [x] Premium loading experience with rotating tips, elapsed timer, progress animation
+
+PR #671 implements Phase 1 with polished UX.
+
+### Phase 2: Enhanced UX
+
+- [x] Progress indicator during generation (rotating tips + elapsed timer pattern)
+- [ ] Aspect ratio selection from prompt analysis
+- [ ] Resolution options (1K/2K/4K based on user tier)
+- [x] Error handling with user-friendly messages
+- [ ] Optional: Canvas-based "PixelCard" animation (LibreChat pattern) for visual polish
+
+### Phase 3: Iteration Loop
+
+- [ ] "Try again" regeneration with different seed
+- [ ] Targeted refinement ("make it warmer", "remove the person")
+- [ ] Reference previous generations in conversation
+- [ ] Version history tracking
+
+### Phase 4: Multi-Model Routing
+
+- [ ] Add FLUX via Replicate/fal provider
+- [ ] Add GPT Image 1 via OpenAI provider
+- [ ] Implement routing logic based on task type
+- [ ] User model override via prompt
+
+## Sources
+
+- [Nano Banana Pro API Setup Guide](https://www.aifreeapi.com/en/posts/nano-banana-pro-api-setup)
+- [Vercel AI SDK generateImage](https://github.com/vercel/ai/blob/main/content/docs/07-reference/01-ai-sdk-core/10-generate-image.mdx)
+- [Google Gemini Image Generation Docs](https://ai.google.dev/gemini-api/docs/image-generation)
+- [OpenRouter Image Generation](https://openrouter.ai/docs/guides/overview/multimodal/image-generation)
+- [Black Forest Labs FLUX](https://docs.bfl.ml/quick_start/introduction)

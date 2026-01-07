@@ -24,6 +24,7 @@ import {
     UsersIcon,
     PlugIcon,
     ArchiveIcon,
+    ImageSquareIcon,
     type Icon,
 } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
@@ -469,6 +470,28 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["Nailed it", "Chef's kiss", "This is the one"],
             fast: ["Quick meme!", "Done"],
+        },
+    },
+    createImage: {
+        displayName: "Image Generation",
+        icon: ImageSquareIcon,
+        getDescription: (args) => {
+            const prompt = args.prompt as string | undefined;
+            return prompt ? truncate(prompt, 40) : undefined;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Creating something beautiful...",
+            completed: "Image ready",
+            error: "We couldn't create that image",
+        },
+        delightMessages: {
+            completed: [
+                "Look at this",
+                "Here's what we made",
+                "Vision realized",
+                "Created",
+            ],
         },
     },
     gmail: {

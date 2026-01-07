@@ -1,13 +1,69 @@
-import { tool } from "ai";
+import { generateImage, tool } from "ai";
 import { all, create } from "mathjs";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
+import type { ReasoningConfig } from "@/lib/concierge/types";
 import { env } from "@/lib/env";
+import { getGatewayClient } from "@/lib/ai/gateway";
 import { httpClient } from "@/lib/http-client";
 import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { searchKnowledge } from "@/lib/kb/search";
+
+/**
+ * Image model tiers for quality-based routing.
+ * Selected based on reasoning level - higher reasoning = higher quality images.
+ */
+const IMAGE_MODELS = {
+    fast: "google/imagen-4.0-fast-generate", // $0.02/image - quick drafts
+    standard: "google/imagen-4.0-generate", // $0.04/image - balanced
+    quality: "google/gemini-3-pro-image", // $0.134/image - Nano Banana Pro
+} as const;
+
+type ImageModelTier = keyof typeof IMAGE_MODELS;
+
+/**
+ * Select image model based on reasoning configuration.
+ * Higher reasoning effort = higher quality image model.
+ */
+function selectImageModel(reasoning?: ReasoningConfig): {
+    modelId: string;
+    tier: ImageModelTier;
+} {
+    // No reasoning or disabled = fast model
+    if (!reasoning?.enabled) {
+        return { modelId: IMAGE_MODELS.fast, tier: "fast" };
+    }
+
+    // Effort-based models (OpenAI, xAI)
+    if (reasoning.effort === "high") {
+        return { modelId: IMAGE_MODELS.quality, tier: "quality" };
+    }
+    if (reasoning.effort === "low" || reasoning.effort === "none") {
+        return { modelId: IMAGE_MODELS.fast, tier: "fast" };
+    }
+
+    // Token-budget models (Anthropic)
+    if (reasoning.maxTokens !== undefined) {
+        if (reasoning.maxTokens >= 16000) {
+            return { modelId: IMAGE_MODELS.quality, tier: "quality" };
+        }
+        if (reasoning.maxTokens < 4000) {
+            return { modelId: IMAGE_MODELS.fast, tier: "fast" };
+        }
+    }
+
+    // Default: standard quality
+    return { modelId: IMAGE_MODELS.standard, tier: "standard" };
+}
+
+/**
+ * Context passed to tools that need reasoning awareness.
+ */
+export interface ToolContext {
+    reasoning?: ReasoningConfig;
+}
 
 const GIPHY_API_BASE = "https://api.giphy.com/v1/gifs";
 
@@ -498,6 +554,173 @@ export const builtInTools = {
         },
     }),
 };
+
+/**
+ * Create the createImage tool with reasoning-aware model selection.
+ * Higher reasoning effort = higher quality (and more expensive) image model.
+ *
+ * Model tiers:
+ * - fast ($0.02): Imagen 4 Fast - quick drafts, low reasoning
+ * - standard ($0.04): Imagen 4 - balanced quality/cost
+ * - quality ($0.134): Nano Banana Pro - best quality, high reasoning
+ */
+export function createImageTool(context?: ToolContext) {
+    return tool({
+        description:
+            "Generate an AI image from a text description. Use this when the user wants to create custom images, logos, illustrations, or visualize ideas. Takes 5-30 seconds to generate.",
+        inputSchema: z.object({
+            prompt: z
+                .string()
+                .min(1, "Prompt cannot be empty")
+                .max(4000, "Prompt is too long")
+                .transform((s) => s.trim())
+                .refine((s) => s.length > 0, "Prompt cannot be just whitespace")
+                .describe(
+                    "Detailed description of the image to generate. Be specific about style, colors, composition, and mood."
+                ),
+            aspectRatio: z
+                .enum(["1:1", "16:9", "9:16", "4:3", "3:4"])
+                .optional()
+                .describe(
+                    "Aspect ratio for the generated image. Default is 1:1 (square). Use 16:9 for landscape, 9:16 for portrait."
+                ),
+        }),
+        execute: async ({ prompt, aspectRatio = "1:1" }) => {
+            // Select model based on reasoning level
+            const { modelId, tier } = selectImageModel(context?.reasoning);
+            const promptPreview =
+                prompt.length > 100 ? `${prompt.slice(0, 100)}...` : prompt;
+            logger.info(
+                { promptPreview, aspectRatio, model: modelId, tier },
+                "Generating image"
+            );
+
+            return await Sentry.startSpan(
+                { op: "ai.image", name: "generateImage" },
+                async (span) => {
+                    span.setAttribute("model", modelId);
+                    span.setAttribute("tier", tier);
+                    span.setAttribute("aspectRatio", aspectRatio);
+
+                    try {
+                        const gateway = getGatewayClient();
+                        const startTime = Date.now();
+
+                        const { image } = await generateImage({
+                            model: gateway.imageModel(modelId),
+                            prompt,
+                            aspectRatio,
+                        });
+
+                        // Validate response has actual image data
+                        if (!image?.base64 || image.base64.length < 100) {
+                            throw new Error("Generated image data is empty or invalid");
+                        }
+
+                        const durationMs = Date.now() - startTime;
+                        const imageSizeKb = Math.round(
+                            (image.base64.length * 0.75) / 1024
+                        );
+                        logger.info(
+                            {
+                                durationMs,
+                                aspectRatio,
+                                model: modelId,
+                                tier,
+                                imageSizeKb,
+                            },
+                            "Image generated successfully"
+                        );
+
+                        span.setAttribute("imageSizeKb", imageSizeKb);
+                        span.setStatus({ code: 1, message: "Success" });
+
+                        return {
+                            success: true,
+                            image: {
+                                base64: image.base64,
+                                mimeType: image.mediaType ?? "image/png",
+                            },
+                            prompt,
+                            aspectRatio,
+                            model: modelId,
+                            tier,
+                            durationMs,
+                        };
+                    } catch (error) {
+                        logger.error(
+                            { error, promptPreview, model: modelId, tier },
+                            "Image generation failed"
+                        );
+                        Sentry.captureException(error, {
+                            tags: {
+                                component: "tool",
+                                tool: "createImage",
+                                model: modelId,
+                                tier,
+                            },
+                            extra: { promptPreview, aspectRatio },
+                        });
+
+                        span.setStatus({ code: 2, message: "Error" });
+
+                        // Sanitize error messages to avoid leaking internal details
+                        const message = getUserFriendlyImageError(error);
+
+                        return {
+                            error: true,
+                            message,
+                            prompt,
+                        };
+                    }
+                }
+            );
+        },
+    });
+}
+
+/**
+ * Convert internal errors to user-friendly messages for image generation.
+ * Avoids leaking API details, URLs, or internal error codes.
+ */
+function getUserFriendlyImageError(error: unknown): string {
+    if (!(error instanceof Error)) {
+        return "We couldn't create that image right now";
+    }
+
+    const msg = error.message.toLowerCase();
+
+    // Content policy violations
+    if (
+        msg.includes("content policy") ||
+        msg.includes("safety") ||
+        msg.includes("blocked")
+    ) {
+        return "This prompt doesn't meet content guidelines. Try describing it differently.";
+    }
+
+    // Rate limiting
+    if (msg.includes("rate limit") || msg.includes("429") || msg.includes("quota")) {
+        return "We're generating a lot of images right now. Try again in a moment.";
+    }
+
+    // Timeouts
+    if (
+        msg.includes("timeout") ||
+        msg.includes("timed out") ||
+        msg.includes("deadline")
+    ) {
+        return "Image generation took too long. Try a simpler prompt.";
+    }
+
+    // Invalid/empty response
+    if (msg.includes("empty") || msg.includes("invalid")) {
+        return "Something went wrong with the image. Let's try again.";
+    }
+
+    // Generic fallback - don't leak internal details
+    return "We couldn't create that image right now";
+}
 
 // Giphy API types
 interface GiphyGif {
