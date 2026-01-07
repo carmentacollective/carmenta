@@ -13,7 +13,7 @@
  * 4. After consuming, clears params from URL
  */
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { logger } from "@/lib/client-logger";
@@ -75,7 +75,8 @@ export function useSharedContent(): UseSharedContentReturn {
     // Read shared content from URL params (returns null if consumed or no params)
     const sharedText = !consumed ? (searchParams?.get("sharedText") ?? null) : null;
     const filesBase64 = !consumed ? (searchParams?.get("sharedFiles") ?? null) : null;
-    const sharedFiles = parseSharedFiles(filesBase64);
+    // Memoize to avoid re-parsing on every render
+    const sharedFiles = useMemo(() => parseSharedFiles(filesBase64), [filesBase64]);
 
     // Log once when shared content is detected
     useEffect(() => {

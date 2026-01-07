@@ -38,8 +38,10 @@ function generateSharedFilePath(userId: string, filename: string): string {
     const timestamp = Date.now();
     const id = nanoid(10);
     // Extract extension, handling files without dots (e.g., "README" → "bin")
+    // Sanitize to alphanumeric only for safety
     const parts = filename.split(".");
-    const ext = parts.length > 1 ? parts.pop()! : "bin";
+    const rawExt = parts.length > 1 ? parts.pop()! : "bin";
+    const ext = rawExt.replace(/[^a-zA-Z0-9]/g, "") || "bin";
     return `${userId}/shared/${timestamp}-${id}.${ext}`;
 }
 
