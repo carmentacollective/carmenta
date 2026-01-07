@@ -4,7 +4,10 @@
  * CarmentaSheet
  *
  * A proper side-panel Carmenta interface using shadcn Sheet.
- * Provides a consistent, accessible drawer experience with proper z-index layering.
+ * Uses the real Chat component from /connection for full feature parity.
+ *
+ * This is essentially the mobile/narrow version of the main chat interface,
+ * with the same tool rendering, message actions, and composer features.
  *
  * Usage:
  * ```tsx
@@ -18,7 +21,6 @@
  * ```
  */
 
-import { useRef, useEffect } from "react";
 import { Sparkle, Trash } from "@phosphor-icons/react";
 
 import {
@@ -28,16 +30,9 @@ import {
     SheetTitle,
     SheetDescription,
 } from "@/components/ui/sheet";
-import {
-    SimpleComposer,
-    UserBubble,
-    AssistantBubble,
-    ThinkingBubble,
-} from "@/components/chat";
-
-import { useCarmenta } from "./use-carmenta";
-import { getMessageText } from "./utils";
-import { EmptyState } from "./empty-state";
+import { ConnectRuntimeProvider, useChatContext } from "@/components/connection";
+import { HoloThread } from "@/components/connection/holo-thread";
+import { cn } from "@/lib/utils";
 
 interface CarmentaSheetProps {
     /** Whether the sheet is open */
@@ -48,7 +43,7 @@ interface CarmentaSheetProps {
     pageContext: string;
     /** Callback when Carmenta makes changes (tool calls complete) */
     onChangesComplete?: () => void;
-    /** Placeholder text for the input */
+    /** Placeholder text for the input - NOT YET SUPPORTED, Composer has its own */
     placeholder?: string;
     /** Title shown in the sheet header */
     title?: string;
@@ -61,111 +56,84 @@ export function CarmentaSheet({
     onOpenChange,
     pageContext,
     onChangesComplete,
-    placeholder = "What are we working on?",
+    placeholder: _placeholder, // TODO: Need to pass through to Composer
     title = "Carmenta",
     description = "Working together",
 }: CarmentaSheetProps) {
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const { messages, input, setInput, sendMessage, stop, isLoading, clear } =
-        useCarmenta({
-            pageContext,
-            onChangesComplete,
-        });
-
-    const isThinking =
-        isLoading &&
-        (messages.length === 0 || messages[messages.length - 1]?.role === "user");
-
-    // Scroll to bottom on new messages
-    useEffect(() => {
-        if (messages.length > 0) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
-    }, [messages.length]);
-
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="left" className="flex flex-col p-0" hideClose>
-                {/* Header */}
-                <SheetHeader className="border-foreground/[0.08] flex-row items-center justify-between space-y-0 border-b px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                        <div className="bg-primary/20 flex h-8 w-8 items-center justify-center rounded-full">
-                            <Sparkle
-                                className="text-primary h-4 w-4"
-                                weight="duotone"
-                            />
-                        </div>
-                        <div>
-                            <SheetTitle className="text-sm font-medium">
-                                {title}
-                            </SheetTitle>
-                            <SheetDescription className="text-[10px]">
-                                {description}
-                            </SheetDescription>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        {messages.length > 0 && (
-                            <button
-                                onClick={clear}
-                                className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/60 flex min-h-9 min-w-9 items-center justify-center rounded-lg transition-colors"
-                                aria-label="Clear conversation"
-                                title="Clear conversation"
-                            >
-                                <Trash className="h-4 w-4" />
-                            </button>
-                        )}
-                    </div>
-                </SheetHeader>
-
-                {/* Messages area */}
-                <div className="flex-1 overflow-y-auto px-4">
-                    {messages.length === 0 && !isThinking ? (
-                        <EmptyState pageContext={pageContext} />
-                    ) : (
-                        <>
-                            {messages.map((message) => {
-                                const text = getMessageText(message);
-                                const isLastMessage =
-                                    message.role === "assistant" &&
-                                    message.id === messages[messages.length - 1]?.id;
-
-                                if (message.role === "user") {
-                                    return (
-                                        <UserBubble key={message.id} content={text} />
-                                    );
-                                }
-
-                                return (
-                                    <AssistantBubble
-                                        key={message.id}
-                                        content={text}
-                                        isStreaming={isLoading && isLastMessage}
-                                        showAvatar={false}
-                                    />
-                                );
-                            })}
-                            {isThinking && <ThinkingBubble showAvatar={false} />}
-                            <div ref={messagesEndRef} />
-                        </>
-                    )}
-                </div>
-
-                {/* Input */}
-                <div className="border-foreground/[0.08] shrink-0 border-t p-3">
-                    <SimpleComposer
-                        value={input}
-                        onChange={setInput}
-                        onSubmit={sendMessage}
-                        onStop={stop}
-                        isLoading={isLoading}
-                        placeholder={placeholder}
-                        autoFocus={open}
-                    />
-                </div>
+            <SheetContent
+                side="left"
+                className={cn(
+                    "flex flex-col p-0",
+                    // Wider on tablets, narrower on phones
+                    "w-full sm:w-[400px] sm:max-w-[400px]"
+                )}
+                hideClose
+            >
+                <ConnectRuntimeProvider
+                    endpoint="/api/dcos"
+                    pageContext={pageContext}
+                    onChangesComplete={onChangesComplete}
+                >
+                    <CarmentaSheetInner title={title} description={description} />
+                </ConnectRuntimeProvider>
             </SheetContent>
         </Sheet>
+    );
+}
+
+/**
+ * Inner component that has access to ChatContext
+ */
+function CarmentaSheetInner({
+    title,
+    description,
+}: {
+    title: string;
+    description: string;
+}) {
+    const { messages, setMessages, stop } = useChatContext();
+
+    const handleClear = () => {
+        stop();
+        setMessages([]);
+    };
+
+    return (
+        <>
+            {/* Header */}
+            <SheetHeader className="border-foreground/[0.08] flex-row items-center justify-between space-y-0 border-b px-4 py-3">
+                <div className="flex items-center gap-2.5">
+                    <div className="bg-primary/20 flex h-8 w-8 items-center justify-center rounded-full">
+                        <Sparkle className="text-primary h-4 w-4" weight="duotone" />
+                    </div>
+                    <div>
+                        <SheetTitle className="text-sm font-medium">{title}</SheetTitle>
+                        <SheetDescription className="text-[10px]">
+                            {description}
+                        </SheetDescription>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1">
+                    {messages.length > 0 && (
+                        <button
+                            onClick={handleClear}
+                            className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/60 flex min-h-9 min-w-9 items-center justify-center rounded-lg transition-colors"
+                            aria-label="Clear conversation"
+                            title="Clear conversation"
+                        >
+                            <Trash className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+            </SheetHeader>
+
+            {/* Chat interface - same as /connection but narrower */}
+            <div className="min-h-0 flex-1 overflow-hidden">
+                <HoloThread />
+            </div>
+        </>
     );
 }

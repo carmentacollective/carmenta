@@ -442,3 +442,11 @@ export function useConnection() {
     }
     return context;
 }
+
+/**
+ * Safe version of useConnection that returns null when outside ConnectionProvider.
+ * Use this when the component may or may not be inside a ConnectionProvider.
+ */
+export function useConnectionSafe(): ConnectionContextValue | null {
+    return useContext(ConnectionContext);
+}

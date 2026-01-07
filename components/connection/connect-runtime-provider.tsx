@@ -37,7 +37,7 @@ import {
     useConcierge,
     parseConciergeHeaders,
 } from "@/lib/concierge/context";
-import { useConnection } from "./connection-context";
+import { useConnectionSafe } from "./connection-context";
 import type { ModelOverrides } from "./model-selector/types";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { TransientProvider, useTransient } from "@/lib/streaming";
@@ -141,6 +141,8 @@ export function toAIMessage(msg: UIMessageLike): UIMessage {
 interface ChatContextType {
     /** Messages in the chat */
     messages: UIMessage[];
+    /** Direct access to setMessages - use for clearing messages */
+    setMessages: (messages: UIMessage[]) => void;
     /** Send a message - wraps sendMessage with our format */
     append: (message: {
         role: "user";
@@ -433,6 +435,20 @@ const DEFAULT_OVERRIDES: ModelOverrides = {
 
 interface ConnectRuntimeProviderProps {
     children: ReactNode;
+    /**
+     * Standalone mode props - when provided, bypasses ConnectionContext.
+     * Use this to render the chat in sheets/modals without the full /connection context.
+     */
+    /** API endpoint override (default: /api/connection) */
+    endpoint?: string;
+    /** Connection ID for persistence (null = ephemeral) */
+    connectionId?: string | null;
+    /** Initial messages to hydrate */
+    initialMessages?: UIMessageLike[];
+    /** Page context for DCOS routing */
+    pageContext?: string;
+    /** Callback when agent makes changes */
+    onChangesComplete?: () => void;
 }
 
 /**
@@ -738,16 +754,54 @@ function createFetchWrapper(
 
 /**
  * Inner provider that has access to concierge context.
+ *
+ * Supports two modes:
+ * 1. Connection mode (default): Reads from ConnectionContext, handles URL updates, etc.
+ * 2. Standalone mode: When endpoint prop is provided, bypasses ConnectionContext entirely.
+ *    Use this for rendering the chat in sheets/modals outside /connection page.
  */
-function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) {
+function ConnectRuntimeProviderInner({
+    children,
+    endpoint: endpointProp,
+    connectionId: connectionIdProp,
+    initialMessages: initialMessagesProp,
+    pageContext,
+    onChangesComplete,
+}: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
-    const {
-        activeConnectionId,
-        initialMessages,
-        addNewConnection,
-        setIsStreaming,
-        projectPath,
-    } = useConnection();
+
+    // Standalone mode: when endpoint is provided, we bypass ConnectionContext
+    const isStandaloneMode = !!endpointProp;
+    const connectionContext = useConnectionSafe();
+
+    // Resolve values from props (standalone) or context (connection mode)
+    // Memoize to prevent dependency changes on every render
+    const activeConnectionId = isStandaloneMode
+        ? (connectionIdProp ?? null)
+        : (connectionContext?.activeConnectionId ?? null);
+
+    const initialMessages = useMemo(
+        () =>
+            isStandaloneMode
+                ? (initialMessagesProp ?? [])
+                : (connectionContext?.initialMessages ?? []),
+        [isStandaloneMode, initialMessagesProp, connectionContext?.initialMessages]
+    );
+
+    const addNewConnection = useMemo(
+        () => connectionContext?.addNewConnection ?? (() => {}),
+        [connectionContext?.addNewConnection]
+    );
+
+    const setIsStreaming = useMemo(
+        () => connectionContext?.setIsStreaming ?? (() => {}),
+        [connectionContext?.setIsStreaming]
+    );
+
+    const projectPath = connectionContext?.projectPath ?? null;
+
+    // Track onChangesComplete callback for tool-calling responses
+    const onChangesCompleteRef = useRef(onChangesComplete);
     const { handleDataPart: handleTransientData, clearAll: clearTransientMessages } =
         useTransient();
     const { handleDataPart: handleToolStateData, clear: clearToolState } =
@@ -787,6 +841,32 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     useEffect(() => {
         projectPathRef.current = projectPath;
     }, [projectPath]);
+
+    // Keep onChangesComplete ref updated (for standalone mode tool callbacks)
+    useEffect(() => {
+        onChangesCompleteRef.current = onChangesComplete;
+    }, [onChangesComplete]);
+
+    // Refs for standalone mode configuration
+    const endpointRef = useRef(endpointProp);
+    const pageContextRef = useRef(pageContext);
+    const isStandaloneModeRef = useRef(isStandaloneMode);
+
+    // Getter functions to read refs at call time (not render time)
+    // This satisfies react-hooks/refs linter while still using refs for stability
+    const getPageContext = useCallback(() => pageContextRef.current, []);
+
+    useEffect(() => {
+        endpointRef.current = endpointProp;
+    }, [endpointProp]);
+
+    useEffect(() => {
+        pageContextRef.current = pageContext;
+    }, [pageContext]);
+
+    useEffect(() => {
+        isStandaloneModeRef.current = isStandaloneMode;
+    }, [isStandaloneMode]);
 
     // Background mode polling hook
     // When background work completes, refreshes messages from database
@@ -844,8 +924,12 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 
     // Update document title and URL when a new connection is created
     // Uses replaceState so the URL updates without triggering navigation
+    // Skipped in standalone mode (sheets/modals don't need URL updates)
     const handleNewConnectionCreated = useCallback(
         (title: string | null, slug: string | null, id: string | null) => {
+            // Skip URL/title updates in standalone mode
+            if (isStandaloneModeRef.current) return;
+
             if (title) {
                 document.title = `${title} | Carmenta`;
             }
@@ -885,11 +969,12 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     // Create transport with custom fetch
     // Note: We pass ref objects (not .current) to be read at fetch time, not render time
     // The fetch wrapper handles routing to /api/code when projectPath is set
+    // In standalone mode, uses the endpoint prop directly (e.g., /api/dcos)
+    /* eslint-disable react-hooks/refs -- refs passed to transport are read at fetch/request time, not render */
     const transport = useMemo(
         () =>
             new DefaultChatTransport({
-                api: "/api/connection",
-                /* eslint-disable react-hooks/refs -- refs are read in fetch callback at call time, not render */
+                api: endpointProp ?? "/api/connection",
                 fetch: createFetchWrapper(
                     setConcierge,
                     overridesRef,
@@ -899,25 +984,33 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
                     handleNewConnectionCreated,
                     startBackgroundPolling
                 ),
-                /* eslint-enable react-hooks/refs */
+
                 prepareSendMessagesRequest(request) {
                     // Send the full messages array - API expects this format
+                    // Include pageContext for DCOS routing in standalone mode
+                    const currentPageContext = getPageContext();
                     return {
                         body: {
                             id: request.id,
                             messages: request.messages,
+                            ...(currentPageContext && {
+                                pageContext: currentPageContext,
+                            }),
                             ...request.body,
                         },
                     };
                 },
             }),
         [
+            endpointProp,
             setConcierge,
             addNewConnection,
             handleNewConnectionCreated,
             startBackgroundPolling,
+            getPageContext,
         ]
     );
+    /* eslint-enable react-hooks/refs */
 
     // Chat hook with AI SDK 5.0
     // Key insight: We use effectiveChatId (which is stable from the start)
@@ -1018,9 +1111,32 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
             handleToolStateData(dataPart);
         },
         // Clear ephemeral state when streaming completes
-        onFinish: () => {
+        // In standalone mode, trigger onChangesComplete when agent made tool calls
+        onFinish: ({ message, finishReason }) => {
             clearTransientMessages();
             // Note: We don't clear tool state here - tools persist in the message
+
+            // Check if the response included tool calls (agent made changes)
+            const hasToolCalls = message.parts?.some(
+                (part: { type?: string }) =>
+                    typeof part === "object" &&
+                    "type" in part &&
+                    typeof part.type === "string" &&
+                    part.type.startsWith("tool-")
+            );
+
+            // Trigger callback if agent made changes (standalone mode)
+            // The stream has ended, so server-side tool execution is complete
+            if (
+                (hasToolCalls || finishReason === "tool-calls") &&
+                onChangesCompleteRef.current
+            ) {
+                logger.info(
+                    { pageContext: getPageContext() },
+                    "Triggering page refresh after agent changes"
+                );
+                onChangesCompleteRef.current();
+            }
         },
         experimental_throttle: 50,
     });
@@ -1284,6 +1400,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
     const chatContextValue = useMemo<ChatContextType>(
         () => ({
             messages,
+            setMessages,
             append,
             isLoading,
             stop,
@@ -1300,6 +1417,7 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
         }),
         [
             messages,
+            setMessages,
             append,
             isLoading,
             stop,
@@ -1360,9 +1478,11 @@ function ConnectRuntimeProviderInner({ children }: ConnectRuntimeProviderProps) 
 /**
  * Inner wrapper that reads initialConcierge from ConnectionContext
  * and passes it to ConciergeProvider.
+ * Safe to use in standalone mode (when ConnectionContext is not available).
  */
 function ConciergeWrapper({ children }: { children: ReactNode }) {
-    const { initialConcierge } = useConnection();
+    const connectionContext = useConnectionSafe();
+    const initialConcierge = connectionContext?.initialConcierge ?? null;
 
     // Convert PersistedConciergeData to ConciergeResult format
     // The persisted format matches ConciergeResult's core fields
@@ -1391,13 +1511,29 @@ function ConciergeWrapper({ children }: { children: ReactNode }) {
  * - ToolStateProvider for accumulated tool state in code mode
  * - ChatContext for message state and actions
  * - Runtime error display with retry capability
+ *
+ * Supports standalone mode for use outside /connection page (sheets, modals).
+ * Pass endpoint, connectionId, initialMessages, pageContext, onChangesComplete props.
  */
-export function ConnectRuntimeProvider({ children }: ConnectRuntimeProviderProps) {
+export function ConnectRuntimeProvider({
+    children,
+    endpoint,
+    connectionId,
+    initialMessages,
+    pageContext,
+    onChangesComplete,
+}: ConnectRuntimeProviderProps) {
     return (
         <ConciergeWrapper>
             <TransientProvider>
                 <ToolStateProvider>
-                    <ConnectRuntimeProviderInner>
+                    <ConnectRuntimeProviderInner
+                        endpoint={endpoint}
+                        connectionId={connectionId}
+                        initialMessages={initialMessages}
+                        pageContext={pageContext}
+                        onChangesComplete={onChangesComplete}
+                    >
                         {children}
                     </ConnectRuntimeProviderInner>
                 </ToolStateProvider>

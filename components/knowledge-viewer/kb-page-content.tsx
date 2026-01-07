@@ -9,11 +9,11 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SparkleIcon, ChatCircleIcon } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 
 import { KnowledgeViewer } from "./index";
 import { LibrarianTaskBar } from "./librarian-task-bar";
-import { CarmentaSheet } from "@/components/carmenta-assistant";
+import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
 import type { KBFolder } from "@/lib/kb/actions";
 
 interface KBPageContentProps {
@@ -37,16 +37,11 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
                     onChangesComplete={handleChangesComplete}
                     className="flex-1"
                 />
-                <button
-                    onClick={() => setSheetOpen(true)}
-                    className="glass-card hover:bg-foreground/5 flex items-center gap-2 rounded-xl px-4 py-2.5 transition-colors"
-                    title="Work with Carmenta to organize your knowledge"
-                >
-                    <ChatCircleIcon className="text-primary h-5 w-5" weight="duotone" />
-                    <span className="hidden text-sm font-medium sm:inline">
-                        Organize together
-                    </span>
-                </button>
+                <CarmentaToggle
+                    isOpen={sheetOpen}
+                    onClick={() => setSheetOpen(!sheetOpen)}
+                    label="With Carmenta"
+                />
             </div>
 
             {/* Knowledge Viewer */}
@@ -72,7 +67,7 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
                 onOpenChange={setSheetOpen}
                 pageContext="We're in the knowledge base. The user can reorganize folders, rename documents, create new categories, or ask me to extract insights from their conversations."
                 onChangesComplete={handleChangesComplete}
-                placeholder="Reorganize, rename, create categories..."
+                placeholder="What should we organize?"
                 description="Shaping what we know"
             />
         </>

@@ -468,11 +468,11 @@ function IntegrationsContent({
                         </div>
                     </div>
 
-                    {/* Ask Carmenta toggle */}
+                    {/* Open Carmenta panel */}
                     <CarmentaToggle
                         isOpen={carmentaOpen}
                         onClick={() => setCarmentaOpen(!carmentaOpen)}
-                        label="Configure together"
+                        label="With Carmenta"
                     />
                 </div>
             </section>
