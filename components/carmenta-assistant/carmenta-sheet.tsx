@@ -43,8 +43,6 @@ interface CarmentaSheetProps {
     pageContext: string;
     /** Callback when Carmenta makes changes (tool calls complete) */
     onChangesComplete?: () => void;
-    /** Placeholder text for the input - NOT YET SUPPORTED, Composer has its own */
-    placeholder?: string;
     /** Title shown in the sheet header */
     title?: string;
     /** Description shown below the title */
@@ -56,7 +54,6 @@ export function CarmentaSheet({
     onOpenChange,
     pageContext,
     onChangesComplete,
-    placeholder: _placeholder, // TODO: Need to pass through to Composer
     title = "Carmenta",
     description = "Working together",
 }: CarmentaSheetProps) {

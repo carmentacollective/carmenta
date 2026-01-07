@@ -640,7 +640,6 @@ function IntegrationsContent({
                 onOpenChange={setCarmentaOpen}
                 pageContext={PAGE_CONTEXT}
                 onChangesComplete={onChangesComplete}
-                placeholder="What should we connect?"
             />
         </StandardPageLayout>
     );

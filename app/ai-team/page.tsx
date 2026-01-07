@@ -533,7 +533,6 @@ function AITeamContent({
                 onOpenChange={setCarmentaOpen}
                 pageContext={PAGE_CONTEXT}
                 onChangesComplete={onChangesComplete}
-                placeholder="What should we adjust? An agent, schedule, notification..."
             />
         </StandardPageLayout>
     );

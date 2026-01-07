@@ -61,8 +61,6 @@ interface CarmentaLayoutProps {
     pageContext: string;
     /** Callback when Carmenta makes changes (tool calls complete) */
     onChangesComplete?: () => void;
-    /** Placeholder text for the input */
-    placeholder?: string;
     /** Additional className for the content area */
     className?: string;
 }
@@ -76,7 +74,6 @@ export function CarmentaLayout({
     children,
     pageContext,
     onChangesComplete,
-    placeholder: _placeholder,
     className,
 }: CarmentaLayoutProps) {
     const [isOpen, setIsOpen] = useState(false);

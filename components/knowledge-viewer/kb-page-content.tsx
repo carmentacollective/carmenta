@@ -67,7 +67,6 @@ export function KBPageContent({ initialFolders }: KBPageContentProps) {
                 onOpenChange={setSheetOpen}
                 pageContext="We're in the knowledge base. The user can reorganize folders, rename documents, create new categories, or ask me to extract insights from their conversations."
                 onChangesComplete={handleChangesComplete}
-                placeholder="What should we organize?"
                 description="Shaping what we know"
             />
         </>
