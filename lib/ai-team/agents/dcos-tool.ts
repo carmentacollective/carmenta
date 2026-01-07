@@ -334,15 +334,8 @@ async function executeUpdate(
             return errorResult("VALIDATION", `Failed to decode job ID: ${params.id}`);
         }
 
-        // Check at least one field to update
-        if (!params.prompt && !params.name && !params.integrations) {
-            return errorResult(
-                "VALIDATION",
-                "At least one of prompt, name, or integrations is required for update"
-            );
-        }
-
         // Find the job first
+        // Note: validateParams already ensures at least one update field is present
         const existingJob = await db.query.scheduledJobs.findFirst({
             where: and(
                 eq(scheduledJobs.seqId, seqId),
@@ -454,8 +447,9 @@ async function executeRuns(
             return errorResult("VALIDATION", `Automation not found: ${params.id}`);
         }
 
-        // Get runs
-        const limit = Math.min(params.limit ?? 10, MAX_RUNS_LIMIT);
+        // Get runs with bounds checking
+        // Clamp to [1, MAX_RUNS_LIMIT] - negative values would remove LIMIT in Postgres
+        const limit = Math.min(Math.max(params.limit ?? 10, 1), MAX_RUNS_LIMIT);
         const runs = await db.query.jobRuns.findMany({
             where: eq(jobRuns.jobId, job.id),
             orderBy: [desc(jobRuns.createdAt)],
