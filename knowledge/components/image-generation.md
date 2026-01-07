@@ -46,8 +46,19 @@ webSearch, giphy). The tool returns generated image data that renders inline.
 
 ✅ **Async Generation with Progress** (decided 2025-01)
 
-Image generation takes 5-30 seconds. We use streaming progress indicators similar to
-deepResearch. The tool UI shows generation status, and results appear when ready.
+Image generation takes 5-30 seconds. The Vercel AI Gateway's `generateImage` API is
+fire-and-wait (no streaming progress events), so we use simulated progress indicators
+following the deepResearch pattern:
+
+- Rotating tips that provide value during the wait
+- Elapsed time counter (appears after 5s)
+- Animated indeterminate progress bar
+- Prompt context displayed during generation
+
+**Research finding**: Competitor analysis (LibreChat, LobeChat, Open WebUI) confirmed
+this is industry standard. LibreChat uses sophisticated canvas-based "PixelCard"
+animations to make waits feel shorter, but all progress is simulated - the API provides
+no real-time progress data.
 
 ## Why This Exists
 
@@ -415,6 +426,32 @@ Open-source competitors support image generation via tools. LibreChat uses DALL-
 FLUX. LobeChat supports DALL-E 3 and Pollinations. Open WebUI supports DALL-E,
 AUTOMATIC1111, ComfyUI. None have the iteration loop UX we're building.
 
+**Progress/Loading UX Research (2025-01)**:
+
+**LibreChat** (most sophisticated):
+
+- Canvas-based "PixelCard" animation - radial pixel reveal from center outward
+- Quality-based timing estimates: Low (10s), Medium (20s), High (50s) with ±30% jitter
+- Multi-layer progress: PixelCard + shimmer text + progress circle
+- Files: `PixelCard.tsx`, `OpenAIImageGen.tsx`, `ProgressText.tsx`
+
+**LobeChat**:
+
+- State-based rendering (LoadingState/SuccessState/ErrorState components)
+- Elapsed time counter during generation
+- Skeleton grid for initial page load
+- Direct swap from loading to image (no progressive reveal)
+
+**Open WebUI**:
+
+- Simple multi-circle spinner during generation
+- No skeleton/placeholder - direct image render
+- Fire-and-wait API pattern
+
+**Key insight**: All competitors simulate progress because image generation APIs provide
+no real-time streaming events. LibreChat's sophisticated animations make waits _feel_
+shorter but don't show actual generation progress.
+
 ### Opportunity
 
 No unified interface does it all well. ChatGPT has generation but limited iteration.
@@ -427,20 +464,24 @@ refineable through natural dialogue.
 
 ## Implementation Milestones
 
-### Phase 1: Basic Generation (MVP)
+### Phase 1: Basic Generation (MVP) ✅
 
-- [ ] Add `generateImage` tool to `lib/tools/built-in.ts`
-- [ ] Add tool config to `lib/tools/tool-config.ts` with delight messages
-- [ ] Use existing Gateway (`gateway.imageModel()`) - no new API keys needed
-- [ ] Return base64 image data for inline display
-- [ ] Add image rendering component for tool results
+- [x] Add `createImage` tool to `lib/tools/built-in.ts`
+- [x] Add tool config to `lib/tools/tool-config.ts` with delight messages
+- [x] Use existing Gateway (`gateway.imageModel()`) - no new API keys needed
+- [x] Return base64 image data for inline display
+- [x] Add image rendering component (`components/tools/integrations/create-image.tsx`)
+- [x] Premium loading experience with rotating tips, elapsed timer, progress animation
+
+PR #671 implements Phase 1 with polished UX.
 
 ### Phase 2: Enhanced UX
 
-- [ ] Progress indicator during generation (5-30s)
+- [x] Progress indicator during generation (rotating tips + elapsed timer pattern)
 - [ ] Aspect ratio selection from prompt analysis
 - [ ] Resolution options (1K/2K/4K based on user tier)
-- [ ] Error handling with user-friendly messages
+- [x] Error handling with user-friendly messages
+- [ ] Optional: Canvas-based "PixelCard" animation (LibreChat pattern) for visual polish
 
 ### Phase 3: Iteration Loop
 
