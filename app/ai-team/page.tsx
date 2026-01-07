@@ -17,11 +17,14 @@ import {
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
-import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
 import { LabelToggle } from "@/components/ui/label-toggle";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
+import {
+    CarmentaLayout,
+    useCarmentaLayout,
+    CarmentaToggle,
+} from "@/components/carmenta-assistant";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -93,8 +96,8 @@ function AITeamContent({
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [viewingActivity, setViewingActivity] = useState<ActivityItem | null>(null);
 
-    // Carmenta sheet state
-    const [carmentaOpen, setCarmentaOpen] = useState(false);
+    // Carmenta layout state
+    const { isOpen: carmentaOpen, toggle: toggleCarmenta } = useCarmentaLayout();
 
     // Handle success states from redirects
     useEffect(() => {
@@ -295,7 +298,7 @@ function AITeamContent({
     const unreadNotificationCount = notifications.length;
 
     return (
-        <StandardPageLayout maxWidth="standard" contentClassName="space-y-8 py-12">
+        <>
             {/* Header */}
             <section className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -315,7 +318,7 @@ function AITeamContent({
                     <div className="flex items-center gap-3">
                         <CarmentaToggle
                             isOpen={carmentaOpen}
-                            onClick={() => setCarmentaOpen(!carmentaOpen)}
+                            onClick={toggleCarmenta}
                             label="With Carmenta"
                         />
                         <Link
@@ -526,15 +529,7 @@ function AITeamContent({
                     onClose={() => setViewingActivity(null)}
                 />
             )}
-
-            {/* Carmenta Sheet for DCOS assistance */}
-            <CarmentaSheet
-                open={carmentaOpen}
-                onOpenChange={setCarmentaOpen}
-                pageContext={PAGE_CONTEXT}
-                onChangesComplete={onChangesComplete}
-            />
-        </StandardPageLayout>
+        </>
     );
 }
 
@@ -550,10 +545,16 @@ function AITeamWithCarmenta() {
     }, []);
 
     return (
-        <AITeamContent
-            refreshKey={refreshKey}
+        <CarmentaLayout
+            pageContext={PAGE_CONTEXT}
             onChangesComplete={handleChangesComplete}
-        />
+            maxWidth="standard"
+        >
+            <AITeamContent
+                refreshKey={refreshKey}
+                onChangesComplete={handleChangesComplete}
+            />
+        </CarmentaLayout>
     );
 }
 
@@ -564,7 +565,7 @@ export default function AITeamPage() {
     return (
         <Suspense
             fallback={
-                <StandardPageLayout maxWidth="standard" contentClassName="py-12">
+                <CarmentaLayout pageContext={PAGE_CONTEXT} maxWidth="standard">
                     <div className="flex items-center justify-center py-24">
                         <div className="flex flex-col items-center gap-4">
                             <SparkleIcon className="text-primary h-8 w-8 animate-pulse" />
@@ -573,7 +574,7 @@ export default function AITeamPage() {
                             </p>
                         </div>
                     </div>
-                </StandardPageLayout>
+                </CarmentaLayout>
             }
         >
             <AITeamWithCarmenta />

@@ -16,7 +16,11 @@ import { SparkleIcon, Trash } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useCarmentaModal } from "@/hooks/use-carmenta-modal";
-import { ConnectRuntimeProvider, useChatContext } from "@/components/connection";
+import {
+    ConnectionProvider,
+    ConnectRuntimeProvider,
+    useChatContext,
+} from "@/components/connection";
 import { HoloThread } from "@/components/connection/holo-thread";
 
 /**
@@ -36,9 +40,14 @@ export function CarmentaModal() {
                     "flex flex-col gap-0 overflow-hidden p-0"
                 )}
             >
-                <ConnectRuntimeProvider endpoint="/api/dcos" pageContext={pageContext}>
-                    <CarmentaModalInner />
-                </ConnectRuntimeProvider>
+                <ConnectionProvider>
+                    <ConnectRuntimeProvider
+                        endpoint="/api/dcos"
+                        pageContext={pageContext}
+                    >
+                        <CarmentaModalInner />
+                    </ConnectRuntimeProvider>
+                </ConnectionProvider>
             </DialogContent>
         </Dialog>
     );

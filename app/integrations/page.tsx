@@ -12,7 +12,6 @@ import {
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
-import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { MultiAccountServiceCard, ApiKeyModal } from "@/components/integrations";
 import type { StatusMessage } from "@/components/integrations/multi-account-service-card";
 import {
@@ -28,7 +27,11 @@ import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
 import { useOAuthFlowRecovery } from "@/lib/hooks/use-oauth-flow-recovery";
 import { analytics } from "@/lib/analytics/events";
-import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
+import {
+    CarmentaLayout,
+    useCarmentaLayout,
+    CarmentaToggle,
+} from "@/components/carmenta-assistant";
 
 /**
  * Page context for Carmenta
@@ -51,8 +54,8 @@ function IntegrationsContent({
     const [services, setServices] = useState<GroupedService[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Carmenta sheet state
-    const [carmentaOpen, setCarmentaOpen] = useState(false);
+    // Carmenta layout state
+    const { isOpen: carmentaOpen, toggle: toggleCarmenta } = useCarmentaLayout();
 
     // OAuth flow recovery - detects abandoned OAuth attempts
     const {
@@ -450,7 +453,7 @@ function IntegrationsContent({
     };
 
     return (
-        <StandardPageLayout maxWidth="standard" contentClassName="space-y-8 py-12">
+        <>
             {/* Header */}
             <section className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -471,7 +474,7 @@ function IntegrationsContent({
                     {/* Open Carmenta panel */}
                     <CarmentaToggle
                         isOpen={carmentaOpen}
-                        onClick={() => setCarmentaOpen(!carmentaOpen)}
+                        onClick={toggleCarmenta}
                         label="With Carmenta"
                     />
                 </div>
@@ -633,15 +636,7 @@ function IntegrationsContent({
                 }}
                 onSubmit={handleConnectSubmit}
             />
-
-            {/* Carmenta Sheet for DCOS assistance */}
-            <CarmentaSheet
-                open={carmentaOpen}
-                onOpenChange={setCarmentaOpen}
-                pageContext={PAGE_CONTEXT}
-                onChangesComplete={onChangesComplete}
-            />
-        </StandardPageLayout>
+        </>
     );
 }
 
@@ -656,10 +651,16 @@ function IntegrationsWithCarmenta() {
     }, []);
 
     return (
-        <IntegrationsContent
-            refreshKey={refreshKey}
+        <CarmentaLayout
+            pageContext={PAGE_CONTEXT}
             onChangesComplete={handleChangesComplete}
-        />
+            maxWidth="standard"
+        >
+            <IntegrationsContent
+                refreshKey={refreshKey}
+                onChangesComplete={handleChangesComplete}
+            />
+        </CarmentaLayout>
     );
 }
 
@@ -671,7 +672,7 @@ export default function IntegrationsPage() {
     return (
         <Suspense
             fallback={
-                <StandardPageLayout maxWidth="standard" contentClassName="py-12">
+                <CarmentaLayout pageContext={PAGE_CONTEXT} maxWidth="standard">
                     <div className="flex items-center justify-center py-24">
                         <div className="flex flex-col items-center gap-4">
                             <SparkleIcon className="text-primary h-8 w-8 animate-pulse" />
@@ -680,7 +681,7 @@ export default function IntegrationsPage() {
                             </p>
                         </div>
                     </div>
-                </StandardPageLayout>
+                </CarmentaLayout>
             }
         >
             <IntegrationsWithCarmenta />

@@ -30,7 +30,11 @@ import {
     SheetTitle,
     SheetDescription,
 } from "@/components/ui/sheet";
-import { ConnectRuntimeProvider, useChatContext } from "@/components/connection";
+import {
+    ConnectionProvider,
+    ConnectRuntimeProvider,
+    useChatContext,
+} from "@/components/connection";
 import { HoloThread } from "@/components/connection/holo-thread";
 import { cn } from "@/lib/utils";
 
@@ -68,13 +72,15 @@ export function CarmentaSheet({
                 )}
                 hideClose
             >
-                <ConnectRuntimeProvider
-                    endpoint="/api/dcos"
-                    pageContext={pageContext}
-                    onChangesComplete={onChangesComplete}
-                >
-                    <CarmentaSheetInner title={title} description={description} />
-                </ConnectRuntimeProvider>
+                <ConnectionProvider>
+                    <ConnectRuntimeProvider
+                        endpoint="/api/dcos"
+                        pageContext={pageContext}
+                        onChangesComplete={onChangesComplete}
+                    >
+                        <CarmentaSheetInner title={title} description={description} />
+                    </ConnectRuntimeProvider>
+                </ConnectionProvider>
             </SheetContent>
         </Sheet>
     );

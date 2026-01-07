@@ -29,8 +29,15 @@ import { SparkleIcon, CaretLeftIcon, Trash } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCarmentaModal } from "@/hooks/use-carmenta-modal";
-import { ConnectRuntimeProvider, useChatContext } from "@/components/connection";
+import {
+    ConnectionProvider,
+    ConnectRuntimeProvider,
+    useChatContext,
+} from "@/components/connection";
 import { HoloThread } from "@/components/connection/holo-thread";
+import { HolographicBackground } from "@/components/ui/holographic-background";
+import { SiteHeader } from "@/components/site-header";
+import { Footer } from "@/components/footer";
 
 /** Panel width in pixels */
 const PANEL_WIDTH = 400;
@@ -63,7 +70,22 @@ interface CarmentaLayoutProps {
     onChangesComplete?: () => void;
     /** Additional className for the content area */
     className?: string;
+    /** ClassName for the content wrapper (defaults to standard page spacing) */
+    contentClassName?: string;
+    /**
+     * Maximum content width constraint
+     * - 'narrow': 56rem (896px) — for text-heavy pages
+     * - 'standard': 64rem (1024px) — for standard pages
+     * - 'wide': 80rem (1280px) — for feature-rich pages
+     */
+    maxWidth?: "narrow" | "standard" | "wide";
 }
+
+const maxWidthClasses = {
+    narrow: "max-w-4xl", // 56rem / 896px
+    standard: "max-w-5xl", // 64rem / 1024px
+    wide: "max-w-6xl", // 80rem / 1280px
+};
 
 /**
  * CarmentaLayout
@@ -75,6 +97,8 @@ export function CarmentaLayout({
     pageContext,
     onChangesComplete,
     className,
+    contentClassName = "space-y-8 py-12",
+    maxWidth = "standard",
 }: CarmentaLayoutProps) {
     const [isOpen, setIsOpen] = useState(false);
     const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -112,33 +136,51 @@ export function CarmentaLayout({
     );
 
     return (
-        <CarmentaLayoutContext.Provider value={contextValue}>
-            <div className="flex min-h-0 flex-1">
-                {/* Desktop sidebar panel */}
-                <AnimatePresence mode="wait">
-                    {isDesktop && isOpen && (
-                        <ConnectRuntimeProvider
-                            key="carmenta-desktop-panel"
-                            endpoint="/api/dcos"
-                            pageContext={pageContext}
-                            onChangesComplete={onChangesComplete}
-                        >
-                            <DesktopPanel onClose={close} />
-                        </ConnectRuntimeProvider>
-                    )}
-                </AnimatePresence>
+        <div className="bg-background relative min-h-screen">
+            <HolographicBackground />
+            <div className="z-content relative">
+                {/* Header with safe-area padding for iPhone PWA */}
+                <div className="pt-safe-top">
+                    <SiteHeader bordered />
+                </div>
 
-                {/* Main content - grows to fill remaining space */}
-                <div
-                    className={cn(
-                        "flex min-h-0 flex-1 flex-col overflow-hidden",
-                        className
-                    )}
-                >
-                    {children}
+                {/* Flex container: sidebar | content */}
+                <CarmentaLayoutContext.Provider value={contextValue}>
+                    <div className="flex min-h-0 flex-1">
+                        {/* Desktop sidebar panel */}
+                        <AnimatePresence mode="wait">
+                            {isDesktop && isOpen && (
+                                <ConnectionProvider key="carmenta-desktop-panel">
+                                    <ConnectRuntimeProvider
+                                        endpoint="/api/dcos"
+                                        pageContext={pageContext}
+                                        onChangesComplete={onChangesComplete}
+                                    >
+                                        <DesktopPanel onClose={close} />
+                                    </ConnectRuntimeProvider>
+                                </ConnectionProvider>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Main content - constrained width, no centering */}
+                        <main
+                            className={cn(
+                                "w-full px-6 sm:px-8 lg:px-10",
+                                maxWidthClasses[maxWidth],
+                                className
+                            )}
+                        >
+                            <div className={contentClassName}>{children}</div>
+                        </main>
+                    </div>
+                </CarmentaLayoutContext.Provider>
+
+                {/* Footer with safe-area padding for iPhone PWA */}
+                <div className="pb-safe-bottom">
+                    <Footer />
                 </div>
             </div>
-        </CarmentaLayoutContext.Provider>
+        </div>
     );
 }
 
