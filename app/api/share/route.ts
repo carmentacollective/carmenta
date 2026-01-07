@@ -9,7 +9,7 @@
  * @see https://web.dev/articles/web-share-target
  */
 
-import { redirect, isRedirectError } from "next/navigation";
+import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import { nanoid } from "nanoid";
 import * as Sentry from "@sentry/nextjs";
@@ -202,9 +202,12 @@ export async function POST(request: Request) {
         redirect(redirectUrl);
     } catch (error) {
         // redirect() throws a special error that should propagate
-        // Use Next.js helper to detect redirect errors properly
-        if (isRedirectError(error)) {
-            throw error;
+        // Check error digest to detect Next.js redirect errors
+        if (error && typeof error === "object" && "digest" in error) {
+            const digest = (error as { digest?: string }).digest;
+            if (digest?.startsWith("NEXT_REDIRECT")) {
+                throw error;
+            }
         }
 
         logger.error({ error }, "Share target request failed");
