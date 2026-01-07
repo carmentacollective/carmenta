@@ -20,8 +20,10 @@ interface ToolStatusProps {
     duration?: number;
     /** Whether the expanded content is visible */
     expanded: boolean;
-    /** Called when user clicks to expand/collapse */
-    onToggle: () => void;
+    /** Whether there's content to expand (hides caret if false) */
+    expandable?: boolean;
+    /** Called when user clicks to expand/collapse. Ignored when expandable is false. */
+    onToggle?: () => void;
     /** Additional class names */
     className?: string;
 }
@@ -41,22 +43,27 @@ export function ToolStatus({
     status,
     duration,
     expanded,
+    expandable = true,
     onToggle,
     className,
 }: ToolStatusProps) {
     const config = getToolConfig(toolName, { fallbackToDefault: true });
 
+    // Use div instead of button when not expandable (no interaction)
+    const Component = expandable ? "button" : "div";
+
     return (
-        <button
-            type="button"
-            onClick={onToggle}
+        <Component
+            type={expandable ? "button" : undefined}
+            onClick={expandable ? onToggle : undefined}
             className={cn(
                 // Fixed height container
                 "flex h-10 w-full items-center gap-3 rounded-lg px-3",
                 // Base styles
                 "text-left text-sm transition-colors",
-                // Interactive states
-                "focus-visible:ring-primary/50 hover:bg-white/5 focus-visible:ring-1 focus-visible:outline-none",
+                // Interactive states (only when expandable)
+                expandable &&
+                    "focus-visible:ring-primary/50 hover:bg-white/5 focus-visible:ring-1 focus-visible:outline-none",
                 // Status-specific backgrounds
                 status === "error" && "bg-holo-blush/10",
                 status === "running" && "bg-holo-lavender/5",
@@ -100,14 +107,16 @@ export function ToolStatus({
                 </span>
             )}
 
-            {/* Expand chevron */}
-            <CaretRightIcon
-                className={cn(
-                    "text-muted-foreground/50 h-4 w-4 shrink-0 transition-transform duration-200",
-                    expanded && "rotate-90"
-                )}
-            />
-        </button>
+            {/* Expand chevron - only show when expandable */}
+            {expandable && (
+                <CaretRightIcon
+                    className={cn(
+                        "text-muted-foreground/50 h-4 w-4 shrink-0 transition-transform duration-200",
+                        expanded && "rotate-90"
+                    )}
+                />
+            )}
+        </Component>
     );
 }
 

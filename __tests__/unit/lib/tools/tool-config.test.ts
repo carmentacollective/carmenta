@@ -47,7 +47,7 @@ describe("tool-config", () => {
         it("returns default config for unknown tools when fallback is enabled", () => {
             const config = getToolConfig("unknownTool", { fallbackToDefault: true });
             expect(config).toBe(DEFAULT_TOOL_CONFIG);
-            expect(config.displayName).toBe("Tool");
+            expect(config.displayName).toBe("Working");
         });
     });
 
@@ -308,7 +308,7 @@ describe("tool-config", () => {
 
         it("uses fallback for unknown tools", () => {
             const message = getErrorMessage("unknownTool");
-            expect(message).toBe("That didn't work out");
+            expect(message).toBe("Something went sideways. The robots are on it. 🤖");
         });
     });
 
@@ -347,7 +347,7 @@ describe("tool-config", () => {
 
         it("uses fallback for unknown tools", () => {
             const message = getFirstUseMessage("unknownTool");
-            expect(message).toBe("First tool check!");
+            expect(message).toBe("First working check!");
         });
     });
 });

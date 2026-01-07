@@ -21,6 +21,9 @@ import {
     LinkIcon,
     QuestionIcon,
     HeartIcon,
+    UsersIcon,
+    PlugIcon,
+    ArchiveIcon,
     type Icon,
 } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
@@ -157,7 +160,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             pending: "Getting ready...",
             running: "Checking the weather...",
             completed: "Weather retrieved",
-            error: "Couldn't get the weather",
+            error: "Weather service isn't responding. The bots are on it. 🤖",
         },
         delightMessages: {
             completed: ["Forecast ready", "Weather check done", "Climate confirmed"],
@@ -182,9 +185,89 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             fast: ["Quick recall!", "Found that fast"],
         },
     },
+
+    // =========================================================================
+    // AI Team tools - DCOS orchestration and subagents
+    // =========================================================================
+
+    dcos: {
+        displayName: "AI Team",
+        icon: UsersIcon,
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const name = args.name as string | undefined;
+            if (action === "list") return "listing automations";
+            if (action === "get" && name) return truncate(name, 30);
+            if (action === "update") return "updating automation";
+            if (action === "runs") return "checking run history";
+            if (action === "run") return "viewing run details";
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Checking on our team...",
+            completed: "Team update ready",
+            error: "Couldn't reach the team. Our monitoring caught it. 🤖",
+        },
+        delightMessages: {
+            completed: ["Team checked", "All systems go", "Here's the update"],
+            fast: ["Quick check!", "Got it"],
+        },
+    },
+    librarian: {
+        displayName: "Knowledge Librarian",
+        icon: ArchiveIcon,
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const query = args.query as string | undefined;
+            const path = args.path as string | undefined;
+            if (action === "search" && query) return truncate(query, 40);
+            if (action === "extract") return "analyzing conversation";
+            if (action === "retrieve" && path) return truncate(path, 30);
+            if (action === "create") return "creating document";
+            if (action === "update") return "updating document";
+            if (action === "move") return "moving document";
+            if (action === "delete") return "removing document";
+            if (action === "list") return "listing documents";
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Working with our knowledge...",
+            completed: "Knowledge updated",
+            error: "Had trouble with our knowledge base. The robots have been notified. 🤖",
+        },
+        delightMessages: {
+            completed: ["Memory organized", "Knowledge saved", "All recorded"],
+            fast: ["Quick update!", "Done"],
+        },
+    },
+    mcpConfig: {
+        displayName: "Integrations",
+        icon: PlugIcon,
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const serviceId = args.serviceId as string | undefined;
+            if (action === "list") return "checking connections";
+            if (action === "test" && serviceId) return `testing ${serviceId}`;
+            if (action === "guide" && serviceId) return `${serviceId} setup`;
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Checking our connections...",
+            completed: "Integrations checked",
+            error: "Couldn't check integrations. The bots are on it. 🤖",
+        },
+        delightMessages: {
+            completed: ["All connected", "Services ready", "Connections verified"],
+            fast: ["Quick check!", "All good"],
+        },
+    },
+
     // Discovery tools - progressive context building
     updateDiscovery: {
-        displayName: "Discovery",
+        displayName: "Learning",
         icon: SparkleIcon,
         getDescription: (args) => {
             const key = args.key as string | undefined;
@@ -193,35 +276,35 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         messages: {
             pending: "Getting ready...",
             running: "Learning something new...",
-            completed: "Discovery saved",
-            error: "Couldn't save that discovery",
+            completed: "Got it",
+            error: "Couldn't save that. The robots are on it. 🤖",
         },
         delightMessages: {
-            completed: ["Captured", "Noted", "Got it"],
-            fast: ["Quick capture!"],
+            completed: ["Noted", "Captured", "Remembered"],
+            fast: ["Quick!"],
         },
     },
     completeDiscovery: {
-        displayName: "Discovery",
+        displayName: "Learning",
         icon: SparkleIcon,
         messages: {
             pending: "Getting ready...",
-            running: "Completing discovery...",
-            completed: "Discovery complete",
-            error: "Couldn't complete discovery",
+            running: "Finishing up...",
+            completed: "All learned",
+            error: "Couldn't complete. The bots are checking. 🤖",
         },
         delightMessages: {
-            completed: ["All done", "Wrapped up", "Complete"],
+            completed: ["Done", "Wrapped up", "Complete"],
         },
     },
     skipDiscovery: {
-        displayName: "Discovery",
+        displayName: "Learning",
         icon: SparkleIcon,
         messages: {
             pending: "Getting ready...",
-            running: "Skipping discovery...",
+            running: "Moving on...",
             completed: "Skipped",
-            error: "Couldn't skip discovery",
+            error: "Something went sideways. The robots are on it. 🤖",
         },
     },
     limitless: {
@@ -246,14 +329,18 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     calculate: {
         displayName: "Calculator",
         icon: CalculatorIcon,
+        getDescription: (args) => {
+            const expression = args.expression as string | undefined;
+            return expression ? truncate(expression, 30) : undefined;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Crunching numbers...",
-            completed: "Calculation complete",
-            error: "Calculation failed",
+            running: "Crunching the numbers...",
+            completed: "Here's the answer",
+            error: "That expression didn't compute. Check the syntax?",
         },
         delightMessages: {
-            completed: ["Got it", "Here's the answer", "Math done"],
+            completed: ["Got it", "Math done", "Solved"],
             fast: ["Quick math!", "Done!"],
         },
     },
@@ -279,108 +366,153 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     coinmarketcap: {
         displayName: "CoinMarketCap",
         icon: "/logos/coinmarketcap.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const symbol = (args.params as { symbol?: string })?.symbol;
+            if (symbol) return symbol.toUpperCase();
+            return action;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Fetching crypto data...",
-            completed: "Crypto data retrieved",
-            error: "Couldn't get crypto data",
+            running: "Checking the markets...",
+            completed: "Market data ready",
+            error: "Couldn't reach CoinMarketCap. The bots are checking. 🤖",
         },
         delightMessages: {
-            completed: ["Market data ready", "Prices retrieved", "Crypto check done"],
-            fast: ["Quick quote!", "Market snapshot"],
+            completed: ["Prices retrieved", "Market snapshot", "Data fresh"],
+            fast: ["Quick quote!", "Instant prices"],
         },
     },
     dropbox: {
         displayName: "Dropbox",
         icon: "/logos/dropbox.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const path = (args.params as { path?: string })?.path;
+            if (path) {
+                const parts = path.split("/");
+                return truncate(parts[parts.length - 1] || path, 30);
+            }
+            return action;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Accessing Dropbox...",
-            completed: "Dropbox operation complete",
-            error: "Couldn't complete Dropbox operation",
+            running: "Working with our files...",
+            completed: "Files ready",
+            error: "Had trouble with Dropbox. Our monitoring caught it. 🤖",
         },
         delightMessages: {
-            completed: ["Files ready", "Dropbox updated", "Storage synced"],
-            fast: ["Quick access!", "Got it"],
+            completed: ["Got it", "Synced", "Files updated"],
+            fast: ["Quick access!", "Done"],
         },
     },
     fireflies: {
         displayName: "Fireflies",
         icon: "/logos/fireflies.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const query = (args.params as { query?: string })?.query;
+            if (query) return truncate(query, 30);
+            return action;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Searching meeting transcripts...",
-            completed: "Transcripts found",
-            error: "Couldn't search transcripts",
+            running: "Searching our meeting notes...",
+            completed: "Found the transcripts",
+            error: "Couldn't reach Fireflies. The robots are on it. 🤖",
         },
         delightMessages: {
-            completed: ["Meetings retrieved", "Found those notes", "Transcript ready"],
-            fast: ["Quick search!", "Found it fast"],
+            completed: ["Meetings found", "Notes retrieved", "Transcript ready"],
+            fast: ["Quick find!", "Got it"],
         },
     },
     giphy: {
-        displayName: "Giphy",
+        displayName: "GIF",
         icon: "/logos/giphy.svg",
+        getDescription: (args) => {
+            const query = args.query as string | undefined;
+            const action = args.action as string | undefined;
+            if (query) return truncate(query, 25);
+            if (action === "get_trending") return "trending";
+            if (action === "get_random") return "random";
+            return action;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Wait for it...",
-            completed: "Perfect",
-            error: "Couldn't find the right one",
+            running: "Finding the perfect one...",
+            completed: "This one",
+            error: "Couldn't find the right GIF. The bots are on it. 🤖",
         },
         delightMessages: {
-            completed: ["This one", "Yes", "Here"],
-            fast: ["Gotcha", "Quick"],
+            completed: ["Perfect", "Yes", "Found it"],
+            fast: ["Gotcha", "Quick!"],
         },
     },
     imgflip: {
-        displayName: "Imgflip",
+        displayName: "Meme",
         icon: "/logos/imgflip.svg",
-        messages: {
-            pending: "Getting ready...",
-            running: "This'll be good...",
-            completed: "Perfect",
-            error: "That didn't work",
-        },
-        delightMessages: {
-            completed: ["Nailed it", "This one", "Yes"],
-            fast: ["Quick", "Done"],
-        },
         getDescription: (args) => {
             const action = args.action as string | undefined;
             const templateId = args.templateId as string | undefined;
             return action === "list_templates"
-                ? "templates"
+                ? "browsing templates"
                 : templateId
-                  ? `template ${templateId}`
+                  ? "creating meme"
                   : undefined;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "This'll be good...",
+            completed: "Perfect",
+            error: "Meme generation failed. The robots are sad. 🤖",
+        },
+        delightMessages: {
+            completed: ["Nailed it", "Chef's kiss", "This is the one"],
+            fast: ["Quick meme!", "Done"],
         },
     },
     gmail: {
         displayName: "Gmail",
         icon: "/logos/gmail.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            if (action === "send_email") return "sending email";
+            if (action === "search_emails") return "searching inbox";
+            if (action === "read_email") return "reading email";
+            if (action === "list_labels") return "checking labels";
+            return action;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Accessing Gmail...",
-            completed: "Gmail operation complete",
-            error: "Couldn't complete Gmail operation",
+            running: "Working with our email...",
+            completed: "Email ready",
+            error: "Had trouble with Gmail. Our monitoring caught it. 🤖",
         },
         delightMessages: {
-            completed: ["Email sent", "Inbox checked", "Mail ready"],
-            fast: ["Quick send!", "Sent!"],
+            completed: ["Done", "Inbox checked", "All set"],
+            fast: ["Quick!", "Sent!"],
         },
     },
     "google-calendar-contacts": {
-        displayName: "Google Calendar & Contacts",
+        displayName: "Calendar & Contacts",
         icon: "/logos/google-calendar-contacts.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            if (action === "list_events") return "checking calendar";
+            if (action === "create_event") return "creating event";
+            if (action === "search_contacts") return "finding contacts";
+            if (action === "get_contact") return "looking up contact";
+            return action;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Accessing Google...",
-            completed: "Google operation complete",
-            error: "Couldn't complete Google operation",
+            running: "Checking our calendar...",
+            completed: "Calendar ready",
+            error: "Had trouble with Google. The bots are on it. 🤖",
         },
         delightMessages: {
-            completed: ["Calendar updated", "Event created", "Contact found"],
-            fast: ["Quick update!", "Done!"],
+            completed: ["All set", "Event ready", "Contact found"],
+            fast: ["Quick check!", "Done!"],
         },
     },
     notion: {
@@ -409,27 +541,35 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         messages: {
             pending: "Getting ready...",
-            running: "Accessing Quo...",
-            completed: "Quo operation complete",
-            error: "Couldn't complete Quo operation",
+            running: "Working with Quo...",
+            completed: "All set",
+            error: "Had trouble with Quo. Our monitoring caught it. 🤖",
         },
         delightMessages: {
-            completed: ["Message sent", "Inbox checked", "All set"],
-            fast: ["Quick!", "Done"],
+            completed: ["Message sent", "Done", "Ready"],
+            fast: ["Quick!", "Sent"],
         },
     },
     slack: {
         displayName: "Slack",
         icon: "/logos/slack.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const channel = (args.params as { channel?: string })?.channel;
+            if (action === "send_message" && channel) return `#${channel}`;
+            if (action === "list_channels") return "checking channels";
+            if (action === "search_messages") return "searching messages";
+            return action;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Accessing Slack...",
-            completed: "Slack operation complete",
-            error: "Couldn't complete Slack operation",
+            running: "Working with our Slack...",
+            completed: "Slack ready",
+            error: "Had trouble with Slack. The bots are on it. 🤖",
         },
         delightMessages: {
-            completed: ["Message sent", "Slack updated", "Channel checked"],
-            fast: ["Quick send!", "Sent!"],
+            completed: ["Message sent", "Done", "Channel updated"],
+            fast: ["Quick!", "Sent!"],
         },
     },
     spotify: {
@@ -459,17 +599,24 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
     },
     twitter: {
-        displayName: "X (Twitter)",
+        displayName: "X",
         icon: "/logos/twitter.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            if (action === "post_tweet") return "posting";
+            if (action === "search_tweets") return "searching";
+            if (action === "get_timeline") return "checking timeline";
+            return action;
+        },
         messages: {
             pending: "Getting ready...",
-            running: "Accessing X...",
-            completed: "X operation complete",
-            error: "Couldn't complete X operation",
+            running: "Working with X...",
+            completed: "Done",
+            error: "Had trouble with X. Our monitoring caught it. 🤖",
         },
         delightMessages: {
-            completed: ["Tweet posted", "Timeline checked", "Post ready"],
-            fast: ["Quick post!", "Posted!"],
+            completed: ["Posted", "Timeline checked", "Ready"],
+            fast: ["Quick!", "Done"],
         },
     },
 
@@ -478,7 +625,7 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
     // =========================================================================
 
     Read: {
-        displayName: "Read File",
+        displayName: "Reading",
         icon: FileTextIcon,
         getDescription: (args) => {
             const filePath = args.file_path as string | undefined;
@@ -488,18 +635,18 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         messages: {
             pending: "Getting ready...",
-            running: "Reading file...",
-            completed: "File read",
-            error: "Couldn't read file",
+            running: "Reading...",
+            completed: "Got it",
+            error: "File not accessible",
         },
         delightMessages: {
-            completed: ["Got it", "File loaded", "Contents ready"],
-            fast: ["Quick read!"],
+            completed: ["Loaded", "Ready", "Here it is"],
+            fast: ["Quick!"],
         },
     },
 
     Write: {
-        displayName: "Write File",
+        displayName: "Writing",
         icon: PencilSimpleIcon,
         getDescription: (args) => {
             const filePath = args.file_path as string | undefined;
@@ -509,18 +656,18 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         messages: {
             pending: "Getting ready...",
-            running: "Writing file...",
-            completed: "File written",
-            error: "Couldn't write file",
+            running: "Writing...",
+            completed: "Saved",
+            error: "Couldn't write that file. Check permissions?",
         },
         delightMessages: {
-            completed: ["Saved", "Written", "File created"],
-            fast: ["Quick write!"],
+            completed: ["Done", "Written", "Created"],
+            fast: ["Quick!"],
         },
     },
 
     Edit: {
-        displayName: "Edit File",
+        displayName: "Editing",
         icon: PencilIcon,
         getDescription: (args) => {
             const filePath = args.file_path as string | undefined;
@@ -530,23 +677,24 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         messages: {
             pending: "Getting ready...",
-            running: "Editing file...",
-            completed: "File edited",
-            error: "Couldn't edit file",
+            running: "Editing...",
+            completed: "Updated",
+            error: "Edit didn't apply. The old content might have changed.",
         },
         delightMessages: {
-            completed: ["Updated", "Changed", "Modified"],
-            fast: ["Quick edit!"],
+            completed: ["Changed", "Modified", "Done"],
+            fast: ["Quick!"],
         },
     },
 
     Bash: {
-        displayName: "Run Command",
+        displayName: "Running",
         icon: TerminalIcon,
         getDescription: (args) => {
             const command = args.command as string | undefined;
+            const description = args.description as string | undefined;
+            if (description) return truncate(description, 35);
             if (!command) return undefined;
-            // Show first word (the command) plus truncated args
             const parts = command.split(/\s+/);
             const cmd = parts[0];
             if (parts.length === 1) return cmd;
@@ -554,18 +702,18 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         messages: {
             pending: "Getting ready...",
-            running: "Running command...",
-            completed: "Command completed",
-            error: "Command failed",
+            running: "Running...",
+            completed: "Done",
+            error: "Command exited with an error",
         },
         delightMessages: {
-            completed: ["Done", "Executed", "Complete"],
+            completed: ["Executed", "Complete", "Finished"],
             fast: ["Quick!"],
         },
     },
 
     Glob: {
-        displayName: "Find Files",
+        displayName: "Finding",
         icon: FolderOpenIcon,
         getDescription: (args) => {
             const pattern = args.pattern as string | undefined;
@@ -574,17 +722,17 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         messages: {
             pending: "Getting ready...",
             running: "Finding files...",
-            completed: "Files found",
-            error: "Couldn't find files",
+            completed: "Found them",
+            error: "Search didn't match anything",
         },
         delightMessages: {
-            completed: ["Found them", "Located", "Matched"],
-            fast: ["Quick find!"],
+            completed: ["Located", "Matched", "Here they are"],
+            fast: ["Quick!"],
         },
     },
 
     Grep: {
-        displayName: "Search Code",
+        displayName: "Searching",
         icon: FileMagnifyingGlassIcon,
         getDescription: (args) => {
             const pattern = args.pattern as string | undefined;
@@ -592,18 +740,18 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         messages: {
             pending: "Getting ready...",
-            running: "Searching code...",
-            completed: "Search complete",
-            error: "Search failed",
+            running: "Searching...",
+            completed: "Found matches",
+            error: "No matches found",
         },
         delightMessages: {
-            completed: ["Found matches", "Results ready", "Searched"],
-            fast: ["Quick search!"],
+            completed: ["Results ready", "Located", "Here they are"],
+            fast: ["Quick!"],
         },
     },
 
     Task: {
-        displayName: "Sub-Agent",
+        displayName: "Working",
         icon: RobotIcon,
         getDescription: (args) => {
             const agentType = args.subagent_type as string | undefined;
@@ -612,32 +760,32 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         messages: {
             pending: "Getting ready...",
-            running: "Working on sub-task...",
-            completed: "Sub-task complete",
-            error: "Sub-task failed",
+            running: "Working on this...",
+            completed: "Finished",
+            error: "Sub-task hit an issue",
         },
         delightMessages: {
-            completed: ["Done", "Finished", "Complete"],
+            completed: ["Done", "Complete", "All set"],
         },
     },
 
     TodoWrite: {
-        displayName: "Task List",
+        displayName: "Tasks",
         icon: ListChecksIcon,
         messages: {
             pending: "Getting ready...",
             running: "Updating tasks...",
             completed: "Tasks updated",
-            error: "Couldn't update tasks",
+            error: "Couldn't update task list",
         },
         delightMessages: {
-            completed: ["Updated", "Organized", "Tracked"],
-            fast: ["Quick update!"],
+            completed: ["Organized", "Tracked", "Ready"],
+            fast: ["Quick!"],
         },
     },
 
     LSP: {
-        displayName: "Code Intelligence",
+        displayName: "Analyzing",
         icon: CodeIcon,
         getDescription: (args) => {
             const operation = args.operation as string | undefined;
@@ -646,32 +794,38 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         messages: {
             pending: "Getting ready...",
             running: "Analyzing code...",
-            completed: "Analysis complete",
-            error: "Analysis failed",
+            completed: "Analysis ready",
+            error: "Couldn't analyze that code",
         },
         delightMessages: {
-            completed: ["Analyzed", "Found it", "Understood"],
-            fast: ["Quick lookup!"],
+            completed: ["Found it", "Understood", "Here's what I see"],
+            fast: ["Quick!"],
         },
     },
 
     NotebookEdit: {
-        displayName: "Edit Notebook",
+        displayName: "Notebook",
         icon: NotebookIcon,
+        getDescription: (args) => {
+            const notebookPath = args.notebook_path as string | undefined;
+            if (!notebookPath) return undefined;
+            const parts = notebookPath.split("/");
+            return truncate(parts[parts.length - 1] || notebookPath, 30);
+        },
         messages: {
             pending: "Getting ready...",
             running: "Editing notebook...",
             completed: "Notebook updated",
-            error: "Couldn't edit notebook",
+            error: "Couldn't edit that cell",
         },
         delightMessages: {
-            completed: ["Updated", "Edited", "Modified"],
-            fast: ["Quick edit!"],
+            completed: ["Updated", "Modified", "Done"],
+            fast: ["Quick!"],
         },
     },
 
     WebFetch: {
-        displayName: "Fetch Page",
+        displayName: "Fetching",
         icon: GlobeIcon,
         getDescription: (args) => {
             const url = args.url as string | undefined;
@@ -685,17 +839,17 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         messages: {
             pending: "Getting ready...",
             running: "Fetching page...",
-            completed: "Page fetched",
-            error: "Couldn't fetch page",
+            completed: "Page ready",
+            error: "Page not reachable. It may be down or blocking access.",
         },
         delightMessages: {
             completed: ["Got it", "Loaded", "Retrieved"],
-            fast: ["Quick fetch!"],
+            fast: ["Quick!"],
         },
     },
 
     WebSearch: {
-        displayName: "Web Search",
+        displayName: "Searching",
         icon: MagnifyingGlassIcon,
         getDescription: (args) => {
             const query = args.query as string | undefined;
@@ -704,33 +858,34 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         messages: {
             pending: "Getting ready...",
             running: "Searching the web...",
-            completed: "Search complete",
-            error: "Search failed",
+            completed: "Found results",
+            error: "Search didn't return results. The bots are on it. 🤖",
         },
         delightMessages: {
-            completed: ["Found results", "Searched", "Discovered"],
-            fast: ["Quick search!"],
+            completed: ["Discovered", "Here's what I found", "Results ready"],
+            fast: ["Quick!"],
         },
     },
     // Post-response enhancement tools
     suggestQuestions: {
-        displayName: "Follow-ups",
+        displayName: "Ideas",
         icon: ChatCircleDotsIcon,
         getDescription: (args) => {
             const suggestions = args.suggestions as
                 | Array<{ prompt: string }>
                 | undefined;
             if (!suggestions?.length) return undefined;
-            return `${suggestions.length} suggestion${suggestions.length > 1 ? "s" : ""}`;
+            return `${suggestions.length} idea${suggestions.length > 1 ? "s" : ""}`;
         },
         messages: {
             pending: "Thinking...",
             running: "Finding follow-ups...",
-            completed: "Here are some ideas",
-            error: "Couldn't generate suggestions",
+            completed: "Some ideas",
+            error: "Couldn't think of follow-ups",
         },
         delightMessages: {
-            completed: ["What's next?", "Keep going?", "Curious about more?"],
+            completed: ["What's next?", "Keep exploring?", "Curious about more?"],
+            fast: ["Quick thoughts!"],
         },
     },
     showReferences: {
@@ -744,11 +899,12 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         messages: {
             pending: "Getting ready...",
             running: "Gathering sources...",
-            completed: "Sources ready",
+            completed: "Sources",
             error: "Couldn't load sources",
         },
         delightMessages: {
-            completed: ["Here's where this came from", "Check the sources"],
+            completed: ["Here's where this came from", "The sources"],
+            fast: ["Quick reference!"],
         },
     },
     askUserInput: {
@@ -760,41 +916,48 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         },
         messages: {
             pending: "Getting ready...",
-            running: "Preparing question...",
-            completed: "Your input needed",
-            error: "Couldn't prepare question",
+            running: "Preparing...",
+            completed: "Your turn",
+            error: "Something went wrong preparing that question",
+        },
+        delightMessages: {
+            completed: ["Over to you", "Your input", "What do you think?"],
         },
     },
     acknowledge: {
-        displayName: "Appreciation",
+        displayName: "Gratitude",
         icon: HeartIcon,
         messages: {
             pending: "Getting ready...",
             running: "Thinking...",
             completed: "With gratitude",
-            error: "Couldn't express appreciation",
+            error: "Couldn't quite express that",
         },
         delightMessages: {
             completed: ["From the heart", "With care", "Truly appreciated"],
+            fast: ["❤️"],
         },
     },
 };
 
 /**
  * Default configuration for unknown tools
+ *
+ * This is a fallback - if you see this in production, add the tool to TOOL_CONFIG.
+ * The development warning will help catch missing configs.
  */
 export const DEFAULT_TOOL_CONFIG: ToolConfig = {
-    displayName: "Tool",
-    icon: MagnifyingGlassIcon,
+    displayName: "Working",
+    icon: SparkleIcon,
     messages: {
         pending: "Getting ready...",
-        running: "Working through this...",
-        completed: "All set",
-        error: "That didn't work out",
+        running: "Working on this...",
+        completed: "Done",
+        error: "Something went sideways. The robots are on it. 🤖",
     },
     delightMessages: {
-        completed: ["Got it", "Here you go", "All done"],
-        fast: ["Quick one!", "That was fast"],
+        completed: ["Got it", "All set", "Ready"],
+        fast: ["Quick!"],
     },
 };
 
