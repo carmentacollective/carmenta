@@ -573,6 +573,25 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             fast: ["Quick!", "Sent"],
         },
     },
+    smsUser: {
+        displayName: "SMS",
+        icon: ChatCircleDotsIcon,
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            if (action === "send") return "texting you";
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Texting you...",
+            completed: "Sent",
+            error: "That didn't go through. Make sure you have a verified phone in settings.",
+        },
+        delightMessages: {
+            completed: ["On its way", "Headed your way", "Check your phone"],
+            fast: ["Quick!", "Already there"],
+        },
+    },
     slack: {
         displayName: "Slack",
         icon: "/logos/slack.svg",
