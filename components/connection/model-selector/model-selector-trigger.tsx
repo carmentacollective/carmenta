@@ -103,7 +103,7 @@ export function ModelSelectorTrigger({
                     <ProviderIcon
                         provider={displayModel.provider}
                         className={cn(
-                            "h-5 w-5 transition-all duration-300 sm:h-6 sm:w-6",
+                            "h-5 w-5 transition-all duration-300 @md:h-6 @md:w-6",
                             disabled
                                 ? "text-foreground/30"
                                 : isAuto
@@ -112,7 +112,7 @@ export function ModelSelectorTrigger({
                         )}
                     />
                 ) : (
-                    <SparkleIcon className="text-primary/70 group-hover:text-primary h-5 w-5 transition-colors sm:h-6 sm:w-6" />
+                    <SparkleIcon className="text-primary/70 group-hover:text-primary h-5 w-5 transition-colors @md:h-6 @md:w-6" />
                 )}
             </button>
 

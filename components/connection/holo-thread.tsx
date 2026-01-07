@@ -234,7 +234,7 @@ function HoloThreadInner() {
             <div
                 ref={scrollRef}
                 className={cn(
-                    "chat-viewport-fade landscape-compact-viewport relative z-10 flex flex-1 flex-col items-center overflow-y-auto bg-transparent px-2 pt-2 pb-4 sm:px-14 sm:pt-8 sm:pb-10",
+                    "chat-viewport-fade landscape-compact-viewport relative z-10 flex flex-1 flex-col items-center overflow-y-auto bg-transparent px-2 pt-2 pb-4 @lg:px-14 @lg:pt-8 @lg:pb-10",
                     isLoading ? "scrollbar-streaming" : "scrollbar-holo"
                 )}
             >
@@ -301,7 +301,7 @@ function HoloThreadInner() {
             {/* Input container with safe area for notched devices - glass treatment matches header */}
             {/* NOTE: No motion.div wrapper here - CSS transforms on iOS Safari cause cursor
                 positioning bugs where the cursor appears displaced from the textarea */}
-            <div className="landscape-compact-input border-foreground/5 dark:bg-card/60 flex flex-none items-center justify-center border-t bg-white/60 px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl sm:px-4 sm:pt-3 sm:pb-4">
+            <div className="landscape-compact-input border-foreground/5 dark:bg-card/60 flex flex-none items-center justify-center border-t bg-white/60 px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl @md:px-4 @md:pt-3 @md:pb-4">
                 <div className="relative flex w-full flex-col items-center">
                     <ScrollToBottomButton
                         isAtBottom={isAtBottom}
@@ -333,7 +333,7 @@ const ScrollToBottomButton = memo(function ScrollToBottomButton({
     return (
         <button
             onClick={onScrollToBottom}
-            className="btn-glass-interactive z-sticky absolute -top-14 flex h-11 w-11 items-center justify-center sm:-top-12 sm:h-10 sm:w-10"
+            className="btn-glass-interactive z-sticky absolute -top-14 flex h-11 w-11 items-center justify-center @md:-top-12 @md:h-10 @md:w-10"
             aria-label="Scroll to bottom"
         >
             <CaretDownIcon className="text-foreground/70 h-5 w-5" />
@@ -1551,14 +1551,14 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     );
 
     return (
-        <div className="my-3 flex w-full justify-end sm:my-5">
-            <div className="group relative max-w-full sm:max-w-[80%]">
+        <div className="my-3 flex w-full justify-end @lg:my-5">
+            <div className="group relative max-w-full @lg:max-w-[80%]">
                 {/* User avatar - positioned outside bubble, hidden on mobile */}
                 <div className="absolute top-2 -right-10 hidden sm:block">
                     <UserAvatar />
                 </div>
 
-                <div className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3 sm:px-5 sm:py-4">
+                <div className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3 @md:px-5 @md:py-4">
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
@@ -1819,7 +1819,7 @@ export function AssistantMessage({
 
                             {/* File previews */}
                             {fileParts.length > 0 && (
-                                <div className="border-foreground/10 border-b p-3 sm:p-4">
+                                <div className="border-foreground/10 border-b p-3 @md:p-4">
                                     <div className="flex flex-col gap-2">
                                         {fileParts.map((file, idx) => (
                                             <FilePreview
@@ -1835,7 +1835,7 @@ export function AssistantMessage({
 
                             {/* Thinking indicator - inside LLM zone while waiting for content */}
                             {showThinking && (
-                                <div className="px-3 py-2 sm:px-4 sm:py-3">
+                                <div className="px-3 py-2 @md:px-4 @md:py-3">
                                     <ThinkingIndicator />
                                 </div>
                             )}
@@ -1843,13 +1843,13 @@ export function AssistantMessage({
                             {/* Message content - primary output */}
                             {hasContent && (
                                 <div className="group">
-                                    <div className="px-4 pt-4 pb-2 sm:px-5 sm:pt-5 sm:pb-3">
+                                    <div className="px-4 pt-4 pb-2 @md:px-5 @md:pt-5 @md:pb-3">
                                         <CollapsibleStreamingContent
                                             content={content}
                                             isStreaming={isStreaming}
                                         />
                                     </div>
-                                    <div className="px-4 pb-2 sm:px-5">
+                                    <div className="px-4 pb-2 @md:px-5">
                                         <MessageActions
                                             content={content}
                                             isLast={isLast}
@@ -1870,7 +1870,7 @@ export function AssistantMessage({
 
                             {/* Clarifying questions - data-askUserInput parts */}
                             {askUserInputParts.length > 0 && (
-                                <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+                                <div className="px-4 pb-4 @md:px-5 @md:pb-5">
                                     {askUserInputParts.map((part, idx) => (
                                         <AskUserInputResult
                                             key={part.id || `ask-${idx}`}
@@ -1898,13 +1898,13 @@ export function AssistantMessage({
 
             {/* Fallback: Show content without LLM zone wrapper when no concierge (e.g., history messages) */}
             {!showConcierge && hasContent && (
-                <div className="group relative max-w-full sm:max-w-[85%]">
+                <div className="group relative max-w-full @lg:max-w-[85%]">
                     {/* Carmenta avatar - positioned outside bubble, hidden on mobile */}
                     <div className="absolute top-2 -left-10 hidden sm:block">
                         <CarmentaAvatar size="sm" state="idle" />
                     </div>
 
-                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-3 sm:px-5 sm:py-4">
+                    <div className="assistant-message-bubble rounded-2xl rounded-bl-md border-l-[3px] border-l-cyan-400 px-4 py-3 @md:px-5 @md:py-4">
                         <MarkdownRenderer content={content} isStreaming={isStreaming} />
                     </div>
                     <MessageActions
@@ -2075,7 +2075,7 @@ function PendingAssistantMessage({
                             }}
                             className="border-foreground/10 max-w-full overflow-hidden rounded-2xl border border-l-[3px] border-l-cyan-400 bg-white/75 backdrop-blur-xl dark:bg-black/50"
                         >
-                            <div className="px-4 py-3 sm:px-5 sm:py-4">
+                            <div className="px-4 py-3 @md:px-5 @md:py-4">
                                 <ThinkingIndicator />
                             </div>
                         </motion.div>
