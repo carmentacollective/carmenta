@@ -268,13 +268,12 @@ test.describe("Visual Consistency", () => {
             await page.goto(pagePath);
             await page.waitForLoadState("networkidle");
 
-            // Check for broken images
+            // Check for broken images (only images that attempted to load but failed)
+            // Excludes lazy-loaded images that haven't loaded yet (img.complete === false)
             const brokenImages = await page.evaluate(() => {
                 const images = Array.from(document.querySelectorAll("img"));
                 return images.filter(
-                    (img) =>
-                        img.complete === false ||
-                        (img.naturalHeight === 0 && img.src !== "")
+                    (img) => img.complete && img.naturalHeight === 0 && img.src !== ""
                 ).length;
             });
 

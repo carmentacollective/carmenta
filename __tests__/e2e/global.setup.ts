@@ -80,6 +80,9 @@ setup("warm up authenticated pages", async ({ page }) => {
         },
     });
 
+    // Verify authentication succeeded (not redirected to sign-in)
+    await expect(page).not.toHaveURL(/sign-in/);
+
     // Navigate to pages as authenticated user to trigger compilation
     // This is the slow operation that was timing out in tests
     const pagesToWarmUp = [
