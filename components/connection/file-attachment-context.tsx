@@ -59,11 +59,21 @@ function uploadReducer(
     }
 }
 
+/** Pre-uploaded file metadata (for share target) */
+export interface PreUploadedFile {
+    url: string;
+    name: string;
+    mediaType: string;
+    size: number;
+}
+
 interface FileAttachmentContextType {
     /** Pending uploads (uploading or complete) */
     pendingFiles: UploadProgress[];
     /** Add files to upload queue, returns placeholder if provided */
     addFiles: (files: FileList | File[], placeholder?: string) => void;
+    /** Add pre-uploaded files (already in storage, e.g., from share target) */
+    addPreUploadedFiles: (files: PreUploadedFile[]) => void;
     /** Remove file from queue */
     removeFile: (id: string) => void;
     /** Clear all files (after successful send) */
@@ -152,6 +162,35 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
         [startUpload]
     );
 
+    /**
+     * Add pre-uploaded files (already in storage).
+     * Used by PWA Share Target where files are uploaded server-side
+     * before being passed to the client.
+     */
+    const addPreUploadedFiles = useCallback((files: PreUploadedFile[]) => {
+        if (files.length === 0) return;
+
+        const newUploads: UploadProgress[] = files.map((file) => ({
+            id: nanoid(),
+            // Create a minimal File object for the progress display
+            file: new File([], file.name, { type: file.mediaType }),
+            status: "complete" as const,
+            result: {
+                url: file.url,
+                mediaType: file.mediaType,
+                name: file.name,
+                size: file.size,
+                path: file.url, // Use URL as path since it's already uploaded
+            },
+        }));
+
+        dispatch({ type: "ADD", uploads: newUploads });
+        logger.info(
+            { fileCount: files.length, names: files.map((f) => f.name) },
+            "Added pre-uploaded files from share target"
+        );
+    }, []);
+
     const getNextPlaceholder = useCallback(
         (type: "text" | "image", mimeType?: string) => {
             // Increment synchronously via ref to avoid race conditions with simultaneous pastes
@@ -223,6 +262,7 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
             value={{
                 pendingFiles,
                 addFiles,
+                addPreUploadedFiles,
                 removeFile,
                 clearFiles,
                 isUploading,
