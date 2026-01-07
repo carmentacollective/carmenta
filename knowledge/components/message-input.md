@@ -133,13 +133,30 @@ correction.
 
 ### Keyboard Behavior
 
-**Universal pattern (all competitors identical):**
+**Platform-specific patterns (matching ChatGPT, Claude, and major AI apps):**
+
+**Desktop:**
 
 - Enter = send
 - Shift+Enter = newline
 - Escape = stop generation (when streaming)
 
-**Optional:** Cmd/Ctrl+Enter as user preference (some builders prefer explicit send).
+**Mobile:**
+
+- Enter/Return = newline (for composing multi-line messages)
+- Send button = send (explicit tap required)
+- Cmd/Ctrl+Enter = send (power user shortcut)
+
+**Why different on mobile:** Mobile users compose multi-line messages naturally using
+the Return key. Auto-sending on Return creates a frustrating experience where users
+accidentally send incomplete thoughts. The ChatGPT app, Claude app, and virtually all
+modern mobile chat interfaces use Return for newlines with an explicit send button.
+
+**Technical implementation:**
+
+- Use `enterKeyHint="enter"` on mobile to show "return" key label
+- Use `enterKeyHint="send"` on desktop to indicate Enter sends
+- Detect mobile via viewport width or touch capability
 
 ### Draft Persistence
 
@@ -172,15 +189,27 @@ chat too.
 - Auto-focus on load (with preventScroll)
 - Taller max height (8-10 lines)
 - Hover states matter
+- Enter = send, Shift+Enter = newline
 
 **Mobile:**
 
 - No auto-focus (don't pop keyboard unexpectedly)
 - Shorter max height (4-6 lines)
 - Larger touch targets
-- Detect mobile/touch device, adjust behavior
+- Enter = newline, send button = send
+- Virtual keyboard detection via visualViewport API
+- Scroll position stability during keyboard transitions
+- Immediate draft save on blur (prevents data loss)
 
 **Why:** Desktop and mobile are different contexts. Respect platform conventions.
+
+**Key mobile UX principles:**
+
+1. Never auto-pop the keyboard - let users initiate
+2. Return key creates newlines (matches user expectation from native apps)
+3. Explicit send button required (prevents accidental sends)
+4. Scroll position must not jump when keyboard opens/closes
+5. Save draft immediately on blur (users scroll to read, shouldn't lose content)
 
 ### File Attachments
 

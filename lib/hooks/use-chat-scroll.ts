@@ -13,11 +13,13 @@
  * - Smart user intent detection (pauses on scroll up, resumes on return to bottom)
  * - No scroll fighting (distinguishes user scroll from content pushing)
  * - Content observation (ResizeObserver + MutationObserver for all content changes)
+ * - Keyboard awareness (suppresses auto-scroll during mobile keyboard transitions)
  *
  * @see knowledge/components/chat-scroll.md
  */
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useVirtualKeyboard } from "@/lib/hooks/use-virtual-keyboard";
 
 const AT_BOTTOM_THRESHOLD = 100; // px from bottom to consider "at bottom"
 
@@ -58,6 +60,11 @@ export function useChatScroll({
     const scrollRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 
+    // Track keyboard state to suppress auto-scroll during keyboard transitions
+    const { isKeyboardOpen } = useVirtualKeyboard();
+    const prevKeyboardOpenRef = useRef(isKeyboardOpen);
+    const keyboardTransitionRef = useRef(false);
+
     // Exposed state - triggers re-renders for UI updates (scroll button visibility)
     const [isAtBottom, setIsAtBottom] = useState(true);
 
@@ -65,6 +72,22 @@ export function useChatScroll({
     const isAtBottomRef = useRef(true);
     const isUserScrollingRef = useRef(false);
     const lastScrollTopRef = useRef(0);
+
+    // Detect keyboard transitions (opening or closing)
+    // During these transitions, suppress auto-scroll to prevent jarring UX
+    useEffect(() => {
+        if (prevKeyboardOpenRef.current !== isKeyboardOpen) {
+            keyboardTransitionRef.current = true;
+            prevKeyboardOpenRef.current = isKeyboardOpen;
+
+            // Clear transition flag after keyboard animation completes (~300ms)
+            const timer = setTimeout(() => {
+                keyboardTransitionRef.current = false;
+            }, 350);
+
+            return () => clearTimeout(timer);
+        }
+    }, [isKeyboardOpen]);
 
     /**
      * Sync ref to state - only when value actually changes to minimize re-renders
@@ -129,11 +152,22 @@ export function useChatScroll({
 
     /**
      * Auto-scroll during streaming when user is at bottom
+     *
+     * Key safety checks:
+     * - Only during active streaming
+     * - Not when user has scrolled up
+     * - Not during keyboard transitions (opening/closing)
+     * - Only when already at bottom
      */
     const handleContentChange = useCallback(() => {
         if (!isStreaming) return;
         if (isUserScrollingRef.current) return;
         if (!isAtBottomRef.current) return;
+
+        // Suppress auto-scroll during keyboard transitions
+        // This prevents the jarring scroll jumps when the mobile keyboard
+        // opens or closes, which resize the viewport
+        if (keyboardTransitionRef.current) return;
 
         // Use requestAnimationFrame for smooth visual updates
         requestAnimationFrame(() => {

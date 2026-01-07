@@ -77,12 +77,17 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
     const { checkMessage } = useMessageEffects();
 
     // Draft persistence - saves unsent messages to localStorage
-    const { hasRecoveredDraft, dismissRecovery, clearDraft, onMessageSent } =
-        useDraftPersistence({
-            connectionId: activeConnectionId,
-            input,
-            setInput,
-        });
+    const {
+        hasRecoveredDraft,
+        dismissRecovery,
+        clearDraft,
+        onMessageSent,
+        saveImmediately,
+    } = useDraftPersistence({
+        connectionId: activeConnectionId,
+        input,
+        setInput,
+    });
 
     // Message queue - allows queuing messages while AI is streaming
     const {
@@ -310,15 +315,19 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         [getTextContent, removeFile, setInput]
     );
 
-    // Autofocus on mount (all devices)
-    // User preference: keyboard should appear on mobile too
+    // Autofocus on mount - desktop only
+    // Mobile: Don't auto-focus to avoid unexpectedly popping the keyboard.
+    // Users should tap the input when ready to type.
+    // Desktop: Auto-focus for immediate typing (standard pattern).
     useEffect(() => {
         if (hasInitialFocusRef.current) return;
         hasInitialFocusRef.current = true;
 
+        // Skip auto-focus on mobile - let users initiate keyboard
+        if (isMobile) return;
+
         if (inputRef.current) {
-            // Use preventScroll on mobile to avoid keyboard-induced scroll jank
-            inputRef.current.focus({ preventScroll: isMobile });
+            inputRef.current.focus({ preventScroll: true });
         }
     }, [isMobile]);
 
@@ -602,6 +611,39 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 return;
             }
 
+            // Mobile keyboard behavior: Enter = newline, send button = send
+            // This matches ChatGPT, Claude, and other major AI chat apps on mobile.
+            // The mobile Return key should create newlines for multi-line composition.
+            // Users tap the explicit send button to submit.
+            if (isMobile && e.key === "Enter") {
+                // On mobile, don't auto-send on Enter - let the newline happen naturally
+                // Exception: Cmd/Ctrl+Enter always sends (power user shortcut)
+                if (e.metaKey || e.ctrlKey) {
+                    e.preventDefault();
+                    if (isLoading) {
+                        if (input.trim() && !isQueueFull) {
+                            enqueueMessage(
+                                input.trim(),
+                                completedFiles.map((f) => ({
+                                    url: f.url,
+                                    mediaType: f.mediaType,
+                                    name: f.name,
+                                }))
+                            );
+                            setInput("");
+                            clearFiles();
+                        }
+                    } else if (input.trim() || completedFiles.length > 0) {
+                        handleSubmit(e as unknown as FormEvent);
+                    }
+                }
+                // Otherwise let Enter create a newline (don't preventDefault)
+                return;
+            }
+
+            // Desktop keyboard behavior: Enter = send, Shift+Enter = newline
+            // This is the established desktop convention.
+
             // Shift+Enter during streaming = interrupt (stop + send now)
             if (e.key === "Enter" && e.shiftKey && isLoading && input.trim()) {
                 e.preventDefault();
@@ -638,6 +680,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         [
             isComposing,
             isLoading,
+            isMobile,
             input,
             completedFiles,
             isQueueFull,
@@ -731,13 +774,26 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
+                    onBlur={() => {
+                        setIsFocused(false);
+                        // Save draft immediately on blur to prevent data loss
+                        // This catches cases where user scrolls away or switches apps
+                        saveImmediately();
+                    }}
                     onCompositionStart={() => setIsComposing(true)}
                     onCompositionEnd={() => {
                         // IME composition ends before value updates, defer flag reset
                         setTimeout(() => setIsComposing(false), 0);
                     }}
                     placeholder="Message Carmenta..."
+                    // Mobile: enterKeyHint="enter" shows "return" key (creates newlines)
+                    // Desktop: enterKeyHint="send" shows "send" key (though desktop keyboards ignore this)
+                    // This provides proper visual affordance - users see "return" and expect newlines
+                    enterKeyHint={isMobile ? "enter" : "send"}
+                    // Prevent aggressive autocorrect/capitalize on mobile that can disrupt coding
+                    autoCapitalize="sentences"
+                    autoCorrect="off"
+                    spellCheck="false"
                     className={cn(
                         // Layout
                         "w-full flex-none resize-none sm:flex-1",

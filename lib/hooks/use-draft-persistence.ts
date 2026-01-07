@@ -21,8 +21,8 @@ import { logger } from "@/lib/client-logger";
 
 const DRAFT_KEY_PREFIX = "carmenta:draft:";
 const NEW_CONNECTION_KEY = "new";
-const DEBOUNCE_MS = 500;
-const MIN_DRAFT_LENGTH = 30; // Don't save drafts shorter than this (roughly 5-7 words)
+const DEBOUNCE_MS = 150; // Fast debounce - saves quickly while avoiding write storms
+const MIN_DRAFT_LENGTH = 3; // Save any meaningful content (even short messages matter)
 
 export interface UseDraftPersistenceOptions {
     /** Connection ID to scope the draft to (uses "new" fallback for new connections) */
@@ -42,6 +42,8 @@ export interface UseDraftPersistenceReturn {
     clearDraft: () => void;
     /** Call this when message is successfully sent */
     onMessageSent: () => void;
+    /** Call this when input loses focus to save immediately */
+    saveImmediately: () => void;
 }
 
 function getDraftKey(connectionId: string): string {
@@ -196,10 +198,34 @@ export function useDraftPersistence({
         setShowRecoveryBanner(false);
     }, [effectiveKey]);
 
+    // Save immediately (bypasses debounce) - call on blur to prevent data loss
+    const saveImmediately = useCallback(() => {
+        // Clear any pending debounced save
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+            debounceRef.current = null;
+        }
+
+        if (typeof window === "undefined") return;
+
+        try {
+            const key = getDraftKey(effectiveKey);
+
+            if (input.trim().length >= MIN_DRAFT_LENGTH) {
+                localStorage.setItem(key, input);
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch (error) {
+            logger.debug({ error }, "Could not save draft immediately");
+        }
+    }, [effectiveKey, input]);
+
     return {
         hasRecoveredDraft: showRecoveryBanner,
         dismissRecovery,
         clearDraft,
         onMessageSent,
+        saveImmediately,
     };
 }
