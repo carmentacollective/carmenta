@@ -521,59 +521,83 @@ export const builtInTools = {
         }),
         execute: async ({ prompt, aspectRatio = "1:1" }) => {
             const MODEL_ID = "google/imagen-4.0-generate";
-            logger.info({ prompt, aspectRatio, model: MODEL_ID }, "Generating image");
+            const promptPreview =
+                prompt.length > 100 ? `${prompt.slice(0, 100)}...` : prompt;
+            logger.info(
+                { promptPreview, aspectRatio, model: MODEL_ID },
+                "Generating image"
+            );
 
-            try {
-                const gateway = getGatewayClient();
-                const startTime = Date.now();
+            return await Sentry.startSpan(
+                { op: "ai.image", name: "generateImage" },
+                async (span) => {
+                    span.setAttribute("model", MODEL_ID);
+                    span.setAttribute("aspectRatio", aspectRatio);
 
-                const { image } = await generateImage({
-                    model: gateway.imageModel(MODEL_ID),
-                    prompt,
-                    aspectRatio,
-                });
+                    try {
+                        const gateway = getGatewayClient();
+                        const startTime = Date.now();
 
-                // Validate response has actual image data
-                if (!image?.base64 || image.base64.length < 100) {
-                    throw new Error("Generated image data is empty or invalid");
+                        const { image } = await generateImage({
+                            model: gateway.imageModel(MODEL_ID),
+                            prompt,
+                            aspectRatio,
+                        });
+
+                        // Validate response has actual image data
+                        if (!image?.base64 || image.base64.length < 100) {
+                            throw new Error("Generated image data is empty or invalid");
+                        }
+
+                        const durationMs = Date.now() - startTime;
+                        const imageSizeKb = Math.round(
+                            (image.base64.length * 0.75) / 1024
+                        );
+                        logger.info(
+                            { durationMs, aspectRatio, model: MODEL_ID, imageSizeKb },
+                            "Image generated successfully"
+                        );
+
+                        span.setAttribute("imageSizeKb", imageSizeKb);
+                        span.setStatus({ code: 1, message: "Success" });
+
+                        return {
+                            success: true,
+                            image: {
+                                base64: image.base64,
+                                mimeType: image.mediaType ?? "image/png",
+                            },
+                            prompt,
+                            aspectRatio,
+                            durationMs,
+                        };
+                    } catch (error) {
+                        logger.error(
+                            { error, promptPreview, model: MODEL_ID },
+                            "Image generation failed"
+                        );
+                        Sentry.captureException(error, {
+                            tags: {
+                                component: "tool",
+                                tool: "createImage",
+                                model: MODEL_ID,
+                            },
+                            extra: { promptPreview, aspectRatio },
+                        });
+
+                        span.setStatus({ code: 2, message: "Error" });
+
+                        // Sanitize error messages to avoid leaking internal details
+                        const message = getUserFriendlyImageError(error);
+
+                        return {
+                            error: true,
+                            message,
+                            prompt,
+                        };
+                    }
                 }
-
-                const durationMs = Date.now() - startTime;
-                const imageSizeKb = Math.round((image.base64.length * 0.75) / 1024);
-                logger.info(
-                    { durationMs, aspectRatio, model: MODEL_ID, imageSizeKb },
-                    "Image generated successfully"
-                );
-
-                return {
-                    success: true,
-                    image: {
-                        base64: image.base64,
-                        mimeType: "image/png",
-                    },
-                    prompt,
-                    aspectRatio,
-                    durationMs,
-                };
-            } catch (error) {
-                logger.error(
-                    { error, prompt, model: MODEL_ID },
-                    "Image generation failed"
-                );
-                Sentry.captureException(error, {
-                    tags: { component: "tool", tool: "createImage", model: MODEL_ID },
-                    extra: { prompt, aspectRatio },
-                });
-
-                // Sanitize error messages to avoid leaking internal details
-                const message = getUserFriendlyImageError(error);
-
-                return {
-                    error: true,
-                    message,
-                    prompt,
-                };
-            }
+            );
         },
     }),
 };

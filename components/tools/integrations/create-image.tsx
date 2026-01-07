@@ -112,7 +112,11 @@ function ImageContent({
             <div className="relative">
                 <Image
                     src={src}
-                    alt={prompt || "AI-generated image"}
+                    alt={
+                        prompt
+                            ? `${prompt} (${aspectRatio})`
+                            : `AI-generated image (${aspectRatio})`
+                    }
                     width={512}
                     height={getHeightFromAspectRatio(aspectRatio)}
                     className="w-full object-contain"
