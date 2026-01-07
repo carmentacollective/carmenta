@@ -80,7 +80,8 @@ function CarmentaModalInner() {
             </div>
 
             {/* Chat interface - same as /connection */}
-            <div className="min-h-0 flex-1 overflow-hidden">
+            {/* @container enables container queries so Composer adapts to modal width */}
+            <div className="@container min-h-0 flex-1 overflow-hidden">
                 <HoloThread />
             </div>
         </>

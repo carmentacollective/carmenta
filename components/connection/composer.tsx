@@ -722,7 +722,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 ref={formRef}
                 onSubmit={handleSubmit}
                 className={cn(
-                    "relative flex w-full flex-col transition-all sm:flex-row sm:items-center",
+                    "relative flex w-full flex-col transition-all @md:flex-row @md:items-center",
                     shouldFlash && "ring-primary/40 ring-2"
                 )}
             >
@@ -741,12 +741,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     }}
                     placeholder="Message Carmenta..."
                     className={cn(
-                        // Layout
-                        "w-full flex-none resize-none sm:flex-1",
-                        // Height - 44px mobile, 56px desktop
+                        // Layout - use container queries for width responsiveness
+                        "w-full flex-none resize-none @md:flex-1",
+                        // Height - 44px mobile, 56px desktop (viewport-based is fine here)
                         "max-h-48 min-h-11 md:max-h-60 md:min-h-14",
                         // Spacing - symmetric for centered placeholder
-                        "px-4 py-2.5 sm:px-6 sm:py-4",
+                        "px-4 py-2.5 @md:px-6 @md:py-4",
                         // Typography
                         "text-base leading-5 outline-none",
                         "text-foreground/95 placeholder:text-foreground/40",
@@ -764,10 +764,10 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     data-testid="composer-input"
                 />
 
-                {/* Action bar: responsive layout via CSS */}
-                <div className="flex items-center justify-between gap-2 px-4 py-3 sm:justify-end sm:gap-1.5 sm:py-0 sm:pr-4">
+                {/* Action bar: responsive layout via container width */}
+                <div className="flex items-center justify-between gap-2 px-4 py-3 @md:justify-end @md:gap-1.5 @md:py-0 @md:pr-4">
                     {/* Left group (mobile) / inline (desktop): Model + Attach */}
-                    <div className="flex items-center gap-1 sm:order-last sm:gap-1.5">
+                    <div className="flex items-center gap-1 @md:order-last @md:gap-1.5">
                         <ModelSelectorTrigger
                             overrides={overrides}
                             onChange={setOverrides}
@@ -781,7 +781,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     </div>
 
                     {/* Right group: Send/Queue/Stop + Voice */}
-                    <div className="flex items-center gap-2 sm:order-first sm:gap-1.5">
+                    <div className="flex items-center gap-2 @md:order-first @md:gap-1.5">
                         {/* Button transforms based on state:
                             - Not streaming → Send (arrow)
                             - Streaming + empty input → Stop (square)
@@ -795,7 +795,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="send-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <ArrowElbowDownLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                                <ArrowElbowDownLeftIcon className="h-5 w-5 @md:h-6 @md:w-6" />
                             </ComposerButton>
                         ) : input.trim() ? (
                             <ComposerButton
@@ -822,7 +822,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
                                 <PlusIcon
-                                    className="h-5 w-5 sm:h-6 sm:w-6"
+                                    className="h-5 w-5 @md:h-6 @md:w-6"
                                     weight="bold"
                                 />
                             </ComposerButton>
@@ -836,7 +836,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 data-testid="stop-button"
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
-                                <SquareIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <SquareIcon className="h-4 w-4 @md:h-5 @md:w-5" />
                             </ComposerButton>
                         )}
                         <VoiceInputButton
@@ -985,7 +985,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
         // Queue and Send variants use children (passed as props)
         const getIcon = () => {
             if (variant === "stop") {
-                return <SquareIcon className="h-4 w-4 sm:h-5 sm:w-5" />;
+                return <SquareIcon className="h-4 w-4 @md:h-5 @md:w-5" />;
             }
             // Send, queue, and ghost variants use children
             return children;
@@ -1005,7 +1005,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                     ref={ref}
                     disabled={disabled}
                     className={cn(
-                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full @md:h-12 @md:w-12",
                         "shadow-xl ring-1 backdrop-blur-xl transition-all",
                         "hover:ring-primary/40 hover:scale-105 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",
@@ -1074,7 +1074,7 @@ const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>(
                               : { duration: 0.3 },
                     }}
                     className={cn(
-                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full @md:h-12 @md:w-12",
                         "shadow-xl ring-1 backdrop-blur-xl transition-[box-shadow,ring-color]",
                         "hover:ring-primary/40 hover:shadow-2xl hover:ring-[3px]",
                         "active:translate-y-0.5 active:shadow-sm",

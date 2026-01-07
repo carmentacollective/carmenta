@@ -225,7 +225,8 @@ function DesktopPanel({ onClose }: { onClose: () => void }) {
             </header>
 
             {/* Chat interface - same as /connection but narrower */}
-            <div className="min-h-0 flex-1 overflow-hidden">
+            {/* @container enables container queries so Composer adapts to panel width */}
+            <div className="@container min-h-0 flex-1 overflow-hidden">
                 <HoloThread />
             </div>
         </motion.aside>
