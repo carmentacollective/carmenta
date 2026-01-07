@@ -74,7 +74,7 @@ describe("useVirtualKeyboard", () => {
     });
 
     describe("when visualViewport is supported", () => {
-        it("should return isSupported true", () => {
+        it("should return isSupported true immediately", () => {
             const mockViewport = createMockVisualViewport(800);
             Object.defineProperty(window, "visualViewport", {
                 value: mockViewport,
@@ -84,6 +84,7 @@ describe("useVirtualKeyboard", () => {
 
             const { result } = renderHook(() => useVirtualKeyboard());
 
+            // Should be true immediately - no async needed for client-only hook
             expect(result.current.isSupported).toBe(true);
         });
 

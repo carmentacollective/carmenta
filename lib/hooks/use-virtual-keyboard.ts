@@ -47,7 +47,8 @@ export function useVirtualKeyboard(): UseVirtualKeyboardReturn {
     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-    // Check support once on initialization (not in effect to avoid setState cascade)
+    // Check support synchronously - this is a "use client" hook so window is always
+    // defined. No SSR hydration concern since this code only runs on the client.
     const isSupported =
         typeof window !== "undefined" &&
         "visualViewport" in window &&

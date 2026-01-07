@@ -81,6 +81,15 @@ export function useDraftPersistence({
     const restoredConnectionRef = useRef<string | null>(null);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Track latest input value via ref to avoid stale closures in saveImmediately
+    // This ensures we always save the most current value, even if React is batching updates
+    const inputRef = useRef(input);
+
+    // Keep ref in sync with latest input (must be in effect, not during render)
+    useEffect(() => {
+        inputRef.current = input;
+    }, [input]);
+
     // Initialize with draft check on first render (SSR-safe)
     const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
 
@@ -199,6 +208,7 @@ export function useDraftPersistence({
     }, [effectiveKey]);
 
     // Save immediately (bypasses debounce) - call on blur to prevent data loss
+    // Uses inputRef to avoid stale closure issues when React is batching state updates
     const saveImmediately = useCallback(() => {
         // Clear any pending debounced save
         if (debounceRef.current) {
@@ -210,16 +220,17 @@ export function useDraftPersistence({
 
         try {
             const key = getDraftKey(effectiveKey);
+            const currentInput = inputRef.current;
 
-            if (input.trim().length >= MIN_DRAFT_LENGTH) {
-                localStorage.setItem(key, input);
+            if (currentInput.trim().length >= MIN_DRAFT_LENGTH) {
+                localStorage.setItem(key, currentInput);
             } else {
                 localStorage.removeItem(key);
             }
         } catch (error) {
             logger.debug({ error }, "Could not save draft immediately");
         }
-    }, [effectiveKey, input]);
+    }, [effectiveKey]);
 
     return {
         hasRecoveredDraft: showRecoveryBanner,

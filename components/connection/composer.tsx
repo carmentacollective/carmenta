@@ -4,11 +4,14 @@
  * Composer - The glassmorphism input dock with model selector.
  *
  * Core behaviors:
- * - Enter = send, Shift+Enter = newline, Escape = stop
+ * - Desktop: Enter = send, Shift+Enter = newline
+ * - Mobile: Enter = newline, send button = send (matches ChatGPT/Claude)
+ * - Escape = stop generation (when streaming)
  * - IME composition detection (prevents sending mid-composition)
  * - Stop returns last message to input for quick correction
- * - Autofocus on mount (all devices), re-focus after send
- * - One-time Shift+Enter hint for new users
+ * - Desktop: Autofocus on mount, re-focus after send
+ * - Mobile: No autofocus (don't pop keyboard unexpectedly)
+ * - Draft saved immediately on blur to prevent data loss
  */
 
 import {
@@ -793,7 +796,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     // Prevent aggressive autocorrect/capitalize on mobile that can disrupt coding
                     autoCapitalize="sentences"
                     autoCorrect="off"
-                    spellCheck="false"
+                    spellCheck={false}
                     className={cn(
                         // Layout
                         "w-full flex-none resize-none sm:flex-1",
