@@ -20,7 +20,7 @@ import { useUser } from "@clerk/nextjs";
 import { uploadFile } from "@/lib/storage/upload";
 import { logger } from "@/lib/client-logger";
 import type { UploadProgress, UploadedFile, UploadStatus } from "@/lib/storage/types";
-import { useConnection } from "./connection-context";
+import { useConnectionSafe } from "./connection-context";
 
 // Upload state reducer actions
 type UploadAction =
@@ -94,7 +94,10 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
     const pasteCountRef = useRef({ text: 0, image: 0 });
     // Use ref for Map - it's mutated, not replaced, so shouldn't trigger re-renders
     const pastedTextContentRef = useRef(new Map<string, string>());
-    const { activeConnection } = useConnection();
+    // Safe version - activeConnection is optional for file uploads
+    // When outside ConnectionProvider (e.g., CarmentaSheet), uploads work without connection context
+    const connectionContext = useConnectionSafe();
+    const activeConnection = connectionContext?.activeConnection ?? null;
     const { user } = useUser();
 
     const startUpload = useCallback(

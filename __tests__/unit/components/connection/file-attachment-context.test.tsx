@@ -16,6 +16,7 @@ import {
 // Mock dependencies
 vi.mock("@/components/connection/connection-context", () => ({
     useConnection: () => ({ activeConnection: { id: "test-connection-id" } }),
+    useConnectionSafe: () => ({ activeConnection: { id: "test-connection-id" } }),
 }));
 
 vi.mock("@/lib/storage/upload", () => ({

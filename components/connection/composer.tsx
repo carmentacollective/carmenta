@@ -41,7 +41,7 @@ import { useChatContext, useModelOverrides } from "./connect-runtime-provider";
 import { ModelSelectorTrigger } from "./model-selector";
 import { useFileAttachments } from "./file-attachment-context";
 import { FilePickerButton } from "./file-picker-button";
-import { useConnection } from "./connection-context";
+import { useConnectionSafe } from "./connection-context";
 import { DraftRecoveryBanner } from "./draft-recovery-banner";
 import { UploadProgressDisplay } from "./upload-progress";
 import { MessageQueueDisplay } from "./message-queue-display";
@@ -69,7 +69,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         getNextPlaceholder,
         getTextContent,
     } = useFileAttachments();
-    const { activeConnectionId } = useConnection();
+    // Safe version - works outside ConnectionProvider (e.g., CarmentaSheet)
+    const connectionContext = useConnectionSafe();
+    const activeConnectionId = connectionContext?.activeConnectionId ?? null;
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
