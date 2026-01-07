@@ -8,9 +8,9 @@
  * so errors in portaled content don't bubble to the app-level error boundary.
  *
  * This component ensures:
- * 1. Errors are captured and reported to Sentry
- * 2. A graceful fallback UI is shown
- * 3. Users can dismiss the error and try again
+ * - Errors are captured and reported to Sentry
+ * - A graceful fallback UI is shown
+ * - Users can dismiss the error and try again
  */
 
 import * as Sentry from "@sentry/nextjs";
@@ -56,6 +56,14 @@ export class PortalErrorBoundary extends React.Component<
             `Portal "${this.props.portalName}" failed to render`
         );
 
+        // Breadcrumb for richer Sentry context
+        Sentry.addBreadcrumb({
+            category: "ui.error-boundary",
+            message: `Portal "${this.props.portalName}" caught error`,
+            level: "error",
+            data: { portalName: this.props.portalName },
+        });
+
         Sentry.captureException(error, {
             tags: {
                 component: "Portal",
@@ -70,6 +78,15 @@ export class PortalErrorBoundary extends React.Component<
     }
 
     handleRetry = () => {
+        Sentry.addBreadcrumb({
+            category: "ui.action",
+            message: `User retried "${this.props.portalName}" after error`,
+            level: "info",
+            data: {
+                portalName: this.props.portalName,
+                errorMessage: this.state.error?.message,
+            },
+        });
         this.setState({ hasError: false, error: undefined });
     };
 
