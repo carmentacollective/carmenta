@@ -472,7 +472,6 @@ function IntegrationsContent({
                     <CarmentaToggle
                         isOpen={carmentaOpen}
                         onClick={() => setCarmentaOpen(!carmentaOpen)}
-                        label="With Carmenta"
                     />
                 </div>
             </section>

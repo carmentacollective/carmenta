@@ -67,6 +67,7 @@ export default async function CommunicationPage() {
                 name: "style",
                 path: "style",
                 documents: communicationDocs,
+                children: [],
             });
         }
     }

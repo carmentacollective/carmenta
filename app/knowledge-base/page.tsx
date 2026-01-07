@@ -79,26 +79,35 @@ export default async function KnowledgeBasePage() {
                 name: "about",
                 path: "about",
                 documents: [identityDoc],
+                children: [],
             });
         }
     }
 
     // 2. Memories - learned knowledge from conversations
     // Aggregate ALL folders under knowledge.* namespace (knowledge.people, knowledge.preferences, etc.)
-    // The librarian creates 3-level paths like knowledge.category.name, which getParentPath
-    // groups as knowledge.category folders - not a single knowledge folder
-    const knowledgeFolders = userFolders.filter(
-        (f) => f.path === "knowledge" || f.path.startsWith("knowledge.")
-    );
+    // Since getKBFolders() now returns a tree structure with nested children,
+    // we need to recursively collect all documents from the knowledge folder and its descendants
+    const knowledgeFolder = userFolders.find((f) => f.path === "knowledge");
+
+    // Helper to recursively collect all documents from a folder and its children
+    const collectAllDocuments = (folder: KBFolder): typeof folder.documents => {
+        const docs = [...folder.documents];
+        for (const child of folder.children) {
+            docs.push(...collectAllDocuments(child));
+        }
+        return docs;
+    };
+
     // Filter out documents that duplicate profile content (about-you, identity, etc.)
     // These belong in profile.identity, not knowledge.*
-    const knowledgeDocuments = knowledgeFolders
-        .flatMap((f) => f.documents)
-        .filter(
-            (d) =>
-                !d.path.toLowerCase().includes("about") &&
-                !d.path.toLowerCase().includes("identity")
-        );
+    const knowledgeDocuments = knowledgeFolder
+        ? collectAllDocuments(knowledgeFolder).filter(
+              (d) =>
+                  !d.path.toLowerCase().includes("about") &&
+                  !d.path.toLowerCase().includes("identity")
+          )
+        : [];
 
     if (knowledgeDocuments.length > 0) {
         allFolders.push({
@@ -106,6 +115,7 @@ export default async function KnowledgeBasePage() {
             name: "memories",
             path: "memories",
             documents: knowledgeDocuments.sort((a, b) => a.name.localeCompare(b.name)),
+            children: [],
         });
     } else {
         allFolders.push({
@@ -125,6 +135,7 @@ export default async function KnowledgeBasePage() {
                     updatedAt: new Date(),
                 },
             ],
+            children: [],
         });
     }
 

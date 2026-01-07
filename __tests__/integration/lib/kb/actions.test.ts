@@ -68,7 +68,7 @@ describe("Knowledge Base Server Actions", () => {
             expect(folders).toEqual([]);
         });
 
-        it("groups documents by parent folder", async () => {
+        it("groups documents into nested folder tree", async () => {
             // Arrange: Create documents in different folders
             await kb.create(TEST_USER_ID, {
                 path: "profile.identity",
@@ -91,8 +91,8 @@ describe("Knowledge Base Server Actions", () => {
             // Act
             const folders = await getKBFolders();
 
-            // Assert: Should have two folders (profile and profile.people)
-            expect(folders).toHaveLength(2);
+            // Assert: Should have one root folder with nested children
+            expect(folders).toHaveLength(1);
 
             const profileFolder = folders.find((f) => f.id === "profile");
             expect(profileFolder).toBeDefined();
@@ -100,7 +100,11 @@ describe("Knowledge Base Server Actions", () => {
             expect(profileFolder?.documents[0].name).toBe("identity.txt");
             expect(profileFolder?.documents[1].name).toBe("preferences.txt");
 
-            const peopleFolder = folders.find((f) => f.id === "profile.people");
+            // People should be a child folder of profile
+            expect(profileFolder?.children).toHaveLength(1);
+            const peopleFolder = profileFolder?.children.find(
+                (f) => f.id === "profile.people"
+            );
             expect(peopleFolder).toBeDefined();
             expect(peopleFolder?.documents).toHaveLength(1);
             expect(peopleFolder?.documents[0].name).toBe("sarah.txt");
