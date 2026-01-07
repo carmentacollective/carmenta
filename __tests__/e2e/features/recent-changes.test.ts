@@ -51,6 +51,8 @@ test.describe("AI Team Page", () => {
     );
 
     test("loads without console errors", async ({ page }) => {
+        await signIn(page);
+
         const consoleErrors: string[] = [];
         page.on("console", (msg) => {
             if (msg.type() === "error") {
@@ -58,7 +60,6 @@ test.describe("AI Team Page", () => {
             }
         });
 
-        await signIn(page);
         await page.goto("/ai-team");
 
         // Page should load successfully
@@ -92,6 +93,8 @@ test.describe("Integrations Page", () => {
     );
 
     test("loads without console errors", async ({ page }) => {
+        await signIn(page);
+
         const consoleErrors: string[] = [];
         page.on("console", (msg) => {
             if (msg.type() === "error") {
@@ -99,7 +102,6 @@ test.describe("Integrations Page", () => {
             }
         });
 
-        await signIn(page);
         await page.goto("/integrations");
 
         // Page should load successfully
@@ -139,6 +141,8 @@ test.describe("Knowledge Base Page", () => {
     );
 
     test("loads without console errors", async ({ page }) => {
+        await signIn(page);
+
         const consoleErrors: string[] = [];
         page.on("console", (msg) => {
             if (msg.type() === "error") {
@@ -146,7 +150,6 @@ test.describe("Knowledge Base Page", () => {
             }
         });
 
-        await signIn(page);
         await page.goto("/knowledge-base");
 
         // Page should load successfully
@@ -217,6 +220,8 @@ test.describe("Connection/Chat Page", () => {
     );
 
     test("loads without console errors", async ({ page }) => {
+        await signIn(page);
+
         const consoleErrors: string[] = [];
         page.on("console", (msg) => {
             if (msg.type() === "error") {
@@ -224,7 +229,6 @@ test.describe("Connection/Chat Page", () => {
             }
         });
 
-        await signIn(page);
         await page.goto("/connection");
 
         // Page should load successfully
