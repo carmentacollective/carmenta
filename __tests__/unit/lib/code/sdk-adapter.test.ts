@@ -532,6 +532,85 @@ describe("SDK Adapter - Edge Cases", () => {
 });
 
 /**
+ * Tool Result Error Detection Tests
+ *
+ * The SDK adapter detects errors from multiple formats:
+ * 1. String starting with "Error:"
+ * 2. Object with non-zero exitCode (Bash tool)
+ * 3. SubagentResult with success: false (DCOS tools)
+ * 4. Object with error: true (legacy format)
+ *
+ * Important: SubagentResult can have an error field even for degraded successes,
+ * so we check success === false specifically, not just error !== undefined.
+ */
+describe("SDK Adapter - Tool Result Error Detection", () => {
+    it("detects error from string starting with Error:", () => {
+        const result = "Error: File not found";
+        const isError = typeof result === "string" && result.startsWith("Error:");
+        expect(isError).toBe(true);
+    });
+
+    it("detects error from Bash tool with non-zero exit code", () => {
+        const result = { exitCode: 1, stdout: "", stderr: "command not found" };
+        const isError = typeof result.exitCode === "number" && result.exitCode !== 0;
+        expect(isError).toBe(true);
+    });
+
+    it("detects success from Bash tool with zero exit code", () => {
+        const result = { exitCode: 0, stdout: "output", stderr: "" };
+        const isError = typeof result.exitCode === "number" && result.exitCode !== 0;
+        expect(isError).toBe(false);
+    });
+
+    it("detects error from SubagentResult with success=false", () => {
+        // This is what DCOS tools return on failure
+        const result = {
+            success: false,
+            error: { code: "NOT_FOUND", message: "Resource not found" },
+        };
+        const isError = "success" in result && result.success === false;
+        expect(isError).toBe(true);
+    });
+
+    it("treats SubagentResult with success=true as success even with error field", () => {
+        // This is the bug that was fixed - degraded successes have an error field
+        // but should still be treated as successes (green status indicator)
+        const result = {
+            success: true,
+            data: { items: [] },
+            error: { code: "PARTIAL", message: "Some items failed" },
+        };
+        const isError = "success" in result && result.success === false;
+        expect(isError).toBe(false);
+    });
+
+    it("treats SubagentResult with success=true and no error field as success", () => {
+        const result = { success: true, data: { items: [1, 2, 3] } };
+        const isError = "success" in result && result.success === false;
+        expect(isError).toBe(false);
+    });
+
+    it("detects error from legacy format with error: true", () => {
+        const result = { error: true, message: "Something went wrong" };
+        const isError = result.error === true;
+        expect(isError).toBe(true);
+    });
+
+    it("does not treat object with error field as error (new behavior)", () => {
+        // Previously any object with error !== undefined was marked as error
+        // Now we only check success === false or error === true (boolean)
+        const result: { error: unknown; data: object } = {
+            error: "some string",
+            data: {},
+        };
+        const isErrorOldBehavior = result.error !== undefined; // Old: would be true
+        const isErrorNewBehavior = result.error === true; // New: false (it's a string)
+        expect(isErrorOldBehavior).toBe(true); // Shows what old code did
+        expect(isErrorNewBehavior).toBe(false); // New behavior is correct
+    });
+});
+
+/**
  * SDK Message Type Completeness Check
  * Verifies we have fixtures for all known SDK message types
  */

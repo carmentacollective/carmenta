@@ -22,8 +22,8 @@ interface ToolStatusProps {
     expanded: boolean;
     /** Whether there's content to expand (hides caret if false) */
     expandable?: boolean;
-    /** Called when user clicks to expand/collapse */
-    onToggle: () => void;
+    /** Called when user clicks to expand/collapse. Ignored when expandable is false. */
+    onToggle?: () => void;
     /** Additional class names */
     className?: string;
 }
