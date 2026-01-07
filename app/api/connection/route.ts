@@ -46,7 +46,11 @@ import { getModel, getFallbackChain } from "@/lib/model-config";
 import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
-import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
+import {
+    builtInTools,
+    createSearchKnowledgeTool,
+    createImageTool,
+} from "@/lib/tools/built-in";
 import { postResponseTools } from "@/lib/tools/post-response";
 import {
     unauthorizedResponse,
@@ -575,6 +579,10 @@ export async function POST(req: Request) {
         // This allows the AI to explicitly query the knowledge base mid-conversation
         const searchKnowledgeTool = createSearchKnowledgeTool(dbUser.id);
 
+        // Create image tool with reasoning context
+        // Higher reasoning level = higher quality (and more expensive) image model
+        const imageTool = createImageTool({ reasoning: concierge.reasoning });
+
         // Discovery mode is disabled until we refine the experience
         // It was interrupting substantive responses and degrading quality
         // TODO: Re-enable when discovery is less intrusive
@@ -587,6 +595,7 @@ export async function POST(req: Request) {
             ...integrationTools,
             ...postResponseTools,
             searchKnowledge: searchKnowledgeTool,
+            createImage: imageTool,
             ...discoveryTools,
         };
 

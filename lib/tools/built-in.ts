@@ -3,12 +3,67 @@ import { all, create } from "mathjs";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
+import type { ReasoningConfig } from "@/lib/concierge/types";
 import { env } from "@/lib/env";
 import { getGatewayClient } from "@/lib/ai/gateway";
 import { httpClient } from "@/lib/http-client";
 import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { searchKnowledge } from "@/lib/kb/search";
+
+/**
+ * Image model tiers for quality-based routing.
+ * Selected based on reasoning level - higher reasoning = higher quality images.
+ */
+const IMAGE_MODELS = {
+    fast: "google/imagen-4.0-fast-generate", // $0.02/image - quick drafts
+    standard: "google/imagen-4.0-generate", // $0.04/image - balanced
+    quality: "google/gemini-3-pro-image", // $0.134/image - Nano Banana Pro
+} as const;
+
+type ImageModelTier = keyof typeof IMAGE_MODELS;
+
+/**
+ * Select image model based on reasoning configuration.
+ * Higher reasoning effort = higher quality image model.
+ */
+function selectImageModel(reasoning?: ReasoningConfig): {
+    modelId: string;
+    tier: ImageModelTier;
+} {
+    // No reasoning or disabled = fast model
+    if (!reasoning?.enabled) {
+        return { modelId: IMAGE_MODELS.fast, tier: "fast" };
+    }
+
+    // Effort-based models (OpenAI, xAI)
+    if (reasoning.effort === "high") {
+        return { modelId: IMAGE_MODELS.quality, tier: "quality" };
+    }
+    if (reasoning.effort === "low" || reasoning.effort === "none") {
+        return { modelId: IMAGE_MODELS.fast, tier: "fast" };
+    }
+
+    // Token-budget models (Anthropic)
+    if (reasoning.maxTokens !== undefined) {
+        if (reasoning.maxTokens >= 16000) {
+            return { modelId: IMAGE_MODELS.quality, tier: "quality" };
+        }
+        if (reasoning.maxTokens < 4000) {
+            return { modelId: IMAGE_MODELS.fast, tier: "fast" };
+        }
+    }
+
+    // Default: standard quality
+    return { modelId: IMAGE_MODELS.standard, tier: "standard" };
+}
+
+/**
+ * Context passed to tools that need reasoning awareness.
+ */
+export interface ToolContext {
+    reasoning?: ReasoningConfig;
+}
 
 const GIPHY_API_BASE = "https://api.giphy.com/v1/gifs";
 
@@ -498,8 +553,19 @@ export const builtInTools = {
             }
         },
     }),
+};
 
-    createImage: tool({
+/**
+ * Create the createImage tool with reasoning-aware model selection.
+ * Higher reasoning effort = higher quality (and more expensive) image model.
+ *
+ * Model tiers:
+ * - fast ($0.02): Imagen 4 Fast - quick drafts, low reasoning
+ * - standard ($0.04): Imagen 4 - balanced quality/cost
+ * - quality ($0.134): Nano Banana Pro - best quality, high reasoning
+ */
+export function createImageTool(context?: ToolContext) {
+    return tool({
         description:
             "Generate an AI image from a text description. Use this when the user wants to create custom images, logos, illustrations, or visualize ideas. Takes 5-30 seconds to generate.",
         inputSchema: z.object({
@@ -520,18 +586,20 @@ export const builtInTools = {
                 ),
         }),
         execute: async ({ prompt, aspectRatio = "1:1" }) => {
-            const MODEL_ID = "google/imagen-4.0-generate";
+            // Select model based on reasoning level
+            const { modelId, tier } = selectImageModel(context?.reasoning);
             const promptPreview =
                 prompt.length > 100 ? `${prompt.slice(0, 100)}...` : prompt;
             logger.info(
-                { promptPreview, aspectRatio, model: MODEL_ID },
+                { promptPreview, aspectRatio, model: modelId, tier },
                 "Generating image"
             );
 
             return await Sentry.startSpan(
                 { op: "ai.image", name: "generateImage" },
                 async (span) => {
-                    span.setAttribute("model", MODEL_ID);
+                    span.setAttribute("model", modelId);
+                    span.setAttribute("tier", tier);
                     span.setAttribute("aspectRatio", aspectRatio);
 
                     try {
@@ -539,7 +607,7 @@ export const builtInTools = {
                         const startTime = Date.now();
 
                         const { image } = await generateImage({
-                            model: gateway.imageModel(MODEL_ID),
+                            model: gateway.imageModel(modelId),
                             prompt,
                             aspectRatio,
                         });
@@ -554,7 +622,13 @@ export const builtInTools = {
                             (image.base64.length * 0.75) / 1024
                         );
                         logger.info(
-                            { durationMs, aspectRatio, model: MODEL_ID, imageSizeKb },
+                            {
+                                durationMs,
+                                aspectRatio,
+                                model: modelId,
+                                tier,
+                                imageSizeKb,
+                            },
                             "Image generated successfully"
                         );
 
@@ -569,18 +643,21 @@ export const builtInTools = {
                             },
                             prompt,
                             aspectRatio,
+                            model: modelId,
+                            tier,
                             durationMs,
                         };
                     } catch (error) {
                         logger.error(
-                            { error, promptPreview, model: MODEL_ID },
+                            { error, promptPreview, model: modelId, tier },
                             "Image generation failed"
                         );
                         Sentry.captureException(error, {
                             tags: {
                                 component: "tool",
                                 tool: "createImage",
-                                model: MODEL_ID,
+                                model: modelId,
+                                tier,
                             },
                             extra: { promptPreview, aspectRatio },
                         });
@@ -599,8 +676,8 @@ export const builtInTools = {
                 }
             );
         },
-    }),
-};
+    });
+}
 
 /**
  * Convert internal errors to user-friendly messages for image generation.
