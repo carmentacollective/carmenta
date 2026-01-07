@@ -244,7 +244,7 @@ What can we help you with?`,
                         </div>
 
                         {/* Input */}
-                        <div className="border-foreground/10 border-t p-4">
+                        <div className="border-foreground/10 @container border-t p-4">
                             <SimpleComposer
                                 value={input}
                                 onChange={setInput}

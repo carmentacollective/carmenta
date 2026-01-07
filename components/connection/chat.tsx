@@ -74,7 +74,8 @@ class ChatErrorBoundary extends Component<
 export function Chat() {
     return (
         <ChatErrorBoundary>
-            <div className="scrollbar-holo h-full">
+            {/* @container enables container queries so Composer adapts to available width */}
+            <div className="scrollbar-holo @container h-full">
                 <HoloThread />
             </div>
         </ChatErrorBoundary>

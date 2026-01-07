@@ -65,7 +65,7 @@ export function OptionListResult({
             error={error}
         >
             {hasOptions && (
-                <div className="p-3 sm:p-4">
+                <div className="p-3 @md:p-4">
                     <OptionList
                         id={`option-list-${toolCallId}`}
                         options={options}

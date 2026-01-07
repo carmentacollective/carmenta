@@ -196,7 +196,7 @@ function UploadItem({
             <button
                 type="button"
                 onClick={() => onRemove(id)}
-                className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/80 active:bg-foreground/15 flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full p-2 transition-colors active:scale-95 sm:min-h-0 sm:min-w-0 sm:p-1"
+                className="text-foreground/40 hover:bg-foreground/10 hover:text-foreground/80 active:bg-foreground/15 flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full p-2 transition-colors active:scale-95 @md:min-h-0 @md:min-w-0 @md:p-1"
                 aria-label="Remove file"
                 data-tooltip-id="tip"
                 data-tooltip-content="Remove"

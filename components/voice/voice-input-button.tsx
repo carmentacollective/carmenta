@@ -184,7 +184,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                 disabled={disabled}
                 className={cn(
                     "group relative flex shrink-0 items-center justify-center rounded-full",
-                    variant === "primary" ? "h-11 w-11" : "h-10 w-10 sm:h-12 sm:w-12",
+                    variant === "primary" ? "h-11 w-11" : "h-10 w-10 @md:h-12 @md:w-12",
                     buttonStyle,
                     showError && "text-amber-500",
                     disabled && "pointer-events-none opacity-50",
@@ -210,7 +210,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                             exit={{ opacity: 0, scale: 0.8 }}
                             transition={{ duration: 0.15 }}
                         >
-                            <CircleNotchIcon className="h-5 w-5 animate-spin sm:h-6 sm:w-6" />
+                            <CircleNotchIcon className="h-5 w-5 animate-spin @md:h-6 @md:w-6" />
                         </motion.div>
                     ) : isListening ? (
                         <motion.div
@@ -221,7 +221,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                             transition={{ duration: 0.15 }}
                             className="relative"
                         >
-                            <MicrophoneIcon className="text-primary-foreground h-5 w-5 sm:h-6 sm:w-6" />
+                            <MicrophoneIcon className="text-primary-foreground h-5 w-5 @md:h-6 @md:w-6" />
                             {/* Pulsing ring animation */}
                             <motion.div
                                 className="border-primary-foreground/60 absolute inset-0 rounded-full border-2"
@@ -242,7 +242,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                             exit={{ opacity: 0, scale: 0.8 }}
                             transition={{ duration: 0.15 }}
                         >
-                            <MicrophoneSlashIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                            <MicrophoneSlashIcon className="h-5 w-5 @md:h-6 @md:w-6" />
                         </motion.div>
                     ) : (
                         <motion.div
@@ -254,7 +254,7 @@ export const VoiceInputButton = forwardRef<VoiceInputButtonRef, VoiceInputButton
                         >
                             <MicrophoneIcon
                                 className={cn(
-                                    "h-5 w-5 transition-colors sm:h-6 sm:w-6",
+                                    "h-5 w-5 transition-colors @md:h-6 @md:w-6",
                                     variant === "primary"
                                         ? "text-primary-foreground"
                                         : "text-foreground/50 group-hover:text-foreground/80"

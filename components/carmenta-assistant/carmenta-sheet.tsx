@@ -135,7 +135,8 @@ function CarmentaSheetInner({
             </SheetHeader>
 
             {/* Chat interface - same as /connection but narrower */}
-            <div className="min-h-0 flex-1 overflow-hidden">
+            {/* @container enables container queries so Composer adapts to sheet width */}
+            <div className="@container min-h-0 flex-1 overflow-hidden">
                 <HoloThread />
             </div>
         </>

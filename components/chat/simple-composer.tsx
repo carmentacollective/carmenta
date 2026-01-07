@@ -114,7 +114,7 @@ export function SimpleComposer({
                 disabled={!canSubmit && !isLoading}
                 className={cn(
                     // Base shape matching main Composer button
-                    "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
+                    "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full @md:h-12 @md:w-12",
                     // Shadow and ring
                     "shadow-xl ring-1 backdrop-blur-xl transition-all",
                     // Hover/focus states
@@ -131,9 +131,9 @@ export function SimpleComposer({
                 aria-label={isLoading ? "Stop" : "Send message"}
             >
                 {isLoading ? (
-                    <SquareIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <SquareIcon className="h-4 w-4 @md:h-5 @md:w-5" />
                 ) : (
-                    <ArrowElbowDownLeftIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <ArrowElbowDownLeftIcon className="h-5 w-5 @md:h-6 @md:w-6" />
                 )}
             </button>
         </div>
