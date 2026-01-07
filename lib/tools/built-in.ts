@@ -1,9 +1,10 @@
-import { tool } from "ai";
+import { generateImage, tool } from "ai";
 import { all, create } from "mathjs";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import { env } from "@/lib/env";
+import { getGatewayClient } from "@/lib/ai/gateway";
 import { httpClient } from "@/lib/http-client";
 import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
@@ -497,7 +498,128 @@ export const builtInTools = {
             }
         },
     }),
+
+    createImage: tool({
+        description:
+            "Generate an AI image from a text description. Use this when the user wants to create custom images, logos, illustrations, or visualize ideas. Takes 5-30 seconds to generate.",
+        inputSchema: z.object({
+            prompt: z
+                .string()
+                .min(1, "Prompt cannot be empty")
+                .max(4000, "Prompt is too long")
+                .transform((s) => s.trim())
+                .refine((s) => s.length > 0, "Prompt cannot be just whitespace")
+                .describe(
+                    "Detailed description of the image to generate. Be specific about style, colors, composition, and mood."
+                ),
+            aspectRatio: z
+                .enum(["1:1", "16:9", "9:16", "4:3", "3:4"])
+                .optional()
+                .describe(
+                    "Aspect ratio for the generated image. Default is 1:1 (square). Use 16:9 for landscape, 9:16 for portrait."
+                ),
+        }),
+        execute: async ({ prompt, aspectRatio = "1:1" }) => {
+            const MODEL_ID = "google/imagen-4.0-generate";
+            logger.info({ prompt, aspectRatio, model: MODEL_ID }, "Generating image");
+
+            try {
+                const gateway = getGatewayClient();
+                const startTime = Date.now();
+
+                const { image } = await generateImage({
+                    model: gateway.imageModel(MODEL_ID),
+                    prompt,
+                    aspectRatio,
+                });
+
+                // Validate response has actual image data
+                if (!image?.base64 || image.base64.length < 100) {
+                    throw new Error("Generated image data is empty or invalid");
+                }
+
+                const durationMs = Date.now() - startTime;
+                const imageSizeKb = Math.round((image.base64.length * 0.75) / 1024);
+                logger.info(
+                    { durationMs, aspectRatio, model: MODEL_ID, imageSizeKb },
+                    "Image generated successfully"
+                );
+
+                return {
+                    success: true,
+                    image: {
+                        base64: image.base64,
+                        mimeType: "image/png",
+                    },
+                    prompt,
+                    aspectRatio,
+                    durationMs,
+                };
+            } catch (error) {
+                logger.error(
+                    { error, prompt, model: MODEL_ID },
+                    "Image generation failed"
+                );
+                Sentry.captureException(error, {
+                    tags: { component: "tool", tool: "createImage", model: MODEL_ID },
+                    extra: { prompt, aspectRatio },
+                });
+
+                // Sanitize error messages to avoid leaking internal details
+                const message = getUserFriendlyImageError(error);
+
+                return {
+                    error: true,
+                    message,
+                    prompt,
+                };
+            }
+        },
+    }),
 };
+
+/**
+ * Convert internal errors to user-friendly messages for image generation.
+ * Avoids leaking API details, URLs, or internal error codes.
+ */
+function getUserFriendlyImageError(error: unknown): string {
+    if (!(error instanceof Error)) {
+        return "We couldn't create that image right now";
+    }
+
+    const msg = error.message.toLowerCase();
+
+    // Content policy violations
+    if (
+        msg.includes("content policy") ||
+        msg.includes("safety") ||
+        msg.includes("blocked")
+    ) {
+        return "This prompt doesn't meet content guidelines. Try describing it differently.";
+    }
+
+    // Rate limiting
+    if (msg.includes("rate limit") || msg.includes("429") || msg.includes("quota")) {
+        return "We're generating a lot of images right now. Try again in a moment.";
+    }
+
+    // Timeouts
+    if (
+        msg.includes("timeout") ||
+        msg.includes("timed out") ||
+        msg.includes("deadline")
+    ) {
+        return "Image generation took too long. Try a simpler prompt.";
+    }
+
+    // Invalid/empty response
+    if (msg.includes("empty") || msg.includes("invalid")) {
+        return "Something went wrong with the image. Let's try again.";
+    }
+
+    // Generic fallback - don't leak internal details
+    return "We couldn't create that image right now";
+}
 
 // Giphy API types
 interface GiphyGif {

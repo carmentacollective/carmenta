@@ -18,3 +18,4 @@ export { NotionToolResult } from "./notion";
 export { QuoToolResult } from "./quo";
 export { SlackToolResult } from "./slack";
 export { TwitterToolResult } from "./twitter";
+export { CreateImageToolResult } from "./create-image";

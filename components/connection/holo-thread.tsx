@@ -65,6 +65,7 @@ import {
 import {
     ClickUpToolResult,
     CoinMarketCapToolResult,
+    CreateImageToolResult,
     DropboxToolResult,
     FirefliesToolResult,
     GiphyToolResult,
@@ -706,6 +707,17 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "CoinMarketCap request failed")}
+                />
+            );
+
+        case "createImage":
+            return (
+                <CreateImageToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Image generation failed")}
                 />
             );
 
