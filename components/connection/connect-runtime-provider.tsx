@@ -986,13 +986,28 @@ function ConnectRuntimeProviderInner({
                 ),
 
                 prepareSendMessagesRequest(request) {
-                    // Send the full messages array - API expects this format
+                    // Code mode optimization: Only send the last user message
+                    // The Claude Agent SDK maintains its own session state in .clauderc,
+                    // so sending full history just bloats the request body (screenshots can
+                    // be 500KB+ and get re-sent on every request, quickly hitting 10MB limit)
+                    const isCodeMode = !!projectPathRef.current;
+                    const messages = isCodeMode
+                        ? (() => {
+                              const lastUserMessage = [...request.messages]
+                                  .reverse()
+                                  .find((m) => m.role === "user");
+                              return lastUserMessage
+                                  ? [lastUserMessage]
+                                  : request.messages;
+                          })()
+                        : request.messages;
+
                     // Include pageContext for DCOS routing in standalone mode
                     const currentPageContext = getPageContext();
                     return {
                         body: {
                             id: request.id,
-                            messages: request.messages,
+                            messages,
                             ...(currentPageContext && {
                                 pageContext: currentPageContext,
                             }),
