@@ -9,7 +9,7 @@
  * @see https://web.dev/articles/web-share-target
  */
 
-import { redirect } from "next/navigation";
+import { redirect, isRedirectError } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import { nanoid } from "nanoid";
 import * as Sentry from "@sentry/nextjs";
@@ -37,7 +37,9 @@ interface SharedFileMetadata {
 function generateSharedFilePath(userId: string, filename: string): string {
     const timestamp = Date.now();
     const id = nanoid(10);
-    const ext = filename.split(".").pop() || "bin";
+    // Extract extension, handling files without dots (e.g., "README" → "bin")
+    const parts = filename.split(".");
+    const ext = parts.length > 1 ? parts.pop()! : "bin";
     return `${userId}/shared/${timestamp}-${id}.${ext}`;
 }
 
@@ -200,7 +202,8 @@ export async function POST(request: Request) {
         redirect(redirectUrl);
     } catch (error) {
         // redirect() throws a special error that should propagate
-        if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        // Use Next.js helper to detect redirect errors properly
+        if (isRedirectError(error)) {
             throw error;
         }
 
