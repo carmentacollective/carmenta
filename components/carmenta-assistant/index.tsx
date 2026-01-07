@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 // Export components
 export { CarmentaPanel } from "./carmenta-panel";
 export { CarmentaLayout, useCarmentaLayout } from "./carmenta-layout";
+export { CarmentaSheet } from "./carmenta-sheet";
 
 // Export hooks
 export { useCarmenta } from "./use-carmenta";

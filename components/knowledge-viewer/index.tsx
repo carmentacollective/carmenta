@@ -54,7 +54,32 @@ export function KnowledgeViewer({
 }: KnowledgeViewerProps) {
     const isMobile = useMediaQuery("(max-width: 767px)");
 
-    const [folders, setFolders] = useState<KBFolder[]>(initialFolders);
+    // Use initialFolders directly - parent component (KBPageContent) handles refresh via router.refresh()
+    // Local state is only needed for optimistic updates during direct editing
+    // Key the updates by the initialFolders identity so they reset when server data changes
+    const [localFolderUpdates, setLocalFolderUpdates] = useState<{
+        key: typeof initialFolders;
+        updates: Map<string, Partial<KBDocument>>;
+    }>({ key: initialFolders, updates: new Map() });
+
+    // Merge server data with local optimistic updates
+    // If initialFolders changed (server refresh), discard old updates
+    const folders = useMemo(() => {
+        const currentUpdates =
+            localFolderUpdates.key === initialFolders
+                ? localFolderUpdates.updates
+                : new Map<string, Partial<KBDocument>>();
+
+        if (currentUpdates.size === 0) return initialFolders;
+        return initialFolders.map((folder) => ({
+            ...folder,
+            documents: folder.documents.map((doc) => {
+                const update = currentUpdates.get(doc.path);
+                return update ? { ...doc, ...update } : doc;
+            }),
+        }));
+    }, [initialFolders, localFolderUpdates]);
+
     const [selectedPath, setSelectedPath] = useState<string | null>(
         initialFolders[0]?.documents[0]?.path ?? null
     );
@@ -96,17 +121,17 @@ export function KnowledgeViewer({
         return null;
     }, [mobileSearchQuery, mobileView, folders, currentFolder]);
 
-    // Handle document update
-    const handleDocumentUpdate = useCallback((path: string, updatedDoc: KBDocument) => {
-        setFolders((prev) =>
-            prev.map((folder) => ({
-                ...folder,
-                documents: folder.documents.map((doc) =>
-                    doc.path === path ? updatedDoc : doc
-                ),
-            }))
-        );
-    }, []);
+    // Handle document update (optimistic local update while server syncs)
+    const handleDocumentUpdate = useCallback(
+        (path: string, updatedDoc: KBDocument) => {
+            setLocalFolderUpdates((prev) => {
+                const next = new Map(prev.updates);
+                next.set(path, updatedDoc);
+                return { key: initialFolders, updates: next };
+            });
+        },
+        [initialFolders]
+    );
 
     // Handle desktop sidebar selection
     const handleDesktopDocSelect = useCallback(

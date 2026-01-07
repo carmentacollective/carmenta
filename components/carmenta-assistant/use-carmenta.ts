@@ -93,11 +93,12 @@ export function useCarmenta(options: UseCarmentaOptions = {}): UseCarmentaReturn
     } = useChat({
         id: chatId,
         transport,
-        onFinish: ({ message }) => {
+        onFinish: ({ message, finishReason }) => {
             // Clear any previous error on successful response
             setError(null);
 
             // Check if the response included tool calls (agent made changes)
+            // In AI SDK 5, tool parts have typed names like 'tool-librarian', 'tool-mcpConfig'
             const hasToolCalls = message.parts?.some(
                 (part: { type?: string }) =>
                     typeof part === "object" &&
@@ -106,10 +107,29 @@ export function useCarmenta(options: UseCarmentaOptions = {}): UseCarmentaReturn
                     part.type.startsWith("tool-")
             );
 
+            logger.debug(
+                {
+                    hasToolCalls,
+                    partTypes:
+                        message.parts?.map((p: { type?: string }) => p.type) ?? [],
+                    finishReason,
+                    pageContext,
+                },
+                "Carmenta onFinish"
+            );
+
             // Trigger page refresh if agent made changes
-            if (hasToolCalls && onChangesCompleteRef.current) {
+            // Also trigger if finishReason is 'tool-calls' (agent used tools even if not in final message)
+            if (
+                (hasToolCalls || finishReason === "tool-calls") &&
+                onChangesCompleteRef.current
+            ) {
                 // Small delay to let any DB writes complete
                 setTimeout(() => {
+                    logger.info(
+                        { pageContext },
+                        "Triggering page refresh after agent changes"
+                    );
                     onChangesCompleteRef.current?.();
                 }, 100);
             }

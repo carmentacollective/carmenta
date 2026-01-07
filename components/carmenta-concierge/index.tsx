@@ -3,6 +3,10 @@
 /**
  * Carmenta Concierge
  *
+ * @deprecated Use `CarmentaSheet` from `@/components/carmenta-assistant` instead.
+ * This component uses custom overlays with z-index issues. CarmentaSheet uses
+ * the standard shadcn Sheet component with proper portal rendering.
+ *
  * Non-blocking chat panel for working alongside Carmenta.
  * - Desktop: Slides out from left (from Oracle menu position)
  * - Mobile: Pushes down from top
