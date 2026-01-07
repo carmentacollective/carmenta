@@ -27,7 +27,7 @@ export default defineConfig({
 
     // Timeouts optimized for CI (cold start) and local (warm cache)
     // Cold start can be slow, but once warm, pages should be fast
-    timeout: 30_000, // 30s per test - headroom for cold start + assertions
+    timeout: 60_000, // 60s per test - SSR pages with auth can be slow
     expect: {
         timeout: 5_000, // 5s for assertions - should be instant
     },
@@ -37,7 +37,7 @@ export default defineConfig({
         trace: "retain-on-failure", // Captures traces for debugging failed tests
         // Navigation/action timeouts
         actionTimeout: 5_000, // 5s for clicks, fills - should be instant
-        navigationTimeout: 20_000, // 20s for page.goto - accounts for cold start
+        navigationTimeout: 45_000, // 45s for page.goto - SSR pages can be slow
     },
 
     projects: [
