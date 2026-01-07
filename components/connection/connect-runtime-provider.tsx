@@ -753,6 +753,16 @@ function createFetchWrapper(
 }
 
 /**
+ * Extract last user message from messages array.
+ * Used in code mode where the SDK maintains conversation history,
+ * so we only need to send the current prompt.
+ */
+function getLastUserMessageOnly(messages: UIMessage[]): UIMessage[] {
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    return lastUserMessage ? [lastUserMessage] : messages;
+}
+
+/**
  * Inner provider that has access to concierge context.
  *
  * Supports two modes:
@@ -986,13 +996,21 @@ function ConnectRuntimeProviderInner({
                 ),
 
                 prepareSendMessagesRequest(request) {
-                    // Send the full messages array - API expects this format
+                    // Code mode optimization: Only send the last user message
+                    // The Claude Agent SDK maintains its own session state in .clauderc,
+                    // so sending full history just bloats the request body (screenshots can
+                    // be 500KB+ and get re-sent on every request, quickly hitting 10MB limit)
+                    const isCodeMode = !!projectPathRef.current;
+                    const messages = isCodeMode
+                        ? getLastUserMessageOnly(request.messages)
+                        : request.messages;
+
                     // Include pageContext for DCOS routing in standalone mode
                     const currentPageContext = getPageContext();
                     return {
                         body: {
                             id: request.id,
-                            messages: request.messages,
+                            messages,
                             ...(currentPageContext && {
                                 pageContext: currentPageContext,
                             }),
