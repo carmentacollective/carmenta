@@ -245,12 +245,19 @@ export function createConversationalTools(userId: string) {
 
         moveDocument: tool({
             description:
-                "Move a document from one path to another. Useful for reorganizing.",
+                "Move a document from one location to another. Use sourceDocumentPath for the current location and destinationDocumentPath for the new location.",
             inputSchema: z.object({
-                fromPath: z.string().describe("Current document path"),
-                toPath: z.string().describe("New document path"),
+                sourceDocumentPath: z
+                    .string()
+                    .describe("Current path of the document to move"),
+                destinationDocumentPath: z
+                    .string()
+                    .describe("New path where the document should be moved to"),
             }),
-            execute: async ({ fromPath, toPath }) => {
+            execute: async ({
+                sourceDocumentPath: fromPath,
+                destinationDocumentPath: toPath,
+            }) => {
                 let createdAtToPath = false;
 
                 try {

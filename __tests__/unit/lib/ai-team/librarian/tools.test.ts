@@ -280,8 +280,8 @@ describe("Knowledge Librarian Tools", () => {
 
             const result = await executeTool<MoveDocumentOutput>(moveDocumentTool, {
                 userId: user.id,
-                fromPath: "knowledge.old-path",
-                toPath: "knowledge.new-path",
+                sourceDocumentPath: "knowledge.old-path",
+                destinationDocumentPath: "knowledge.new-path",
             });
 
             expect(result.success).toBe(true);
@@ -304,8 +304,8 @@ describe("Knowledge Librarian Tools", () => {
 
             const result = await executeTool<MoveDocumentOutput>(moveDocumentTool, {
                 userId: user.id,
-                fromPath: "knowledge.nonexistent",
-                toPath: "knowledge.new-path",
+                sourceDocumentPath: "knowledge.nonexistent",
+                destinationDocumentPath: "knowledge.new-path",
             });
 
             expect(result.success).toBe(false);
@@ -331,8 +331,8 @@ describe("Knowledge Librarian Tools", () => {
 
             const result = await executeTool<MoveDocumentOutput>(moveDocumentTool, {
                 userId: user.id,
-                fromPath: "knowledge.source",
-                toPath: "knowledge.destination",
+                sourceDocumentPath: "knowledge.source",
+                destinationDocumentPath: "knowledge.destination",
             });
 
             expect(result.success).toBe(false);
@@ -358,8 +358,8 @@ describe("Knowledge Librarian Tools", () => {
             // Try to move to invalid path
             const result = await executeTool<MoveDocumentOutput>(moveDocumentTool, {
                 userId: user.id,
-                fromPath: "knowledge.source",
-                toPath: "invalid%path%format", // % not allowed in paths
+                sourceDocumentPath: "knowledge.source",
+                destinationDocumentPath: "invalid%path%format", // % not allowed in paths
             });
 
             expect(result.success).toBe(false);

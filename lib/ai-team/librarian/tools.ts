@@ -238,13 +238,19 @@ export const appendToDocumentTool = tool({
  */
 export const moveDocumentTool = tool({
     description:
-        "Move a document from one path to another. This is useful for reorganizing knowledge or correcting misplaced documents.",
+        "Move a document from one location to another. Use sourceDocumentPath for the current location and destinationDocumentPath for the new location.",
     inputSchema: z.object({
         userId: z.string().describe("User ID"),
-        fromPath: z.string().describe("Current document path"),
-        toPath: z.string().describe("New document path"),
+        sourceDocumentPath: z.string().describe("Current path of the document to move"),
+        destinationDocumentPath: z
+            .string()
+            .describe("New path where the document should be moved to"),
     }),
-    execute: async ({ userId, fromPath, toPath }): Promise<MoveDocumentOutput> => {
+    execute: async ({
+        userId,
+        sourceDocumentPath: fromPath,
+        destinationDocumentPath: toPath,
+    }): Promise<MoveDocumentOutput> => {
         // Track if we created a document at toPath (for rollback safety)
         let createdAtToPath = false;
 
