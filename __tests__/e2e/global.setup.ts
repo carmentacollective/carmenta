@@ -55,7 +55,7 @@ setup("initialize Clerk testing", async () => {
  * Timeout is generous (60s) because this is a one-time setup cost.
  */
 setup("warm up authenticated pages", async ({ page }) => {
-    setup.setTimeout(60_000); // 60s for warm-up
+    setup.setTimeout(180_000); // 3 minutes for warming up multiple pages
 
     if (!hasTestCredentials) {
         console.log("⚠️  Skipping page warm-up: TEST_USER credentials not set");
@@ -80,12 +80,23 @@ setup("warm up authenticated pages", async ({ page }) => {
         },
     });
 
-    // Navigate to /connection as authenticated user to trigger compilation
-    // This is the slow operation that was timing out in tests
-    await page.goto("/connection", { timeout: 45_000 });
+    // Verify authentication succeeded (not redirected to sign-in)
+    await expect(page).not.toHaveURL(/sign-in/);
 
-    // Verify page loaded
-    await expect(page.locator("body")).toBeVisible();
+    // Navigate to pages as authenticated user to trigger compilation
+    // This is the slow operation that was timing out in tests
+    const pagesToWarmUp = [
+        "/connection",
+        "/ai-team",
+        "/integrations",
+        "/knowledge-base",
+    ];
+
+    for (const pagePath of pagesToWarmUp) {
+        console.log(`  Warming up ${pagePath}...`);
+        await page.goto(pagePath, { timeout: 45_000 });
+        await expect(page.locator("body")).toBeVisible();
+    }
 
     console.log("✅ Page warm-up complete");
 });

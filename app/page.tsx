@@ -185,7 +185,7 @@ export default function HomePage() {
                             duration: prefersReducedMotion ? 0 : 0.5,
                             ease: smoothOut,
                         }}
-                        className="text-foreground/90 max-w-3xl text-4xl font-light sm:text-5xl lg:text-6xl"
+                        className="text-foreground/90 max-w-3xl px-2 text-3xl leading-tight font-light sm:px-0 sm:text-5xl lg:text-6xl"
                     >
                         The best interface to AI for people who create at the speed of
                         thought
