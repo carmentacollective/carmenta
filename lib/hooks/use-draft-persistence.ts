@@ -5,7 +5,7 @@
  * Restores draft on page load so work is never lost.
  *
  * Features:
- * - Debounced saves (500ms) to avoid excessive writes
+ * - Debounced saves (150ms) to avoid excessive writes
  * - Per-connection drafts (each conversation has its own draft)
  * - Clears draft on successful send
  * - SSR-safe (no localStorage access on server)
@@ -21,8 +21,8 @@ import { logger } from "@/lib/client-logger";
 
 const DRAFT_KEY_PREFIX = "carmenta:draft:";
 const NEW_CONNECTION_KEY = "new";
-const DEBOUNCE_MS = 500;
-const MIN_DRAFT_LENGTH = 30; // Don't save drafts shorter than this (roughly 5-7 words)
+const DEBOUNCE_MS = 150; // Fast debounce - saves quickly while avoiding write storms
+const MIN_DRAFT_LENGTH = 3; // Save any meaningful content (even short messages matter)
 
 export interface UseDraftPersistenceOptions {
     /** Connection ID to scope the draft to (uses "new" fallback for new connections) */
@@ -42,6 +42,8 @@ export interface UseDraftPersistenceReturn {
     clearDraft: () => void;
     /** Call this when message is successfully sent */
     onMessageSent: () => void;
+    /** Call this when input loses focus to save immediately */
+    saveImmediately: () => void;
 }
 
 function getDraftKey(connectionId: string): string {
@@ -78,6 +80,15 @@ export function useDraftPersistence({
     // Track whether we've restored for this connection (to prevent double-restore)
     const restoredConnectionRef = useRef<string | null>(null);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Track latest input value via ref to avoid stale closures in saveImmediately
+    // This ensures we always save the most current value, even if React is batching updates
+    const inputRef = useRef(input);
+
+    // Keep ref in sync with latest input (must be in effect, not during render)
+    useEffect(() => {
+        inputRef.current = input;
+    }, [input]);
 
     // Initialize with draft check on first render (SSR-safe)
     const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
@@ -196,10 +207,36 @@ export function useDraftPersistence({
         setShowRecoveryBanner(false);
     }, [effectiveKey]);
 
+    // Save immediately (bypasses debounce) - call on blur to prevent data loss
+    // Uses inputRef to avoid stale closure issues when React is batching state updates
+    const saveImmediately = useCallback(() => {
+        // Clear any pending debounced save
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+            debounceRef.current = null;
+        }
+
+        if (typeof window === "undefined") return;
+
+        try {
+            const key = getDraftKey(effectiveKey);
+            const currentInput = inputRef.current;
+
+            if (currentInput.trim().length >= MIN_DRAFT_LENGTH) {
+                localStorage.setItem(key, currentInput);
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch (error) {
+            logger.debug({ error }, "Could not save draft immediately");
+        }
+    }, [effectiveKey]);
+
     return {
         hasRecoveredDraft: showRecoveryBanner,
         dismissRecovery,
         clearDraft,
         onMessageSent,
+        saveImmediately,
     };
 }
