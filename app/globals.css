@@ -542,8 +542,15 @@
     }
 
     html {
-        /* Smooth scrolling for in-page navigation */
-        scroll-behavior: smooth;
+        /*
+         * NOTE: We intentionally DO NOT set scroll-behavior: smooth here.
+         * On iOS Safari, this conflicts with native keyboard viewport adjustments,
+         * causing erratic scroll jumps when the virtual keyboard opens/closes.
+         * Let Safari handle keyboard scroll behavior natively.
+         * 
+         * If smooth scrolling is needed for specific elements (like chat),
+         * apply it to those scroll containers directly.
+         */
 
         /* Prevent text size adjustment on orientation change */
         -webkit-text-size-adjust: 100%;
