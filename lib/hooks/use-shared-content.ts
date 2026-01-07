@@ -44,12 +44,16 @@ interface UseSharedContentReturn {
 
 /**
  * Parse shared files from base64-encoded JSON.
+ * Uses atob + TextDecoder for browser compatibility (no Node Buffer).
  */
 function parseSharedFiles(filesBase64: string | null): SharedFile[] {
     if (!filesBase64) return [];
 
     try {
-        const filesJson = Buffer.from(filesBase64, "base64").toString("utf-8");
+        // Decode base64 to binary string, then to UTF-8
+        const binaryString = atob(filesBase64);
+        const bytes = Uint8Array.from(binaryString, (char) => char.charCodeAt(0));
+        const filesJson = new TextDecoder().decode(bytes);
         return JSON.parse(filesJson) as SharedFile[];
     } catch (error) {
         logger.error({ error }, "Failed to parse shared files from URL");
