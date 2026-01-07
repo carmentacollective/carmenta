@@ -224,7 +224,7 @@ export function Footer() {
                 {/* Centered on mobile/tablet, spread on desktop */}
                 <div className="flex flex-col items-center gap-5 text-center lg:flex-row lg:items-center lg:justify-between lg:text-left">
                     {/* All navigation links - wrap between links, not within */}
-                    <nav className="text-foreground/60 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm lg:justify-start">
+                    <nav className="text-foreground/60 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm sm:gap-x-5 lg:justify-start">
                         <Link
                             href="/heart-centered-ai"
                             className="hover:text-foreground/90 flex items-center gap-1.5 whitespace-nowrap transition-all hover:scale-105"

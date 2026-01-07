@@ -13,6 +13,9 @@ const config: NextConfig = {
 
     reactStrictMode: true,
 
+    // Hide Next.js dev indicators (build indicator, etc)
+    devIndicators: false,
+
     // Force transpilation of ESM packages that have issues with pnpm + Turbopack
     // See: property-information's boolean import gets dropped during bundling
     transpilePackages: [
