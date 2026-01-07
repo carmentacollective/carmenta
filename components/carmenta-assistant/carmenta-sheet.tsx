@@ -30,6 +30,7 @@ import {
     SheetTitle,
     SheetDescription,
 } from "@/components/ui/sheet";
+import { PortalErrorBoundary } from "@/components/ui/portal-error-boundary";
 import { ConnectRuntimeProvider, useChatContext } from "@/components/connection";
 import { HoloThread } from "@/components/connection/holo-thread";
 import { cn } from "@/lib/utils";
@@ -68,13 +69,19 @@ export function CarmentaSheet({
                 )}
                 hideClose
             >
-                <ConnectRuntimeProvider
-                    endpoint="/api/dcos"
-                    pageContext={pageContext}
-                    onChangesComplete={onChangesComplete}
+                {/* Error boundary inside portal ensures Sentry captures errors */}
+                <PortalErrorBoundary
+                    portalName="CarmentaSheet"
+                    onDismiss={() => onOpenChange(false)}
                 >
-                    <CarmentaSheetInner title={title} description={description} />
-                </ConnectRuntimeProvider>
+                    <ConnectRuntimeProvider
+                        endpoint="/api/dcos"
+                        pageContext={pageContext}
+                        onChangesComplete={onChangesComplete}
+                    >
+                        <CarmentaSheetInner title={title} description={description} />
+                    </ConnectRuntimeProvider>
+                </PortalErrorBoundary>
             </SheetContent>
         </Sheet>
     );
