@@ -27,6 +27,7 @@ import { buildDCOSPrompt } from "./prompt";
 import { type SubagentContext, type DCOSInput } from "./types";
 import { createLibrarianTool } from "../agents/librarian-tool";
 import { createMcpConfigTool } from "../agents/mcp-config-tool";
+import { createDcosTool } from "../agents/dcos-tool";
 
 /**
  * Default model for DCOS
@@ -79,6 +80,13 @@ function getSubagentStatusMessage(toolName: string, action?: string): string {
     const actionSuffix = action ? ` (${action})` : "";
 
     switch (toolName) {
+        case "dcos":
+            if (action === "list") return "Listing automations...";
+            if (action === "get") return "Getting automation details...";
+            if (action === "update") return "Updating automation...";
+            if (action === "runs") return "Getting run history...";
+            if (action === "run") return "Getting run details...";
+            return "Managing AI team...";
         case "librarian":
             if (action === "search") return "Searching knowledge...";
             if (action === "extract") return "Analyzing conversation...";
@@ -129,6 +137,7 @@ export async function executeDCOS(input: DCOSExecutionInput) {
     // Create subagent tools
     const librarianTool = createLibrarianTool(subagentContext);
     const mcpConfigTool = createMcpConfigTool(subagentContext);
+    const dcosTool = createDcosTool(subagentContext);
 
     // Load integration tools for connected services
     const integrationTools = await getIntegrationTools(userEmail);
@@ -138,11 +147,11 @@ export async function executeDCOS(input: DCOSExecutionInput) {
 
     // Combine all tools
     const allTools = {
+        dcos: dcosTool,
         librarian: librarianTool,
         mcpConfig: mcpConfigTool,
         searchKnowledge: searchKnowledgeTool,
         ...integrationTools,
-        // Future: researcher, quoHandler
     };
 
     // Build system prompt with context
