@@ -177,8 +177,8 @@ describe("Tool Component Rendering", () => {
                 // Green status indicator
                 expect(container.querySelector(".bg-green-500")).toBeInTheDocument();
 
-                // Component should display Giphy branding
-                expect(screen.getByText("Giphy")).toBeInTheDocument();
+                // Component should display GIF branding (display name)
+                expect(screen.getByText("GIF")).toBeInTheDocument();
             });
         });
 
@@ -360,7 +360,7 @@ describe("Tool Display Names", () => {
         expect(screen.getByText("Calculator")).toBeInTheDocument();
     });
 
-    it("shows Giphy display name for giphy tool", () => {
+    it("shows GIF display name for giphy tool", () => {
         render(
             <GiphyToolResult
                 toolCallId="test-giphy-display"
@@ -371,7 +371,7 @@ describe("Tool Display Names", () => {
             />
         );
 
-        expect(screen.getByText("Giphy")).toBeInTheDocument();
+        expect(screen.getByText("GIF")).toBeInTheDocument();
     });
 
     it("shows Web Search display name for webSearch tool", () => {

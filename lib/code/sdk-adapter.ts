@@ -344,7 +344,11 @@ function* processSDKMessage(
                     // Detect errors from multiple formats:
                     // 1. String output starting with "Error:"
                     // 2. Object with non-zero exitCode (Bash tool)
-                    // 3. Object with error field
+                    // 3. SubagentResult with success: false (DCOS tools)
+                    // 4. Object with error: true (legacy format)
+                    //
+                    // Note: SubagentResult can have error field even for degraded
+                    // successes, so we check success === false specifically.
                     let isError = false;
                     const result = userMsg.tool_use_result;
 
@@ -353,8 +357,13 @@ function* processSDKMessage(
                     } else if (typeof result === "object" && result !== null) {
                         const obj = result as Record<string, unknown>;
                         if (typeof obj.exitCode === "number" && obj.exitCode !== 0) {
+                            // Bash tool with non-zero exit code
                             isError = true;
-                        } else if (obj.error !== undefined) {
+                        } else if ("success" in obj && obj.success === false) {
+                            // SubagentResult with explicit failure
+                            isError = true;
+                        } else if (obj.error === true) {
+                            // Legacy format: { error: true, message: "..." }
                             isError = true;
                         }
                     }

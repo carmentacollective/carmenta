@@ -137,8 +137,8 @@ export function ToolRenderer({
                 status={status}
                 duration={timing.durationMs}
                 expanded={expanded}
-                onToggle={() => hasExpandedContent && setExpanded(!expanded)}
-                className={!hasExpandedContent ? "cursor-default" : undefined}
+                expandable={hasExpandedContent}
+                onToggle={() => setExpanded(!expanded)}
             />
 
             {/* Expanded content with animation */}
