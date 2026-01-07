@@ -326,8 +326,10 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         if (hasInitialFocusRef.current) return;
         hasInitialFocusRef.current = true;
 
-        // Skip auto-focus on mobile - let users initiate keyboard
-        if (isMobile) return;
+        // Skip auto-focus unless we KNOW it's desktop (isMobile === false)
+        // useIsMobile() returns undefined during hydration, so we must wait
+        // for a definitive false before focusing to avoid mobile keyboard popup
+        if (isMobile !== false) return;
 
         if (inputRef.current) {
             inputRef.current.focus({ preventScroll: true });
@@ -618,7 +620,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // This matches ChatGPT, Claude, and other major AI chat apps on mobile.
             // The mobile Return key should create newlines for multi-line composition.
             // Users tap the explicit send button to submit.
-            if (isMobile && e.key === "Enter") {
+            // Note: useIsMobile() returns undefined during hydration, so we use
+            // explicit === true check to avoid falling through to desktop behavior
+            if (isMobile === true && e.key === "Enter") {
                 // On mobile, don't auto-send on Enter - let the newline happen naturally
                 // Exception: Cmd/Ctrl+Enter always sends (power user shortcut)
                 if (e.metaKey || e.ctrlKey) {

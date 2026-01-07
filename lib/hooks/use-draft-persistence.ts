@@ -5,7 +5,7 @@
  * Restores draft on page load so work is never lost.
  *
  * Features:
- * - Debounced saves (500ms) to avoid excessive writes
+ * - Debounced saves (150ms) to avoid excessive writes
  * - Per-connection drafts (each conversation has its own draft)
  * - Clears draft on successful send
  * - SSR-safe (no localStorage access on server)
