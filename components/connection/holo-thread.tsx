@@ -1720,13 +1720,6 @@ export function AssistantMessage({
     // In code mode, treat as always "selected" so content renders immediately
     const hasSelected = isCodeMode || Boolean(concierge);
 
-    // Derive avatar state for ConciergeDisplay
-    const avatarState = isSelectingModel
-        ? "thinking"
-        : hasSelected
-          ? "speaking"
-          : "idle";
-
     // Show thinking indicator only when:
     // - Streaming AND no content yet AND no tools running AND this is the last message
     // - Concierge has already made its selection
@@ -1757,7 +1750,6 @@ export function AssistantMessage({
                     explanation={concierge?.explanation}
                     reasoning={concierge?.reasoning}
                     isSelecting={isSelectingModel}
-                    avatarState={avatarState}
                     messageSeed={message.id}
                 />
             )}
@@ -2054,13 +2046,6 @@ function PendingAssistantMessage({
     const isSelectingModel = !concierge;
     const hasSelected = Boolean(concierge);
 
-    // Derive avatar state
-    const avatarState = isSelectingModel
-        ? "thinking"
-        : hasSelected
-          ? "speaking"
-          : "idle";
-
     return (
         <div className="my-3 flex w-full flex-col gap-0 sm:my-5">
             {/* CONCIERGE ZONE - Always show during pending state */}
@@ -2070,7 +2055,6 @@ function PendingAssistantMessage({
                 explanation={concierge?.explanation}
                 reasoning={concierge?.reasoning}
                 isSelecting={isSelectingModel}
-                avatarState={avatarState}
                 messageSeed={messageSeed}
             />
 

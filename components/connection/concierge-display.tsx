@@ -101,8 +101,6 @@ interface ConciergeDisplayProps {
     isSelecting?: boolean;
     /** True when celebrating selection (brief animation state) */
     isCelebrating?: boolean;
-    /** Avatar animation state - controls CarmentaAvatar directly */
-    avatarState?: CarmentaAvatarState;
     /** Seed for deterministic message selection */
     messageSeed?: string;
     /** Additional CSS classes */
@@ -111,14 +109,6 @@ interface ConciergeDisplayProps {
     autoSwitched?: boolean;
     /** Reason for auto-switching (shown to user) */
     autoSwitchReason?: string;
-    /** Context utilization metrics */
-    contextUtilization?: {
-        estimatedTokens: number;
-        contextLimit: number;
-        utilizationPercent: number;
-        isWarning: boolean;
-        isCritical: boolean;
-    };
 }
 
 /**
@@ -143,12 +133,10 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     reasoning,
     isSelecting = false,
     isCelebrating = false,
-    avatarState: _avatarState = "idle",
     messageSeed = "default",
     className,
     autoSwitched,
     autoSwitchReason,
-    contextUtilization: _contextUtilization,
 }: ConciergeDisplayProps) {
     const [isOpen, setIsOpen] = useState(false);
     const hasSelected = Boolean(modelId);
@@ -212,8 +200,6 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                 >
                     {/* Status content */}
                     <div className="relative min-w-0 flex-1">
-                        {/* Selected state - compact model attribution */}
-
                         {/* Selected state layer - only render when selected */}
                         {showSelected && (
                             <motion.div
