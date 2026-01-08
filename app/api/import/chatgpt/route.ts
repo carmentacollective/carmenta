@@ -96,17 +96,28 @@ export async function POST(request: NextRequest): Promise<Response> {
         const arrayBuffer = await file.arrayBuffer();
         const result = await parseExportZip(arrayBuffer);
 
-        if (result.errors.length > 0) {
+        // Allow partial success - only fail if NO conversations parsed successfully
+        if (result.conversations.length === 0) {
+            const errorMessage =
+                result.errors.length > 0
+                    ? result.errors[0]
+                    : "No conversations found in the export. Please ensure you uploaded a valid ChatGPT data export.";
+
             return validationErrorResponse(
-                { parseErrors: result.errors },
-                result.errors[0]
+                { conversations: "empty", parseErrors: result.errors },
+                errorMessage
             );
         }
 
-        if (result.conversations.length === 0) {
-            return validationErrorResponse(
-                { conversations: "empty" },
-                "No conversations found in the export. Please ensure you uploaded a valid ChatGPT data export."
+        // Partial failures are logged but don't block the import
+        if (result.errors.length > 0) {
+            requestLogger.warn(
+                {
+                    successCount: result.conversations.length,
+                    failureCount: result.errors.length,
+                    errors: result.errors,
+                },
+                "Partial import success - some conversations failed to parse"
             );
         }
 
