@@ -26,6 +26,7 @@ import {
     validateProject,
     validateUserProjectPath,
 } from "@/lib/code";
+import { executeBash } from "@/lib/code/bash-executor";
 import { streamSDK } from "@/lib/code/sdk-adapter";
 import { decodeConnectionId, encodeConnectionId, generateSlug } from "@/lib/sqids";
 import { logger } from "@/lib/logger";
@@ -250,6 +251,44 @@ export async function POST(req: Request) {
     // The SDK expects a prompt string, not the AI SDK model message format
     const prompt = convertUIMessagesToPrompt(body.messages as UIMessage[]);
     timing("Messages converted to prompt");
+
+    // Handle bang commands - direct bash execution without LLM
+    // Example: "!git status" executes `git status` directly
+    if (prompt.startsWith("!")) {
+        const command = prompt.slice(1).trim();
+
+        // Validate command is non-empty and reasonable length
+        if (!command || command.length === 0) {
+            return new Response(JSON.stringify({ error: "Empty command" }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+
+        if (command.length > 10000) {
+            return new Response(
+                JSON.stringify({ error: "Command too long (max 10k chars)" }),
+                {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
+        }
+
+        logger.info(
+            { command, projectPath: body.projectPath, userEmail },
+            "Code mode: bang command"
+        );
+
+        return handleBangCommand(
+            command,
+            body.projectPath,
+            userEmail,
+            req.signal,
+            isNewConnection ? connectionPublicId : null,
+            isNewConnection ? connectionSlug : null
+        );
+    }
 
     // Extract first user message content for title generation
     const firstUserMessage = (body.messages as UIMessage[]).find(
@@ -525,6 +564,26 @@ export async function POST(req: Request) {
                                 { error: chunk.error },
                                 "Code mode: SDK error"
                             );
+
+                            // Report SDK errors to Sentry for visibility
+                            Sentry.captureException(
+                                chunk.error instanceof Error
+                                    ? chunk.error
+                                    : new Error(String(chunk.error)),
+                                {
+                                    level: "error",
+                                    tags: {
+                                        component: "code-mode",
+                                        operation: "sdk_execution",
+                                    },
+                                    extra: {
+                                        connectionId: body.connectionId,
+                                        projectPath: body.projectPath,
+                                        model: modelName,
+                                    },
+                                }
+                            );
+
                             writer.write({
                                 type: "error",
                                 errorText:
@@ -600,6 +659,159 @@ export async function POST(req: Request) {
             headers: { "Content-Type": "application/json" },
         });
     }
+}
+
+/**
+ * Handle bang commands - direct bash execution without LLM
+ *
+ * When user types `!command`, execute it directly and stream output.
+ * This bypasses Claude entirely for quick shell operations.
+ */
+async function handleBangCommand(
+    command: string,
+    cwd: string,
+    userEmail: string,
+    abortSignal?: AbortSignal,
+    connectionPublicId?: string | null,
+    connectionSlug?: string | null
+): Promise<Response> {
+    const stream = createUIMessageStream({
+        execute: async ({ writer }) => {
+            const textId = nanoid();
+
+            // Helper to safely write to stream (handles client disconnects)
+            const safeWrite = (chunk: any) => {
+                try {
+                    writer.write(chunk);
+                } catch (error) {
+                    // Stream write failure usually means client disconnected
+                    logger.warn(
+                        {
+                            error,
+                            chunkType: chunk.type,
+                            command,
+                        },
+                        "Failed to write to stream (client likely disconnected)"
+                    );
+                    // Don't throw - let the generator finish gracefully
+                }
+            };
+
+            try {
+                // Start text block
+                safeWrite({ type: "text-start", id: textId });
+
+                // Write command echo with formatting
+                safeWrite({
+                    type: "text-delta",
+                    id: textId,
+                    delta: `\`\`\`bash\n$ ${command}\n`,
+                });
+
+                // Execute and stream output
+                for await (const chunk of executeBash(command, cwd, abortSignal)) {
+                    switch (chunk.type) {
+                        case "stdout":
+                            safeWrite({
+                                type: "text-delta",
+                                id: textId,
+                                delta: chunk.text,
+                            });
+                            break;
+
+                        case "stderr":
+                            safeWrite({
+                                type: "text-delta",
+                                id: textId,
+                                delta: chunk.text,
+                            });
+                            break;
+
+                        case "exit":
+                            // Close code fence
+                            safeWrite({
+                                type: "text-delta",
+                                id: textId,
+                                delta: "```\n",
+                            });
+
+                            // Show exit code if non-zero (after fence)
+                            if (chunk.code !== 0) {
+                                safeWrite({
+                                    type: "text-delta",
+                                    id: textId,
+                                    delta: `[exit code: ${chunk.code}]\n`,
+                                });
+                            }
+                            break;
+
+                        case "error":
+                            safeWrite({
+                                type: "text-delta",
+                                id: textId,
+                                delta: `\nError: ${chunk.message}\n\`\`\`\n`,
+                            });
+                            break;
+                    }
+                }
+
+                // End text block
+                safeWrite({ type: "text-end", id: textId });
+                safeWrite({ type: "finish", finishReason: "stop" });
+            } catch (error) {
+                logger.error(
+                    { error, command, cwd },
+                    "Code mode: bang command execution failed"
+                );
+
+                // Try to write error to stream
+                try {
+                    safeWrite({
+                        type: "text-delta",
+                        id: textId,
+                        delta: `\n\nCommand failed: ${error instanceof Error ? error.message : String(error)}\n\`\`\`\n`,
+                    });
+                    safeWrite({ type: "text-end", id: textId });
+                    safeWrite({
+                        type: "error",
+                        errorText: `Failed to execute: ${command}`,
+                    });
+                } catch (streamError) {
+                    // Stream is dead - log for visibility but don't throw
+                    logger.warn(
+                        { error: streamError, command, originalError: error },
+                        "Failed to write error to stream - stream likely dead"
+                    );
+                }
+
+                Sentry.captureException(error, {
+                    tags: {
+                        component: "code-mode",
+                        operation: "bang_command",
+                    },
+                    extra: { command, cwd, userEmail },
+                });
+            }
+        },
+    });
+
+    const response = createUIMessageStreamResponse({ stream });
+
+    // Add connection headers for new connections
+    // This ensures the client receives the connection ID to update URL and send subsequent messages
+    if (connectionPublicId && connectionSlug) {
+        response.headers.set("X-Connection-Id", connectionPublicId);
+        response.headers.set("X-Connection-Slug", connectionSlug);
+        response.headers.set("X-Connection-Is-New", "true");
+        // Initial title based on project name
+        const projectName = cwd.split("/").pop() || "project";
+        response.headers.set(
+            "X-Connection-Title",
+            encodeURIComponent(`Code: ${projectName}`)
+        );
+    }
+
+    return response;
 }
 
 /**
