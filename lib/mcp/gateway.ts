@@ -384,10 +384,27 @@ type McpGatewayTool = ReturnType<typeof createMcpServerTool>;
 // ============================================================================
 
 /**
+ * Generate a unique tool name for an MCP server
+ *
+ * Uses "mcp_" prefix to avoid collisions with built-in tools.
+ * Appends accountId for multi-account scenarios (e.g., multiple GitHub accounts).
+ */
+function getToolName(server: McpServer): string {
+    const base = `mcp_${server.identifier}`;
+    if (server.accountId && server.accountId !== "default") {
+        return `${base}_${server.accountId}`;
+    }
+    return base;
+}
+
+/**
  * Get all MCP gateway tools for a user
  *
  * Returns a Record of tool name → tool that can be spread into streamText's tools option.
  * Each enabled MCP server becomes a single tool using the gateway pattern.
+ *
+ * Tool names are prefixed with "mcp_" to avoid collisions with built-in tools.
+ * For multi-account servers, the accountId is appended (e.g., "mcp_github_work").
  *
  * @param userEmail - User's email address
  *
@@ -417,7 +434,18 @@ export async function getMcpGatewayTools(
         // Create a tool for each server
         for (const server of servers) {
             try {
-                tools[server.identifier] = createMcpServerTool(server, userEmail);
+                const toolName = getToolName(server);
+
+                // Check for duplicate tool names (shouldn't happen but log if it does)
+                if (tools[toolName]) {
+                    logger.warn(
+                        { toolName, serverIdentifier: server.identifier, userEmail },
+                        "Duplicate MCP tool name - skipping server"
+                    );
+                    continue;
+                }
+
+                tools[toolName] = createMcpServerTool(server, userEmail);
             } catch (error) {
                 logger.error(
                     { error, serverIdentifier: server.identifier, userEmail },
