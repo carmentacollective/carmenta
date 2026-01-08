@@ -51,6 +51,7 @@ export async function* executeBash(
         USER: process.env.USER,
         SHELL: process.env.SHELL,
         LANG: process.env.LANG,
+        TZ: process.env.TZ, // Timezone for consistent date/time behavior
         NODE_ENV: process.env.NODE_ENV,
         // Enable color output where supported
         FORCE_COLOR: "1",
