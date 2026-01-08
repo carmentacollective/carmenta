@@ -127,7 +127,8 @@ function buildToolDescription(server: McpServer): string {
         return `${serverName}. Top operations: ${topTools.join(", ")}${moreText}. Use action='describe' for full list.`;
     }
 
-    return `${serverName}. Use action='describe' to see available operations.`;
+    const toolText = toolCount > 0 ? ` (${toolCount} tools)` : "";
+    return `${serverName}${toolText}. Use action='describe' to see available operations.`;
 }
 
 // ============================================================================
@@ -209,7 +210,8 @@ export async function describeMcpOperations(
             childLogger.error({ dbError }, "Failed to update server error status");
         }
 
-        await logMcpEvent({
+        // Log event without blocking (fire-and-forget for activity logging)
+        void logMcpEvent({
             userEmail,
             serverIdentifier,
             accountId,
@@ -343,7 +345,8 @@ export async function executeMcpAction(
             childLogger.error({ dbError }, "Failed to update server error status");
         }
 
-        await logMcpEvent({
+        // Log event without blocking (fire-and-forget for activity logging)
+        void logMcpEvent({
             userEmail,
             serverIdentifier,
             accountId,
