@@ -134,9 +134,10 @@ function extractMessageContent(content: ChatGPTMessage["content"]): string {
 }
 
 /**
- * Walk the message tree from root to current_node to get the conversation flow.
+ * Walk the message tree from current_node back to root to get the conversation flow.
  * ChatGPT stores messages in a tree structure where users can edit prompts
- * or regenerate responses, creating branches.
+ * or regenerate responses, creating branches. We walk backward from current_node
+ * to reconstruct the active conversation path.
  */
 function walkMessageTree(
     mapping: Record<string, ChatGPTNode>,
@@ -145,20 +146,7 @@ function walkMessageTree(
     const messages: ParsedMessage[] = [];
     const visited = new Set<string>();
 
-    // Find root node (parent is null)
-    let rootId: string | null = null;
-    for (const [nodeId, node] of Object.entries(mapping)) {
-        if (node.parent === null) {
-            rootId = nodeId;
-            break;
-        }
-    }
-
-    if (!rootId) {
-        return messages;
-    }
-
-    // Build path from root to current node
+    // Build path from current node back to root by walking parent chain
     const path: string[] = [];
     let currentId: string | null = currentNodeId;
 
@@ -196,10 +184,45 @@ function walkMessageTree(
 }
 
 /**
- * Parse a single conversation from the export
+ * Safely convert a Unix timestamp to a Date, with validation.
+ * Returns null for invalid timestamps.
  */
-function parseConversation(conv: ChatGPTConversation): ParsedConversation | null {
+function safeTimestampToDate(timestamp: unknown): Date | null {
+    if (typeof timestamp !== "number" || !isFinite(timestamp) || timestamp <= 0) {
+        return null;
+    }
+    // Reasonable bounds: 2015 to 2035
+    const minTimestamp = 1420070400; // 2015-01-01
+    const maxTimestamp = 2051222400; // 2035-01-01
+    if (timestamp < minTimestamp || timestamp > maxTimestamp) {
+        return null;
+    }
+    return new Date(timestamp * 1000);
+}
+
+interface ParseConversationError {
+    error: string;
+    conversationId: string;
+}
+
+/**
+ * Parse a single conversation from the export.
+ * Returns ParsedConversation on success, error info object on failure, or null for empty conversations.
+ */
+function parseConversation(
+    conv: ChatGPTConversation
+): ParsedConversation | ParseConversationError | null {
     try {
+        // Validate required fields
+        if (!conv.mapping || typeof conv.mapping !== "object") {
+            logger.warn({ conversationId: conv.id }, "Missing or invalid mapping");
+            return null;
+        }
+        if (!conv.current_node || !conv.mapping[conv.current_node]) {
+            logger.warn({ conversationId: conv.id }, "Missing or invalid current_node");
+            return null;
+        }
+
         const messages = walkMessageTree(conv.mapping, conv.current_node);
 
         // Skip conversations with no meaningful messages
@@ -213,11 +236,15 @@ function parseConversation(conv: ChatGPTConversation): ParsedConversation | null
             assistantMessages.find((m) => m.model)?.model ||
             (assistantMessages.length > 0 ? "unknown" : null);
 
+        // Validate timestamps with fallbacks
+        const createdAt = safeTimestampToDate(conv.create_time) ?? new Date();
+        const updatedAt = safeTimestampToDate(conv.update_time) ?? createdAt;
+
         return {
             id: conv.id,
             title: conv.title || "Untitled",
-            createdAt: new Date(conv.create_time * 1000),
-            updatedAt: new Date(conv.update_time * 1000),
+            createdAt,
+            updatedAt,
             messages,
             model,
             isArchived: conv.is_archived,
@@ -225,8 +252,10 @@ function parseConversation(conv: ChatGPTConversation): ParsedConversation | null
             messageCount: messages.length,
         };
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         logger.warn({ error, conversationId: conv.id }, "Failed to parse conversation");
-        return null;
+        // Return error info instead of null so caller can track failures
+        return { error: errorMessage, conversationId: conv.id };
     }
 }
 
@@ -239,12 +268,13 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
 
     try {
         data = JSON.parse(jsonContent);
-    } catch {
+    } catch (error) {
+        const detail = error instanceof SyntaxError ? `: ${error.message}` : "";
         return {
             conversations: [],
             dateRange: { earliest: new Date(), latest: new Date() },
             totalMessageCount: 0,
-            errors: ["Invalid JSON format in conversations.json"],
+            errors: [`Invalid JSON format in conversations.json${detail}`],
         };
     }
 
@@ -262,26 +292,51 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
 
     const conversations: ParsedConversation[] = [];
     let totalMessageCount = 0;
-    let earliest = new Date();
-    let latest = new Date(0);
+    let earliest: Date | null = null;
+    let latest: Date | null = null;
+    let parseFailures = 0;
 
     for (const rawConv of rawConversations) {
-        const parsed = parseConversation(rawConv);
-        if (parsed) {
-            conversations.push(parsed);
-            totalMessageCount += parsed.messageCount;
+        const result = parseConversation(rawConv);
 
-            if (parsed.createdAt < earliest) earliest = parsed.createdAt;
-            if (parsed.updatedAt > latest) latest = parsed.updatedAt;
+        // Handle parse errors
+        if (result && "error" in result) {
+            parseFailures++;
+            // Only add to errors array if we have significant failures
+            if (parseFailures <= 5) {
+                errors.push(
+                    `Failed to parse "${rawConv.title || rawConv.id}": ${result.error}`
+                );
+            }
+            continue;
         }
+
+        // Handle successful parse
+        if (result) {
+            conversations.push(result);
+            totalMessageCount += result.messageCount;
+
+            if (!earliest || result.createdAt < earliest) earliest = result.createdAt;
+            if (!latest || result.updatedAt > latest) latest = result.updatedAt;
+        }
+    }
+
+    // Add summary error if many failures occurred
+    if (parseFailures > 5) {
+        errors.push(`...and ${parseFailures - 5} more conversations failed to parse`);
     }
 
     // Sort by created date, newest first
     conversations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+    // Default to current date if no valid conversations found
+    const now = new Date();
     return {
         conversations,
-        dateRange: { earliest, latest },
+        dateRange: {
+            earliest: earliest ?? now,
+            latest: latest ?? now,
+        },
         totalMessageCount,
         errors,
     };

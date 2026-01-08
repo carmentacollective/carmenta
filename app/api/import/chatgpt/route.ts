@@ -152,6 +152,8 @@ export async function POST(request: NextRequest): Promise<Response> {
             headers: { "Content-Type": "application/json" },
         });
     } catch (error) {
+        requestLogger.error({ error }, "Import request failed");
+
         Sentry.captureException(error, {
             tags: { component: "import", platform: "chatgpt" },
             extra: { userEmail },

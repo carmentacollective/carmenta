@@ -44,66 +44,78 @@ export default function ImportPage() {
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileSelect = useCallback(async (file: File) => {
-        if (!file.name.endsWith(".zip")) {
-            setError(
-                "Please upload a ZIP file. ChatGPT exports are downloaded as .zip files."
-            );
-            setState("error");
-            return;
-        }
-
-        // 100MB limit
-        if (file.size > 100 * 1024 * 1024) {
-            setError(
-                `File is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum size is 100MB.`
-            );
-            setState("error");
-            return;
-        }
-
-        setState("uploading");
-        setError(null);
-
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-
-            setState("parsing");
-
-            const response = await fetch("/api/import/chatgpt", {
-                method: "POST",
-                body: formData,
-            });
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || "Failed to parse export");
-            }
-
-            setParsedData({
-                importId: data.importId,
-                conversations: data.conversations,
-                stats: data.stats,
-            });
-            setState("preview");
-
-            logger.info(
-                { conversationCount: data.stats.conversationCount },
-                "ChatGPT export parsed successfully"
-            );
-        } catch (err) {
-            const message =
-                err instanceof Error ? err.message : "Failed to parse export";
-            setError(message);
-            setState("error");
-            logger.error({ error: err }, "Failed to parse ChatGPT export");
-            Sentry.captureException(err, {
-                tags: { component: "import", platform: "chatgpt" },
-            });
+    const clearFileInput = useCallback(() => {
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
         }
     }, []);
+
+    const handleFileSelect = useCallback(
+        async (file: File) => {
+            if (!file.name.endsWith(".zip")) {
+                setError(
+                    "Please upload a ZIP file. ChatGPT exports are downloaded as .zip files."
+                );
+                setState("error");
+                clearFileInput();
+                return;
+            }
+
+            // 100MB limit
+            if (file.size > 100 * 1024 * 1024) {
+                setError(
+                    `File is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum size is 100MB.`
+                );
+                setState("error");
+                clearFileInput();
+                return;
+            }
+
+            setState("uploading");
+            setError(null);
+
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                setState("parsing");
+
+                const response = await fetch("/api/import/chatgpt", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Failed to parse export");
+                }
+
+                setParsedData({
+                    importId: data.importId,
+                    conversations: data.conversations,
+                    stats: data.stats,
+                });
+                setState("preview");
+
+                logger.info(
+                    { conversationCount: data.stats.conversationCount },
+                    "ChatGPT export parsed successfully"
+                );
+            } catch (err) {
+                const message =
+                    err instanceof Error ? err.message : "Failed to parse export";
+                setError(message);
+                setState("error");
+                clearFileInput();
+                logger.error({ error: err }, "Failed to parse ChatGPT export");
+                Sentry.captureException(err, {
+                    tags: { component: "import", platform: "chatgpt" },
+                });
+            }
+        },
+        [clearFileInput]
+    );
 
     const handleDrop = useCallback(
         (e: React.DragEvent) => {
