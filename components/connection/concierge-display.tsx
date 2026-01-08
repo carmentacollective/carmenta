@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect, useRef } from "react";
+import { memo, useState, useLayoutEffect, useRef } from "react";
 import { CaretDownIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 
@@ -149,16 +149,13 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     const reasoningBadge = reasoning ? getReasoningEmoji(reasoning) : null;
 
     // Settling phase: Brief moment when selection completes before showing result
-    // This allows the water ripple animation to play
-    useEffect(() => {
+    // useLayoutEffect runs synchronously before paint, preventing flash of selected state
+    useLayoutEffect(() => {
         if (hasSelected && !prevHasSelectedRef.current) {
-            // Defer to next tick to avoid cascading render warning
-            const startTimer = setTimeout(() => setIsSettling(true), 0);
-            const endTimer = setTimeout(() => setIsSettling(false), 350);
-            return () => {
-                clearTimeout(startTimer);
-                clearTimeout(endTimer);
-            };
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: synchronous state before paint
+            setIsSettling(true);
+            const timer = setTimeout(() => setIsSettling(false), 350);
+            return () => clearTimeout(timer);
         }
         prevHasSelectedRef.current = hasSelected;
     }, [hasSelected]);
