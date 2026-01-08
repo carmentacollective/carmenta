@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
     PlugIcon,
     SparkleIcon,
@@ -610,8 +611,14 @@ function IntegrationsContent({
             {/* Security Note */}
             <section className="pt-4 text-center">
                 <p className="text-foreground/50 text-sm">
-                    All credentials and OAuth tokens are encrypted with AES-256-GCM and
-                    stored securely.
+                    We encrypt your credentials and never keep copies of your data.
+                    Disconnect whenever you want.{" "}
+                    <Link
+                        href="/security"
+                        className="text-foreground/70 hover:text-foreground underline underline-offset-2"
+                    >
+                        Our security practices →
+                    </Link>
                 </p>
             </section>
 
