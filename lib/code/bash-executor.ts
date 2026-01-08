@@ -57,13 +57,17 @@ export async function* executeBash(
         SHELL: process.env.SHELL,
         LANG: process.env.LANG,
         TZ: process.env.TZ, // Timezone for consistent date/time behavior
+        // NODE_ENV included for commands that use it (e.g., npm scripts, build tools)
+        // Does not leak sensitive info - just "development" or "production"
         NODE_ENV: process.env.NODE_ENV,
         // Enable color output where supported
         FORCE_COLOR: "1",
         TERM: "xterm-256color",
     };
 
-    // Spawn shell process
+    // Spawn shell process with shell=true (intentional for user-requested shell operations)
+    // Security: This allows shell features like pipes, redirects, etc.
+    // The security boundary is authentication + project path validation (see route.ts)
     const proc = spawn(command, {
         shell: true,
         cwd,
@@ -221,6 +225,9 @@ export async function* executeBash(
     });
 
     // Check if all streams and process are complete
+    // Note: exitChunk is only set by the 'close' event, so this will only push
+    // the exit chunk after the process has fully exited, even if stdout/stderr
+    // finish earlier. This ordering ensures we don't emit exit before all output.
     const checkComplete = () => {
         if (done && stdoutEnded && stderrEnded && exitChunk) {
             pushChunk(exitChunk);
