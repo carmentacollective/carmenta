@@ -189,7 +189,6 @@ export function ComposerUI({
 
     const isDisabled = disabled || isLoading;
     const hasLeftActions = renderModelSelector || renderFilePicker;
-    const hasRightActions = renderVoiceInput || true; // Always have send button
 
     // Determine button to show
     const renderPrimaryButton = () => {

@@ -439,7 +439,6 @@ function ModalEmptyState() {
             className="flex h-full w-full flex-1 flex-col items-center justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
         >
             <p className="text-foreground/40 text-sm">What's on your mind?</p>
