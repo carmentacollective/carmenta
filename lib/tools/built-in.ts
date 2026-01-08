@@ -1,4 +1,4 @@
-import { generateImage, tool } from "ai";
+import { generateImage, NoImageGeneratedError, tool } from "ai";
 import { all, create } from "mathjs";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
@@ -648,24 +648,49 @@ export function createImageTool(context?: ToolContext) {
                             durationMs,
                         };
                     } catch (error) {
+                        // Extract the underlying error from NoImageGeneratedError
+                        const underlyingError =
+                            NoImageGeneratedError.isInstance(error) && error.cause
+                                ? error.cause
+                                : error;
+
                         logger.error(
-                            { error, promptPreview, model: modelId, tier },
+                            {
+                                error: underlyingError,
+                                errorType: NoImageGeneratedError.isInstance(error)
+                                    ? "NoImageGeneratedError"
+                                    : "unknown",
+                                promptPreview,
+                                model: modelId,
+                                tier,
+                            },
                             "Image generation failed"
                         );
-                        Sentry.captureException(error, {
+
+                        Sentry.captureException(underlyingError, {
                             tags: {
                                 component: "tool",
                                 tool: "createImage",
                                 model: modelId,
                                 tier,
+                                errorType: NoImageGeneratedError.isInstance(error)
+                                    ? "NoImageGeneratedError"
+                                    : "unknown",
                             },
-                            extra: { promptPreview, aspectRatio },
+                            extra: {
+                                promptPreview,
+                                aspectRatio,
+                                originalErrorMessage:
+                                    error instanceof Error
+                                        ? String(error.message)
+                                        : String(error),
+                            },
                         });
 
                         span.setStatus({ code: 2, message: "Error" });
 
                         // Sanitize error messages to avoid leaking internal details
-                        const message = getUserFriendlyImageError(error);
+                        const message = getUserFriendlyImageError(underlyingError);
 
                         return {
                             error: true,
@@ -688,7 +713,13 @@ function getUserFriendlyImageError(error: unknown): string {
         return "We couldn't create that image right now";
     }
 
-    const msg = error.message.toLowerCase();
+    // Defensively handle cases where error.message might not be a string
+    // (e.g., when the AI SDK wraps errors with Promise values)
+    const rawMessage = error.message;
+    const msg =
+        typeof rawMessage === "string"
+            ? rawMessage.toLowerCase()
+            : String(rawMessage).toLowerCase();
 
     // Content policy violations
     if (
