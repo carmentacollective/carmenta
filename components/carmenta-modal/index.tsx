@@ -79,10 +79,10 @@ function CarmentaModalInner() {
                 )}
             </div>
 
-            {/* Chat interface - same as /connection */}
+            {/* Chat interface - HoloThread in modal mode (no greeting/sparks) */}
             {/* @container enables container queries so Composer adapts to modal width */}
             <div className="@container min-h-0 flex-1 overflow-hidden">
-                <HoloThread />
+                <HoloThread hideWelcome />
             </div>
         </>
     );

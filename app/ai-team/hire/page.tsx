@@ -16,8 +16,16 @@ import {
     UserBubble,
     AssistantBubble,
     ThinkingBubble,
-    SimpleComposer,
+    ComposerUI,
 } from "@/components/chat";
+import {
+    FileAttachmentProvider,
+    useFileAttachments,
+} from "@/components/connection/file-attachment-context";
+import { FilePickerButton } from "@/components/connection/file-picker-button";
+import { UploadProgressDisplay } from "@/components/connection/upload-progress";
+import { VoiceInputButton, type VoiceInputButtonRef } from "@/components/voice";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -48,22 +56,32 @@ interface Playbook {
  *
  * Uses shared chat components:
  * - UserBubble, AssistantBubble, ThinkingBubble for messages
- * - SimpleComposer for input
+ * - ComposerUI for rich input with voice and file attachments
  */
 export default function HirePage() {
+    return (
+        <FileAttachmentProvider>
+            <HirePageInner />
+        </FileAttachmentProvider>
+    );
+}
+
+function HirePageInner() {
     const router = useRouter();
+    const isMobile = useIsMobile();
+    const voiceInputRef = useRef<VoiceInputButtonRef>(null);
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "welcome",
             role: "assistant",
-            content: `Hi there! We're here to help you hire a new AI team member.
+            content: `Let's bring on a new team member together.
 
-Tell us what you'd like automated. For example:
-- "Check my email every morning and flag important messages"
+What do you want automated? Some ideas:
+- "Check my email every morning and flag what matters"
 - "Monitor competitor news and summarize weekly"
-- "Triage my Slack DMs and highlight urgent ones"
+- "Triage my Slack DMs and surface the urgent ones"
 
-What can we help you with?`,
+What are we building?`,
         },
     ]);
     const [input, setInput] = useState("");
@@ -72,13 +90,26 @@ What can we help you with?`,
     const [isHiring, setIsHiring] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // File attachment state
+    const { completedFiles, pendingFiles, clearFiles, isUploading } =
+        useFileAttachments();
+
     // Auto-scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isLoading]);
 
+    // Voice input handlers
+    const handleVoiceTranscript = useCallback((transcript: string) => {
+        // onTranscriptUpdate provides the full cumulative transcript, not deltas
+        setInput(transcript);
+    }, []);
+
     const handleSubmit = useCallback(async () => {
-        if (!input.trim() || isLoading) return;
+        if (!input.trim() || isLoading || isUploading) return;
+
+        // Stop voice recording if active
+        voiceInputRef.current?.stop();
 
         const userMessage: Message = {
             id: `user-${Date.now()}`,
@@ -88,6 +119,7 @@ What can we help you with?`,
 
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
+        clearFiles();
         setIsLoading(true);
 
         try {
@@ -98,6 +130,12 @@ What can we help you with?`,
                     messages: [...messages, userMessage].map((m) => ({
                         role: m.role,
                         content: m.content,
+                    })),
+                    // Include file attachments if any
+                    files: completedFiles.map((f) => ({
+                        url: f.url,
+                        mediaType: f.mediaType,
+                        name: f.name,
                     })),
                 }),
             });
@@ -134,13 +172,13 @@ What can we help you with?`,
                     id: `error-${Date.now()}`,
                     role: "assistant",
                     content:
-                        "We're having trouble processing that. Could you try rephrasing?",
+                        "That didn't work out. Our bots are looking into it. Want to try again?",
                 },
             ]);
         } finally {
             setIsLoading(false);
         }
-    }, [input, isLoading, messages]);
+    }, [input, isLoading, isUploading, messages, completedFiles, clearFiles]);
 
     const handleHire = async () => {
         if (!playbook) return;
@@ -190,6 +228,8 @@ What can we help you with?`,
             setIsHiring(false);
         }
     };
+
+    const hasPendingFiles = pendingFiles.length > 0;
 
     return (
         <StandardPageLayout maxWidth="standard" contentClassName="py-8">
@@ -243,14 +283,30 @@ What can we help you with?`,
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Input */}
+                        {/* Input with file attachments and voice */}
                         <div className="border-foreground/10 @container border-t p-4">
-                            <SimpleComposer
+                            <ComposerUI
                                 value={input}
                                 onChange={setInput}
                                 onSubmit={handleSubmit}
                                 isLoading={isLoading}
                                 placeholder="Describe what you need..."
+                                renderAbove={() =>
+                                    hasPendingFiles ? <UploadProgressDisplay /> : null
+                                }
+                                renderFilePicker={() => (
+                                    <FilePickerButton
+                                        className={isMobile === true ? "h-11 w-11" : ""}
+                                    />
+                                )}
+                                renderVoiceInput={() => (
+                                    <VoiceInputButton
+                                        ref={voiceInputRef}
+                                        onTranscriptUpdate={handleVoiceTranscript}
+                                        disabled={isLoading || isUploading}
+                                        className={isMobile === true ? "h-11 w-11" : ""}
+                                    />
+                                )}
                             />
                         </div>
                     </div>

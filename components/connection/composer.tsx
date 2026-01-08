@@ -828,9 +828,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 />
 
                 {/* Action bar: responsive layout via container width */}
-                <div className="flex items-center justify-between gap-2 px-4 py-3 @md:justify-end @md:gap-1.5 @md:py-0 @md:pr-4">
+                <div className="flex items-center justify-between gap-2 px-4 py-3.5 @md:justify-end @md:gap-3 @md:py-0 @md:pr-4">
                     {/* Left group (mobile) / inline (desktop): Model + Attach */}
-                    <div className="flex items-center gap-1 @md:order-last @md:gap-1.5">
+                    <div className="flex items-center gap-2 @md:order-last @md:gap-3">
                         <ModelSelectorTrigger
                             overrides={overrides}
                             onChange={setOverrides}
@@ -844,7 +844,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     </div>
 
                     {/* Right group: Send/Queue/Stop + Voice */}
-                    <div className="flex items-center gap-2 @md:order-first @md:gap-1.5">
+                    <div className="flex items-center gap-2 @md:order-first @md:gap-3">
                         {/* Button transforms based on state:
                             - Not streaming → Send (arrow)
                             - Streaming + empty input → Stop (square)
