@@ -17,6 +17,7 @@ import { unauthorizedResponse, notFoundResponse } from "@/lib/api/responses";
 import { getOrCreateUser } from "@/lib/db/users";
 import {
     findProjectBySlug,
+    getProject,
     isWorkspaceMode,
     validateUserProjectPath,
 } from "@/lib/code/projects";
@@ -113,8 +114,12 @@ export async function GET(
             imageUrl: user?.imageUrl ?? null,
         });
 
-        // Find project by repo slug
-        const project = await findProjectBySlug(repo);
+        // Use path query param if provided (faster, avoids directory scan)
+        // Fall back to slug lookup for backwards compatibility
+        const pathParam = request.nextUrl.searchParams.get("path");
+        const project = pathParam
+            ? await getProject(pathParam)
+            : await findProjectBySlug(repo);
         if (!project) {
             return notFoundResponse("project");
         }
@@ -198,7 +203,13 @@ export async function GET(
         }
 
         logger.info(
-            { repo, fileCount: files.length, totalAdditions, totalDeletions },
+            {
+                repo,
+                pathParam,
+                fileCount: files.length,
+                totalAdditions,
+                totalDeletions,
+            },
             "Retrieved git status"
         );
 

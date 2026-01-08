@@ -60,7 +60,11 @@ async function fetchSessionChanges(projectPath: string): Promise<SessionChangesD
     const normalizedPath = projectPath.replace(/\/+$/, "");
     const repoSlug = normalizedPath.split("/").pop() ?? "";
 
-    const response = await fetch(`/api/code/${repoSlug}/git/status`);
+    // Pass full path as query param to avoid expensive directory scanning
+    const url = new URL(`/api/code/${repoSlug}/git/status`, window.location.origin);
+    url.searchParams.set("path", normalizedPath);
+
+    const response = await fetch(url.toString());
 
     if (!response.ok) {
         throw new Error("Failed to fetch git status");
