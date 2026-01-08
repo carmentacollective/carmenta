@@ -1,4 +1,4 @@
-import { generateImage, tool } from "ai";
+import { generateImage, NoImageGeneratedError, tool } from "ai";
 import { all, create } from "mathjs";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
@@ -16,8 +16,8 @@ import { searchKnowledge } from "@/lib/kb/search";
  * Selected based on reasoning level - higher reasoning = higher quality images.
  */
 const IMAGE_MODELS = {
-    fast: "google/imagen-4.0-fast-generate", // $0.02/image - quick drafts
-    standard: "google/imagen-4.0-generate", // $0.04/image - balanced
+    fast: "google/imagen-4.0-fast-generate-001", // $0.02/image - quick drafts
+    standard: "google/imagen-4.0-generate-001", // $0.04/image - balanced
     quality: "google/gemini-3-pro-image", // $0.134/image - Nano Banana Pro
 } as const;
 
@@ -648,24 +648,88 @@ export function createImageTool(context?: ToolContext) {
                             durationMs,
                         };
                     } catch (error) {
+                        // Extract the underlying error from NoImageGeneratedError
+                        let underlyingError =
+                            NoImageGeneratedError.isInstance(error) && error.cause
+                                ? error.cause
+                                : error;
+
+                        // AI SDK sometimes returns the error itself as a Promise
+                        // Await it to get the actual error
+                        if (underlyingError instanceof Promise) {
+                            try {
+                                underlyingError = await underlyingError;
+                            } catch (promiseError) {
+                                // If the promise rejects, use that error
+                                underlyingError = promiseError;
+                            }
+                        }
+
+                        // Also check if error has a Promise-valued message property
+                        if (
+                            underlyingError &&
+                            typeof underlyingError === "object" &&
+                            "message" in underlyingError &&
+                            underlyingError.message instanceof Promise
+                        ) {
+                            try {
+                                const resolvedMessage = await underlyingError.message;
+                                underlyingError = new Error(String(resolvedMessage));
+                            } catch (promiseError) {
+                                // If the promise rejects, use that error
+                                underlyingError = promiseError;
+                            }
+                        }
+
                         logger.error(
-                            { error, promptPreview, model: modelId, tier },
+                            {
+                                error: underlyingError,
+                                errorMessage:
+                                    underlyingError instanceof Error
+                                        ? underlyingError.message
+                                        : String(underlyingError),
+                                errorName:
+                                    underlyingError instanceof Error
+                                        ? underlyingError.name
+                                        : typeof underlyingError,
+                                errorStack:
+                                    underlyingError instanceof Error
+                                        ? underlyingError.stack
+                                        : undefined,
+                                errorType: NoImageGeneratedError.isInstance(error)
+                                    ? "NoImageGeneratedError"
+                                    : "unknown",
+                                promptPreview,
+                                model: modelId,
+                                tier,
+                            },
                             "Image generation failed"
                         );
-                        Sentry.captureException(error, {
+
+                        Sentry.captureException(underlyingError, {
                             tags: {
                                 component: "tool",
                                 tool: "createImage",
                                 model: modelId,
                                 tier,
+                                errorType: NoImageGeneratedError.isInstance(error)
+                                    ? "NoImageGeneratedError"
+                                    : "unknown",
                             },
-                            extra: { promptPreview, aspectRatio },
+                            extra: {
+                                promptPreview,
+                                aspectRatio,
+                                originalErrorMessage:
+                                    error instanceof Error
+                                        ? String(error.message)
+                                        : String(error),
+                            },
                         });
 
                         span.setStatus({ code: 2, message: "Error" });
 
                         // Sanitize error messages to avoid leaking internal details
-                        const message = getUserFriendlyImageError(error);
+                        const message = getUserFriendlyImageError(underlyingError);
 
                         return {
                             error: true,
@@ -688,7 +752,13 @@ function getUserFriendlyImageError(error: unknown): string {
         return "We couldn't create that image right now";
     }
 
-    const msg = error.message.toLowerCase();
+    // Defensively handle cases where error.message might not be a string
+    // (e.g., when the AI SDK wraps errors with Promise values)
+    const rawMessage = error.message;
+    const msg =
+        typeof rawMessage === "string"
+            ? rawMessage.toLowerCase()
+            : String(rawMessage).toLowerCase();
 
     // Content policy violations
     if (
