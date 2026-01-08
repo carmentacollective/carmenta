@@ -17,12 +17,23 @@ interface ToolStatusBadgeProps {
 }
 
 /**
+ * Shimmer text effect for running state
+ */
+function ShimmerLabel({ children }: { children: React.ReactNode }) {
+    return (
+        <span className="from-foreground/50 via-foreground/90 to-foreground/50 animate-shimmer-text bg-gradient-to-r bg-[length:200%_100%] bg-clip-text text-transparent">
+            {children}
+        </span>
+    );
+}
+
+/**
  * Status badge for tool execution with four states.
  *
  * Visual design follows Vercel AI Chatbot patterns with
  * Carmenta's holographic color palette:
  * - Pending: Muted gray, subtle
- * - Running: Soft lavender with pulse animation
+ * - Running: Soft lavender with shimmer text
  * - Completed: Mint green with checkmark
  * - Error: Coral/blush with X
  */
@@ -35,8 +46,8 @@ export function ToolStatusBadge({ status, label, className }: ToolStatusBadgePro
                 {
                     // Pending: subtle gray
                     "bg-muted/50 text-muted-foreground": status === "pending",
-                    // Running: soft lavender with pulse
-                    "bg-holo-lavender/30 text-foreground/80": status === "running",
+                    // Running: soft lavender with shimmer
+                    "bg-holo-lavender/30": status === "running",
                     // Completed: mint green
                     "bg-holo-mint/30 text-foreground/80": status === "completed",
                     // Error: coral/blush
@@ -46,7 +57,11 @@ export function ToolStatusBadge({ status, label, className }: ToolStatusBadgePro
             )}
         >
             <StatusIcon status={status} />
-            <span>{label}</span>
+            {status === "running" ? (
+                <ShimmerLabel>{label}</ShimmerLabel>
+            ) : (
+                <span>{label}</span>
+            )}
         </span>
     );
 }

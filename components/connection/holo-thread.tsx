@@ -1727,9 +1727,13 @@ export function AssistantMessage({
           ? "speaking"
           : "idle";
 
-    // Show thinking indicator only when streaming AND no content yet AND this is the last message
-    // AND concierge has already made its selection (so we're not showing ConciergeDisplay in selecting state)
-    const showThinking = isStreaming && !hasContent && isLast && hasSelected;
+    // Show thinking indicator only when:
+    // - Streaming AND no content yet AND no tools running AND this is the last message
+    // - Concierge has already made its selection
+    // Once tools start running, they provide their own progress indicators - no need for ThinkingIndicator
+    const hasToolsRunning = toolParts.length > 0;
+    const showThinking =
+        isStreaming && !hasContent && !hasToolsRunning && isLast && hasSelected;
 
     // Current model ID for regenerate menu - prefer override, fallback to concierge selection
     const currentModelId = overrides.modelId ?? concierge?.modelId;

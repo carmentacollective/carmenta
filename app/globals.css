@@ -1430,6 +1430,11 @@
         animation: shimmer 2s ease-in-out infinite;
     }
 
+    /* Shimmer text effect for loading labels (e.g., tool execution) */
+    .animate-shimmer-text {
+        animation: shimmer 1.5s linear infinite;
+    }
+
     /* Indeterminate progress bar - sweeping gradient for tool execution */
     @keyframes indeterminate-progress {
         0% {
