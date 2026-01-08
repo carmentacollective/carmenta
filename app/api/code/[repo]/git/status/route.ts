@@ -203,7 +203,13 @@ export async function GET(
         }
 
         logger.info(
-            { repo, fileCount: files.length, totalAdditions, totalDeletions },
+            {
+                repo,
+                pathParam,
+                fileCount: files.length,
+                totalAdditions,
+                totalDeletions,
+            },
             "Retrieved git status"
         );
 
