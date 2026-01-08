@@ -280,7 +280,13 @@ export async function POST(req: Request) {
             "Code mode: bang command"
         );
 
-        return handleBangCommand(command, body.projectPath, req.signal);
+        return handleBangCommand(
+            command,
+            body.projectPath,
+            req.signal,
+            isNewConnection ? connectionPublicId : null,
+            isNewConnection ? connectionSlug : null
+        );
     }
 
     // Extract first user message content for title generation
@@ -663,7 +669,9 @@ export async function POST(req: Request) {
 async function handleBangCommand(
     command: string,
     cwd: string,
-    abortSignal?: AbortSignal
+    abortSignal?: AbortSignal,
+    connectionPublicId?: string | null,
+    connectionSlug?: string | null
 ): Promise<Response> {
     const stream = createUIMessageStream({
         execute: async ({ writer }) => {
@@ -781,7 +789,23 @@ async function handleBangCommand(
         },
     });
 
-    return createUIMessageStreamResponse({ stream });
+    const response = createUIMessageStreamResponse({ stream });
+
+    // Add connection headers for new connections
+    // This ensures the client receives the connection ID to update URL and send subsequent messages
+    if (connectionPublicId && connectionSlug) {
+        response.headers.set("X-Connection-Id", connectionPublicId);
+        response.headers.set("X-Connection-Slug", connectionSlug);
+        response.headers.set("X-Connection-Is-New", "true");
+        // Initial title based on project name
+        const projectName = cwd.split("/").pop() || "project";
+        response.headers.set(
+            "X-Connection-Title",
+            encodeURIComponent(`Code: ${projectName}`)
+        );
+    }
+
+    return response;
 }
 
 /**

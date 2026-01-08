@@ -71,6 +71,9 @@ export async function* executeBash(
     let stdoutEnded = false;
     let stderrEnded = false;
     let exitChunk: BashChunk | null = null;
+    // Track actual termination for SIGKILL fallback (not proc.killed which is set on kill() call)
+
+    let processTerminated = false;
 
     // Create async iterator from process streams
     const chunks: BashChunk[] = [];
@@ -94,12 +97,14 @@ export async function* executeBash(
             );
             proc.kill("SIGTERM");
 
-            // Force kill after timeout if graceful termination fails
+            // Force kill after timeout if process hasn't terminated
+            // Note: proc.killed is set immediately after kill(), not when process exits
+            // We need to check processTerminated flag instead
             setTimeout(() => {
-                if (!proc.killed) {
+                if (!processTerminated) {
                     logger.warn(
                         { command, pid: proc.pid },
-                        "Process didn't terminate, force killing"
+                        "Process didn't terminate gracefully, force killing"
                     );
                     proc.kill("SIGKILL");
                 }
@@ -146,6 +151,9 @@ export async function* executeBash(
 
     // Handle process exit - wait for streams to finish
     proc.on("close", (code: number | null, signal: NodeJS.Signals | null) => {
+        // Mark process as terminated for SIGKILL fallback check
+        processTerminated = true;
+
         // Don't emit exit if error already occurred
         if (errorOccurred) return;
 
