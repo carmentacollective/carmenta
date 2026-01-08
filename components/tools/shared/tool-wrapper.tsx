@@ -184,29 +184,17 @@ export function ToolWrapper({
     // First-use celebration (only shows once per tool per session)
     const celebrationMessage = useFirstUseCelebration(toolName, status);
 
-    // Track whether user has manually interacted with the collapsible
-    const [userInteracted, setUserInteracted] = useState(false);
+    // Default collapsed to reduce visual noise - badge with shimmer shows status
+    // Auto-expand on error so users see what went wrong immediately
+    const [isOpen, setIsOpen] = useState(status === "error");
 
-    // Default to open when running, closed when completed (unless user opened it)
-    const [isOpen, setIsOpen] = useState(status !== "completed");
-
-    // Auto-collapse only on initial completion, not when user re-opens
+    // Auto-expand when status transitions to error
+    // Use setTimeout to defer the setState call, following the same pattern as useToolTiming
     useEffect(() => {
-        // Skip if user has manually interacted
-        if (userInteracted) return;
-
-        // When status transitions to completed, collapse after brief delay
-        if (status === "completed" && isOpen) {
-            const timer = setTimeout(() => setIsOpen(false), 800);
-            return () => clearTimeout(timer);
+        if (status === "error") {
+            setTimeout(() => setIsOpen(true), 0);
         }
-    }, [status, isOpen, userInteracted]);
-
-    // Wrap setIsOpen to track user interaction
-    const handleOpenChange = (open: boolean) => {
-        setUserInteracted(true);
-        setIsOpen(open);
-    };
+    }, [status]);
 
     // Get the appropriate status message (with potential delight)
     const statusLabel =
@@ -241,7 +229,7 @@ export function ToolWrapper({
 
         return (
             <div className={cn("not-prose", spacing.inlineResult, className)}>
-                <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
+                <Collapsible open={isOpen} onOpenChange={setIsOpen}>
                     <CollapsibleTrigger
                         className={cn(
                             "group flex w-full items-center gap-2 text-left text-sm transition-colors",
@@ -283,7 +271,7 @@ export function ToolWrapper({
     return (
         <Collapsible
             open={isOpen}
-            onOpenChange={handleOpenChange}
+            onOpenChange={setIsOpen}
             className={cn(
                 "not-prose mb-4 w-full rounded-lg",
                 glass.subtle,

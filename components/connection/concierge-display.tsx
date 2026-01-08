@@ -1,12 +1,10 @@
 "use client";
 
 import { memo, useState } from "react";
-import {
-    CaretDownIcon,
-    CircleNotchIcon,
-    ArrowsLeftRightIcon,
-} from "@phosphor-icons/react";
+import { CaretDownIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
+
+import { CarmentaReflection } from "@/components/ui/carmenta-reflection";
 
 import { cn } from "@/lib/utils";
 import {
@@ -16,10 +14,7 @@ import {
 } from "@/components/ui/collapsible";
 import { getModel } from "@/lib/model-config";
 import type { ReasoningConfig } from "@/lib/concierge/types";
-import {
-    CarmentaAvatar,
-    type CarmentaAvatarState,
-} from "@/components/ui/carmenta-avatar";
+import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 
 /**
@@ -103,8 +98,6 @@ interface ConciergeDisplayProps {
     isSelecting?: boolean;
     /** True when celebrating selection (brief animation state) */
     isCelebrating?: boolean;
-    /** Avatar animation state - controls CarmentaAvatar directly */
-    avatarState?: CarmentaAvatarState;
     /** Seed for deterministic message selection */
     messageSeed?: string;
     /** Additional CSS classes */
@@ -113,14 +106,6 @@ interface ConciergeDisplayProps {
     autoSwitched?: boolean;
     /** Reason for auto-switching (shown to user) */
     autoSwitchReason?: string;
-    /** Context utilization metrics */
-    contextUtilization?: {
-        estimatedTokens: number;
-        contextLimit: number;
-        utilizationPercent: number;
-        isWarning: boolean;
-        isCritical: boolean;
-    };
 }
 
 /**
@@ -145,12 +130,10 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     reasoning,
     isSelecting = false,
     isCelebrating = false,
-    avatarState = "idle",
     messageSeed = "default",
     className,
     autoSwitched,
     autoSwitchReason,
-    contextUtilization,
 }: ConciergeDisplayProps) {
     const [isOpen, setIsOpen] = useState(false);
     const hasSelected = Boolean(modelId);
@@ -172,6 +155,24 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
         return null;
     }
 
+    // SELECTING STATE: Show prominent CarmentaReflection only (no avatar)
+    if (showSelecting) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className={cn("not-prose flex items-center gap-3 py-2", className)}
+            >
+                <CarmentaReflection size={32} animate />
+                <span className="text-foreground/60 text-sm italic">
+                    {selectingMessage}
+                </span>
+            </motion.div>
+        );
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 6 }}
@@ -183,7 +184,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
             className={cn("not-prose", className)}
         >
             <Collapsible open={isOpen} onOpenChange={setIsOpen} disabled={!hasSelected}>
-                {/* ORCHESTRATOR LINE - Compact attribution */}
+                {/* ORCHESTRATOR LINE - Compact attribution (only shown after selection) */}
                 <CollapsibleTrigger
                     className={cn(
                         "group -mx-2 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors duration-200 @md:gap-2.5 @md:py-2",
@@ -194,36 +195,8 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                         isCelebrating && "bg-purple-500/5"
                     )}
                 >
-                    {/* Carmenta avatar - consistent size, animation state changes */}
-                    <motion.div
-                        className="relative shrink-0"
-                        layout
-                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                        <CarmentaAvatar size="sm" state={avatarState} />
-                    </motion.div>
-
-                    {/* Status content - layered crossfade approach */}
+                    {/* Status content */}
                     <div className="relative min-w-0 flex-1">
-                        {/* Selecting state layer - only render when active */}
-                        {showSelecting && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                                transition={{
-                                    duration: 0.25,
-                                    ease: [0.16, 1, 0.3, 1],
-                                }}
-                                className="flex items-center gap-2"
-                            >
-                                <span className="text-foreground/90 text-sm">
-                                    {selectingMessage}
-                                </span>
-                                <CircleNotchIcon className="text-foreground/50 h-3.5 w-3.5 animate-spin" />
-                            </motion.div>
-                        )}
-
                         {/* Selected state layer - only render when selected */}
                         {showSelected && (
                             <motion.div
