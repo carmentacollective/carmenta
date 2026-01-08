@@ -109,10 +109,10 @@ export const FEATURES: Feature[] = [
         id: "service-integrations",
         headline: "Your world, connected.",
         tagline:
-            "Search your Gmail, query your calendar, browse your Notion—ClickUp, Slack, Dropbox, Google Drive, Fireflies, and more. Read access to everything. Two-way sync coming next.",
+            "Search your Gmail, query your calendar, browse your Notion—ClickUp, Slack, Dropbox, Fireflies, and more. Read access to everything. Two-way sync coming next.",
         tipTitle: "Your Data, In the Conversation",
         tipDescription:
-            "Connect Google Calendar, Notion, Slack, Dropbox, GitHub, and more. Your data flows into the conversation—no copy-pasting between tabs.",
+            "Connect Google Calendar, Notion, Slack, Dropbox, and more. Your data flows into the conversation—no copy-pasting between tabs.",
         cta: {
             label: "Connect services",
             action: "link",
