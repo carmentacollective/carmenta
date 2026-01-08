@@ -14,10 +14,7 @@ import {
 } from "@/components/ui/collapsible";
 import { getModel } from "@/lib/model-config";
 import type { ReasoningConfig } from "@/lib/concierge/types";
-import {
-    CarmentaAvatar,
-    type CarmentaAvatarState,
-} from "@/components/ui/carmenta-avatar";
+import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 
 /**
