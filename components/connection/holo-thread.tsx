@@ -292,10 +292,12 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
                 )}
             >
                 <div ref={contentRef} className="flex w-full flex-col">
-                    {isEmpty && !hideWelcome ? (
-                        <ThreadWelcome onPrefill={handleSparkPrefill} />
-                    ) : isEmpty && hideWelcome ? (
-                        <ModalEmptyState />
+                    {isEmpty ? (
+                        hideWelcome ? (
+                            <ModalEmptyState />
+                        ) : (
+                            <ThreadWelcome onPrefill={handleSparkPrefill} />
+                        )
                     ) : (
                         <div className="flex w-full flex-col">
                             {messages.map((message, index) => {
@@ -440,7 +442,7 @@ function ModalEmptyState() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <p className="text-foreground/40 text-sm">How can we help?</p>
+            <p className="text-foreground/40 text-sm">What's on your mind?</p>
         </motion.div>
     );
 }

@@ -228,7 +228,24 @@ export function ComposerUI({
             );
         }
 
-        // Streaming + no input = Stop button
+        // Streaming + no input = Stop button (only if onStop provided)
+        if (!onStop) {
+            // No stop handler - show disabled state
+            return (
+                <ComposerButton
+                    type="button"
+                    variant="stop"
+                    pipelineState={pipelineState}
+                    aria-label="Generation in progress"
+                    disabled
+                    data-testid="stop-button"
+                    className={buttonSizeClass}
+                >
+                    <SquareIcon className="h-4 w-4 @md:h-5 @md:w-5" />
+                </ComposerButton>
+            );
+        }
+
         return (
             <ComposerButton
                 type="button"

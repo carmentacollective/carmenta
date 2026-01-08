@@ -74,14 +74,14 @@ function HirePageInner() {
         {
             id: "welcome",
             role: "assistant",
-            content: `Hi there! We're here to help you hire a new AI team member.
+            content: `Let's bring on a new team member together.
 
-Tell us what you'd like automated. For example:
-- "Check my email every morning and flag important messages"
+What do you want automated? Some ideas:
+- "Check my email every morning and flag what matters"
 - "Monitor competitor news and summarize weekly"
-- "Triage my Slack DMs and highlight urgent ones"
+- "Triage my Slack DMs and surface the urgent ones"
 
-What can we help you with?`,
+What are we building?`,
         },
     ]);
     const [input, setInput] = useState("");
@@ -111,7 +111,7 @@ What can we help you with?`,
     }, []);
 
     const handleSubmit = useCallback(async () => {
-        if (!input.trim() || isLoading) return;
+        if (!input.trim() || isLoading || isUploading) return;
 
         // Stop voice recording if active
         voiceInputRef.current?.stop();
@@ -177,13 +177,13 @@ What can we help you with?`,
                     id: `error-${Date.now()}`,
                     role: "assistant",
                     content:
-                        "We're having trouble processing that. Could you try rephrasing?",
+                        "That didn't work out. Our bots are looking into it. Want to try again?",
                 },
             ]);
         } finally {
             setIsLoading(false);
         }
-    }, [input, isLoading, messages, completedFiles, clearFiles]);
+    }, [input, isLoading, isUploading, messages, completedFiles, clearFiles]);
 
     const handleHire = async () => {
         if (!playbook) return;
