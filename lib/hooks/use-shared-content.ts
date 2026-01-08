@@ -54,7 +54,15 @@ function parseSharedFiles(filesBase64: string | null): SharedFile[] {
         const binaryString = atob(filesBase64);
         const bytes = Uint8Array.from(binaryString, (char) => char.charCodeAt(0));
         const filesJson = new TextDecoder().decode(bytes);
-        return JSON.parse(filesJson) as SharedFile[];
+        const parsed = JSON.parse(filesJson);
+
+        // Validate structure - must be array to prevent crash on .length access
+        if (!Array.isArray(parsed)) {
+            logger.warn({ parsed }, "Shared files param is not an array");
+            return [];
+        }
+
+        return parsed as SharedFile[];
     } catch (error) {
         logger.error({ error }, "Failed to parse shared files from URL");
         return [];

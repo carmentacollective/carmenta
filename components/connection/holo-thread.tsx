@@ -126,9 +126,14 @@ function HoloThreadInner() {
     const { sharedText, sharedFiles, hasSharedContent, clearSharedContent } =
         useSharedContent();
 
+    // Guard against double execution in Strict Mode
+    const hasProcessedSharedContentRef = useRef(false);
+
     // Pre-fill composer with shared content on mount
     useEffect(() => {
-        if (!hasSharedContent) return;
+        if (!hasSharedContent || hasProcessedSharedContentRef.current) return;
+
+        hasProcessedSharedContentRef.current = true;
 
         // Pre-fill the input with shared text
         if (sharedText) {
