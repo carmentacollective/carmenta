@@ -101,13 +101,8 @@ What are we building?`,
 
     // Voice input handlers
     const handleVoiceTranscript = useCallback((transcript: string) => {
-        setInput((prev) => {
-            // If already has content, append with space
-            if (prev.trim()) {
-                return prev + " " + transcript;
-            }
-            return transcript;
-        });
+        // onTranscriptUpdate provides the full cumulative transcript, not deltas
+        setInput(transcript);
     }, []);
 
     const handleSubmit = useCallback(async () => {

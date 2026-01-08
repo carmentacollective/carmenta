@@ -86,6 +86,7 @@ export const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>
                 return () => {
                     clearTimeout(startTimer);
                     clearTimeout(endTimer);
+                    setIsInhaling(false); // Reset state on cleanup
                 };
             }
 
@@ -100,6 +101,7 @@ export const ComposerButton = forwardRef<HTMLButtonElement, ComposerButtonProps>
                 return () => {
                     clearTimeout(startTimer);
                     clearTimeout(endTimer);
+                    setJustCompleted(false); // Reset state on cleanup
                 };
             }
         }, [pipelineState]);
