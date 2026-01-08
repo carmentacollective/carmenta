@@ -76,12 +76,12 @@ export function McpAuthModal({
                 method: "POST",
             });
 
+            const data = await response.json();
             if (!response.ok) {
-                const data = await response.json();
                 throw new Error(data.error || "Failed to start authentication");
             }
 
-            const { authUrl } = await response.json();
+            const { authUrl } = data;
 
             // Open OAuth in popup
             const popup = window.open(
@@ -90,15 +90,31 @@ export function McpAuthModal({
                 "width=600,height=700,scrollbars=yes"
             );
 
+            // Handle popup blocked
+            if (!popup) {
+                setError(
+                    "Popup blocked. Please allow popups for this site and try again."
+                );
+                setIsConnecting(false);
+                return;
+            }
+
+            let pollTimer: NodeJS.Timeout | null = null;
+
             // Listen for OAuth completion
             const handleMessage = (event: MessageEvent) => {
+                // Security: Only accept messages from our own origin
+                if (event.origin !== window.location.origin) return;
+
                 if (event.data?.type === "mcp-oauth-success") {
+                    if (pollTimer) clearInterval(pollTimer);
                     window.removeEventListener("message", handleMessage);
                     popup?.close();
                     setIsConnecting(false);
                     onOpenChange(false);
                     onAuthSuccess?.();
                 } else if (event.data?.type === "mcp-oauth-error") {
+                    if (pollTimer) clearInterval(pollTimer);
                     window.removeEventListener("message", handleMessage);
                     popup?.close();
                     setIsConnecting(false);
@@ -109,9 +125,9 @@ export function McpAuthModal({
             window.addEventListener("message", handleMessage);
 
             // Cleanup if popup is closed manually
-            const pollTimer = setInterval(() => {
-                if (popup?.closed) {
-                    clearInterval(pollTimer);
+            pollTimer = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(pollTimer!);
                     window.removeEventListener("message", handleMessage);
                     setIsConnecting(false);
                 }

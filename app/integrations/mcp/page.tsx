@@ -729,7 +729,8 @@ function McpConfigContent({
     const serversNeedingReconnect = servers.filter(
         (s) =>
             s.enabled &&
-            (s.status === "expired" ||
+            (s.needsReconnect ||
+                s.status === "expired" ||
                 s.status === "error" ||
                 s.status === "auth_required")
     ).length;
