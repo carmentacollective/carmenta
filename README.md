@@ -48,8 +48,8 @@ slider. The preprocessing layer handles model selection, query enhancement, and 
 strategy automatically.
 
 **AI Team** - Digital Chief of Staff tracks commitments, maintains knowledge,
-anticipates needs. Additional team members (Researcher, Analyst, Creator, Reviewer)
-follow. One person becomes a team.
+anticipates needs. SMS you proactively with agent results and reminders. Additional team
+members (Researcher, Analyst, Creator, Reviewer) follow. One person becomes a team.
 
 **Scheduled Agents** - Agents that run on your schedule. Daily briefings, hourly
 monitoring, weekly research digests. Proactive, not just reactive.
@@ -60,6 +60,16 @@ requiring authentication. Task execution across web applications.
 **Service Connectivity** - Native integrations for productivity, communication, storage,
 media, dev tools, finance, calendar. One subscription covers everything. MCP servers
 supported for custom integrations.
+
+**Image Generation** - Create images with quality scaling based on reasoning effort.
+Quick previews or premium renders. Branded loading experience with Carmenta's pendulum
+animation.
+
+**Data Import** - Bring your ChatGPT conversation history into Carmenta. Your investment
+in context and preferences travels with you. More platforms coming.
+
+**PWA Share Target** - Share content to Carmenta from any app. Images, text, URLs, PDFs
+appear instantly in your composer, ready for conversation.
 
 ## The Name
 
@@ -118,9 +128,11 @@ component catalog.
 Holographic interface, intelligent model selection, persistent conversations, error
 handling, observability.
 
-**M2: Relationship Grows** - In Progress 🔨 Currently building: Memory system, auth
-integration (Clerk), file attachments, reasoning token display.
-[See roadmap](knowledge/roadmap.md) for details.
+**M2: Relationship Grows** - Nearly Complete 🔨 Auth (Clerk), file attachments,
+reasoning tokens, service integrations (11 connected), generative UI, image generation,
+data import (ChatGPT), PWA share target, and proactive SMS all shipped. Memory phases
+1-2 complete (context compilation, retrieval). Remaining: session compaction, knowledge
+extraction, semantic search. [See roadmap](knowledge/roadmap.md) for details.
 
 Building in public.
 [Follow progress on GitHub](https://github.com/nicholaswilliams/carmenta).
