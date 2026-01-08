@@ -206,15 +206,15 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                       <div className="border-foreground/10 my-1 border-t" />
 
                                       {/* Carmenta Features */}
-                                      <div className="text-foreground/40 flex w-full cursor-not-allowed items-center justify-between px-4 py-2.5 text-sm">
-                                          <span className="flex items-center gap-3">
-                                              <UsersIcon className="h-4 w-4" />
-                                              AI Team
-                                          </span>
-                                          <span className="bg-foreground/5 text-foreground/50 rounded-full px-2 py-0.5 text-[10px] font-medium">
-                                              Soon
-                                          </span>
-                                      </div>
+                                      <Link
+                                          href="/ai-team"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <UsersIcon className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">AI Team</span>
+                                      </Link>
 
                                       <Link
                                           href="/guide"
