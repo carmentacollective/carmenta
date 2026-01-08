@@ -45,6 +45,7 @@ import { logger } from "@/lib/logger";
 import { getModel, getFallbackChain } from "@/lib/model-config";
 import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
+import { getMcpGatewayTools } from "@/lib/mcp/gateway";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import {
     builtInTools,
@@ -576,6 +577,10 @@ export async function POST(req: Request) {
             ? await getIntegrationTools(userEmail!)
             : {};
 
+        // Load MCP gateway tools for user-configured MCP servers
+        // Each enabled server becomes a single tool with progressive disclosure
+        const mcpTools = modelSupportsTools ? await getMcpGatewayTools(userEmail!) : {};
+
         // Create searchKnowledge tool with user context
         // This allows the AI to explicitly query the knowledge base mid-conversation
         const searchKnowledgeTool = createSearchKnowledgeTool(dbUser.id);
@@ -597,10 +602,11 @@ export async function POST(req: Request) {
         const pendingDiscoveries: DiscoveryItem[] = [];
         const discoveryTools = {};
 
-        // Merge built-in tools, integration tools, searchKnowledge, post-response, and discovery tools
+        // Merge built-in tools, integration tools, MCP tools, searchKnowledge, post-response, and discovery tools
         const allTools = {
             ...builtInTools,
             ...integrationTools,
+            ...mcpTools,
             ...postResponseTools,
             searchKnowledge: searchKnowledgeTool,
             createImage: imageTool,
@@ -618,6 +624,7 @@ export async function POST(req: Request) {
                 reasoning: concierge.reasoning,
                 toolsAvailable: modelSupportsTools ? Object.keys(allTools) : [],
                 integrationTools: Object.keys(integrationTools),
+                mcpTools: Object.keys(mcpTools),
             },
             "Starting connect stream"
         );
