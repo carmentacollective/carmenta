@@ -36,6 +36,7 @@ import type { ConciergeResult } from "@/lib/concierge/types";
 import { getModel } from "@/lib/model-config";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useDragDrop } from "@/lib/hooks/use-drag-drop";
+import { useSharedContent } from "@/lib/hooks/use-shared-content";
 import { Greeting } from "@/components/ui/greeting";
 import { Sparks } from "./sparks";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
@@ -118,9 +119,52 @@ export function HoloThread() {
 function HoloThreadInner() {
     const router = useRouter();
     const { messages, isLoading, setInput, append } = useChatContext();
-    const { addFiles, isUploading } = useFileAttachments();
+    const { addFiles, addPreUploadedFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
     const { isCodeMode } = useCodeMode();
+
+    // PWA Share Target: Handle content shared from other apps
+    const { sharedText, sharedFiles, hasSharedContent, clearSharedContent } =
+        useSharedContent();
+
+    // Guard against double execution in Strict Mode
+    const hasProcessedSharedContentRef = useRef(false);
+
+    // Pre-fill composer with shared content on mount
+    useEffect(() => {
+        if (!hasSharedContent || hasProcessedSharedContentRef.current) return;
+
+        hasProcessedSharedContentRef.current = true;
+
+        // Pre-fill the input with shared text
+        if (sharedText) {
+            setInput(sharedText);
+            logger.info(
+                { textLength: sharedText.length },
+                "Pre-filled composer with shared text"
+            );
+        }
+
+        // Add shared files to the file attachment context
+        // These are already uploaded, so they'll show immediately in the preview
+        if (sharedFiles.length > 0) {
+            addPreUploadedFiles(sharedFiles);
+            logger.info(
+                { fileCount: sharedFiles.length },
+                "Added shared files to composer"
+            );
+        }
+
+        // Clear the URL params to prevent re-processing on navigation
+        clearSharedContent();
+    }, [
+        hasSharedContent,
+        sharedText,
+        sharedFiles,
+        setInput,
+        addPreUploadedFiles,
+        clearSharedContent,
+    ]);
 
     // Chat scroll behavior - auto-scroll during streaming, pause on user scroll-up
     const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useChatScroll({

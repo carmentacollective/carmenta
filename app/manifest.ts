@@ -57,5 +57,29 @@ export default function manifest(): MetadataRoute.Manifest {
                 ],
             },
         ],
+        // PWA Share Target: Receive content shared from other apps
+        // Users can share text, URLs, images, and PDFs directly to Carmenta
+        share_target: {
+            action: "/api/share",
+            method: "POST",
+            enctype: "multipart/form-data",
+            params: {
+                title: "title",
+                text: "text",
+                url: "url",
+                files: [
+                    {
+                        name: "files",
+                        accept: [
+                            "image/jpeg",
+                            "image/png",
+                            "image/gif",
+                            "image/webp",
+                            "application/pdf",
+                        ],
+                    },
+                ],
+            },
+        },
     };
 }

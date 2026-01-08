@@ -59,9 +59,12 @@ export function UploadProgressDisplay({
  * File Preview Thumbnail
  *
  * Shows image thumbnail for images, file type icon for others.
+ * For pre-uploaded files (from share target), uses the result URL directly.
+ * For pending uploads, creates object URL from file data.
  * Manages object URL lifecycle to prevent memory leaks and StrictMode issues.
  */
-function FilePreviewThumbnail({ file }: { file: File }) {
+function FilePreviewThumbnail({ upload }: { upload: UploadProgressType }) {
+    const { file, result } = upload;
     const category = getFileCategory(file.type);
     const isImage = category === "image";
     const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -71,6 +74,8 @@ function FilePreviewThumbnail({ file }: { file: File }) {
     // ensures a fresh URL is created after cleanup on remount
     useEffect(() => {
         if (!isImage) return;
+        // For pre-uploaded files (share target), we already have the URL
+        if (result?.url) return;
 
         const url = URL.createObjectURL(file);
         setObjectUrl(url);
@@ -78,20 +83,23 @@ function FilePreviewThumbnail({ file }: { file: File }) {
         return () => {
             URL.revokeObjectURL(url);
         };
-    }, [file, isImage]);
+    }, [file, isImage, result]);
 
-    // Image thumbnail
-    if (isImage && objectUrl) {
-        return (
-            <div className="bg-foreground/5 relative h-10 w-10 shrink-0 overflow-hidden rounded-md">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src={objectUrl}
-                    alt={file.name}
-                    className="h-full w-full object-cover"
-                />
-            </div>
-        );
+    // Image thumbnail - use result URL for pre-uploaded files, object URL otherwise
+    if (isImage) {
+        const thumbnailUrl = result?.url || objectUrl;
+        if (thumbnailUrl) {
+            return (
+                <div className="bg-foreground/5 relative h-10 w-10 shrink-0 overflow-hidden rounded-md">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={thumbnailUrl}
+                        alt={file.name}
+                        className="h-full w-full object-cover"
+                    />
+                </div>
+            );
+        }
     }
 
     // File type icon for non-images
@@ -154,7 +162,7 @@ function UploadItem({
                         <WarningCircle className="bg-background text-destructive h-4 w-4 rounded-full" />
                     </div>
                 )}
-                <FilePreviewThumbnail file={file} />
+                <FilePreviewThumbnail upload={upload} />
             </div>
 
             {/* Filename and status */}
