@@ -108,15 +108,23 @@ import { ExpandableText } from "@/components/ui/expandable-text";
 import { CollapsibleStreamingContent } from "./collapsible-streaming-content";
 import { Composer } from "./composer";
 
-export function HoloThread() {
+export interface HoloThreadProps {
+    /**
+     * Hide the welcome screen (greeting + sparks) when thread is empty.
+     * Use in modal/sheet context where the full welcome feels redundant.
+     */
+    hideWelcome?: boolean;
+}
+
+export function HoloThread({ hideWelcome = false }: HoloThreadProps) {
     return (
         <FileAttachmentProvider>
-            <HoloThreadInner />
+            <HoloThreadInner hideWelcome={hideWelcome} />
         </FileAttachmentProvider>
     );
 }
 
-function HoloThreadInner() {
+function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
     const router = useRouter();
     const { messages, isLoading, setInput, append } = useChatContext();
     const { addFiles, addPreUploadedFiles, isUploading } = useFileAttachments();
@@ -284,8 +292,10 @@ function HoloThreadInner() {
                 )}
             >
                 <div ref={contentRef} className="flex w-full flex-col">
-                    {isEmpty ? (
+                    {isEmpty && !hideWelcome ? (
                         <ThreadWelcome onPrefill={handleSparkPrefill} />
+                    ) : isEmpty && hideWelcome ? (
+                        <ModalEmptyState />
                     ) : (
                         <div className="flex w-full flex-col">
                             {messages.map((message, index) => {
@@ -413,6 +423,24 @@ function ThreadWelcome({ onPrefill }: ThreadWelcomeProps) {
         >
             <Greeting />
             <Sparks onPrefill={onPrefill} />
+        </motion.div>
+    );
+}
+
+/**
+ * Simple empty state for modal/sheet context.
+ * No greeting, no sparks - just a subtle invitation to chat.
+ */
+function ModalEmptyState() {
+    return (
+        <motion.div
+            className="flex h-full w-full flex-1 flex-col items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+        >
+            <p className="text-foreground/40 text-sm">How can we help?</p>
         </motion.div>
     );
 }

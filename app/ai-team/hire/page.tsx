@@ -16,8 +16,16 @@ import {
     UserBubble,
     AssistantBubble,
     ThinkingBubble,
-    SimpleComposer,
+    ComposerUI,
 } from "@/components/chat";
+import {
+    FileAttachmentProvider,
+    useFileAttachments,
+} from "@/components/connection/file-attachment-context";
+import { FilePickerButton } from "@/components/connection/file-picker-button";
+import { UploadProgressDisplay } from "@/components/connection/upload-progress";
+import { VoiceInputButton, type VoiceInputButtonRef } from "@/components/voice";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -48,10 +56,20 @@ interface Playbook {
  *
  * Uses shared chat components:
  * - UserBubble, AssistantBubble, ThinkingBubble for messages
- * - SimpleComposer for input
+ * - ComposerUI for rich input with voice and file attachments
  */
 export default function HirePage() {
+    return (
+        <FileAttachmentProvider>
+            <HirePageInner />
+        </FileAttachmentProvider>
+    );
+}
+
+function HirePageInner() {
     const router = useRouter();
+    const isMobile = useIsMobile();
+    const voiceInputRef = useRef<VoiceInputButtonRef>(null);
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "welcome",
@@ -72,13 +90,31 @@ What can we help you with?`,
     const [isHiring, setIsHiring] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // File attachment state
+    const { completedFiles, pendingFiles, clearFiles, isUploading } =
+        useFileAttachments();
+
     // Auto-scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isLoading]);
 
+    // Voice input handlers
+    const handleVoiceTranscript = useCallback((transcript: string) => {
+        setInput((prev) => {
+            // If already has content, append with space
+            if (prev.trim()) {
+                return prev + " " + transcript;
+            }
+            return transcript;
+        });
+    }, []);
+
     const handleSubmit = useCallback(async () => {
         if (!input.trim() || isLoading) return;
+
+        // Stop voice recording if active
+        voiceInputRef.current?.stop();
 
         const userMessage: Message = {
             id: `user-${Date.now()}`,
@@ -88,6 +124,7 @@ What can we help you with?`,
 
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
+        clearFiles();
         setIsLoading(true);
 
         try {
@@ -98,6 +135,12 @@ What can we help you with?`,
                     messages: [...messages, userMessage].map((m) => ({
                         role: m.role,
                         content: m.content,
+                    })),
+                    // Include file attachments if any
+                    files: completedFiles.map((f) => ({
+                        url: f.url,
+                        mediaType: f.mediaType,
+                        name: f.name,
                     })),
                 }),
             });
@@ -140,7 +183,7 @@ What can we help you with?`,
         } finally {
             setIsLoading(false);
         }
-    }, [input, isLoading, messages]);
+    }, [input, isLoading, messages, completedFiles, clearFiles]);
 
     const handleHire = async () => {
         if (!playbook) return;
@@ -190,6 +233,8 @@ What can we help you with?`,
             setIsHiring(false);
         }
     };
+
+    const hasPendingFiles = pendingFiles.length > 0;
 
     return (
         <StandardPageLayout maxWidth="standard" contentClassName="py-8">
@@ -243,14 +288,30 @@ What can we help you with?`,
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Input */}
+                        {/* Input with file attachments and voice */}
                         <div className="border-foreground/10 @container border-t p-4">
-                            <SimpleComposer
+                            <ComposerUI
                                 value={input}
                                 onChange={setInput}
                                 onSubmit={handleSubmit}
                                 isLoading={isLoading}
                                 placeholder="Describe what you need..."
+                                renderAbove={() =>
+                                    hasPendingFiles ? <UploadProgressDisplay /> : null
+                                }
+                                renderFilePicker={() => (
+                                    <FilePickerButton
+                                        className={isMobile === true ? "h-11 w-11" : ""}
+                                    />
+                                )}
+                                renderVoiceInput={() => (
+                                    <VoiceInputButton
+                                        ref={voiceInputRef}
+                                        onTranscriptUpdate={handleVoiceTranscript}
+                                        disabled={isLoading || isUploading}
+                                        className={isMobile === true ? "h-11 w-11" : ""}
+                                    />
+                                )}
                             />
                         </div>
                     </div>
