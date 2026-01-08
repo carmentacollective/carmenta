@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import { CaretDownIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 
@@ -21,14 +21,14 @@ import { ProviderIcon } from "@/components/icons/provider-icons";
  * Selecting state messages - warm, varied, "we" language.
  * Hash-based selection ensures consistency without randomness.
  *
- * Voice: Partnership, not tool-use. We're collaborating on approach.
+ * Voice: Reflection metaphor - Carmenta contemplating before responding.
  * Brief because this state is transient (typically 1-2 seconds).
  */
 const SELECTING_MESSAGES = [
-    "Choosing our approach...",
-    "Finding the right voice...",
+    "Reflecting...",
+    "Finding our approach...",
     "Tuning in...",
-    "Selecting together...",
+    "Contemplating...",
 ];
 
 function getSelectingMessage(seed: string): string {
@@ -136,7 +136,9 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     autoSwitchReason,
 }: ConciergeDisplayProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [isSettling, setIsSettling] = useState(false);
     const hasSelected = Boolean(modelId);
+    const prevHasSelectedRef = useRef(hasSelected);
 
     const displayName = modelId ? getModelDisplayName(modelId) : null;
     const modelConfig = modelId ? getModel(modelId) : null;
@@ -146,17 +148,35 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     const tempBadge = getTemperatureEmoji(temperature);
     const reasoningBadge = reasoning ? getReasoningEmoji(reasoning) : null;
 
+    // Settling phase: Brief moment when selection completes before showing result
+    // This allows the water ripple animation to play
+    useEffect(() => {
+        if (hasSelected && !prevHasSelectedRef.current) {
+            // Defer to next tick to avoid cascading render warning
+            const startTimer = setTimeout(() => setIsSettling(true), 0);
+            const endTimer = setTimeout(() => setIsSettling(false), 350);
+            return () => {
+                clearTimeout(startTimer);
+                clearTimeout(endTimer);
+            };
+        }
+        prevHasSelectedRef.current = hasSelected;
+    }, [hasSelected]);
+
     // Determine which text state to show
+    // Show selecting state during selection OR during settling phase
     const showSelecting = isSelecting && !hasSelected;
-    const showSelected = hasSelected;
+    const showSettling = isSettling && hasSelected;
+    const showSelected = hasSelected && !isSettling;
 
     // Don't render if we have nothing to show
     if (!isSelecting && !hasSelected && !isCelebrating) {
         return null;
     }
 
-    // SELECTING STATE: Show prominent CarmentaReflection only (no avatar)
-    if (showSelecting) {
+    // SELECTING or SETTLING STATE: Show CarmentaReflection
+    // Settling phase shows ripple effect before transitioning to selected
+    if (showSelecting || showSettling) {
         return (
             <motion.div
                 initial={{ opacity: 0, y: 6 }}
@@ -165,10 +185,18 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className={cn("not-prose flex items-center gap-3 py-2", className)}
             >
-                <CarmentaReflection size={32} animate />
-                <span className="text-foreground/60 text-sm italic">
+                <CarmentaReflection
+                    size={32}
+                    animate={!showSettling}
+                    isSettling={showSettling}
+                />
+                <motion.span
+                    className="text-foreground/60 text-sm italic"
+                    animate={{ opacity: showSettling ? 0 : 1 }}
+                    transition={{ duration: 0.2 }}
+                >
                     {selectingMessage}
-                </span>
+                </motion.span>
             </motion.div>
         );
     }
