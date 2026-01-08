@@ -22,17 +22,22 @@ export type BashChunk =
     | { type: "exit"; code: number; signal: string | null }
     | { type: "error"; message: string };
 
+/** Default timeout for command execution (4 minutes) */
+const DEFAULT_TIMEOUT_MS = 4 * 60 * 1000;
+
 /**
  * Execute a bash command and stream output
  *
  * @param command - The command to execute (without the `!` prefix)
  * @param cwd - Working directory for the command
  * @param abortSignal - Optional signal to abort execution
+ * @param timeoutMs - Maximum execution time before killing process (default: 4 minutes)
  */
 export async function* executeBash(
     command: string,
     cwd: string,
-    abortSignal?: AbortSignal
+    abortSignal?: AbortSignal,
+    timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): AsyncGenerator<BashChunk> {
     logger.info({ command, cwd }, "Code mode: executing bash command");
 
@@ -65,6 +70,9 @@ export async function* executeBash(
         env: safeEnv,
     });
 
+    // Close stdin - we don't support interactive commands
+    proc.stdin?.end();
+
     // Track completion state
     let done = false;
     let errorOccurred = false;
@@ -72,7 +80,6 @@ export async function* executeBash(
     let stderrEnded = false;
     let exitChunk: BashChunk | null = null;
     // Track actual termination for SIGKILL fallback (not proc.killed which is set on kill() call)
-
     let processTerminated = false;
 
     // Create async iterator from process streams
@@ -112,6 +119,33 @@ export async function* executeBash(
         };
         abortSignal.addEventListener("abort", abortHandler, { once: true });
     }
+
+    // Execution timeout - kill process if it exceeds time limit
+    // This prevents runaway commands like `!sleep 999999` from holding resources
+    const timeoutId = setTimeout(() => {
+        if (!processTerminated) {
+            logger.warn(
+                { command, pid: proc.pid, timeoutMs },
+                "Process exceeded timeout, killing"
+            );
+            pushChunk({
+                type: "stderr",
+                text: `\n[Process killed: exceeded ${Math.round(timeoutMs / 1000)}s timeout]\n`,
+            });
+            proc.kill("SIGTERM");
+
+            // Force kill after 5s if SIGTERM didn't work
+            setTimeout(() => {
+                if (!processTerminated) {
+                    logger.warn(
+                        { command, pid: proc.pid },
+                        "Process didn't terminate after timeout SIGTERM, force killing"
+                    );
+                    proc.kill("SIGKILL");
+                }
+            }, 5000);
+        }
+    }, timeoutMs);
 
     // Stream stdout with error boundary
     proc.stdout?.on("data", (data: Buffer) => {
@@ -154,6 +188,9 @@ export async function* executeBash(
         // Mark process as terminated for SIGKILL fallback check
         processTerminated = true;
 
+        // Clear execution timeout - process has exited
+        clearTimeout(timeoutId);
+
         // Don't emit exit if error already occurred
         if (errorOccurred) return;
 
@@ -163,7 +200,8 @@ export async function* executeBash(
         );
         exitChunk = {
             type: "exit",
-            code: code ?? 0,
+            // If killed by signal, use non-zero code to indicate termination (not success)
+            code: code ?? (signal ? 128 : 0),
             signal,
         };
         done = true;
@@ -212,6 +250,29 @@ export async function* executeBash(
         // Cleanup: remove abort listener if generator exits early
         if (abortHandler && abortSignal) {
             abortSignal.removeEventListener("abort", abortHandler);
+        }
+
+        // Clear execution timeout
+        clearTimeout(timeoutId);
+
+        // Kill orphaned process if generator exits early (e.g., client disconnect)
+        if (!processTerminated) {
+            logger.info(
+                { command, pid: proc.pid },
+                "Killing orphaned process - generator exited early"
+            );
+            proc.kill("SIGTERM");
+
+            // Force kill after 5s if SIGTERM didn't work
+            setTimeout(() => {
+                if (!processTerminated) {
+                    logger.warn(
+                        { command, pid: proc.pid },
+                        "Orphaned process didn't terminate gracefully, force killing"
+                    );
+                    proc.kill("SIGKILL");
+                }
+            }, 5000);
         }
     }
 }

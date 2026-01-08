@@ -276,13 +276,14 @@ export async function POST(req: Request) {
         }
 
         logger.info(
-            { command, projectPath: body.projectPath },
+            { command, projectPath: body.projectPath, userEmail },
             "Code mode: bang command"
         );
 
         return handleBangCommand(
             command,
             body.projectPath,
+            userEmail,
             req.signal,
             isNewConnection ? connectionPublicId : null,
             isNewConnection ? connectionSlug : null
@@ -669,6 +670,7 @@ export async function POST(req: Request) {
 async function handleBangCommand(
     command: string,
     cwd: string,
+    userEmail: string,
     abortSignal?: AbortSignal,
     connectionPublicId?: string | null,
     connectionSlug?: string | null
@@ -774,8 +776,12 @@ async function handleBangCommand(
                         type: "error",
                         errorText: `Failed to execute: ${command}`,
                     });
-                } catch {
-                    // Stream is dead, nothing we can do
+                } catch (streamError) {
+                    // Stream is dead - log for visibility but don't throw
+                    logger.warn(
+                        { error: streamError, command, originalError: error },
+                        "Failed to write error to stream - stream likely dead"
+                    );
                 }
 
                 Sentry.captureException(error, {
@@ -783,7 +789,7 @@ async function handleBangCommand(
                         component: "code-mode",
                         operation: "bang_command",
                     },
-                    extra: { command, cwd },
+                    extra: { command, cwd, userEmail },
                 });
             }
         },
