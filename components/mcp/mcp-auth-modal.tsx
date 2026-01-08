@@ -11,7 +11,7 @@
  * aesthetic and inline modal approach.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { KeyIcon, ArrowsClockwiseIcon, XIcon } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -61,6 +61,35 @@ export function McpAuthModal({
     const [isConnecting, setIsConnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Store cleanup refs at component level so handleCancel can access them
+    const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const messageHandlerRef = useRef<((event: MessageEvent) => void) | null>(null);
+    const popupRef = useRef<Window | null>(null);
+
+    // Reset state when modal opens
+    useEffect(() => {
+        if (open) {
+            setError(null);
+            setIsConnecting(false);
+        }
+    }, [open]);
+
+    // Cleanup function to stop OAuth flow
+    const cleanup = useCallback(() => {
+        if (pollTimerRef.current) {
+            clearInterval(pollTimerRef.current);
+            pollTimerRef.current = null;
+        }
+        if (messageHandlerRef.current) {
+            window.removeEventListener("message", messageHandlerRef.current);
+            messageHandlerRef.current = null;
+        }
+        if (popupRef.current && !popupRef.current.closed) {
+            popupRef.current.close();
+            popupRef.current = null;
+        }
+    }, []);
+
     const handleConnect = useCallback(async () => {
         setIsConnecting(true);
         setError(null);
@@ -99,7 +128,7 @@ export function McpAuthModal({
                 return;
             }
 
-            let pollTimer: NodeJS.Timeout | null = null;
+            popupRef.current = popup;
 
             // Listen for OAuth completion
             const handleMessage = (event: MessageEvent) => {
@@ -107,28 +136,24 @@ export function McpAuthModal({
                 if (event.origin !== window.location.origin) return;
 
                 if (event.data?.type === "mcp-oauth-success") {
-                    if (pollTimer) clearInterval(pollTimer);
-                    window.removeEventListener("message", handleMessage);
-                    popup?.close();
+                    cleanup();
                     setIsConnecting(false);
                     onOpenChange(false);
                     onAuthSuccess?.();
                 } else if (event.data?.type === "mcp-oauth-error") {
-                    if (pollTimer) clearInterval(pollTimer);
-                    window.removeEventListener("message", handleMessage);
-                    popup?.close();
+                    cleanup();
                     setIsConnecting(false);
                     setError(event.data.error || "Authentication failed");
                 }
             };
 
+            messageHandlerRef.current = handleMessage;
             window.addEventListener("message", handleMessage);
 
             // Cleanup if popup is closed manually
-            pollTimer = setInterval(() => {
+            pollTimerRef.current = setInterval(() => {
                 if (popup.closed) {
-                    clearInterval(pollTimer!);
-                    window.removeEventListener("message", handleMessage);
+                    cleanup();
                     setIsConnecting(false);
                 }
             }, 500);
@@ -137,12 +162,14 @@ export function McpAuthModal({
             setError(err instanceof Error ? err.message : "Authentication failed");
             setIsConnecting(false);
         }
-    }, [serverId, onAuthSuccess, onOpenChange]);
+    }, [serverId, onAuthSuccess, onOpenChange, cleanup]);
 
     const handleCancel = useCallback(() => {
+        cleanup();
+        setIsConnecting(false);
         onOpenChange(false);
         onCancel?.();
-    }, [onOpenChange, onCancel]);
+    }, [onOpenChange, onCancel, cleanup]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
