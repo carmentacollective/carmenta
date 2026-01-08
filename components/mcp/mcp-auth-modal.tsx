@@ -65,17 +65,15 @@ export function McpAuthModal({
     const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
     const messageHandlerRef = useRef<((event: MessageEvent) => void) | null>(null);
     const popupRef = useRef<Window | null>(null);
-
-    // Reset state when modal opens
-    useEffect(() => {
-        if (open) {
-            setError(null);
-            setIsConnecting(false);
-        }
-    }, [open]);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const mountedRef = useRef(true);
 
     // Cleanup function to stop OAuth flow
     const cleanup = useCallback(() => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
         if (pollTimerRef.current) {
             clearInterval(pollTimerRef.current);
             pollTimerRef.current = null;
@@ -90,6 +88,19 @@ export function McpAuthModal({
         }
     }, []);
 
+    // Reset state when modal opens, cleanup when it closes
+    useEffect(() => {
+        if (open) {
+            setError(null);
+            setIsConnecting(false);
+            mountedRef.current = true;
+        } else {
+            // Modal closed via ESC or outside click - cleanup resources
+            cleanup();
+            mountedRef.current = false;
+        }
+    }, [open, cleanup]);
+
     const handleConnect = useCallback(async () => {
         setIsConnecting(true);
         setError(null);
@@ -101,9 +112,19 @@ export function McpAuthModal({
             // 3. Listen for success/failure message
             // 4. On success, call onAuthSuccess
 
+            // Create abort controller for this request
+            const abortController = new AbortController();
+            abortControllerRef.current = abortController;
+
             const response = await fetch(`/api/mcp/servers/${serverId}/auth`, {
                 method: "POST",
+                signal: abortController.signal,
             });
+
+            // Check if modal was closed while fetch was in-flight
+            if (!mountedRef.current) {
+                return;
+            }
 
             const data = await response.json();
             if (!response.ok) {
