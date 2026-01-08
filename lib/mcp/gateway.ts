@@ -176,15 +176,19 @@ export async function describeMcpOperations(
 
         childLogger.info({ toolCount: tools.length }, "Fetched MCP server tools");
 
-        // Update cached manifest (store tool names only to match schema)
-        await updateMcpServer(server.id, {
-            serverManifest: {
-                name: server.displayName,
-                toolCount: tools.length,
-                tools: tools.map((t) => t.name),
-            },
-            status: "connected",
-        });
+        // Update cached manifest (don't let DB errors mask successful operations)
+        try {
+            await updateMcpServer(server.id, {
+                serverManifest: {
+                    name: server.displayName,
+                    toolCount: tools.length,
+                    tools: tools.map((t) => t.name),
+                },
+                status: "connected",
+            });
+        } catch (dbError) {
+            childLogger.error({ dbError }, "Failed to update server manifest");
+        }
 
         return {
             server: server.displayName,
@@ -277,8 +281,12 @@ export async function executeMcpAction(
         await ensureInitialized(config);
         const result = await callMcpTool(config, action, params ?? {});
 
-        // Update last connected timestamp
-        await updateMcpServer(server.id, { status: "connected" });
+        // Update last connected timestamp (don't let DB errors mask successful operations)
+        try {
+            await updateMcpServer(server.id, { status: "connected" });
+        } catch (dbError) {
+            childLogger.error({ dbError }, "Failed to update server status");
+        }
 
         // Check for error response from server
         if (result.isError) {
