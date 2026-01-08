@@ -133,6 +133,11 @@ export function McpAuthModal({
 
             const { authUrl } = data;
 
+            // Validate authUrl exists
+            if (!authUrl) {
+                throw new Error("No authentication URL provided by server");
+            }
+
             // Open OAuth in popup
             const popup = window.open(
                 authUrl,
@@ -249,12 +254,10 @@ export function McpAuthModal({
 
                     <button
                         onClick={handleCancel}
-                        disabled={isConnecting}
                         className={cn(
                             "flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium transition-colors",
                             "bg-foreground/5 text-foreground/70 hover:bg-foreground/10",
-                            "focus:ring-foreground/20 focus:ring-2 focus:ring-offset-2 focus:outline-none",
-                            isConnecting && "cursor-not-allowed opacity-50"
+                            "focus:ring-foreground/20 focus:ring-2 focus:ring-offset-2 focus:outline-none"
                         )}
                     >
                         <XIcon className="h-4 w-4" />
