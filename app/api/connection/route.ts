@@ -51,6 +51,7 @@ import {
     createSearchKnowledgeTool,
     createImageTool,
 } from "@/lib/tools/built-in";
+import { createSmsUserTool } from "@/lib/ai-team/agents/sms-user-tool";
 import { postResponseTools } from "@/lib/tools/post-response";
 import {
     unauthorizedResponse,
@@ -583,6 +584,13 @@ export async function POST(req: Request) {
         // Higher reasoning level = higher quality (and more expensive) image model
         const imageTool = createImageTool({ reasoning: concierge.reasoning });
 
+        // Create SMS tool for Carmenta to text the user
+        // This is system-level messaging (Carmenta → user), not the user's own Quo account
+        const smsUserTool = createSmsUserTool({
+            userId: dbUser.id,
+            userEmail: userEmail!,
+        });
+
         // Discovery mode is disabled until we refine the experience
         // It was interrupting substantive responses and degrading quality
         // TODO: Re-enable when discovery is less intrusive
@@ -596,6 +604,7 @@ export async function POST(req: Request) {
             ...postResponseTools,
             searchKnowledge: searchKnowledgeTool,
             createImage: imageTool,
+            smsUser: smsUserTool,
             ...discoveryTools,
         };
 
