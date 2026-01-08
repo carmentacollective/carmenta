@@ -6,9 +6,27 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
+import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
 /** Pulsing Carmenta logo as streaming cursor with graceful exit */
 function StreamingCursor() {
+    const prefersReducedMotion = useReducedMotion();
+
+    // Static cursor when reduced motion is preferred
+    if (prefersReducedMotion) {
+        return (
+            <span className="ml-1 inline-flex items-center align-middle">
+                <Image
+                    src="/logos/icon-transparent.png"
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="opacity-80"
+                />
+            </span>
+        );
+    }
+
     return (
         <motion.span
             initial={{ opacity: 0, scale: 0.8 }}
