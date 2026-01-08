@@ -26,9 +26,17 @@ Attention is fully available. You're not managing chaos—you're creating from p
 **What breaks 1x**: Constantly re-explaining context. Switching between fragmented
 tools. Tracking commitments in your head. The mental overhead of coordination.
 
-**How Carmenta enables 1x**: Knowledge base captures everything worth remembering.
+**How Carmenta enables 1x**: Your knowledge base organizes everything worth remembering:
+
+- **People** — Everyone who matters professionally and personally
+- **Projects** — Active initiatives with clear boundaries
+- **Resources** — Tools, services, assets you rely on
+- **Intelligence** — Learnings, insights, patterns worth preserving
+- **Journal** — Temporal markers, significant events
+
 Memory maintains context across conversations. Integrations automate information flow.
-Profile ensures we know how to work with you.
+Profile ensures we know how to work with you. One-time setup, minimal maintenance. The
+foundation is built once and compounds from there.
 
 The result: Peace of mind. The foundation where clarity, intention, and exceptional work
 emerge.
@@ -39,6 +47,20 @@ emerge.
 
 Research, analysis, documentation, follow-up, coordination—all happening in parallel
 while you focus on strategy, relationships, and the creative work only you can do.
+
+**Your team members**:
+
+**The Knowledge Librarian** — Extracts commitments, decisions, and insights from every
+conversation. Maintains your knowledge base. Ensures context stays current.
+
+**Research Agents** — Investigate multiple angles simultaneously. Synthesize findings.
+Deliver structured analysis, not raw data.
+
+**Documentation Agents** — Transform rough notes into structured documents. Maintain
+your wiki. Keep information organized.
+
+**Monitoring Agents** — Watch for important updates. Surface what matters. Filter the
+noise.
 
 **What a 10x team does**:
 
@@ -63,18 +85,34 @@ exist within a week instead of requiring full teams.
 
 **The pattern**:
 
-1. Vision articulation — You describe what you want to create
-2. Comprehensive analysis — Research, context, options generated
-3. Rapid development — Infrastructure, tools, systems built
-4. Validation — Outcomes simulated or pilots coordinated
-5. Iteration — Refinement based on results
-6. Scaling — Operational complexity managed as vision expands
+1. **Vision articulation** — You describe what you want to create
+2. **Comprehensive analysis** — Research, context, strategic options generated
+3. **Rapid development** — Infrastructure, tools, systems built
+4. **Validation** — Outcomes simulated or pilots coordinated
+5. **Iteration** — Refinement based on results
+6. **Scaling** — Operational complexity managed as vision expands
 
 **What this enables**: Exploring dozens of ideas simultaneously. Validating approaches
 through simulation before committing resources. Launching initiatives in weeks that
 would traditionally take years.
 
 Your creative capacity to imagine important work becomes the primary constraint.
+
+## For Builders
+
+If you're building something that matters—whether it's a company, a product, a movement,
+or a body of work—the 100x framework changes what's possible.
+
+**Early stage**: You can prototype, validate, and iterate at speeds that make
+traditional timelines obsolete. Test business models through simulation. Build MVPs in
+days. Get to truth faster.
+
+**Growth stage**: You can maintain the clarity and coherence of a small team while
+operating at much larger scale. One person can effectively coordinate what previously
+required entire departments.
+
+**At any stage**: The ideas you've been sitting on because they felt too ambitious? The
+"someday" projects that never get started? The leverage exists to actually pursue them.
 
 ## Why the Sequence Matters
 
