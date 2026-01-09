@@ -183,7 +183,8 @@ function DesktopSidecar({
         if (!open) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
+            // Only close if escape wasn't already handled (e.g., by composer stopping generation)
+            if (e.key === "Escape" && !e.defaultPrevented) {
                 onClose();
             }
         };
