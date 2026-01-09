@@ -235,16 +235,26 @@ export async function connectApiKeyService(
     try {
         const adapter = getAdapter(serviceId);
         if (!adapter) {
-            logger.warn({ serviceId }, "No adapter found for API key test");
-            // Continue without test - the key might still be valid
-        } else {
-            const testResult = await adapter.testConnection(apiKey.trim());
-            if (!testResult.success) {
-                return {
-                    success: false,
-                    error: testResult.error || "We couldn't verify that API key",
-                };
-            }
+            // Service is in registry but missing adapter - configuration error
+            const error = new Error(`No adapter found for service: ${serviceId}`);
+            logger.error({ serviceId }, "Missing adapter for registered service");
+            Sentry.captureException(error, {
+                level: "error",
+                tags: { component: "integrations", operation: "api_key_test" },
+                extra: { serviceId },
+            });
+            return {
+                success: false,
+                error: "This service isn't fully configured yet. We've been notified. 🤖",
+            };
+        }
+
+        const testResult = await adapter.testConnection(apiKey.trim());
+        if (!testResult.success) {
+            return {
+                success: false,
+                error: testResult.error || "We couldn't verify that API key",
+            };
         }
     } catch (error) {
         logger.warn(
