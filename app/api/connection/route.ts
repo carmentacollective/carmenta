@@ -59,6 +59,7 @@ import {
 import { triggerLibrarian } from "@/lib/ai-team/librarian/trigger";
 // Discovery is disabled - type import kept for pendingDiscoveries typing
 import { type DiscoveryItem } from "@/lib/discovery";
+import { detectDepthSelection, preExecuteResearch } from "@/lib/research/auto-trigger";
 import { writeStatus, STATUS_MESSAGES } from "@/lib/streaming";
 import { getStreamContext } from "@/lib/streaming/stream-context";
 import {
@@ -736,13 +737,61 @@ export async function POST(req: Request) {
             }
         };
 
+        // ================================================================
+        // AUTO-TRIGGER RESEARCH: Pre-execute when depth is selected
+        // ================================================================
+        // When user selects a research depth (like "Quick overview ~15s"),
+        // pre-execute deepResearch before the AI runs. This ensures the
+        // time promise is honored instead of the AI doing manual searches.
+        const depthSelection = detectDepthSelection(messages, connectionId);
+        let researchSystemContext: string | null = null;
+
+        if (
+            depthSelection.isDepthResponse &&
+            depthSelection.depth &&
+            depthSelection.originalQuery
+        ) {
+            logger.info(
+                {
+                    connectionId,
+                    depth: depthSelection.depth,
+                    queryPreview: depthSelection.originalQuery.slice(0, 100),
+                },
+                "Auto-triggering deepResearch for depth selection"
+            );
+
+            const preExecuted = await preExecuteResearch(
+                depthSelection.originalQuery,
+                depthSelection.depth,
+                connectionId
+            );
+
+            if (preExecuted) {
+                researchSystemContext = preExecuted.systemContext;
+                logger.info(
+                    {
+                        connectionId,
+                        findingsCount: preExecuted.result.findings.length,
+                        sourcesCount: preExecuted.result.sources.length,
+                    },
+                    "Pre-executed research complete, adding to system context"
+                );
+            }
+        }
+
+        // Build final messages, including pre-executed research as system context
+        const modelMessages = await convertToModelMessages(messagesWithoutReasoning);
+        const finalSystemMessages = researchSystemContext
+            ? [
+                  ...systemMessages,
+                  { role: "system" as const, content: researchSystemContext },
+              ]
+            : systemMessages;
+
         const result = await streamText({
             model: gateway(translateModelId(concierge.modelId)),
-            // System messages are in the messages array with providerOptions for caching
-            messages: [
-                ...systemMessages,
-                ...(await convertToModelMessages(messagesWithoutReasoning)),
-            ],
+            // System messages include pre-executed research context if applicable
+            messages: [...finalSystemMessages, ...modelMessages],
             // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
             // allTools includes both built-in tools and integration tools for connected services
             ...(modelSupportsTools && { tools: allTools }),
