@@ -1,62 +1,15 @@
-import { generateImage, NoImageGeneratedError, tool } from "ai";
+import { NoImageGeneratedError, tool } from "ai";
 import { all, create } from "mathjs";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import type { ReasoningConfig } from "@/lib/concierge/types";
 import { env } from "@/lib/env";
-import { getGatewayClient } from "@/lib/ai/gateway";
 import { httpClient } from "@/lib/http-client";
 import { logger } from "@/lib/logger";
 import { getWebIntelligenceProvider } from "@/lib/web-intelligence";
 import { searchKnowledge } from "@/lib/kb/search";
-
-/**
- * Image model tiers for quality-based routing.
- * Selected based on reasoning level - higher reasoning = higher quality images.
- */
-const IMAGE_MODELS = {
-    fast: "google/imagen-4.0-fast-generate-001", // $0.02/image - quick drafts
-    standard: "google/imagen-4.0-generate-001", // $0.04/image - balanced
-    quality: "google/gemini-3-pro-image", // $0.134/image - Nano Banana Pro
-} as const;
-
-type ImageModelTier = keyof typeof IMAGE_MODELS;
-
-/**
- * Select image model based on reasoning configuration.
- * Higher reasoning effort = higher quality image model.
- */
-function selectImageModel(reasoning?: ReasoningConfig): {
-    modelId: string;
-    tier: ImageModelTier;
-} {
-    // No reasoning or disabled = fast model
-    if (!reasoning?.enabled) {
-        return { modelId: IMAGE_MODELS.fast, tier: "fast" };
-    }
-
-    // Effort-based models (OpenAI, xAI)
-    if (reasoning.effort === "high") {
-        return { modelId: IMAGE_MODELS.quality, tier: "quality" };
-    }
-    if (reasoning.effort === "low" || reasoning.effort === "none") {
-        return { modelId: IMAGE_MODELS.fast, tier: "fast" };
-    }
-
-    // Token-budget models (Anthropic)
-    if (reasoning.maxTokens !== undefined) {
-        if (reasoning.maxTokens >= 16000) {
-            return { modelId: IMAGE_MODELS.quality, tier: "quality" };
-        }
-        if (reasoning.maxTokens < 4000) {
-            return { modelId: IMAGE_MODELS.fast, tier: "fast" };
-        }
-    }
-
-    // Default: standard quality
-    return { modelId: IMAGE_MODELS.standard, tier: "standard" };
-}
+import { selectImageModel, generateImageFromModel } from "@/lib/ai/image-generation";
 
 /**
  * Context passed to tools that need reasoning awareness.
@@ -587,35 +540,31 @@ export function createImageTool(context?: ToolContext) {
         }),
         execute: async ({ prompt, aspectRatio = "1:1" }) => {
             // Select model based on reasoning level
-            const { modelId, tier } = selectImageModel(context?.reasoning);
+            const model = selectImageModel(context?.reasoning);
             const promptPreview =
                 prompt.length > 100 ? `${prompt.slice(0, 100)}...` : prompt;
             logger.info(
-                { promptPreview, aspectRatio, model: modelId, tier },
+                { promptPreview, aspectRatio, model: model.id, tier: model.tier },
                 "Generating image"
             );
 
             return await Sentry.startSpan(
                 { op: "ai.image", name: "generateImage" },
                 async (span) => {
-                    span.setAttribute("model", modelId);
-                    span.setAttribute("tier", tier);
+                    span.setAttribute("model", model.id);
+                    span.setAttribute("tier", model.tier);
                     span.setAttribute("aspectRatio", aspectRatio);
 
                     try {
-                        const gateway = getGatewayClient();
                         const startTime = Date.now();
 
-                        const { image } = await generateImage({
-                            model: gateway.imageModel(modelId),
+                        // Use shared abstraction that handles both APIs
+                        const image = await generateImageFromModel({
+                            modelId: model.id,
+                            api: model.api,
                             prompt,
                             aspectRatio,
                         });
-
-                        // Validate response has actual image data
-                        if (!image?.base64 || image.base64.length < 100) {
-                            throw new Error("Generated image data is empty or invalid");
-                        }
 
                         const durationMs = Date.now() - startTime;
                         const imageSizeKb = Math.round(
@@ -625,8 +574,8 @@ export function createImageTool(context?: ToolContext) {
                             {
                                 durationMs,
                                 aspectRatio,
-                                model: modelId,
-                                tier,
+                                model: model.id,
+                                tier: model.tier,
                                 imageSizeKb,
                             },
                             "Image generated successfully"
@@ -639,12 +588,12 @@ export function createImageTool(context?: ToolContext) {
                             success: true,
                             image: {
                                 base64: image.base64,
-                                mimeType: image.mediaType ?? "image/png",
+                                mimeType: image.mimeType,
                             },
                             prompt,
                             aspectRatio,
-                            model: modelId,
-                            tier,
+                            model: model.id,
+                            tier: model.tier,
                             durationMs,
                         };
                     } catch (error) {
@@ -700,8 +649,8 @@ export function createImageTool(context?: ToolContext) {
                                     ? "NoImageGeneratedError"
                                     : "unknown",
                                 promptPreview,
-                                model: modelId,
-                                tier,
+                                model: model.id,
+                                tier: model.tier,
                             },
                             "Image generation failed"
                         );
@@ -710,8 +659,8 @@ export function createImageTool(context?: ToolContext) {
                             tags: {
                                 component: "tool",
                                 tool: "createImage",
-                                model: modelId,
-                                tier,
+                                model: model.id,
+                                tier: model.tier,
                                 errorType: NoImageGeneratedError.isInstance(error)
                                     ? "NoImageGeneratedError"
                                     : "unknown",

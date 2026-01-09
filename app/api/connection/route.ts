@@ -14,7 +14,7 @@ import {
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
-import { filterReasoningFromMessages } from "@/lib/ai/messages";
+import { filterReasoningFromMessages, filterLargeToolOutputs } from "@/lib/ai/messages";
 import { getGatewayClient, translateModelId, translateOptions } from "@/lib/ai/gateway";
 
 import {
@@ -689,8 +689,12 @@ export async function POST(req: Request) {
             });
         }
 
-        // Strip reasoning parts before sending to API (Anthropic rejects modified thinking blocks)
-        const messagesWithoutReasoning = filterReasoningFromMessages(messages);
+        // Filter messages for LLM consumption:
+        // 1. Strip reasoning parts (Anthropic rejects modified thinking blocks in history)
+        // 2. Strip large base64 image data (causes context_length_exceeded errors)
+        const messagesWithoutReasoning = filterLargeToolOutputs(
+            filterReasoningFromMessages(messages)
+        );
 
         // Build system messages with Anthropic prompt caching on static content.
         // These are prepended to messages array (not via `system` param) so we can

@@ -21,17 +21,17 @@ export function ImageGenerationLoader({
     return (
         <div
             className={cn(
-                "flex flex-col items-center justify-center gap-4 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 p-8",
+                "bg-card border-border flex flex-col items-center justify-center gap-4 rounded-2xl border p-8",
                 className
             )}
         >
             <div className="relative flex h-32 w-32 items-center justify-center">
                 {/* Pivot point hint */}
-                <div className="absolute top-0 h-1 w-1 rounded-full bg-white/30" />
+                <div className="bg-foreground/20 absolute top-0 h-1 w-1 rounded-full" />
 
                 {/* String */}
                 <motion.div
-                    className="absolute top-0 h-12 w-px origin-top bg-gradient-to-b from-white/30 to-transparent"
+                    className="from-foreground/30 absolute top-0 h-12 w-px origin-top bg-gradient-to-b to-transparent"
                     animate={{ rotate: [-25, 25, -25] }}
                     transition={{
                         duration: 2,

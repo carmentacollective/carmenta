@@ -6,37 +6,47 @@ handles iteration, and persists results as artifacts.
 
 ## Architecture Decisions
 
-✅ **Use Vercel AI Gateway `imageModel()`** (decided 2025-01)
+✅ **Use Vercel AI Gateway with Unified Abstraction** (updated 2025-01)
 
-The AI Gateway (`@ai-sdk/gateway`) supports image generation via `gateway.imageModel()`.
-This uses our existing `AI_GATEWAY_API_KEY`—no additional API keys needed. Benefits:
+The AI Gateway (`@ai-sdk/gateway`) supports image generation, but **two different APIs
+exist** based on model architecture:
 
-- Single API key for LLMs AND image generation
-- Unified billing through Vercel
-- Built-in retry/failover support
-- Consistent with our existing `lib/ai/gateway.ts` pattern
+| Model Type                            | API               | Response Format  |
+| ------------------------------------- | ----------------- | ---------------- |
+| Dedicated image models (Imagen, FLUX) | `generateImage()` | `image.base64`   |
+| Multimodal LLMs (Gemini 3 Pro Image)  | `generateText()`  | `files[].base64` |
 
-Available image models via Gateway:
+**This is intentional, not a bug.** Google built two different model types:
 
-- `google/imagen-4.0-generate` - Fast, good quality
-- `google/imagen-4.0-ultra-generate` - Higher quality
-- `bfl/flux-pro-1.1` - Artistic, high-quality
-- `bfl/flux-kontext-pro` - Character consistency
-- `google/gemini-3-pro-image` - Nano Banana Pro (multimodal)
+- **Imagen** = purpose-built image generator (prompt → image)
+- **Gemini 3 Pro Image** = LLM with image output capability (prompt → text + images)
 
-✅ **Primary Model: Imagen 4.0** (decided 2025-01)
+Our tool abstracts this difference—users don't need to know which API is used.
 
-Google's Imagen 4.0 via Gateway is our default for speed and reliability. For tasks
-requiring text rendering or character consistency, we route to Gemini 3 Pro Image (Nano
-Banana Pro) or FLUX Kontext.
+### Available Models (January 2025)
 
-**Nano Banana Pro (Gemini 3 Pro Image)** is available for advanced use cases:
+| Model                | ID                                    | Price      | API             | Best For                      |
+| -------------------- | ------------------------------------- | ---------- | --------------- | ----------------------------- |
+| **Nano Banana Pro**  | `google/gemini-3-pro-image`           | $0.014/img | `generateText`  | Text rendering, reasoning, 4K |
+| **FLUX 2 Pro**       | `bfl/flux-2-pro`                      | $0.03/MP   | `generateImage` | 4MP, editing, multi-reference |
+| **Imagen 4.0**       | `google/imagen-4.0-generate-001`      | $0.04/img  | `generateImage` | Reliable baseline             |
+| **FLUX 1.1 Pro**     | `bfl/flux-pro-1.1`                    | $0.04/img  | `generateImage` | Artistic quality              |
+| **Imagen 4.0 Fast**  | `google/imagen-4.0-fast-generate-001` | $0.02/img  | `generateImage` | Speed, drafts                 |
+| **FLUX Kontext Pro** | `bfl/flux-kontext-pro`                | varies     | `generateImage` | Character consistency         |
+
+Sources: [Vercel AI Gateway Models](https://vercel.com/ai-gateway/models),
+[AI SDK Image Generation](https://ai-sdk.dev/docs/ai-sdk-core/image-generation)
+
+✅ **Primary Model: Nano Banana Pro** (updated 2025-01)
+
+Gemini 3 Pro Image (Nano Banana Pro) is our default for quality-tier requests:
 
 - State-of-the-art text rendering in images (industry-leading)
-- Character consistency across multiple images (up to 5 characters)
-- Multi-step editing with reasoning ("thinking" mode)
+- Reasoning-enabled editing ("thinking" mode)
 - 4K output resolution support
-- Competitive pricing (~$0.134/image standard, ~$0.24/4K)
+- Cheapest per-image at $0.014
+
+For fast drafts, we route to Imagen 4.0 Fast ($0.02/image).
 
 ✅ **Tool-based Architecture** (decided 2025-01)
 
@@ -82,12 +92,25 @@ mockups. Images become another modality Carmenta uses to communicate.
 **Model-Agnostic, Outcome-Focused**
 
 We don't ask users to choose between DALL-E, Midjourney, Stable Diffusion, or the next
-model that launches tomorrow. We ask what they want to create. The Concierge routes to
-the model best suited for the task: photorealism, illustration, speed, style
-consistency.
+model that launches tomorrow. We ask what they want to create. The Image Artist
+sub-agent routes to the model best suited for the task: photorealism, illustration,
+logos, diagrams.
 
 Users can override model selection when they have preferences. But the default is: tell
 us what you want, we figure out how.
+
+**Sub-Agent Architecture**
+
+Image generation uses a dedicated sub-agent rather than inline tool logic:
+
+1. **Main conversation** detects image intent, optionally asks clarifying questions
+2. **Image Artist sub-agent** has full model rubric and prompt engineering knowledge
+3. **Prompt expansion** transforms brief requests into detailed specifications
+4. **Task-based routing** selects optimal model (not speed-based)
+5. **Transparency** - shows users the expanded prompt used
+
+This keeps the main concierge lean (no rubric context) while giving the image generation
+path full context for quality decisions.
 
 **Iteration Is the Work**
 
@@ -182,81 +205,167 @@ from first attempt to final result.
 
 ### Model Selection
 
-Default: automatic routing based on request analysis.
+**Route by task type, not speed.** Users expect to wait for images.
 
-**Primary Model (2025)**:
+**Routing Reference**: See `knowledge/image-rubric.md` for slim routing rules and
+`knowledge/image-rubric-detailed.md` for full eval data and model profiles.
 
-- **Gemini 3 Pro Image (Nano Banana Pro)**: Our default. Best-in-class text rendering,
-  character consistency, 4K output, reasoning-enabled editing. Available via Vercel AI
-  SDK's Google provider.
+**Task-Based Routing** (implemented in Image Artist sub-agent):
 
-**Alternative Models** (via Vercel AI SDK providers):
+| Task           | Best Model                  | Score | Why                 |
+| -------------- | --------------------------- | ----- | ------------------- |
+| Diagrams       | `google/gemini-3-pro-image` | 98%   | LLM reasoning       |
+| Text-heavy     | `google/gemini-3-pro-image` | 86%   | Best text rendering |
+| Illustrations  | `google/gemini-3-pro-image` | 75%   | Detail work         |
+| Logos          | `bfl/flux-2-flex`           | 70%   | Clean graphics      |
+| Photorealistic | `google/imagen-4.0-ultra`   | 70%   | Realistic images    |
 
-- **GPT Image 1 (OpenAI)**: Strong prompt adherence, good for specific compositions.
-  Available via `@ai-sdk/openai`.
-- **FLUX.2 (Black Forest Labs)**: High-quality diffusion model, excellent for artistic
-  output. Available via `@ai-sdk/replicate` or `@ai-sdk/fal`.
-- **Imagen 4 (Google)**: Fast generation, good baseline. Available via `@ai-sdk/google`.
+Scores from 195-case Braintrust eval (13 models × 15 prompts, January 2025).
 
-**Model Routing Factors**:
+**Routing Logic** (in sub-agent):
 
-- Task type (photorealism → Nano Banana Pro, artistic → FLUX, fast preview → Imagen)
-- Text rendering needs (Nano Banana Pro excels here)
-- Speed requirements (Imagen fastest, Nano Banana Pro slower but higher quality)
-- Cost optimization (route appropriately based on user tier)
+- Prompt contains diagram/flowchart/architecture/infographic → Nano Banana Pro
+- Prompt needs text in image (poster, sign, label, title, banner) → Nano Banana Pro
+- Prompt is logo/wordmark/brand/icon/emblem → FLUX 2 Flex
+- Prompt is photo/realistic/portrait/landscape/product → Imagen 4.0 Ultra
+- Prompt is illustration/cartoon/character/scene/fantasy → Nano Banana Pro
+- Default → Imagen 4.0
+
+**Models to Avoid** (based on eval):
+
+- GPT-5 Image (37%) - expensive and underperforms
+- Imagen 4.0 Fast (33%) - quality too low
+- FLUX Kontext Pro (31%) - poor across all categories
 
 Users can specify model directly: "use FLUX for this" overrides routing.
 
 ### API Integration
 
-We use Vercel AI Gateway with `generateImage`:
+We use Vercel AI Gateway with **two different APIs** based on model type:
 
 ```typescript
-import { generateImage } from "ai";
+import { generateImage, generateText } from "ai";
 import { getGatewayClient } from "@/lib/ai/gateway";
 
 const gateway = getGatewayClient();
 
-// Default: Imagen 4.0 (fast, reliable)
+// =============================================================
+// DEDICATED IMAGE MODELS → use generateImage()
+// =============================================================
+
+// Imagen 4.0 (fast, reliable baseline)
 const { image } = await generateImage({
-  model: gateway.imageModel("google/imagen-4.0-generate"),
+  model: gateway.imageModel("google/imagen-4.0-generate-001"),
   prompt: userPrompt,
   aspectRatio: "16:9",
 });
+// Response: image.base64, image.uint8Array, image.mediaType
 
-// For text-heavy images: Nano Banana Pro
-const { image: textImage } = await generateImage({
-  model: gateway.imageModel("google/gemini-3-pro-image"),
-  prompt: "Logo with text: 'Morning Ritual Coffee'",
-  aspectRatio: "1:1",
-});
-
-// For artistic work: FLUX
+// FLUX for artistic work
 const { image: artImage } = await generateImage({
   model: gateway.imageModel("bfl/flux-pro-1.1"),
   prompt: "Watercolor sunset over mountains",
   aspectRatio: "16:9",
 });
+
+// =============================================================
+// MULTIMODAL LLMs → use generateText()
+// =============================================================
+
+// Nano Banana Pro (best for text rendering, reasoning)
+const result = await generateText({
+  model: gateway("google/gemini-3-pro-image"),
+  prompt: "Logo with text: 'Morning Ritual Coffee'",
+});
+
+// Extract image from files array
+const imageFile = result.files?.find((f) => f.mediaType?.startsWith("image/"));
+// Response: imageFile.base64, imageFile.uint8Array, imageFile.mediaType
 ```
 
-The response includes `image.uint8Array` (raw bytes) or `image.base64` for
-storage/display. No additional API keys needed—uses existing `AI_GATEWAY_API_KEY`.
+**Why two APIs?** Different model architectures:
+
+- Imagen/FLUX are dedicated image generators (prompt → image only)
+- Gemini 3 Pro Image is an LLM that outputs images (prompt → text + images)
+
+Our `createImageTool` in `lib/tools/built-in.ts` abstracts this—users don't need to know
+which API is used. No additional API keys needed—uses existing `AI_GATEWAY_API_KEY`.
 
 ### Prompt Engineering
 
-The generation quality depends heavily on prompt quality. We help:
+The generation quality depends heavily on prompt quality. The Image Artist sub-agent
+handles this automatically.
 
-**Expansion**: Brief prompts become detailed specifications. "sunset" becomes "golden
-hour sunset over ocean, warm orange and pink sky, silhouette of palm trees,
-photorealistic, 4K quality."
+**Expansion Formula**: Subject + Style/Medium + Details + Environment + Lighting + Mood
 
-**Style vocabulary**: Translate natural descriptions to model-specific tokens. "make it
-look professional" becomes appropriate style parameters.
+Example:
+
+- User: "coffee shop logo"
+- Expanded: "Minimalist logo for a coffee shop, clean vector style, warm earth tones
+  (brown, cream, terracotta), single coffee cup icon with steam forming abstract shape,
+  simple sans-serif wordmark, professional and inviting, white background"
+
+**Key Transformations**:
+
+1. **Specificity**: "dog" → "golden retriever puppy, 3 months old, sitting"
+2. **Style anchor**: Add art medium or photography style
+3. **Lighting**: golden hour, soft diffused, dramatic side lighting
+4. **Mood**: warm, professional, playful, mysterious
+5. **Composition**: close-up, wide shot, rule of thirds, centered
+6. **Quality markers**: highly detailed, 4K, professional quality
+
+**What to Avoid in Prompts**:
+
+- Conversational language ("please create", "I want")
+- Abstract concepts without grounding ("freedom" → "eagle soaring over canyon at
+  sunrise")
+- Conflicting styles ("photorealistic oil painting")
 
 **Reference integration**: When style references exist in memory, inject them
 automatically. "Use my brand colors" works when brand context exists.
 
-**Negative prompts**: Generate appropriate exclusions to avoid common artifacts.
+### Clarification Strategy
+
+Based on competitor research, we generate immediately (80% of requests) but consider
+brief clarification for high-stakes creative work (20%).
+
+**Generate immediately when**:
+
+- Clear, specific prompts
+- Technical diagrams
+- Simple scenes
+- User says "quick" or shows urgency
+
+**Consider ONE clarifying question for**:
+
+- Logo/brand work (style matters enormously)
+- Ambiguous mood ("make it nice" → "professional or playful?")
+- Complex multi-subject scenes
+
+The main conversation handles clarification naturally - not the sub-agent. This keeps
+interaction flowing without awkward tool state.
+
+**Always offer easy opt-out**: "Or I can just generate with my best judgment."
+
+### Reference Images
+
+Reference images dramatically improve results for style consistency, brand alignment,
+and character consistency across images.
+
+**When to offer reference image upload**:
+
+- Logo and brand work
+- Illustration series
+- When user mentions "like X" or "similar to"
+
+**What to extract from references**:
+
+- Color palette
+- Composition style
+- Lighting quality
+- Texture/grain
+
+Don't copy the subject - transfer the aesthetic.
 
 ### Output Formats
 
@@ -475,27 +584,29 @@ refineable through natural dialogue.
 
 PR #671 implements Phase 1 with polished UX.
 
-### Phase 2: Enhanced UX
+### Phase 2: Sub-Agent Architecture
 
-- [x] Progress indicator during generation (rotating tips + elapsed timer pattern)
+- [ ] Create Image Artist sub-agent (`lib/ai-team/image-artist/`)
+- [ ] Implement prompt expansion logic with engineering patterns
+- [ ] Add task-based model routing (diagrams → Nano Banana, logos → FLUX, etc.)
+- [ ] Create tool wrapper (`lib/ai-team/agents/image-artist-tool.ts`)
+- [ ] Return expanded prompt in tool output for transparency
+- [ ] Update UI to display expanded prompt used
+
+### Phase 3: Enhanced UX
+
 - [ ] Aspect ratio selection from prompt analysis
-- [ ] Resolution options (1K/2K/4K based on user tier)
-- [x] Error handling with user-friendly messages
-- [ ] Optional: Canvas-based "PixelCard" animation (LibreChat pattern) for visual polish
-
-### Phase 3: Iteration Loop
-
+- [ ] Reference image support for style consistency
 - [ ] "Try again" regeneration with different seed
 - [ ] Targeted refinement ("make it warmer", "remove the person")
-- [ ] Reference previous generations in conversation
 - [ ] Version history tracking
 
-### Phase 4: Multi-Model Routing
+### Phase 4: Multi-Model Routing (Complete)
 
-- [ ] Add FLUX via Replicate/fal provider
-- [ ] Add GPT Image 1 via OpenAI provider
-- [ ] Implement routing logic based on task type
-- [ ] User model override via prompt
+- [x] Task-based routing via Image Artist sub-agent
+- [x] Model rubric based on 195-image eval (13 models × 15 prompts)
+- [x] User model override via prompt ("use FLUX for this")
+- [x] Gateway models only (OpenRouter not needed - Gateway wins every category)
 
 ## Sources
 

@@ -629,7 +629,16 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
 
     const toolName = part.type.replace("tool-", "");
     const status = getToolStatus(part.state);
-    const input = part.input as Record<string, unknown>;
+
+    // State-driven rendering: Don't render until input is fully streamed
+    // During input-streaming, part.input may be undefined or partial
+    // See: knowledge/components/image-generation-evals.md for the state machine
+    if (part.state === "input-streaming") {
+        return null;
+    }
+
+    // After input-streaming, input is guaranteed to exist
+    const input = (part.input ?? {}) as Record<string, unknown>;
     const output = part.output as Record<string, unknown> | undefined;
 
     // Try code tools registry first - returns beautiful renderers for Claude Code tools
@@ -692,11 +701,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         case "deepResearch": {
-            // Don't render until input is available (streaming may have incomplete data)
-            if (part.state === "input-streaming") {
-                return null;
-            }
-
+            // Note: input-streaming guard is now at ToolPartRenderer level
             type Finding = {
                 insight: string;
                 sources: string[];
