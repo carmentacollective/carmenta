@@ -27,37 +27,35 @@ function springLerp(
 }
 
 /**
- * Light mode holographic colors - Twilight Rose (62% feminine)
+ * Light mode holographic colors - Sky Lavender (55% feminine)
  *
- * Soft orchids, lavenders, and sky blues with rose undertones.
- * Balanced and ethereal without being overly pink.
+ * Light lavender with sky blue dominance. Soft and feminine.
  */
 const LIGHT_COLORS = [
-    { r: 230, g: 200, b: 230 }, // Light Orchid
-    { r: 215, g: 200, b: 245 }, // Soft Violet
-    { r: 195, g: 215, b: 255 }, // Sky Blue
-    { r: 185, g: 230, b: 235 }, // Aqua Mist
-    { r: 210, g: 200, b: 240 }, // Lavender
-    { r: 240, g: 220, b: 230 }, // Blush Rose
-    { r: 205, g: 210, b: 245 }, // Periwinkle
-    { r: 225, g: 210, b: 235 }, // Rose Mist
+    { r: 210, g: 210, b: 245 }, // Soft Lavender
+    { r: 195, g: 220, b: 255 }, // Sky Blue
+    { r: 185, g: 230, b: 250 }, // Light Cyan
+    { r: 200, g: 225, b: 245 }, // Powder Blue
+    { r: 220, g: 210, b: 240 }, // Pale Violet
+    { r: 180, g: 225, b: 245 }, // Ice Blue
+    { r: 200, g: 215, b: 250 }, // Periwinkle
+    { r: 195, g: 235, b: 245 }, // Aqua Mist
 ];
 
 /**
- * Dark mode holographic colors - Twilight Rose (62% feminine)
+ * Dark mode holographic colors - Sky Lavender (55% feminine)
  *
- * Deep orchids and twilight violets balanced with ocean blues.
- * Cosmic depths with rose-violet warmth.
+ * Rich lavender-blue with violet warmth. Ethereal depths.
  */
 const DARK_COLORS = [
-    { r: 150, g: 100, b: 160 }, // Deep Rose
-    { r: 110, g: 115, b: 185 }, // Twilight Blue
-    { r: 100, g: 130, b: 190 }, // Ocean Blue
-    { r: 90, g: 145, b: 180 }, // Sea Blue
-    { r: 140, g: 110, b: 180 }, // Orchid Violet
-    { r: 125, g: 110, b: 170 }, // Muted Violet
-    { r: 115, g: 120, b: 180 }, // Periwinkle Depths
-    { r: 134, g: 115, b: 170 }, // Dusty Violet
+    { r: 110, g: 115, b: 180 }, // Deep Lavender
+    { r: 90, g: 135, b: 200 }, // Royal Blue
+    { r: 80, g: 150, b: 195 }, // Ocean
+    { r: 95, g: 145, b: 190 }, // Steel Blue
+    { r: 115, g: 105, b: 170 }, // Violet
+    { r: 80, g: 145, b: 190 }, // Azure
+    { r: 95, g: 130, b: 195 }, // Periwinkle
+    { r: 80, g: 155, b: 200 }, // Cyan Blue
 ];
 
 const DARK_BACKGROUND = "#0D0818"; // Deep cosmic indigo - consciousness depths
@@ -208,12 +206,12 @@ const WARM_PRESENCE_COLORS: Record<
 > = {
     carmenta: {
         light: {
-            inner: "rgba(230, 200, 230, 0.4)", // Light Orchid glow
-            outer: "rgba(210, 200, 240, 0.25)", // Lavender fade
+            inner: "rgba(210, 210, 245, 0.4)", // Soft Lavender glow
+            outer: "rgba(195, 220, 255, 0.25)", // Sky Blue fade
         },
         dark: {
-            inner: "rgba(140, 110, 180, 0.28)", // Orchid Violet glow
-            outer: "rgba(115, 120, 180, 0.14)", // Periwinkle fade
+            inner: "rgba(110, 115, 180, 0.28)", // Deep Lavender glow
+            outer: "rgba(90, 135, 200, 0.14)", // Royal Blue fade
         },
     },
     "warm-earth": {

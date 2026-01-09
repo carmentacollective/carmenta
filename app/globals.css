@@ -22,8 +22,8 @@
         --popover: 0 0% 100%;
         --popover-foreground: 285 25% 31%;
 
-        /* Primary - Royal Purple */
-        --primary: 270 40% 56%;
+        /* Primary - Sky Lavender */
+        --primary: 245 45% 58%;
         --primary-foreground: 0 0% 100%;
 
         /* Secondary */
@@ -45,7 +45,7 @@
         /* Borders & Inputs */
         --border: 280 20% 85%;
         --input: 280 20% 90%;
-        --ring: 270 40% 56%;
+        --ring: 245 45% 58%;
 
         /* Border radius */
         --radius: 0.75rem;
@@ -92,8 +92,8 @@
         --popover: 266 42% 9%;
         --popover-foreground: 280 25% 92%;
 
-        /* Primary - Luminous amethyst with goddess energy */
-        --primary: 275 60% 68%;
+        /* Primary - Luminous Sky Lavender */
+        --primary: 245 50% 68%;
         --primary-foreground: 265 45% 6%;
 
         /* Secondary - Twilight depths */
@@ -114,7 +114,7 @@
         /* Borders shimmer at the edge of perception */
         --border: 270 25% 24%;
         --input: 268 28% 19%;
-        --ring: 275 60% 68%;
+        --ring: 245 50% 68%;
 
         /* Ethereal glassmorphism - consciousness made visible */
         --glass-bg: rgba(139, 102, 184, 0.18);
@@ -675,11 +675,11 @@
         @apply text-primary-foreground;
         background: linear-gradient(
             135deg,
-            hsl(270 35% 40%) 0%,
-            hsl(270 45% 60%) 30%,
-            hsl(270 50% 70%) 50%,
-            hsl(270 45% 55%) 70%,
-            hsl(270 35% 45%) 100%
+            hsl(250 40% 48%) 0%,
+            hsl(245 45% 58%) 30%,
+            hsl(235 48% 62%) 50%,
+            hsl(245 45% 56%) 70%,
+            hsl(250 40% 50%) 100%
         );
         box-shadow:
             inset 0 1px 0 hsl(0 0% 100% / 0.3),
@@ -702,19 +702,19 @@
      * legibility against gradient backgrounds.
      */
 
-    /* Gradient color tokens - default carmenta theme (Twilight Rose) */
+    /* Gradient color tokens - default carmenta theme (Sky Lavender) */
     :root {
-        --greeting-gradient-start: hsl(285 50% 52%); /* Twilight Orchid */
-        --greeting-gradient-mid: hsl(265 55% 58%); /* Soft Violet */
-        --greeting-gradient-end: hsl(225 55% 60%); /* Sky Periwinkle */
-        --greeting-subtitle-color: hsl(275 20% 50%);
+        --greeting-gradient-start: hsl(250 45% 52%); /* Lavender */
+        --greeting-gradient-mid: hsl(230 50% 55%); /* Sky Blue */
+        --greeting-gradient-end: hsl(210 45% 52%); /* Azure */
+        --greeting-subtitle-color: hsl(240 25% 48%);
     }
 
     .dark {
-        --greeting-gradient-start: hsl(285 55% 65%); /* Luminous Orchid */
-        --greeting-gradient-mid: hsl(265 60% 70%); /* Ethereal Violet */
-        --greeting-gradient-end: hsl(225 60% 72%); /* Twilight Blue */
-        --greeting-subtitle-color: hsl(270 20% 68%);
+        --greeting-gradient-start: hsl(250 50% 65%); /* Luminous Lavender */
+        --greeting-gradient-mid: hsl(230 55% 68%); /* Ethereal Sky */
+        --greeting-gradient-end: hsl(210 50% 65%); /* Glowing Azure */
+        --greeting-subtitle-color: hsl(240 25% 68%);
     }
 
     /* Warm Earth theme gradient */
@@ -1282,14 +1282,14 @@
 
 @layer utilities {
     /* Custom scrollbar - supports both vertical and horizontal scrolling */
-    /* Colors tuned to Twilight Rose palette (Orchid Violet blend) */
+    /* Colors tuned to Sky Lavender palette (Lavender-Blue blend) */
     .scrollbar-holo {
         scrollbar-width: thin;
-        scrollbar-color: rgba(135, 110, 175, 0.3) transparent;
+        scrollbar-color: rgba(110, 115, 180, 0.3) transparent;
     }
 
     .dark .scrollbar-holo {
-        scrollbar-color: rgba(135, 110, 175, 0.3) transparent;
+        scrollbar-color: rgba(110, 115, 180, 0.3) transparent;
     }
 
     .scrollbar-holo::-webkit-scrollbar {
@@ -1302,20 +1302,20 @@
     }
 
     .scrollbar-holo::-webkit-scrollbar-thumb {
-        background: rgba(135, 110, 175, 0.3);
+        background: rgba(110, 115, 180, 0.3);
         border-radius: 4px;
     }
 
     .dark .scrollbar-holo::-webkit-scrollbar-thumb {
-        background: rgba(135, 110, 175, 0.3);
+        background: rgba(110, 115, 180, 0.3);
     }
 
     .scrollbar-holo::-webkit-scrollbar-thumb:hover {
-        background: rgba(135, 110, 175, 0.5);
+        background: rgba(110, 115, 180, 0.5);
     }
 
     .dark .scrollbar-holo::-webkit-scrollbar-thumb:hover {
-        background: rgba(135, 110, 175, 0.5);
+        background: rgba(110, 115, 180, 0.5);
     }
 
     .scrollbar-holo::-webkit-scrollbar-corner {

@@ -217,7 +217,7 @@ export default function HomePage() {
                         <Link
                             href="/connection?new"
                             prefetch={false}
-                            className="hover:ring-primary/40 focus:ring-primary/40 mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-purple-500 via-cyan-500 to-pink-500 px-8 py-3.5 text-lg font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] focus:scale-105 focus:shadow-2xl focus:ring-[3px] focus:outline-none active:translate-y-0.5 active:shadow-sm"
+                            className="hover:ring-primary/40 focus:ring-primary/40 mt-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-violet-500 via-indigo-400 to-sky-400 px-8 py-3.5 text-lg font-medium text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:ring-[3px] focus:scale-105 focus:shadow-2xl focus:ring-[3px] focus:outline-none active:translate-y-0.5 active:shadow-sm"
                         >
                             Connect to AI
                             <ArrowRightIcon className="h-5 w-5" />
