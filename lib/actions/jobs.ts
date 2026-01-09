@@ -27,7 +27,6 @@ export interface PublicJob {
     scheduleDisplayText: string | null;
     timezone: string;
     isActive: boolean;
-    integrations: string[];
     lastRunAt: Date | null;
     nextRunAt: Date | null;
     createdAt: Date;
@@ -86,7 +85,6 @@ export async function loadJob(encodedId: string): Promise<PublicJob | null> {
         scheduleDisplayText: job.scheduleDisplayText,
         timezone: job.timezone,
         isActive: job.isActive,
-        integrations: job.integrations,
         lastRunAt: job.lastRunAt,
         nextRunAt: job.nextRunAt,
         createdAt: job.createdAt,

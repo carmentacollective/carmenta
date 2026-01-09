@@ -1413,12 +1413,6 @@ export const scheduledJobs = pgTable(
         /** User's timezone for schedule interpretation (e.g., "America/Los_Angeles") */
         timezone: text("timezone").notNull().default("UTC"),
 
-        /** Which integrations the agent can use */
-        integrations: text("integrations")
-            .array()
-            .notNull()
-            .default(sql`ARRAY[]::text[]`),
-
         /**
          * Persistent memory between runs
          * Agents can store state here that persists across executions

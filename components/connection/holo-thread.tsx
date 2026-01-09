@@ -20,7 +20,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { CaretDownIcon, XIcon, PencilIcon, CheckIcon } from "@phosphor-icons/react";
+import { XIcon, PencilIcon, CheckIcon } from "@phosphor-icons/react";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
 import { usePullToRefresh } from "@/lib/hooks/use-pull-to-refresh";
 import { PullToRefreshIndicator } from "@/components/pwa/pull-to-refresh-indicator";
@@ -56,6 +56,7 @@ import {
 } from "./connect-runtime-provider";
 import { CopyButton } from "@/components/ui/copy-button";
 import { RegenerateMenu } from "@/components/ui/regenerate-menu";
+import { ScrollToBottomButton } from "@/components/chat";
 import { ToolRenderer } from "@/components/tools/shared";
 import {
     WebSearchResults,
@@ -363,6 +364,7 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
                     <ScrollToBottomButton
                         isAtBottom={isAtBottom}
                         onScrollToBottom={() => scrollToBottom("smooth")}
+                        className="absolute -top-14 h-11 w-11 @md:-top-12"
                     />
                     <Composer onMarkMessageStopped={handleMarkMessageStopped} />
                 </div>
@@ -370,33 +372,6 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
         </div>
     );
 }
-
-interface ScrollToBottomButtonProps {
-    isAtBottom: boolean;
-    onScrollToBottom: () => void;
-}
-
-/**
- * Scroll-to-bottom button.
- * Only renders when user has scrolled up from the bottom.
- * Memoized to prevent unnecessary rerenders during scroll events.
- */
-const ScrollToBottomButton = memo(function ScrollToBottomButton({
-    isAtBottom,
-    onScrollToBottom,
-}: ScrollToBottomButtonProps) {
-    if (isAtBottom) return null;
-
-    return (
-        <button
-            onClick={onScrollToBottom}
-            className="btn-glass-interactive z-sticky absolute -top-14 flex h-11 w-11 items-center justify-center @md:-top-12 @md:h-10 @md:w-10"
-            aria-label="Scroll to bottom"
-        >
-            <CaretDownIcon className="text-foreground/70 h-5 w-5" />
-        </button>
-    );
-});
 
 interface ThreadWelcomeProps {
     onPrefill: (prompt: string, autoSubmit: boolean) => void;

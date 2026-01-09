@@ -189,7 +189,6 @@ export interface TestJobOptions {
     prompt?: string;
     scheduleCron?: string;
     timezone?: string;
-    integrations?: string[];
     isActive?: boolean;
 }
 
@@ -208,7 +207,6 @@ export async function createTestJob(options: TestJobOptions) {
             prompt: options.prompt ?? "Test job prompt",
             scheduleCron: options.scheduleCron ?? "0 9 * * *",
             timezone: options.timezone ?? "America/Los_Angeles",
-            integrations: options.integrations ?? [],
             isActive: options.isActive ?? true,
         })
         .returning();
