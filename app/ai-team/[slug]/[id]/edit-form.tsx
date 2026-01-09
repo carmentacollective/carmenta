@@ -60,8 +60,12 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
 
     // Load developer mode preference from localStorage
     useEffect(() => {
-        const stored = localStorage.getItem("carmenta:developer-mode");
-        setDeveloperMode(stored === "true");
+        try {
+            const stored = localStorage.getItem("carmenta:developer-mode");
+            setDeveloperMode(stored === "true");
+        } catch {
+            // localStorage unavailable (private browsing, disabled, etc.)
+        }
     }, []);
 
     const handleScheduleChange = (schedule: {

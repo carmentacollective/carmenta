@@ -135,17 +135,21 @@ function AITeamContent({
         new Set()
     );
 
-    // Compute unique job names for filter chips
-    const uniqueJobNames = Array.from(new Set(activities.map((a) => a.jobName))).slice(
-        0,
-        4
-    ); // Limit to 4 filters to avoid overflow
+    // Compute unique job names for filter chips (sorted for stability)
+    const uniqueJobNames = Array.from(new Set(activities.map((a) => a.jobName)))
+        .sort()
+        .slice(0, 4);
 
     // Filter activities based on selected filter
     const filteredActivities =
         activityFilter === null
             ? activities
             : activities.filter((a) => a.jobName === activityFilter);
+
+    // Clear expanded state when filter changes
+    useEffect(() => {
+        setExpandedActivities(new Set());
+    }, [activityFilter]);
 
     // Toggle expanded state for an activity
     const toggleActivityExpanded = (activityId: string) => {
@@ -480,9 +484,20 @@ function AITeamContent({
                                 <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-12 text-center">
                                     <ClockIcon className="text-foreground/30 mb-4 h-10 w-10" />
                                     <p className="text-foreground/60">
-                                        No activity yet. Your automations will show up
-                                        here.
+                                        No activity yet. We'll show runs as they happen.
                                     </p>
+                                </div>
+                            ) : filteredActivities.length === 0 ? (
+                                <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-8 text-center">
+                                    <p className="text-foreground/60">
+                                        No activity found for this filter.
+                                    </p>
+                                    <button
+                                        onClick={() => setActivityFilter(null)}
+                                        className="text-primary mt-2 text-sm font-medium hover:underline"
+                                    >
+                                        Clear filter
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="max-h-[400px] space-y-3 overflow-y-auto pr-2">
