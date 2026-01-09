@@ -28,6 +28,7 @@ import {
     listServiceAccounts,
 } from "@/lib/integrations/connection-manager";
 import { logIntegrationEvent } from "@/lib/integrations/log-integration-event";
+import { getAdapter } from "@/lib/integrations/tools";
 import { logger } from "@/lib/logger";
 import {
     categorizeService,
@@ -232,16 +233,21 @@ export async function connectApiKeyService(
 
     // Test the API key before saving it
     try {
-        const adapter = await import(
-            `@/lib/integrations/adapters/${serviceId}.ts`
-        ).then((mod) => {
-            // Get adapter class - handle different export patterns
-            const AdapterClass =
-                mod[
-                    `${serviceId.charAt(0).toUpperCase() + serviceId.slice(1).replace(/-([a-z])/g, (_, c) => c.toUpperCase())}Adapter`
-                ] || mod.default;
-            return new AdapterClass();
-        });
+        const adapter = getAdapter(serviceId);
+        if (!adapter) {
+            // Service is in registry but missing adapter - configuration error
+            const error = new Error(`No adapter found for service: ${serviceId}`);
+            logger.error({ serviceId }, "Missing adapter for registered service");
+            Sentry.captureException(error, {
+                level: "error",
+                tags: { component: "integrations", operation: "api_key_test" },
+                extra: { serviceId },
+            });
+            return {
+                success: false,
+                error: "This service isn't fully configured yet. We've been notified. 🤖",
+            };
+        }
 
         const testResult = await adapter.testConnection(apiKey.trim());
         if (!testResult.success) {
