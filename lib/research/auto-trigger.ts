@@ -215,14 +215,25 @@ export async function preExecuteResearch(
 ): Promise<PreExecutedResearch | null> {
     const startTime = Date.now();
 
+    // Comprehensive depth (~5min) exceeds our 120s timeout.
+    // Downgrade to deep (~2min) to ensure completion within request lifecycle.
+    const effectiveDepth = depth === "comprehensive" ? "deep" : depth;
+
+    if (depth === "comprehensive") {
+        logger.info(
+            { connectionId, requestedDepth: depth, effectiveDepth },
+            "Downgrading comprehensive to deep for pre-execution (avoids timeout)"
+        );
+    }
+
     logger.info(
-        { connectionId, objective: objective.slice(0, 100), depth },
+        { connectionId, objective: objective.slice(0, 100), depth: effectiveDepth },
         "Pre-executing deepResearch"
     );
 
     try {
         const provider = getWebIntelligenceProvider();
-        const result = await provider.research(objective, { depth });
+        const result = await provider.research(objective, { depth: effectiveDepth });
         const durationMs = Date.now() - startTime;
 
         if (!result) {
@@ -239,11 +250,13 @@ export async function preExecuteResearch(
             .map((f, i) => `${i + 1}. ${f.insight} (${f.confidence} confidence)`)
             .join("\n");
 
-        const sourcesText = result.sources.map((s) => `- ${s}`).join("\n");
+        const sourcesText = result.sources
+            .map((s) => `- [${s.title}](${s.url})`)
+            .join("\n");
 
         const systemContext = `
 <pre-executed-research>
-Research was automatically conducted based on user's depth selection ("${depth}").
+Research was automatically conducted based on user's depth selection ("${effectiveDepth}").
 Synthesize these findings into a helpful response. Do NOT conduct additional research
 unless the user specifically asks for more detail.
 
