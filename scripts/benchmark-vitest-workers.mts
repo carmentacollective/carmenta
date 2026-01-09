@@ -55,9 +55,11 @@ for (const workers of workerCounts) {
 
             // Run vitest with the specified worker count
             // Suppress output for cleaner benchmark results
-            execSync(`VITEST_WORKERS=${workers} pnpm vitest run --silent`, {
+            // Use env option for cross-platform compatibility (Windows doesn't support VAR=value syntax)
+            execSync(`pnpm vitest run --silent`, {
                 stdio: "pipe",
                 encoding: "utf-8",
+                env: { ...process.env, VITEST_WORKERS: String(workers) },
             });
 
             const duration = Date.now() - startTime;
