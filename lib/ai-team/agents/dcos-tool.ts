@@ -154,7 +154,6 @@ interface AutomationSummary {
     isActive: boolean;
     schedule: string | null;
     timezone: string;
-    integrations: string[];
     lastRunAt: Date | null;
     nextRunAt: Date | null;
 }
@@ -205,7 +204,6 @@ async function executeList(
             isActive: job.isActive,
             schedule: job.scheduleDisplayText,
             timezone: job.timezone,
-            integrations: job.integrations,
             lastRunAt: job.lastRunAt,
             nextRunAt: job.nextRunAt,
         }));
@@ -288,7 +286,6 @@ async function executeGet(
             isActive: job.isActive,
             schedule: job.scheduleDisplayText,
             timezone: job.timezone,
-            integrations: job.integrations,
             lastRunAt: job.lastRunAt,
             nextRunAt: job.nextRunAt,
             createdAt: job.createdAt,
@@ -353,13 +350,10 @@ async function executeUpdate(
         const updates: Partial<{
             prompt: string;
             name: string;
-            integrations: string[];
         }> = {};
 
         if (params.prompt !== undefined) updates.prompt = params.prompt;
         if (params.name !== undefined) updates.name = params.name;
-        if (params.integrations !== undefined)
-            updates.integrations = params.integrations;
 
         // Perform update
         const [updatedJob] = await db
@@ -384,7 +378,6 @@ async function executeUpdate(
             isActive: updatedJob.isActive,
             schedule: updatedJob.scheduleDisplayText,
             timezone: updatedJob.timezone,
-            integrations: updatedJob.integrations,
             lastRunAt: updatedJob.lastRunAt,
             nextRunAt: updatedJob.nextRunAt,
             createdAt: updatedJob.createdAt,
@@ -581,7 +574,6 @@ const dcosActionSchema = z.object({
     name: z.string().optional().describe("Automation name for lookup"),
     // update
     prompt: z.string().optional().describe("New prompt/instructions"),
-    integrations: z.array(z.string()).optional().describe("New integrations list"),
     // runs
     limit: z.number().optional().describe("Max results to return"),
     // run
@@ -609,10 +601,10 @@ function validateParams(
             if (!params.id) {
                 return { valid: false, error: "id is required for update" };
             }
-            if (!params.prompt && !params.name && !params.integrations) {
+            if (!params.prompt && !params.name) {
                 return {
                     valid: false,
-                    error: "At least one of prompt, name, or integrations is required for update",
+                    error: "At least one of prompt or name is required for update",
                 };
             }
             return { valid: true };
@@ -679,7 +671,6 @@ export function createDcosTool(context: SubagentContext) {
                                     id: params.id!,
                                     prompt: params.prompt,
                                     name: params.name,
-                                    integrations: params.integrations,
                                 },
                                 ctx
                             );

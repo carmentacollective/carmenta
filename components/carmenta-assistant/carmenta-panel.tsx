@@ -9,18 +9,21 @@
  * Uses shared components from /components/chat for DRY code.
  */
 
-import { useRef, useEffect } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SparkleIcon, CaretLeftIcon, TrashIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
 import {
     SimpleComposer,
     UserBubble,
     AssistantBubble,
     ThinkingBubble,
+    ScrollToBottomButton,
 } from "@/components/chat";
+import { CopyButton } from "@/components/ui/copy-button";
 
 import { useCarmenta } from "./use-carmenta";
 import { getMessageText } from "./utils";
@@ -38,7 +41,6 @@ export function CarmentaPanel({
     placeholder = "What are we working on?",
     className,
 }: CarmentaPanelProps) {
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const isDesktop = useMediaQuery("(min-width: 768px)");
 
     // Carmenta state
@@ -48,12 +50,15 @@ export function CarmentaPanel({
             onChangesComplete,
         });
 
-    // Scroll to bottom on new messages (depend on length, not array reference)
-    useEffect(() => {
-        if (messages.length > 0) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
-    }, [messages.length]);
+    // Check if Carmenta is currently generating (last message is user or no messages)
+    const isThinking =
+        isLoading &&
+        (messages.length === 0 || messages[messages.length - 1]?.role === "user");
+
+    // Smart scroll behavior - auto-scrolls during streaming, pauses when user scrolls up
+    const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useChatScroll({
+        isStreaming: isLoading && !isThinking,
+    });
 
     // Handle escape key
     useEffect(() => {
@@ -68,11 +73,6 @@ export function CarmentaPanel({
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [isOpen, onClose]);
-
-    // Check if Carmenta is currently generating (last message is user or no messages)
-    const isThinking =
-        isLoading &&
-        (messages.length === 0 || messages[messages.length - 1]?.role === "user");
 
     return (
         <AnimatePresence>
@@ -166,46 +166,75 @@ export function CarmentaPanel({
                         </header>
 
                         {/* Messages area */}
-                        <div className="flex-1 overflow-y-auto px-4">
-                            {messages.length === 0 && !isThinking ? (
-                                <EmptyState pageContext={pageContext} />
-                            ) : (
-                                <>
-                                    {messages.map((message) => {
-                                        const text = getMessageText(message);
-                                        const isLastMessage =
-                                            message.role === "assistant" &&
-                                            message.id ===
-                                                messages[messages.length - 1]?.id;
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4">
+                            <div ref={contentRef}>
+                                {messages.length === 0 && !isThinking ? (
+                                    <EmptyState pageContext={pageContext} />
+                                ) : (
+                                    <>
+                                        {messages.map((message) => {
+                                            const text = getMessageText(message);
+                                            const isLastMessage =
+                                                message.role === "assistant" &&
+                                                message.id ===
+                                                    messages[messages.length - 1]?.id;
+                                            const isStreamingThis =
+                                                isLoading && isLastMessage;
 
-                                        if (message.role === "user") {
+                                            if (message.role === "user") {
+                                                return (
+                                                    <UserBubble
+                                                        key={message.id}
+                                                        content={text}
+                                                    />
+                                                );
+                                            }
+
                                             return (
-                                                <UserBubble
+                                                <div
                                                     key={message.id}
-                                                    content={text}
-                                                />
+                                                    className="group relative"
+                                                >
+                                                    <AssistantBubble
+                                                        content={text}
+                                                        isStreaming={isStreamingThis}
+                                                        showAvatar={false}
+                                                    />
+                                                    {/* Copy button - visible on hover or always on last message */}
+                                                    {text && !isStreamingThis && (
+                                                        <div
+                                                            className={cn(
+                                                                "absolute top-3 right-0 transition-opacity",
+                                                                isLastMessage
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0 group-hover:opacity-100"
+                                                            )}
+                                                        >
+                                                            <CopyButton
+                                                                text={text}
+                                                                variant="ghost"
+                                                                size="sm"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             );
-                                        }
-
-                                        return (
-                                            <AssistantBubble
-                                                key={message.id}
-                                                content={text}
-                                                isStreaming={isLoading && isLastMessage}
-                                                showAvatar={false}
-                                            />
-                                        );
-                                    })}
-                                    {isThinking && (
-                                        <ThinkingBubble showAvatar={false} />
-                                    )}
-                                    <div ref={messagesEndRef} />
-                                </>
-                            )}
+                                        })}
+                                        {isThinking && (
+                                            <ThinkingBubble showAvatar={false} />
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Input */}
-                        <div className="border-foreground/[0.08] @container border-t p-3">
+                        {/* Input area with scroll-to-bottom button */}
+                        <div className="border-foreground/[0.08] @container relative border-t p-3">
+                            <ScrollToBottomButton
+                                isAtBottom={isAtBottom}
+                                onScrollToBottom={() => scrollToBottom("smooth")}
+                                className="absolute -top-12 left-1/2 -translate-x-1/2"
+                            />
                             <SimpleComposer
                                 value={input}
                                 onChange={setInput}

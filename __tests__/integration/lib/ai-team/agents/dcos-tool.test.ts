@@ -70,7 +70,6 @@ describe("DCOS Tool", () => {
             userId: testUser.id,
             name: "Morning Briefing",
             prompt: "Check email and calendar, summarize my day.",
-            integrations: ["gmail", "google-calendar"],
         });
         testJobRun = await createTestJobRun({
             jobId: testJob.id,
@@ -122,10 +121,6 @@ describe("DCOS Tool", () => {
             expect(automations).toHaveLength(1);
             expect(automations[0]).toHaveProperty("name", "Morning Briefing");
             expect(automations[0]).toHaveProperty("isActive", true);
-            expect(automations[0]).toHaveProperty("integrations", [
-                "gmail",
-                "google-calendar",
-            ]);
         });
 
         it("returns empty list for user with no automations", async () => {
@@ -222,23 +217,6 @@ describe("DCOS Tool", () => {
 
             expect(result.success).toBe(true);
             expect(result.data!.automation).toHaveProperty("name", newName);
-        });
-
-        it("updates automation integrations", async () => {
-            const encodedId = encodeJobId(testJob.seqId);
-            const newIntegrations = ["slack", "notion"];
-
-            const result = (await executeTool(dcosTool, {
-                action: "update",
-                id: encodedId,
-                integrations: newIntegrations,
-            })) as SubagentResult<{ updated: boolean; automation: unknown }>;
-
-            expect(result.success).toBe(true);
-            expect(result.data!.automation).toHaveProperty(
-                "integrations",
-                newIntegrations
-            );
         });
 
         it("returns validation error when no update fields provided", async () => {

@@ -48,7 +48,6 @@ interface Playbook {
         displayText: string;
     };
     prompt: string;
-    requiredIntegrations: string[];
 }
 
 /**
@@ -353,26 +352,6 @@ What are we building?`,
                                         <p className="text-foreground/80 text-sm">
                                             {playbook.description}
                                         </p>
-                                    </div>
-                                )}
-
-                                {playbook.requiredIntegrations.length > 0 && (
-                                    <div>
-                                        <p className="text-foreground/60 text-xs tracking-wide uppercase">
-                                            Requires
-                                        </p>
-                                        <div className="mt-1 flex flex-wrap gap-1">
-                                            {playbook.requiredIntegrations.map(
-                                                (int) => (
-                                                    <span
-                                                        key={int}
-                                                        className="bg-foreground/10 text-foreground/80 rounded-lg px-2 py-1 text-xs"
-                                                    >
-                                                        {int}
-                                                    </span>
-                                                )
-                                            )}
-                                        </div>
                                     </div>
                                 )}
                             </div>

@@ -49,9 +49,6 @@ const playbookSchema = z.object({
     prompt: z
         .string()
         .describe("The detailed instructions for what the automation should do"),
-    requiredIntegrations: z
-        .array(z.string())
-        .describe("List of integration names needed, e.g., ['gmail', 'slack']"),
 });
 
 /**

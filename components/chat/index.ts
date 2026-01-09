@@ -12,3 +12,7 @@ export {
     type ComposerButtonProps,
     type PipelineState,
 } from "./composer-button";
+export {
+    ScrollToBottomButton,
+    type ScrollToBottomButtonProps,
+} from "./scroll-to-bottom-button";
