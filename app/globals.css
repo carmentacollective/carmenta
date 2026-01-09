@@ -702,19 +702,19 @@
      * legibility against gradient backgrounds.
      */
 
-    /* Gradient color tokens - default carmenta theme */
+    /* Gradient color tokens - default carmenta theme (Twilight Rose) */
     :root {
-        --greeting-gradient-start: hsl(260 70% 55%); /* Rich purple */
-        --greeting-gradient-mid: hsl(280 65% 60%); /* Vivid violet */
-        --greeting-gradient-end: hsl(310 60% 55%); /* Bright magenta */
-        --greeting-subtitle-color: hsl(285 20% 50%);
+        --greeting-gradient-start: hsl(285 50% 52%); /* Twilight Orchid */
+        --greeting-gradient-mid: hsl(265 55% 58%); /* Soft Violet */
+        --greeting-gradient-end: hsl(225 55% 60%); /* Sky Periwinkle */
+        --greeting-subtitle-color: hsl(275 20% 50%);
     }
 
     .dark {
-        --greeting-gradient-start: hsl(265 75% 70%); /* Luminous purple */
-        --greeting-gradient-mid: hsl(285 70% 75%); /* Bright violet */
-        --greeting-gradient-end: hsl(315 65% 72%); /* Vibrant magenta */
-        --greeting-subtitle-color: hsl(280 20% 72%);
+        --greeting-gradient-start: hsl(285 55% 65%); /* Luminous Orchid */
+        --greeting-gradient-mid: hsl(265 60% 70%); /* Ethereal Violet */
+        --greeting-gradient-end: hsl(225 60% 72%); /* Twilight Blue */
+        --greeting-subtitle-color: hsl(270 20% 68%);
     }
 
     /* Warm Earth theme gradient */
@@ -1282,13 +1282,14 @@
 
 @layer utilities {
     /* Custom scrollbar - supports both vertical and horizontal scrolling */
+    /* Colors tuned to Twilight Rose palette (Orchid Violet blend) */
     .scrollbar-holo {
         scrollbar-width: thin;
-        scrollbar-color: rgba(139, 102, 184, 0.3) transparent;
+        scrollbar-color: rgba(135, 110, 175, 0.3) transparent;
     }
 
     .dark .scrollbar-holo {
-        scrollbar-color: rgba(139, 102, 184, 0.3) transparent;
+        scrollbar-color: rgba(135, 110, 175, 0.3) transparent;
     }
 
     .scrollbar-holo::-webkit-scrollbar {
@@ -1301,20 +1302,20 @@
     }
 
     .scrollbar-holo::-webkit-scrollbar-thumb {
-        background: rgba(139, 102, 184, 0.3);
+        background: rgba(135, 110, 175, 0.3);
         border-radius: 4px;
     }
 
     .dark .scrollbar-holo::-webkit-scrollbar-thumb {
-        background: rgba(139, 102, 184, 0.3);
+        background: rgba(135, 110, 175, 0.3);
     }
 
     .scrollbar-holo::-webkit-scrollbar-thumb:hover {
-        background: rgba(139, 102, 184, 0.5);
+        background: rgba(135, 110, 175, 0.5);
     }
 
     .dark .scrollbar-holo::-webkit-scrollbar-thumb:hover {
-        background: rgba(139, 102, 184, 0.5);
+        background: rgba(135, 110, 175, 0.5);
     }
 
     .scrollbar-holo::-webkit-scrollbar-corner {
