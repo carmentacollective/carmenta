@@ -34,8 +34,8 @@ function isTargetedTest(): boolean {
  * - 20 workers: 20.07s (+1.5% slower)
  * - 28 workers: 24.09s (+21.9% slower)
  *
- * Conclusion: 8 workers performs identically to 10 with better system headroom.
- * Use 8 workers for this machine's full test suite.
+ * Conclusion: Optimal is ~57% of cores (8/14 = 0.57). Performance degrades above
+ * this due to resource contention. This ratio scales across different CPU counts.
  */
 function calculateOptimalWorkers(): {
     workers: number;
@@ -76,8 +76,10 @@ function calculateOptimalWorkers(): {
     }
 
     // Full test suite: Scale workers based on system load
-    // Cap at optimal worker count to avoid resource contention
-    const OPTIMAL_WORKERS = 8; // From benchmark results (tied with 10, better headroom)
+    // Optimal is ~57% of cores based on benchmark results (8/14 = 0.57)
+    // This ratio balances parallelization with resource contention across different CPU counts
+    const OPTIMAL_RATIO = 0.57;
+    const OPTIMAL_WORKERS = Math.max(4, Math.ceil(cpuCount * OPTIMAL_RATIO));
 
     // Calculate load ratio (0 = idle, 1 = fully loaded, >1 = overloaded)
     const loadRatio = loadAvg / cpuCount;
