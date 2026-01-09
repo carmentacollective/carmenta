@@ -65,7 +65,8 @@ for (const workers of workerCounts) {
 
             console.log(`  Run ${run}: ${(duration / 1000).toFixed(2)}s`);
         } catch (error) {
-            console.error(`  ❌ Run ${run} failed`);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            console.error(`  ❌ Run ${run} failed: ${errorMsg}`);
             times.push(Infinity); // Mark failed runs
         }
     }
