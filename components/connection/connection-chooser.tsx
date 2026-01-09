@@ -7,7 +7,7 @@
  *
  * States:
  * - S1: Fresh user (no connections) → renders nothing
- * - State A: New/untitled connection → "Search conversations..." placeholder
+ * - State A: New/untitled connection → "Search connections..." placeholder
  * - State B: Titled connection → Title with typewriter animation on arrival
  *
  * The typewriter effect creates a moment of delight when Carmenta
@@ -897,7 +897,7 @@ function ConnectionDropdown({
                                                             {
                                                                 unstarredConnections.length
                                                             }{" "}
-                                                            conversations
+                                                            connections
                                                         </>
                                                     )}
                                                 </button>
@@ -1055,7 +1055,7 @@ export function ConnectionChooser({
                                 )}
                             </motion.div>
                         ) : (
-                            // No title yet: "Search conversations..." placeholder
+                            // No title yet: "Search connections..." placeholder
                             <motion.div
                                 key="minimal"
                                 className="flex h-full w-full items-center gap-2 px-3 sm:gap-3 sm:px-4"
