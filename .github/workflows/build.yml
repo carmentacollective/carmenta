@@ -100,6 +100,24 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d carmenta_test -c "\dt" | grep -E "users|conversations|messages|message_parts"
           echo "✅ All expected tables exist"
 
+      - name: 🔄 Check migration sync
+        run: |
+          # Generate migrations from current schema
+          pnpm run db:generate
+
+          # Check if any new files were created
+          if [ -n "$(git status --porcelain drizzle/migrations/)" ]; then
+            echo "❌ Schema and migrations are out of sync!"
+            echo ""
+            echo "The following migration files are missing from this PR:"
+            git status --porcelain drizzle/migrations/
+            echo ""
+            echo "To fix: run 'pnpm run db:generate' locally and commit the generated files."
+            exit 1
+          fi
+
+          echo "✅ Schema and migrations are in sync"
+
       - name: 📚 Sync documentation to knowledge base
         run: pnpm run docs:sync
         env:
@@ -169,7 +187,9 @@ jobs:
         env:
           # Clerk test key from GitHub secrets - required at build time for prerendering
           # Falls back to dummy key for fork PRs (which don't have access to secrets)
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST || 'pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+            ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST ||
+            'pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
 
       - name: ⚙️ Build Temporal worker
         run: pnpm run build:worker

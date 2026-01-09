@@ -99,6 +99,13 @@
       "when": 1767647593519,
       "tag": "0025_mixed_molecule_man",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1767997309596,
+      "tag": "0026_natural_grey_gargoyle",
+      "breakpoints": true
     }
   ]
 }
