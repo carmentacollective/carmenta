@@ -240,8 +240,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                                   {/* Menu items */}
                                   <div className="py-1">
-                                      {/* Your Data - things Carmenta knows about you */}
-
                                       <Link
                                           href="/knowledge-base"
                                           onClick={() => setIsOpen(false)}
@@ -433,7 +431,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                 className={cn(glassOrbPreset, "group")}
                 aria-label="User menu"
                 data-tooltip-id="tip"
-                data-tooltip-content="Your account & data"
+                data-tooltip-content="Your account & connections"
             >
                 <UserCircleIcon
                     className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6 md:h-7 md:w-7"
