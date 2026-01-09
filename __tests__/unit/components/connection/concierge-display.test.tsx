@@ -25,15 +25,15 @@ describe("ConciergeDisplay", () => {
             expect(within(trigger!).getByText("Claude Sonnet")).toBeInTheDocument();
         });
 
-        it("does not show explanation in collapsed header (Split Identity design)", () => {
-            // The Split Identity design keeps the header clean - explanation
-            // only appears when expanded
+        it("shows explanation inline in collapsed header for trust-building", () => {
+            // The redesigned UI shows explanation inline to build trust
+            // Users see "why" without needing to expand
             const { container } = render(<ConciergeDisplay {...defaultProps} />);
 
             const trigger = container.querySelector("button");
             expect(
-                within(trigger!).queryByText("Balanced default for general tasks.")
-            ).not.toBeInTheDocument();
+                within(trigger!).getByText("Balanced default for general tasks.")
+            ).toBeInTheDocument();
         });
 
         it("starts with collapsible closed", () => {
@@ -131,18 +131,18 @@ describe("ConciergeDisplay", () => {
     });
 
     describe("reasoning emoji in header", () => {
-        it("shows balanced emoji for medium effort reasoning", () => {
+        it("shows thought bubble emoji for medium effort reasoning", () => {
             const { container } = render(
                 <ConciergeDisplay
                     {...defaultProps}
-                    temperature={0.2} // Use precise temp to avoid duplicate ⚖️
+                    temperature={0.2} // Use precise temp to avoid duplicate emoji
                     reasoning={{ enabled: true, effort: "medium" }}
                 />
             );
 
             const trigger = container.querySelector("button")!;
-            // Balanced emoji for medium effort (distinct from 🎯 precise temp)
-            expect(within(trigger).getByText("⚖️")).toBeInTheDocument();
+            // Thought bubble emoji for medium effort (thorough thinking)
+            expect(within(trigger).getByText("💭")).toBeInTheDocument();
         });
 
         it("shows brain emoji for high effort reasoning", () => {
