@@ -134,15 +134,6 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
         [append, setInput]
     );
 
-    // Track stopped messages
-    const [stoppedMessageIds, setStoppedMessageIds] = useState<Set<string>>(
-        () => new Set()
-    );
-
-    const handleMarkMessageStopped = useCallback((messageId: string) => {
-        setStoppedMessageIds((prev) => new Set(prev).add(messageId));
-    }, []);
-
     // Drag-drop for files
     const handleDragError = useCallback((error: string) => toast.error(error), []);
     const { isDragging } = useDragDrop({
@@ -199,7 +190,6 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
                                     isStreaming={
                                         isLoading && index === messages.length - 1
                                     }
-                                    wasStopped={stoppedMessageIds.has(message.id)}
                                 />
                             ))}
 
@@ -222,10 +212,7 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
                         isAtBottom={isAtBottom}
                         onScrollToBottom={() => scrollToBottom("smooth")}
                     />
-                    <SidecarComposer
-                        onMarkMessageStopped={handleMarkMessageStopped}
-                        placeholder={placeholder}
-                    />
+                    <SidecarComposer placeholder={placeholder} />
                 </div>
             </div>
         </div>
@@ -300,7 +287,7 @@ function SuggestionPill({
     suggestion: SidecarSuggestion;
     onClick: () => void;
 }) {
-    const Icon = suggestion.icon ?? SparkleIcon;
+    const SuggestionIcon = suggestion.icon ?? SparkleIcon;
 
     return (
         <button
@@ -314,7 +301,7 @@ function SuggestionPill({
                 "hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground/90"
             )}
         >
-            <Icon
+            <SuggestionIcon
                 className="text-primary/60 group-hover:text-primary h-3.5 w-3.5 transition-colors"
                 weight="duotone"
             />
@@ -353,12 +340,10 @@ function MessageBubble({
     message,
     isLast,
     isStreaming,
-    wasStopped,
 }: {
     message: UIMessage;
     isLast: boolean;
     isStreaming: boolean;
-    wasStopped?: boolean;
 }) {
     if (message.role === "user") {
         return <UserMessage message={message} />;

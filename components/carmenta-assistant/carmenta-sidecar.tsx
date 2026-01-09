@@ -76,6 +76,7 @@ export interface SidecarWelcomeConfig {
  */
 interface SidecarContextValue {
     isOpen: boolean;
+    isDesktop: boolean;
     open: () => void;
     close: () => void;
     toggle: () => void;
@@ -127,11 +128,12 @@ export function CarmentaSidecar({
     const contextValue = useMemo<SidecarContextValue>(
         () => ({
             isOpen: open,
+            isDesktop,
             open: handleOpen,
             close: handleClose,
             toggle: handleToggle,
         }),
-        [open, handleOpen, handleClose, handleToggle]
+        [open, isDesktop, handleOpen, handleClose, handleToggle]
     );
 
     // Desktop: Show as fixed sidecar with no overlay
@@ -395,7 +397,11 @@ function SidecarInner({
  * ```
  */
 export function useDesktopSidecarMargin(isOpen: boolean): number {
-    const isDesktop = useMediaQuery("(min-width: 1024px)");
+    // Try to get from context first (avoids duplicate media query)
+    const context = useContext(SidecarContext);
+    const fallbackIsDesktop = useMediaQuery("(min-width: 1024px)");
+    const isDesktop = context?.isDesktop ?? fallbackIsDesktop;
+
     return isDesktop && isOpen ? PANEL_WIDTH : 0;
 }
 

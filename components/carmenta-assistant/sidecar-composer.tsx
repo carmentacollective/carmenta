@@ -34,14 +34,11 @@ import { VoiceInputButton, type VoiceInputButtonRef } from "@/components/voice";
 import { useChatContext } from "@/components/connection";
 
 interface SidecarComposerProps {
-    /** Callback to mark a message as stopped */
-    onMarkMessageStopped: (messageId: string) => void;
     /** Placeholder text for the input */
     placeholder?: string;
 }
 
 export function SidecarComposer({
-    onMarkMessageStopped,
     placeholder = "Message Carmenta...",
 }: SidecarComposerProps) {
     const { setConcierge } = useConcierge();
@@ -175,27 +172,12 @@ export function SidecarComposer({
         stop();
         setConcierge(null);
 
-        // Mark last assistant message as stopped
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage?.role === "assistant") {
-            onMarkMessageStopped(lastMessage.id);
-        }
-
         // Restore message for quick correction
         if (lastSentMessageRef.current && !input.trim()) {
             setInput(lastSentMessageRef.current);
         }
         lastSentMessageRef.current = null;
-    }, [
-        isLoading,
-        triggerHaptic,
-        stop,
-        setConcierge,
-        messages,
-        onMarkMessageStopped,
-        input,
-        setInput,
-    ]);
+    }, [isLoading, triggerHaptic, stop, setConcierge, input, setInput]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
