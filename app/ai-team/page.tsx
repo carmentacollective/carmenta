@@ -77,7 +77,7 @@ interface Notification {
 /**
  * Page context for Carmenta
  */
-const PAGE_CONTEXT = `User is on the AI Team page. They manage automated agents that run on schedules. They can ask to update agent configurations and prompts, run jobs manually, enable/disable automations, configure SMS notifications, or troubleshoot issues with their agents. Available automations and recent activity are shown on this page.`;
+const PAGE_CONTEXT = `User is on the AI Team page. They manage automated agents that run on schedules. They can ask to update agent configurations and prompts, run jobs manually, enable/disable automations, configure SMS notifications, or troubleshoot issues with their agents. Available automations and activity are shown on this page.`;
 
 /**
  * AI Team-specific welcome configuration for the sidecar
@@ -130,6 +130,35 @@ function AITeamContent({
     const [togglingJobs, setTogglingJobs] = useState<Set<string>>(new Set());
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [viewingActivity, setViewingActivity] = useState<ActivityItem | null>(null);
+    const [activityFilter, setActivityFilter] = useState<string | null>(null);
+    const [expandedActivities, setExpandedActivities] = useState<Set<string>>(
+        new Set()
+    );
+
+    // Compute unique job names for filter chips
+    const uniqueJobNames = Array.from(new Set(activities.map((a) => a.jobName))).slice(
+        0,
+        4
+    ); // Limit to 4 filters to avoid overflow
+
+    // Filter activities based on selected filter
+    const filteredActivities =
+        activityFilter === null
+            ? activities
+            : activities.filter((a) => a.jobName === activityFilter);
+
+    // Toggle expanded state for an activity
+    const toggleActivityExpanded = (activityId: string) => {
+        setExpandedActivities((prev) => {
+            const next = new Set(prev);
+            if (next.has(activityId)) {
+                next.delete(activityId);
+            } else {
+                next.add(activityId);
+            }
+            return next;
+        });
+    };
 
     // Carmenta sheet state
     const [carmentaOpen, setCarmentaOpen] = useState(false);
@@ -407,12 +436,45 @@ function AITeamContent({
                             </div>
                         )}
 
-                        {/* What's Happening */}
-                        <div className="space-y-4">
-                            <h2 className="text-foreground flex items-center gap-2 text-xl font-medium">
-                                <LightningIcon className="text-primary h-5 w-5" />
-                                What's Happening
-                            </h2>
+                        {/* Activity Section */}
+                        <div id="activity" className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-foreground flex items-center gap-2 text-xl font-medium">
+                                    <LightningIcon className="text-primary h-5 w-5" />
+                                    Activity
+                                </h2>
+                                {/* Filter chips for multi-agent filtering */}
+                                {activities.length > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setActivityFilter(null)}
+                                            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                                activityFilter === null
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "bg-foreground/5 text-foreground/60 hover:bg-foreground/10"
+                                            }`}
+                                        >
+                                            All
+                                        </button>
+                                        {uniqueJobNames.map((jobName) => (
+                                            <button
+                                                key={jobName}
+                                                onClick={() =>
+                                                    setActivityFilter(jobName)
+                                                }
+                                                className={`max-w-[120px] truncate rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                                    activityFilter === jobName
+                                                        ? "bg-primary text-primary-foreground"
+                                                        : "bg-foreground/5 text-foreground/60 hover:bg-foreground/10"
+                                                }`}
+                                                title={jobName}
+                                            >
+                                                {jobName}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             {activities.length === 0 ? (
                                 <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-12 text-center">
@@ -423,25 +485,35 @@ function AITeamContent({
                                     </p>
                                 </div>
                             ) : (
-                                <div className="space-y-3">
-                                    {activities.map((activity) => {
+                                <div className="max-h-[400px] space-y-3 overflow-y-auto pr-2">
+                                    {filteredActivities.map((activity) => {
                                         const isClickable =
                                             activity.status !== "running";
+                                        const isExpanded = expandedActivities.has(
+                                            activity.id
+                                        );
+
                                         const content = (
                                             <div className="flex items-start justify-between gap-4">
-                                                <div className="flex items-start gap-3">
+                                                <div className="flex min-w-0 flex-1 items-start gap-3">
                                                     {activity.status === "completed" ? (
-                                                        <CheckCircleIcon className="mt-0.5 h-5 w-5 text-green-500" />
+                                                        <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
                                                     ) : activity.status === "failed" ? (
-                                                        <WarningCircleIcon className="mt-0.5 h-5 w-5 text-red-500" />
+                                                        <WarningCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
                                                     ) : (
-                                                        <SparkleIcon className="text-primary mt-0.5 h-5 w-5 animate-pulse" />
+                                                        <SparkleIcon className="text-primary mt-0.5 h-5 w-5 shrink-0 animate-pulse" />
                                                     )}
-                                                    <div>
+                                                    <div className="min-w-0 flex-1">
                                                         <p className="text-foreground font-medium">
                                                             {activity.jobName}
                                                         </p>
-                                                        <div className="text-foreground/70 text-sm">
+                                                        <div
+                                                            className={`text-foreground/70 text-sm ${
+                                                                isExpanded
+                                                                    ? ""
+                                                                    : "line-clamp-2"
+                                                            }`}
+                                                        >
                                                             <MarkdownRenderer
                                                                 content={
                                                                     activity.summary
@@ -449,9 +521,27 @@ function AITeamContent({
                                                                 inline
                                                             />
                                                         </div>
+                                                        {/* Expand/collapse toggle */}
+                                                        {activity.summary.length >
+                                                            100 && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    toggleActivityExpanded(
+                                                                        activity.id
+                                                                    );
+                                                                }}
+                                                                className="text-primary mt-1 text-xs font-medium hover:underline"
+                                                            >
+                                                                {isExpanded
+                                                                    ? "Show less"
+                                                                    : "Show more"}
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex shrink-0 items-center gap-2">
                                                     {activity.status === "running" &&
                                                         activity.activeStreamId && (
                                                             <button
@@ -529,7 +619,7 @@ function AITeamContent({
                                 {automations.map((automation) => (
                                     <div
                                         key={automation.id}
-                                        className="border-foreground/5 bg-foreground/[0.02] hover:bg-foreground/[0.04] group rounded-xl border p-4 transition-colors"
+                                        className="group border-foreground/5 bg-foreground/[0.02] hover:bg-foreground/[0.04] rounded-xl border p-4 transition-colors"
                                     >
                                         <div className="flex items-center justify-between">
                                             <a
