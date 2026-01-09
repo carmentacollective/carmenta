@@ -577,7 +577,7 @@ function getToolStatus(state: ToolPart["state"]): ToolStatus {
 
 /**
  * Extract error message from tool part.
- * Checks both AI SDK pattern (errorText) and our API pattern (output.error + output.message)
+ * Checks AI SDK pattern, SubagentResult pattern, and legacy API pattern.
  */
 function getToolError(
     part: ToolPart,
@@ -586,8 +586,18 @@ function getToolError(
 ): string | undefined {
     // AI SDK pattern: errorText field on the part itself
     if (part.errorText) return part.errorText;
-    // Our API pattern: error flag in output with message
-    if (output?.error) return String(output.message ?? fallbackMessage);
+
+    // SubagentResult pattern: { success: false, error: { message: "..." } }
+    if (output?.success === false && output.error) {
+        const error = output.error as { message?: string };
+        return error.message ?? fallbackMessage;
+    }
+
+    // Legacy API pattern: error flag (boolean true) in output with message
+    if (output?.error === true) {
+        return String(output.message ?? fallbackMessage);
+    }
+
     return undefined;
 }
 
@@ -604,7 +614,16 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
 
     const toolName = part.type.replace("tool-", "");
     const status = getToolStatus(part.state);
-    const input = part.input as Record<string, unknown>;
+
+    // State-driven rendering: Don't render until input is fully streamed
+    // During input-streaming, part.input may be undefined or partial
+    // See: knowledge/components/image-generation-evals.md for the state machine
+    if (part.state === "input-streaming") {
+        return null;
+    }
+
+    // After input-streaming, input is guaranteed to exist
+    const input = (part.input ?? {}) as Record<string, unknown>;
     const output = part.output as Record<string, unknown> | undefined;
 
     // Try code tools registry first - returns beautiful renderers for Claude Code tools
@@ -667,11 +686,7 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
         }
 
         case "deepResearch": {
-            // Don't render until input is available (streaming may have incomplete data)
-            if (part.state === "input-streaming") {
-                return null;
-            }
-
+            // Note: input-streaming guard is now at ToolPartRenderer level
             type Finding = {
                 insight: string;
                 sources: string[];
@@ -759,13 +774,14 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
             );
 
         case "createImage":
+        case "imageArtist":
             return (
                 <CreateImageToolResult
                     toolCallId={part.toolCallId}
                     status={status}
                     input={input}
                     output={output}
-                    error={getToolError(part, output, "Image generation failed")}
+                    error={getToolError(part, output, "We couldn't create that image")}
                 />
             );
 
@@ -1747,6 +1763,14 @@ export function AssistantMessage({
     // Extract tool parts for rendering
     const toolParts = getToolParts(message);
 
+    // Separate image tools from other tools - images render outside the LLM zone
+    const isImageTool = (part: ToolPart) => {
+        const toolName = part.type.replace("tool-", "");
+        return toolName === "imageArtist" || toolName === "createImage";
+    };
+    const imageToolParts = toolParts.filter(isImageTool);
+    const otherToolParts = toolParts.filter((p) => !isImageTool(p));
+
     // Extract file parts
     const fileParts = getFileParts(message);
 
@@ -1772,17 +1796,19 @@ export function AssistantMessage({
     // - Streaming AND no content yet AND no tools running AND this is the last message
     // - Concierge has already made its selection
     // Once tools start running, they provide their own progress indicators - no need for ThinkingIndicator
-    const hasToolsRunning = toolParts.length > 0;
+    // Image tools don't count since they render separately outside the LLM zone
+    const hasToolsRunning = otherToolParts.length > 0;
     const showThinking =
         isStreaming && !hasContent && !hasToolsRunning && isLast && hasSelected;
 
     // Current model ID for regenerate menu - prefer override, fallback to concierge selection
     const currentModelId = overrides.modelId ?? concierge?.modelId;
 
-    // Determine if we have LLM output to show (any of: reasoning, tools, files, data parts, content, or thinking)
+    // Determine if we have LLM output to show (any of: reasoning, non-image tools, files, data parts, content, or thinking)
+    // Image tools render outside the LLM zone, so they don't count here
     const hasLlmOutput =
         reasoning ||
-        toolParts.length > 0 ||
+        otherToolParts.length > 0 ||
         fileParts.length > 0 ||
         askUserInputParts.length > 0 ||
         hasContent ||
@@ -1844,19 +1870,19 @@ export function AssistantMessage({
                                 </div>
                             )}
 
-                            {/* Tool UIs - nested inside LLM zone */}
+                            {/* Tool UIs - nested inside LLM zone (excludes image tools which render separately) */}
                             {/* Code mode: Use inline activity display */}
                             {/* Normal mode: Use detailed card renderers */}
-                            {toolParts.length > 0 && (
+                            {otherToolParts.length > 0 && (
                                 <div className="border-foreground/10 border-b">
                                     {isCodeMode ? (
                                         <InlineToolActivity
-                                            parts={toolParts}
+                                            parts={otherToolParts}
                                             className="px-2 py-1"
                                         />
                                     ) : (
                                         <div className="overflow-x-auto">
-                                            {toolParts.map((part, idx) => (
+                                            {otherToolParts.map((part, idx) => (
                                                 <div
                                                     key={part.toolCallId}
                                                     className={cn(
@@ -1952,6 +1978,16 @@ export function AssistantMessage({
                 )}
             </AnimatePresence>
 
+            {/* IMAGE TOOLS - Render outside LLM zone as standalone elements */}
+            {/* Images are the primary content, not secondary output - they deserve prominence */}
+            {imageToolParts.length > 0 && (
+                <div className="mt-3 flex flex-col gap-3">
+                    {imageToolParts.map((part) => (
+                        <ToolPartRenderer key={part.toolCallId} part={part} />
+                    ))}
+                </div>
+            )}
+
             {/* Fallback: Show content without LLM zone wrapper when no concierge (e.g., history messages) */}
             {!showConcierge && hasContent && (
                 <div className="group relative max-w-full @lg:max-w-[85%]">
@@ -1979,7 +2015,8 @@ export function AssistantMessage({
             )}
 
             {/* Fallback: Show reasoning/tools without LLM zone wrapper when no concierge */}
-            {!showConcierge && (reasoning || toolParts.length > 0) && (
+            {/* Image tools already render via the IMAGE TOOLS section above */}
+            {!showConcierge && (reasoning || otherToolParts.length > 0) && (
                 <div className="flex flex-col gap-3">
                     {reasoning && (
                         <ReasoningDisplay
@@ -1988,11 +2025,11 @@ export function AssistantMessage({
                             className="mb-3"
                         />
                     )}
-                    {toolParts.length > 0 &&
+                    {otherToolParts.length > 0 &&
                         (isCodeMode ? (
-                            <InlineToolActivity parts={toolParts} />
+                            <InlineToolActivity parts={otherToolParts} />
                         ) : (
-                            toolParts.map((part) => (
+                            otherToolParts.map((part) => (
                                 <ToolPartRenderer key={part.toolCallId} part={part} />
                             ))
                         ))}

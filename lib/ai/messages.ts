@@ -68,3 +68,108 @@ export function extractTextFromMessage(msg: UIMessage): string {
             .join(" ") ?? ""
     );
 }
+
+/**
+ * Filters large binary data (base64 images) from tool results.
+ *
+ * Image generation tools return base64 data that must be displayed to the user
+ * but should NOT be included in subsequent LLM calls. This data can be 500KB+
+ * and causes context_length_exceeded errors.
+ *
+ * @param messages - Array of UIMessages from the conversation
+ * @returns Messages with base64 image data replaced with placeholders
+ */
+export function filterLargeToolOutputs(messages: UIMessage[]): UIMessage[] {
+    return messages.map((msg) => {
+        if (!msg.parts) return msg;
+
+        const filteredParts = msg.parts.map((part) => {
+            // Handle tool result parts with image output
+            if (
+                part.type?.startsWith("tool-") &&
+                "output" in part &&
+                typeof part.output === "object" &&
+                part.output !== null
+            ) {
+                const output = part.output as Record<string, unknown>;
+
+                // Check for base64 image data in common patterns
+                if (typeof output.base64 === "string" && output.base64.length > 1000) {
+                    return {
+                        ...part,
+                        output: {
+                            ...output,
+                            base64: "[IMAGE_DATA_OMITTED]",
+                            _originalSize: output.base64.length,
+                        },
+                    };
+                }
+
+                // Check for image data in nested result structure
+                if (
+                    typeof output.image === "object" &&
+                    output.image !== null &&
+                    typeof (output.image as Record<string, unknown>).base64 === "string"
+                ) {
+                    const imageData = output.image as Record<string, unknown>;
+                    const base64 = imageData.base64 as string;
+                    if (base64.length > 1000) {
+                        return {
+                            ...part,
+                            output: {
+                                ...output,
+                                image: {
+                                    ...imageData,
+                                    base64: "[IMAGE_DATA_OMITTED]",
+                                    _originalSize: base64.length,
+                                },
+                            },
+                        };
+                    }
+                }
+
+                // Check for SubagentResult structure: { data: { images: [{ base64, ... }] } }
+                if (
+                    typeof output.data === "object" &&
+                    output.data !== null &&
+                    Array.isArray((output.data as Record<string, unknown>).images)
+                ) {
+                    const data = output.data as Record<string, unknown>;
+                    const images = data.images as Array<Record<string, unknown>>;
+                    const hasLargeImages = images.some(
+                        (img) =>
+                            typeof img.base64 === "string" && img.base64.length > 1000
+                    );
+
+                    if (hasLargeImages) {
+                        return {
+                            ...part,
+                            output: {
+                                ...output,
+                                data: {
+                                    ...data,
+                                    images: images.map((img) => ({
+                                        ...img,
+                                        base64:
+                                            typeof img.base64 === "string" &&
+                                            img.base64.length > 1000
+                                                ? "[IMAGE_DATA_OMITTED]"
+                                                : img.base64,
+                                        _originalSize:
+                                            typeof img.base64 === "string"
+                                                ? img.base64.length
+                                                : undefined,
+                                    })),
+                                },
+                            },
+                        };
+                    }
+                }
+            }
+
+            return part;
+        });
+
+        return { ...msg, parts: filteredParts };
+    });
+}
