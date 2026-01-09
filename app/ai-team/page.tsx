@@ -83,7 +83,7 @@ const PAGE_CONTEXT = `User is on the AI Team page. They manage automated agents 
  * AI Team-specific welcome configuration for the sidecar
  */
 const AI_TEAM_WELCOME: SidecarWelcomeConfig = {
-    heading: "AI Team Help",
+    heading: "Digital Chief of Staff",
     subtitle: "Let's manage your agents together",
     placeholder: "What should we work on?",
     suggestions: [
@@ -581,7 +581,7 @@ function AITeamContent({
                 pageContext={PAGE_CONTEXT}
                 onChangesComplete={onChangesComplete}
                 welcomeConfig={AI_TEAM_WELCOME}
-                title="AI Team Help"
+                title="Digital Chief of Staff"
                 description="Let's manage your agents"
             />
         </StandardPageLayout>
