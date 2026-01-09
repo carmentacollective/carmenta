@@ -10,7 +10,6 @@ import {
     MonitorIcon,
     PlugIcon,
     PlugsConnectedIcon,
-    PlusIcon,
     BookOpenIcon,
     ChatTeardropIcon,
 } from "@phosphor-icons/react";
@@ -241,22 +240,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                                   {/* Menu items */}
                                   <div className="py-1">
-                                      {/* Primary action: New Connection */}
-                                      <Link
-                                          href="/connection?new"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all"
-                                      >
-                                          <div className="bg-primary/10 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <PlusIcon className="text-primary relative h-4 w-4" />
-                                          <span className="relative">
-                                              New Connection
-                                          </span>
-                                      </Link>
-
-                                      {/* Your Data - things Carmenta knows about you */}
-                                      <div className="border-foreground/10 my-1 border-t" />
-
                                       <Link
                                           href="/knowledge-base"
                                           onClick={() => setIsOpen(false)}
@@ -448,7 +431,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                 className={cn(glassOrbPreset, "group")}
                 aria-label="User menu"
                 data-tooltip-id="tip"
-                data-tooltip-content="Settings & integrations"
+                data-tooltip-content="Your account & connections"
             >
                 <UserCircleIcon
                     className="text-foreground/50 group-hover:text-foreground/80 h-5 w-5 transition-colors sm:h-6 sm:w-6 md:h-7 md:w-7"
