@@ -82,8 +82,14 @@ Process:
 2. Expand the prompt with appropriate detail
 3. Route to the optimal model for the task
 4. Generate the image
-5. Call completeGeneration with results
+5. Call completeGeneration with the imageRef from step 4
 
-Always call completeGeneration when finished, with the images, expanded prompt, and model used.
+IMPORTANT: generateImage returns an imageRef (not the actual image data). Pass this imageRef to completeGeneration in the imageRefs array. This keeps the context small.
+
+Example flow:
+- detectTaskType → taskType: "photo"
+- expandPrompt → expandedPrompt: "..."
+- generateImage → success: true, imageRef: "img_123_abc"
+- completeGeneration → imageRefs: ["img_123_abc"], generated: true, ...
 </execution>
 `;

@@ -20,6 +20,17 @@ import {
 import type { ImageTaskType, GeneratedImage, ImageArtistResult } from "./types";
 
 /**
+ * Temporary storage for generated images.
+ *
+ * The generateImage tool stores the actual base64 data here instead of returning
+ * it in the tool result. This prevents context overflow - the agent only sees
+ * a small reference, not 2MB+ of base64 data.
+ *
+ * The completeGeneration tool retrieves the image when building the final result.
+ */
+const pendingImages: Map<string, GeneratedImage> = new Map();
+
+/**
  * Task type detection keywords
  */
 const TASK_KEYWORDS: Record<ImageTaskType, string[]> = {
@@ -203,11 +214,15 @@ export const expandPromptTool = tool({
 });
 
 /**
- * Generate an image using the appropriate model
+ * Generate an image using the appropriate model.
+ *
+ * IMPORTANT: Returns only metadata, NOT the actual base64 image data.
+ * The image is stored in pendingImages map and retrieved by completeGeneration.
+ * This prevents context overflow - images can be 2MB+ which would exceed Sonnet's context.
  */
 export const generateImageTool = tool({
     description:
-        "Generate an image using the specified model. Returns base64 image data.",
+        "Generate an image using the specified model. Returns success status and reference ID.",
     inputSchema: z.object({
         prompt: z.string().describe("The expanded prompt to generate"),
         taskType: z
@@ -224,7 +239,8 @@ export const generateImageTool = tool({
         aspectRatio,
     }): Promise<{
         success: boolean;
-        image?: GeneratedImage;
+        imageRef?: string;
+        imageSizeBytes?: number;
         model: string;
         error?: string;
         durationMs: number;
@@ -253,18 +269,25 @@ export const generateImageTool = tool({
 
             const durationMs = Date.now() - startTime;
 
+            // Store image in pending map, return only reference
+            // Use timestamp + random suffix for uniqueness
+            const imageRef = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            pendingImages.set(imageRef, image);
+
             logger.info(
                 {
                     modelId: routing.modelId,
                     durationMs,
                     imageSize: image.base64.length,
+                    imageRef,
                 },
-                "✅ Image generated"
+                "✅ Image generated and stored"
             );
 
             return {
                 success: true,
-                image,
+                imageRef,
+                imageSizeBytes: image.base64.length,
                 model: routing.modelId,
                 durationMs,
             };
@@ -300,21 +323,20 @@ export const generateImageTool = tool({
 });
 
 /**
- * Signal generation is complete and return results
+ * Signal generation is complete and return results.
+ *
+ * Accepts imageRefs from generateImage and retrieves the actual base64 data
+ * from pendingImages map. This avoids passing large base64 strings through
+ * the agent's context window.
  */
 export const completeGenerationTool = tool({
     description:
-        "Signal that image generation is complete. Call this with the final results to end the generation process.",
+        "Signal that image generation is complete. Pass the imageRef from generateImage to include the image.",
     inputSchema: z.object({
         generated: z.boolean().describe("Whether images were successfully generated"),
-        images: z
-            .array(
-                z.object({
-                    base64: z.string(),
-                    mimeType: z.string(),
-                })
-            )
-            .describe("Generated images"),
+        imageRefs: z
+            .array(z.string())
+            .describe("Image reference IDs from generateImage tool"),
         expandedPrompt: z.string().describe("The expanded prompt that was used"),
         originalPrompt: z.string().describe("The original user prompt"),
         model: z.string().describe("Model used for generation"),
@@ -329,19 +351,37 @@ export const completeGenerationTool = tool({
             .describe("Suggestions for improving the image in next iteration"),
     }),
     execute: async (result): Promise<ImageArtistResult> => {
+        // Retrieve actual images from pending storage
+        const images: GeneratedImage[] = [];
+        for (const ref of result.imageRefs) {
+            const image = pendingImages.get(ref);
+            if (image) {
+                images.push(image);
+                // Clean up after retrieval
+                pendingImages.delete(ref);
+            } else {
+                logger.warn(
+                    { imageRef: ref },
+                    "Image reference not found in pending storage"
+                );
+            }
+        }
+
         logger.info(
             {
                 generated: result.generated,
                 model: result.model,
                 taskType: result.taskType,
                 durationMs: result.durationMs,
+                imageCount: images.length,
+                requestedRefs: result.imageRefs.length,
             },
             result.generated ? "✅ Generation complete" : "⏭️ Generation failed"
         );
 
         return {
             generated: result.generated,
-            images: result.images,
+            images,
             expandedPrompt: result.expandedPrompt,
             originalPrompt: result.originalPrompt,
             model: result.model,

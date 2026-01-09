@@ -47,11 +47,8 @@ import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { getMcpGatewayTools } from "@/lib/mcp/gateway";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
-import {
-    builtInTools,
-    createSearchKnowledgeTool,
-    createImageTool,
-} from "@/lib/tools/built-in";
+import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
+import { createImageArtistTool } from "@/lib/ai-team/agents/image-artist-tool";
 import { createSmsUserTool } from "@/lib/ai-team/agents/sms-user-tool";
 import { postResponseTools } from "@/lib/tools/post-response";
 import {
@@ -585,9 +582,12 @@ export async function POST(req: Request) {
         // This allows the AI to explicitly query the knowledge base mid-conversation
         const searchKnowledgeTool = createSearchKnowledgeTool(dbUser.id);
 
-        // Create image tool with reasoning context
-        // Higher reasoning level = higher quality (and more expensive) image model
-        const imageTool = createImageTool({ reasoning: concierge.reasoning });
+        // Create Image Artist agent tool
+        // Uses task-based model routing from 195-image eval results
+        const imageArtistTool = createImageArtistTool({
+            userId: dbUser.id,
+            userEmail: userEmail!,
+        });
 
         // Create SMS tool for Carmenta to text the user
         // This is system-level messaging (Carmenta → user), not the user's own Quo account
@@ -609,7 +609,7 @@ export async function POST(req: Request) {
             ...mcpTools,
             ...postResponseTools,
             searchKnowledge: searchKnowledgeTool,
-            createImage: imageTool,
+            imageArtist: imageArtistTool,
             smsUser: smsUserTool,
             ...discoveryTools,
         };
@@ -728,6 +728,8 @@ export async function POST(req: Request) {
                     return "Reading page...";
                 case "searchKnowledge":
                     return STATUS_MESSAGES.knowledgeBase.searching;
+                case "imageArtist":
+                    return "Creating image...";
                 default:
                     // Integration tools (clickup, notion, etc.)
                     return STATUS_MESSAGES.integration.connecting(toolName);

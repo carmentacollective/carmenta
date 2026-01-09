@@ -50,6 +50,122 @@ export interface ImageModelConfig {
 export type ImageModelTier = "fast" | "standard" | "quality";
 
 /**
+ * Task types for intelligent model routing.
+ * Based on 195-image eval across 13 models.
+ */
+export type ImageTaskType =
+    | "diagram"
+    | "text"
+    | "logo"
+    | "photo"
+    | "illustration"
+    | "default";
+
+/**
+ * Keywords for detecting task type from prompt.
+ */
+const TASK_KEYWORDS: Record<ImageTaskType, string[]> = {
+    diagram: [
+        "flowchart",
+        "architecture",
+        "process",
+        "diagram",
+        "infographic",
+        "steps",
+        "workflow",
+        "system",
+        "chart",
+    ],
+    text: [
+        "poster",
+        "sign",
+        "label",
+        "title",
+        "headline",
+        "banner",
+        "caption",
+        "text",
+        "typography",
+        "lettering",
+    ],
+    logo: ["logo", "wordmark", "brand", "icon", "emblem", "badge", "symbol", "mark"],
+    photo: [
+        "photo",
+        "realistic",
+        "portrait",
+        "landscape",
+        "product",
+        "shot",
+        "photograph",
+        "headshot",
+    ],
+    illustration: [
+        "illustration",
+        "cartoon",
+        "character",
+        "scene",
+        "fantasy",
+        "drawing",
+        "art",
+        "artistic",
+    ],
+    default: [],
+};
+
+/**
+ * Task-based model routing from eval results.
+ *
+ * | Task         | Model              | Score |
+ * | ------------ | ------------------ | ----- |
+ * | Diagrams     | Gemini 3 Pro Image | 98%   |
+ * | Text         | Gemini 3 Pro Image | 86%   |
+ * | Illustrations| Gemini 3 Pro Image | 75%   |
+ * | Logos        | FLUX 2 Flex        | 70%   |
+ * | Photos       | Imagen 4.0 Ultra   | 70%   |
+ */
+const TASK_MODEL_ROUTING: Record<
+    ImageTaskType,
+    { modelId: string; api: ImageApiType; name: string; score: string }
+> = {
+    diagram: {
+        modelId: "google/gemini-3-pro-image",
+        api: "generateText",
+        name: "Gemini 3 Pro",
+        score: "98%",
+    },
+    text: {
+        modelId: "google/gemini-3-pro-image",
+        api: "generateText",
+        name: "Gemini 3 Pro",
+        score: "86%",
+    },
+    logo: {
+        modelId: "bfl/flux-2-flex",
+        api: "generateImage",
+        name: "FLUX 2 Flex",
+        score: "70%",
+    },
+    photo: {
+        modelId: "google/imagen-4.0-ultra-generate-001",
+        api: "generateImage",
+        name: "Imagen 4.0 Ultra",
+        score: "70%",
+    },
+    illustration: {
+        modelId: "google/gemini-3-pro-image",
+        api: "generateText",
+        name: "Gemini 3 Pro",
+        score: "75%",
+    },
+    default: {
+        modelId: "google/imagen-4.0-generate-001",
+        api: "generateImage",
+        name: "Imagen 4.0",
+        score: "51%",
+    },
+};
+
+/**
  * Available image models with their configurations.
  *
  * Routing strategy (from evals):
@@ -201,6 +317,72 @@ export function selectImageModel(reasoning?: ReasoningConfig): ImageModelConfig 
 
     // Default: standard quality
     return IMAGE_MODELS.standard;
+}
+
+/**
+ * Detect task type from prompt using keyword matching.
+ */
+export function detectTaskType(prompt: string): {
+    taskType: ImageTaskType;
+    matchedKeyword?: string;
+} {
+    const promptLower = prompt.toLowerCase();
+
+    for (const [taskType, keywords] of Object.entries(TASK_KEYWORDS)) {
+        if (taskType === "default") continue;
+
+        for (const keyword of keywords) {
+            if (promptLower.includes(keyword)) {
+                return {
+                    taskType: taskType as ImageTaskType,
+                    matchedKeyword: keyword,
+                };
+            }
+        }
+    }
+
+    return { taskType: "default" };
+}
+
+/**
+ * Result from task-based model selection.
+ */
+export interface TaskBasedModelSelection {
+    modelId: string;
+    api: ImageApiType;
+    taskType: ImageTaskType;
+    modelName: string;
+    score: string;
+    reason: string;
+}
+
+/**
+ * Select image model based on task type detected from prompt.
+ * Uses eval results to route to the best model for each task.
+ */
+export function selectImageModelByTask(prompt: string): TaskBasedModelSelection {
+    const { taskType, matchedKeyword } = detectTaskType(prompt);
+    const routing = TASK_MODEL_ROUTING[taskType];
+
+    // Build explanation for why this model was chosen
+    let reason: string;
+    if (taskType === "default") {
+        reason = "General purpose image generation";
+    } else {
+        reason = `Best for ${taskType}s (${routing.score} in evals)`;
+        if (matchedKeyword) {
+            reason = `Detected "${matchedKeyword}" → ${reason}`;
+        }
+    }
+
+    return {
+        modelId: routing.modelId,
+        api: routing.api,
+        taskType,
+        modelName: routing.name,
+        score: routing.score,
+        reason,
+    };
 }
 
 /**

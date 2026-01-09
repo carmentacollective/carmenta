@@ -70,6 +70,44 @@ this is industry standard. LibreChat uses sophisticated canvas-based "PixelCard"
 animations to make waits feel shorter, but all progress is simulated - the API provides
 no real-time progress data.
 
+✅ **Reference-Based Agent Tool Communication** (decided 2026-01-09)
+
+Image generation tools return **reference IDs**, not base64 data. This prevents context
+overflow when the agent orchestrator (Sonnet) continues to subsequent tool calls.
+
+**Problem solved**: A 2MB image as base64 is ~750K tokens - instant context overflow.
+The agent would fail with "Input is too long for requested model" when calling
+`completeGeneration` after `generateImage`.
+
+**Pattern** (mirrors LibreChat's `content_and_artifact`):
+
+```typescript
+// generateImage stores binary, returns reference
+const imageRef = `img_${Date.now()}_${random}`;
+pendingImages.set(imageRef, { base64, mimeType });
+return { success: true, imageRef, imageSizeBytes: base64.length };
+
+// completeGeneration retrieves and returns actual data
+const images = imageRefs.map((ref) => pendingImages.get(ref));
+pendingImages.delete(ref); // Cleanup after retrieval
+return { generated: true, images, ... };
+```
+
+**Alternatives considered**:
+
+- Streaming (Vercel pattern): Would require architectural changes to ToolLoopAgent
+- File storage (LobeChat pattern): Adds persistence complexity we don't need yet
+- External cache (Redis): Overkill for current scale
+
+**Trade-off**: In-memory Map doesn't survive server restarts. Acceptable since image
+generation is synchronous within a single request.
+
+✅ **SubagentResult Filtering for Context Preservation** (decided 2026-01-09)
+
+`filterLargeToolOutputs()` strips base64 from SubagentResult structure
+(`data.images[].base64`) before sending to next LLM turn. This prevents our own context
+from bloating when reviewing failed image generations.
+
 ## Why This Exists
 
 AI image generation has become essential creative infrastructure. People generate
@@ -570,6 +608,56 @@ Open-source projects have tools but no polished iteration experience.
 Carmenta integrates generation into the broader AI interface—with memory, voice,
 artifacts, AG-UI, and a true iteration loop. The image becomes part of the conversation,
 refineable through natural dialogue.
+
+### Context Management Patterns (Best-of Analysis 2026-01)
+
+Analyzed how competitors prevent context overflow from binary image data:
+
+| Project    | Strategy                                       | Storage                      |
+| ---------- | ---------------------------------------------- | ---------------------------- |
+| Vercel AI  | Delta streaming to separate artifact state     | In-memory artifact state     |
+| LobeChat   | S3 keys in DB, pre-signed URLs on-demand       | S3/cloud storage             |
+| LibreChat  | `content_and_artifact` format, IDs in response | File system + cloud fallback |
+| Open WebUI | ChatFile join table, URL references only       | Disk cache + DB references   |
+
+**Universal pattern**: No competitor stores base64 data in message context or passes it
+through agent tool calls. All use references/IDs and retrieve binary data separately.
+
+**LibreChat pattern** (most relevant to our agent architecture):
+
+```javascript
+// Tool returns ID reference, not binary
+return [textResponse, { content, file_ids: [uuid] }];
+
+// Display message prevents AI from re-describing visible images
+const DISPLAY_MESSAGE = "DALL-E displayed an image. All generated images are already
+    plainly visible, so don't repeat the descriptions in detail.";
+```
+
+**LobeChat pattern** (production-grade storage):
+
+```typescript
+// Never store URLs or base64 in database - only S3 keys
+const imageKey = fileService.getKeyFromFullUrl(url);
+validateNoUrlsInConfig(configForDatabase, "configForDatabase"); // Defensive check
+```
+
+**Open WebUI pattern** (three-tier architecture):
+
+1. Persistent storage (disk cache `/cache/image/generations/`)
+2. Database references (ChatFile join table: chat_id → message_id → file_id)
+3. Frontend URL resolution (lazy loading via `/api/v1/files/{id}/content`)
+
+We adopted the **LibreChat pattern** for our agent tools - returning imageRef strings
+that the outer wrapper resolves to actual binary data. This keeps agent context lean
+while the tool result contains the full image for display.
+
+**Sources**:
+
+- Vercel AI: `../reference/ai-chatbot/artifacts/image/client.tsx`
+- LobeChat: `../reference/lobe-chat/src/server/routers/lambda/image.ts:100-135`
+- LibreChat: `../reference/librechat/api/app/clients/tools/structured/DALLE3.js`
+- Open WebUI: `../reference/open-webui/backend/open_webui/routers/images.py:499-530`
 
 ## Implementation Milestones
 

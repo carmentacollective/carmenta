@@ -111,12 +111,18 @@ Process:
 
         const stepsUsed = result.steps.length;
 
-        // Check for explicit completion
-        const completeCall = result.steps
-            .flatMap((step) => step.toolCalls ?? [])
-            .find((call) => call.toolName === "completeGeneration");
+        // Check for explicit completion by finding completeGeneration tool result
+        // The tool result contains the actual ImageArtistResult with images
+        const completeToolResult = result.steps
+            .flatMap((step) => step.toolResults ?? [])
+            .find(
+                (tr) =>
+                    tr.toolName === "completeGeneration" &&
+                    tr.output &&
+                    typeof tr.output === "object"
+            );
 
-        const completedExplicitly = !!completeCall;
+        const completedExplicitly = !!completeToolResult;
 
         // Detect step exhaustion
         const exhaustion = detectStepExhaustion(
@@ -161,68 +167,30 @@ Process:
             );
         }
 
-        // Extract result from completion call with runtime validation
-        const generationResult: ImageArtistResult = {
-            generated: false,
-            images: [],
-            expandedPrompt: prompt,
-            originalPrompt: prompt,
-            model: "unknown",
-            taskType: "default",
-            aspectRatio: aspectRatio ?? "1:1",
-            durationMs: 0,
-        };
-
-        if (
-            completeCall &&
-            typeof completeCall === "object" &&
-            "args" in completeCall
-        ) {
-            const args = completeCall.args;
-            if (typeof args === "object" && args !== null) {
-                // Validate each field at runtime before assignment
-                if ("generated" in args && typeof args.generated === "boolean") {
-                    generationResult.generated = args.generated;
-                }
-                if ("images" in args && Array.isArray(args.images)) {
-                    generationResult.images = args.images;
-                }
-                if (
-                    "expandedPrompt" in args &&
-                    typeof args.expandedPrompt === "string"
-                ) {
-                    generationResult.expandedPrompt = args.expandedPrompt;
-                }
-                if (
-                    "originalPrompt" in args &&
-                    typeof args.originalPrompt === "string"
-                ) {
-                    generationResult.originalPrompt = args.originalPrompt;
-                }
-                if ("model" in args && typeof args.model === "string") {
-                    generationResult.model = args.model;
-                }
-                if ("taskType" in args && typeof args.taskType === "string") {
-                    generationResult.taskType =
-                        args.taskType as ImageArtistResult["taskType"];
-                }
-                if ("aspectRatio" in args && typeof args.aspectRatio === "string") {
-                    generationResult.aspectRatio = args.aspectRatio;
-                }
-                if ("durationMs" in args && typeof args.durationMs === "number") {
-                    generationResult.durationMs = args.durationMs;
-                }
-                if ("suggestions" in args && typeof args.suggestions === "string") {
-                    generationResult.suggestions = args.suggestions;
-                }
-            }
-        }
+        // Extract result from completeGeneration tool output
+        // The tool returns ImageArtistResult with actual images (retrieved from pendingImages)
+        const generationResult: ImageArtistResult =
+            completeToolResult?.output &&
+            typeof completeToolResult.output === "object" &&
+            "generated" in completeToolResult.output
+                ? (completeToolResult.output as ImageArtistResult)
+                : {
+                      generated: false,
+                      images: [],
+                      expandedPrompt: prompt,
+                      originalPrompt: prompt,
+                      model: "unknown",
+                      taskType: "default",
+                      aspectRatio: aspectRatio ?? "1:1",
+                      durationMs: 0,
+                  };
 
         logger.info(
             {
                 userId: context.userId,
                 generated: generationResult.generated,
                 model: generationResult.model,
+                imageCount: generationResult.images.length,
                 stepsUsed,
             },
             generationResult.generated

@@ -127,6 +127,44 @@ export function filterLargeToolOutputs(messages: UIMessage[]): UIMessage[] {
                         };
                     }
                 }
+
+                // Check for SubagentResult structure: { data: { images: [{ base64, ... }] } }
+                if (
+                    typeof output.data === "object" &&
+                    output.data !== null &&
+                    Array.isArray((output.data as Record<string, unknown>).images)
+                ) {
+                    const data = output.data as Record<string, unknown>;
+                    const images = data.images as Array<Record<string, unknown>>;
+                    const hasLargeImages = images.some(
+                        (img) =>
+                            typeof img.base64 === "string" && img.base64.length > 1000
+                    );
+
+                    if (hasLargeImages) {
+                        return {
+                            ...part,
+                            output: {
+                                ...output,
+                                data: {
+                                    ...data,
+                                    images: images.map((img) => ({
+                                        ...img,
+                                        base64:
+                                            typeof img.base64 === "string" &&
+                                            img.base64.length > 1000
+                                                ? "[IMAGE_DATA_OMITTED]"
+                                                : img.base64,
+                                        _originalSize:
+                                            typeof img.base64 === "string"
+                                                ? img.base64.length
+                                                : undefined,
+                                    })),
+                                },
+                            },
+                        };
+                    }
+                }
             }
 
             return part;
