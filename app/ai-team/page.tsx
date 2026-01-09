@@ -21,7 +21,13 @@ import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
 import { LabelToggle } from "@/components/ui/label-toggle";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
+import {
+    CarmentaSidecar,
+    CarmentaToggle,
+    useDesktopSidecarMargin,
+    type SidecarWelcomeConfig,
+} from "@/components/carmenta-assistant";
+import { RobotIcon, PlayIcon, WrenchIcon } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
 
 /**
@@ -72,6 +78,38 @@ interface Notification {
  * Page context for Carmenta
  */
 const PAGE_CONTEXT = `User is on the AI Team page. They manage automated agents that run on schedules. They can ask to update agent configurations and prompts, run jobs manually, enable/disable automations, configure SMS notifications, or troubleshoot issues with their agents. Available automations and recent activity are shown on this page.`;
+
+/**
+ * AI Team-specific welcome configuration for the sidecar
+ */
+const AI_TEAM_WELCOME: SidecarWelcomeConfig = {
+    heading: "AI Team Help",
+    subtitle: "Let's manage your agents together",
+    placeholder: "What should we work on?",
+    suggestions: [
+        {
+            id: "run-agent",
+            label: "Run an agent now",
+            prompt: "I want to run one of my agents manually right now.",
+            icon: PlayIcon,
+            autoSubmit: false,
+        },
+        {
+            id: "troubleshoot",
+            label: "Something isn't working",
+            prompt: "One of my agents isn't running correctly or I'm not getting the results I expected. Can you help me troubleshoot?",
+            icon: WrenchIcon,
+            autoSubmit: false,
+        },
+        {
+            id: "new-agent",
+            label: "Create a new agent",
+            prompt: "I want to set up a new automated agent. What kinds of things can agents do for me?",
+            icon: RobotIcon,
+            autoSubmit: true,
+        },
+    ],
+};
 
 /**
  * Content component with all the UI logic
@@ -294,8 +332,18 @@ function AITeamContent({
 
     const unreadNotificationCount = notifications.length;
 
+    // Get margin to apply when sidecar is open on desktop
+    const sidecarMargin = useDesktopSidecarMargin(carmentaOpen);
+
     return (
-        <StandardPageLayout maxWidth="standard" contentClassName="space-y-8 py-12">
+        <StandardPageLayout
+            maxWidth="standard"
+            contentClassName="space-y-8 py-12"
+            style={{
+                marginLeft: sidecarMargin,
+                transition: "margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+        >
             {/* Header */}
             <section className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -526,12 +574,15 @@ function AITeamContent({
                 />
             )}
 
-            {/* Carmenta Sheet for DCOS assistance */}
-            <CarmentaSheet
+            {/* Carmenta Sidecar for contextual AI Team help */}
+            <CarmentaSidecar
                 open={carmentaOpen}
                 onOpenChange={setCarmentaOpen}
                 pageContext={PAGE_CONTEXT}
                 onChangesComplete={onChangesComplete}
+                welcomeConfig={AI_TEAM_WELCOME}
+                title="AI Team Help"
+                description="Let's manage your agents"
             />
         </StandardPageLayout>
     );

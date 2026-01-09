@@ -32,6 +32,10 @@ interface StandardPageLayoutProps {
      * Additional classes for the content wrapper
      */
     contentClassName?: string;
+    /**
+     * Inline styles for the outer wrapper (e.g., for sidecar margin)
+     */
+    style?: React.CSSProperties;
 }
 
 const maxWidthClasses = {
@@ -67,9 +71,10 @@ export function StandardPageLayout({
     showFooter = true,
     showThemeSwitcher = false,
     contentClassName,
+    style,
 }: StandardPageLayoutProps) {
     return (
-        <div className="bg-background relative min-h-screen">
+        <div className="bg-background relative min-h-screen" style={style}>
             <HolographicBackground />
             <div className="z-content relative">
                 {/* Header with safe-area padding for iPhone PWA */}

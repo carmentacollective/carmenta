@@ -29,31 +29,15 @@ import { getServiceById } from "@/lib/integrations/services";
 import { logger } from "@/lib/client-logger";
 import { useOAuthFlowRecovery } from "@/lib/hooks/use-oauth-flow-recovery";
 import { analytics } from "@/lib/analytics/events";
-import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
-
-/**
- * Page context for Carmenta
- */
-const PAGE_CONTEXT =
-    "We're on the integrations page together. We can connect new services, test existing connections, or troubleshoot issues.";
 
 /**
  * IntegrationsContent - Component that uses useSearchParams()
  * Extracted to allow Suspense boundary wrapping
  */
-function IntegrationsContent({
-    refreshKey,
-    onChangesComplete,
-}: {
-    refreshKey: number;
-    onChangesComplete: () => void;
-}) {
+function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
     const searchParams = useSearchParams();
     const [services, setServices] = useState<GroupedService[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Carmenta sheet state
-    const [carmentaOpen, setCarmentaOpen] = useState(false);
 
     // OAuth flow recovery - detects abandoned OAuth attempts
     const {
@@ -468,12 +452,6 @@ function IntegrationsContent({
                             </p>
                         </div>
                     </div>
-
-                    {/* Open Carmenta panel */}
-                    <CarmentaToggle
-                        isOpen={carmentaOpen}
-                        onClick={() => setCarmentaOpen(!carmentaOpen)}
-                    />
                 </div>
             </section>
 
@@ -639,34 +617,19 @@ function IntegrationsContent({
                 }}
                 onSubmit={handleConnectSubmit}
             />
-
-            {/* Carmenta Sheet for DCOS assistance */}
-            <CarmentaSheet
-                open={carmentaOpen}
-                onOpenChange={setCarmentaOpen}
-                pageContext={PAGE_CONTEXT}
-                onChangesComplete={onChangesComplete}
-            />
         </StandardPageLayout>
     );
 }
 
 /**
- * Wrapper that handles refresh after Carmenta makes changes
+ * Wrapper that handles refresh after OAuth flow completes
  */
-function IntegrationsWithCarmenta() {
+function IntegrationsWithRefresh() {
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const handleChangesComplete = useCallback(() => {
-        setRefreshKey((prev) => prev + 1);
-    }, []);
-
-    return (
-        <IntegrationsContent
-            refreshKey={refreshKey}
-            onChangesComplete={handleChangesComplete}
-        />
-    );
+    // refreshKey is incremented when URL params change (OAuth callback)
+    // This triggers a re-fetch of services in IntegrationsContent
+    return <IntegrationsContent refreshKey={refreshKey} />;
 }
 
 /**
@@ -689,7 +652,7 @@ export default function IntegrationsPage() {
                 </StandardPageLayout>
             }
         >
-            <IntegrationsWithCarmenta />
+            <IntegrationsWithRefresh />
         </Suspense>
     );
 }
