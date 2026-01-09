@@ -73,7 +73,10 @@ On main at ~/src/carmenta-tools, up to date.
 ```
 
 The value is clarity of state, not celebration. Brief, informative, shows next options.
-</completion-state>
+
+Language precision: Say "merged to main" not "live" or "deployed". Merged means it's in
+the codebase. Live/deployed means running in production - requires CI to pass and deploy
+to complete. Don't conflate these. </completion-state>
 
 <error-messages>
 PR not found: Guide user to create one.
