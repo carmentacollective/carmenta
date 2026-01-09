@@ -1,111 +1,69 @@
 ---
 description: When doing code reviews
 alwaysApply: false
-version: 2.0.0
+version: 1.1.0
 ---
 
 # Code Review Standards
 
-Code review exists to make code better. Not to find blockers. Not to document theoretical
-concerns. Not to generate reports we can defer.
+This rule defines when bot feedback is incorrect given context bots lack. Use this to
+identify suggestions that don't apply, not to skip valid feedback based on priority.
 
-## What Great Reviews Do
+## Core Philosophy
 
-Great reviews surface changes that make code:
+Address all suggestions where the bot's analysis is correct given full context. Decline
+when you can articulate why the bot's reasoning doesn't hold - valid declines explain
+why the analysis is incorrect, not why addressing it is inconvenient.
 
-- **More robust for real users** - actual failure modes, not theoretical edge cases
-- **Clearer to read and maintain** - naming, structure, unnecessary complexity
-- **Safer in production** - error handling that matters, security boundaries
-- **More delightful** - copy quality, UX friction, user-facing moments
+## When Bot Suggestions Don't Apply
 
-Great reviews don't just flag issues—they improve the code. A review that generates a
-list of findings without implementation is incomplete.
-
-## What To Address
-
-Address suggestions that:
-
-- Affect real users (bugs, UX friction, unclear copy)
-- Reduce maintenance burden (confusing code, unnecessary complexity)
-- Fix actual security concerns (not theoretical, not defense-in-depth theater)
-- Make the code more honest (comments that lie, misleading names)
-
-When addressing, verify the fix actually improves things. Sometimes the cure is worse
-than the disease—if a fix adds complexity without proportional benefit, reconsider.
-
-## What To Skip
+These patterns describe situations where bot analysis is typically incorrect. Decline
+with explanation when you can demonstrate the bot's reasoning doesn't hold.
 
 ### Single-Use Values
 
-Bots flag inline values as "magic strings" needing extraction. Skip when the value
-appears exactly once and context makes meaning clear. Constants exist to stay DRY across
-multiple uses, not to avoid inline values.
+Bots flag inline values as "magic strings" needing extraction. This suggestion is wrong
+when the value appears exactly once and context makes the meaning clear. Extracting
+`METHOD_INITIALIZE = "initialize"` for a single use adds indirection without DRY
+benefit. Constants exist to stay DRY across multiple uses, not to avoid inline values.
 
 ### Theoretical Race Conditions
 
-Bots flag potential races based on static analysis. Skip when operations are already
-serialized by queue, mutex, or transaction the bot can't see. Add synchronization only
-when testing or production reveals actual races.
+Bots flag potential race conditions based on static analysis. This suggestion is wrong
+when operations are already serialized by a queue, mutex, or transaction the bot can't
+see. Add synchronization when profiling or testing reveals actual race conditions.
 
 ### Redundant Type Safety
 
-Bots suggest stricter types or null checks. Skip when runtime validation already handles
-the case, or the type system guarantees the condition can't occur. TypeScript serves the
-code—working code with runtime safety beats compile-time type perfection.
+Bots suggest stricter types or null checks. This suggestion is wrong when runtime
+validation already handles the case correctly, or when the type system guarantees the
+condition can't occur. TypeScript serves the code - working code with runtime safety
+takes priority over compile-time type perfection.
 
 ### Premature Optimization
 
-Bots flag performance concerns without data. Skip when no profiling shows actual
-problems. Complexity should yield measurable performance gains.
+Bots flag performance concerns without data. This suggestion is wrong when no profiling
+shows actual performance problems. Optimize based on measurements - complexity should
+yield measurable performance gains.
 
-### Complexity Without Benefit
+## Items Requiring Case-by-Case Judgment
 
-Bots suggest abstractions, patterns, or "future-proofing." Skip when the current code is
-clear and the suggested change adds indirection without solving a real problem. Three
-similar lines is often better than a premature abstraction.
-
-## Case-by-Case Judgment
+These require evaluation in context - sometimes the bot is right, sometimes wrong.
 
 ### Test Coverage Gaps
 
-Address if the edge case could reasonably occur and cause user-facing issues. Skip if the
-scenario is already handled by other validation or genuinely can't occur given system
-constraints.
+Bot requests for edge case tests: Address if the edge case could reasonably occur and
+cause user-facing issues. Decline if you can demonstrate the scenario is already handled
+by other validation or genuinely can't occur given system constraints.
 
 ### Documentation Requests
 
-Address if the code is genuinely unclear. Skip if the documentation would merely restate
-what the code already says clearly. Good code is self-documenting; comments explain why,
-not what.
+Bot requests for additional docs: Address if the code is genuinely unclear. Decline if
+the documentation would merely restate what the code already says clearly.
 
-### Accessibility
+### Accessibility Improvements
 
-Check project stance first (CLAUDE.md, user preferences). This project declines
-accessibility suggestions unless explicitly requested. For other projects, present the
-suggestion with scope context and let the user decide.
-
-### Copy/Language Changes
-
-Address if the copy affects user understanding, creates friction, or feels off-brand.
-Skip pedantic grammar corrections that don't affect clarity.
-
-## How To Decline
-
-When skipping a suggestion, explain why the bot's reasoning doesn't hold given full
-context. Valid declines articulate why the analysis is incorrect, not why addressing it
-is inconvenient.
-
-Good decline: "This race condition can't occur—the queue guarantees sequential
-processing."
-
-Bad decline: "We don't have time for this right now."
-
-## Multi-Agent Reviews
-
-When running multi-agent reviews (`/multi-review`), each agent should apply these
-standards independently. The synthesis should:
-
-- Group findings by actionability ("implement now" / "consider" / "skip")
-- Note when multiple agents flag the same issue (strong signal)
-- Preserve each agent's unique lens rather than homogenizing into generic feedback
-- Actually implement the valuable improvements, not just report them
+Accessibility (ARIA labels, keyboard navigation, screen reader support) is a product
+priority decision that varies by project. Check project or user configuration for the
+team's stance. If no stance is declared, present the suggestion to the user with context
+about the scope and ask whether to address or decline.
