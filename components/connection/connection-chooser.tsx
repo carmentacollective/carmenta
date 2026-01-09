@@ -709,10 +709,18 @@ function ConnectionDropdown({
                                 {/* Empty state */}
                                 {filteredStarred.length === 0 &&
                                     filteredUnstarred.length === 0 && (
-                                        <div className="text-foreground/50 py-8 text-center text-sm">
-                                            {connections.length === 0
-                                                ? "We haven't started any connections yet"
-                                                : "No matching connections found"}
+                                        <div className="py-8 text-center">
+                                            <div className="text-foreground/50 text-sm">
+                                                {connections.length === 0
+                                                    ? "We haven't started any connections yet"
+                                                    : "No matching connections found"}
+                                            </div>
+                                            {connections.length > 0 && (
+                                                <div className="text-foreground/30 mt-2 text-xs">
+                                                    Every connection builds our shared
+                                                    understanding
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -811,13 +819,15 @@ function ConnectionDropdown({
                                     </div>
                                 )}
 
-                                {/* Recent section */}
+                                {/* Connections section */}
                                 {filteredUnstarred.length > 0 && (
                                     <div>
                                         <div className="bg-foreground/[0.03] flex items-center gap-2 px-4 py-2">
                                             <Clock className="text-foreground/40 h-3.5 w-3.5" />
                                             <span className="text-foreground/50 text-xs font-medium tracking-wider uppercase">
-                                                {isSearching ? "Results" : "Recent"}
+                                                {isSearching
+                                                    ? "Results"
+                                                    : "Connections"}
                                             </span>
                                             <span className="text-foreground/30 ml-auto text-xs">
                                                 {isSearching
@@ -901,6 +911,13 @@ function ConnectionDropdown({
                                                 </button>
                                             )}
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* Knowledge footer - only show when there are connections */}
+                                {connections.length > 0 && (
+                                    <div className="border-foreground/5 text-foreground/30 border-t px-4 py-3 text-center text-xs">
+                                        Each conversation shapes how we understand you
                                     </div>
                                 )}
                             </div>

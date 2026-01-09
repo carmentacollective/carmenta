@@ -4,13 +4,12 @@
  * OracleMenu - Carmenta speaks through this menu
  *
  * The Oracle represents Carmenta herself. This menu contains:
- * - Product actions (New Connection)
  * - Carmenta features (AI Team, Guide)
  * - Philosophy and company info
  * - Legal/support links
  *
  * The User menu (UserAuthButton) handles personal stuff:
- * - Account, integrations, knowledge base, theme, logout
+ * - New Connection, account, integrations, knowledge base, theme, logout
  */
 
 import { useState, useEffect, useRef } from "react";
@@ -20,7 +19,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-    PlusIcon,
     UsersIcon,
     CompassIcon,
     HeartIcon,
@@ -167,19 +165,6 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <HouseIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Home</span>
-                                      </Link>
-
-                                      {/* Primary action: New Connection */}
-                                      <Link
-                                          href="/connection?new"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all"
-                                      >
-                                          <div className="bg-primary/10 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <PlusIcon className="text-primary relative h-4 w-4" />
-                                          <span className="relative">
-                                              New Connection
-                                          </span>
                                       </Link>
 
                                       {/* Ask Carmenta - quick access */}
