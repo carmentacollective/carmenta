@@ -151,6 +151,13 @@ function AITeamContent({
         setExpandedActivities(new Set());
     }, [activityFilter]);
 
+    // Clear filter if selected filter is no longer in visible chips
+    useEffect(() => {
+        if (activityFilter !== null && !uniqueJobNames.includes(activityFilter)) {
+            setActivityFilter(null);
+        }
+    }, [uniqueJobNames, activityFilter]);
+
     // Toggle expanded state for an activity
     const toggleActivityExpanded = (activityId: string) => {
         setExpandedActivities((prev) => {
