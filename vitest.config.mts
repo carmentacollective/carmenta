@@ -8,9 +8,26 @@ import os from "os";
  * Targeted tests have limited parallelization potential.
  */
 function isTargetedTest(): boolean {
-    // Check for file/directory arguments (anything that's not a flag)
+    // Check for test file arguments (not flags or flag values)
+    // Test files typically end with .test.* or .spec.* or contain __tests__
     const args = process.argv.slice(2);
-    return args.some((arg) => !arg.startsWith("-") && (arg.includes("/") || arg.includes(".")));
+    const testFilePattern = /\.(test|spec)\.[jt]sx?$|__tests__/;
+
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+
+        // Skip flags and their values
+        if (arg.startsWith("-")) {
+            continue;
+        }
+
+        // Check if this looks like a test file path
+        if (testFilePattern.test(arg)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -91,11 +108,11 @@ function calculateOptimalWorkers(): {
         // Low to moderate load: Full speed ahead
         workers = OPTIMAL_WORKERS;
     } else if (loadRatio < 1.8) {
-        // High load: Modest reduction (75% capacity)
-        workers = 6;
+        // High load: Modest reduction (75% of optimal)
+        workers = Math.max(MIN_WORKERS, Math.ceil(OPTIMAL_WORKERS * 0.75));
     } else {
-        // Very high load: System struggling, back off more (50% capacity)
-        workers = 4;
+        // Very high load: System struggling, back off more (50% of optimal)
+        workers = Math.max(MIN_WORKERS, Math.ceil(OPTIMAL_WORKERS * 0.5));
     }
 
     return { workers, cpuCount, loadAvg, isTargeted };
@@ -108,7 +125,10 @@ if (!process.env.CI && !process.argv.includes("--silent")) {
     let reason = "";
     const scope = isTargeted ? "targeted test" : "full suite";
 
-    if (process.env.VITEST_WORKERS) {
+    const manualWorkers = process.env.VITEST_WORKERS ? parseInt(process.env.VITEST_WORKERS, 10) : NaN;
+    const isValidManualOverride = !isNaN(manualWorkers) && manualWorkers > 0;
+
+    if (isValidManualOverride) {
         reason = `manual override (VITEST_WORKERS=${process.env.VITEST_WORKERS})`;
     } else if (cpuCount === 0) {
         reason = "containerized environment fallback";
