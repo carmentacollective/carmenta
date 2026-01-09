@@ -455,9 +455,9 @@ function AssistantMessage({
                         {/* File previews */}
                         {fileParts.length > 0 && (
                             <div className="mb-2 flex flex-col gap-2">
-                                {fileParts.map((file, idx) => (
+                                {fileParts.map((file) => (
                                     <FilePreview
-                                        key={idx}
+                                        key={file.url}
                                         url={file.url}
                                         mediaType={file.mediaType}
                                         filename={file.name || "file"}
@@ -467,9 +467,9 @@ function AssistantMessage({
                         )}
 
                         {/* AskUserInput data parts */}
-                        {askUserInputParts.map((part) => (
+                        {askUserInputParts.map((part, idx) => (
                             <AskUserInputResult
-                                key={part.id ?? part.type}
+                                key={part.id ?? `${part.type}-${idx}`}
                                 toolCallId={part.id ?? "data"}
                                 status="completed"
                                 output={part.data as AskUserInputOutput}
