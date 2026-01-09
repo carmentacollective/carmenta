@@ -822,7 +822,9 @@ function ConnectionDropdown({
                                             <span className="text-foreground/30 ml-auto text-xs">
                                                 {isSearching
                                                     ? filteredUnstarred.length
-                                                    : unstarredConnections.length}
+                                                    : hasMoreRecent && !showAllRecent
+                                                      ? `${filteredUnstarred.length} of ${unstarredConnections.length}`
+                                                      : unstarredConnections.length}
                                             </span>
                                         </div>
 
