@@ -17,14 +17,7 @@
  * - Designed for workbench pages where the sidecar helps with the page's task
  */
 
-import {
-    createContext,
-    useContext,
-    useState,
-    useCallback,
-    useMemo,
-    useEffect,
-} from "react";
+import { createContext, useContext, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SparkleIcon, Trash, X } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
@@ -34,7 +27,6 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import {
     Sheet,
     SheetContent,
-    SheetHeader,
     SheetTitle,
     SheetDescription,
 } from "@/components/ui/sheet";
@@ -397,10 +389,12 @@ function SidecarInner({
  * ```
  */
 export function useDesktopSidecarMargin(isOpen: boolean): number {
-    // Try to get from context first (avoids duplicate media query)
     const context = useContext(SidecarContext);
-    const fallbackIsDesktop = useMediaQuery("(min-width: 1024px)");
-    const isDesktop = context?.isDesktop ?? fallbackIsDesktop;
+    // Always call hook (rules of hooks), but only use if context is null
+    const mediaQueryResult = useMediaQuery("(min-width: 1024px)");
+
+    // Prefer context value if available (avoids duplicate subscription when inside provider)
+    const isDesktop = context?.isDesktop ?? mediaQueryResult;
 
     return isDesktop && isOpen ? PANEL_WIDTH : 0;
 }

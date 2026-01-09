@@ -34,7 +34,7 @@ import { analytics } from "@/lib/analytics/events";
  * IntegrationsContent - Component that uses useSearchParams()
  * Extracted to allow Suspense boundary wrapping
  */
-function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
+function IntegrationsContent() {
     const searchParams = useSearchParams();
     const [services, setServices] = useState<GroupedService[]>([]);
     const [loading, setLoading] = useState(true);
@@ -93,7 +93,7 @@ function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
 
     useEffect(() => {
         loadServices();
-    }, [loadServices, refreshKey]);
+    }, [loadServices]);
 
     // Handle OAuth callback results from URL params
     useEffect(() => {
@@ -622,17 +622,6 @@ function IntegrationsContent({ refreshKey }: { refreshKey: number }) {
 }
 
 /**
- * Wrapper that handles refresh after OAuth flow completes
- */
-function IntegrationsWithRefresh() {
-    const [refreshKey, setRefreshKey] = useState(0);
-
-    // refreshKey is incremented when URL params change (OAuth callback)
-    // This triggers a re-fetch of services in IntegrationsContent
-    return <IntegrationsContent refreshKey={refreshKey} />;
-}
-
-/**
  * IntegrationsPage - Wrapper with Suspense boundary
  * Required for useSearchParams() in Next.js 16
  */
@@ -652,7 +641,7 @@ export default function IntegrationsPage() {
                 </StandardPageLayout>
             }
         >
-            <IntegrationsWithRefresh />
+            <IntegrationsContent />
         </Suspense>
     );
 }
