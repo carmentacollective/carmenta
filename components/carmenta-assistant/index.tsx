@@ -47,6 +47,13 @@ import { cn } from "@/lib/utils";
 export { CarmentaPanel } from "./carmenta-panel";
 export { CarmentaLayout, useCarmentaLayout } from "./carmenta-layout";
 export { CarmentaSheet } from "./carmenta-sheet";
+export {
+    CarmentaSidecar,
+    useSidecar,
+    useDesktopSidecarMargin,
+    SIDECAR_WIDTH,
+} from "./carmenta-sidecar";
+export type { SidecarWelcomeConfig, SidecarSuggestion } from "./carmenta-sidecar";
 
 // Export hooks
 export { useCarmenta } from "./use-carmenta";
