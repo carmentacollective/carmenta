@@ -436,6 +436,8 @@ export async function generateImageFromModel(
 
     if (api === "generateText") {
         // Multimodal LLMs use generateText with images in files[] response
+        // Note: aspectRatio is not supported by generateText API (Gemini, OpenRouter models)
+        // These models generate images at their default aspect ratios
         const client =
             provider === "openrouter" ? getOpenRouterClient() : getGatewayClient();
 

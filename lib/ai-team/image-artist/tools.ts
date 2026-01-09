@@ -14,6 +14,7 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import {
     generateImageFromModel,
+    detectTaskType,
     type ImageApiType,
     type ImageProvider,
 } from "@/lib/ai/image-generation";
@@ -27,59 +28,45 @@ import type { ImageTaskType, GeneratedImage, ImageArtistResult } from "./types";
  * a small reference, not 2MB+ of base64 data.
  *
  * The completeGeneration tool retrieves the image when building the final result.
+ *
+ * TTL cleanup runs on each request to prevent memory leaks from failed/abandoned generations.
  */
-const pendingImages: Map<string, GeneratedImage> = new Map();
+interface PendingImageEntry {
+    image: GeneratedImage;
+    timestamp: number;
+}
+
+const pendingImages: Map<string, PendingImageEntry> = new Map();
+const IMAGE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Task type detection keywords
+ * Clean up expired images from pending storage.
+ * Called on each request to prevent memory leaks from failed agents.
  */
-const TASK_KEYWORDS: Record<ImageTaskType, string[]> = {
-    diagram: [
-        "flowchart",
-        "architecture",
-        "process",
-        "diagram",
-        "infographic",
-        "steps",
-        "workflow",
-        "system",
-        "chart",
-    ],
-    text: [
-        "poster",
-        "sign",
-        "label",
-        "title",
-        "headline",
-        "banner",
-        "caption",
-        "text",
-        "typography",
-        "lettering",
-    ],
-    logo: ["logo", "wordmark", "brand", "icon", "emblem", "badge", "symbol", "mark"],
-    photo: [
-        "photo",
-        "realistic",
-        "portrait",
-        "landscape",
-        "product",
-        "shot",
-        "photograph",
-        "headshot",
-    ],
-    illustration: [
-        "illustration",
-        "cartoon",
-        "character",
-        "scene",
-        "fantasy",
-        "drawing",
-        "art",
-        "artistic",
-    ],
-    default: [],
-};
+function cleanupExpiredImages(): void {
+    const now = Date.now();
+    const expired: string[] = [];
+
+    for (const [ref, entry] of pendingImages.entries()) {
+        if (now - entry.timestamp > IMAGE_TTL_MS) {
+            expired.push(ref);
+        }
+    }
+
+    for (const ref of expired) {
+        pendingImages.delete(ref);
+    }
+
+    if (expired.length > 0) {
+        logger.info(
+            { count: expired.length, remaining: pendingImages.size },
+            "Cleaned up expired pending images"
+        );
+    }
+}
+
+// Task detection now uses shared logic from lib/ai/image-generation.ts
+// with priority ordering (logo before text, etc.)
 
 /**
  * Model routing based on task type (from eval results)
@@ -126,23 +113,18 @@ export const detectTaskTypeTool = tool({
     execute: async ({
         prompt,
     }): Promise<{ taskType: ImageTaskType; confidence: string }> => {
-        const promptLower = prompt.toLowerCase();
+        // Use shared detection logic with priority ordering
+        const { taskType, matchedKeyword } = detectTaskType(prompt);
 
-        for (const [taskType, keywords] of Object.entries(TASK_KEYWORDS)) {
-            if (taskType === "default") continue;
-
-            for (const keyword of keywords) {
-                if (promptLower.includes(keyword)) {
-                    logger.info(
-                        { taskType, keyword, prompt: prompt.slice(0, 50) },
-                        "🎨 Detected task type"
-                    );
-                    return {
-                        taskType: taskType as ImageTaskType,
-                        confidence: "high",
-                    };
-                }
-            }
+        if (matchedKeyword) {
+            logger.info(
+                { taskType, keyword: matchedKeyword, prompt: prompt.slice(0, 50) },
+                "🎨 Detected task type"
+            );
+            return {
+                taskType,
+                confidence: "high",
+            };
         }
 
         logger.info(
@@ -269,10 +251,16 @@ export const generateImageTool = tool({
 
             const durationMs = Date.now() - startTime;
 
+            // Clean up expired images before storing new one
+            cleanupExpiredImages();
+
             // Store image in pending map, return only reference
             // Use timestamp + random suffix for uniqueness
             const imageRef = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-            pendingImages.set(imageRef, image);
+            pendingImages.set(imageRef, {
+                image,
+                timestamp: Date.now(),
+            });
 
             logger.info(
                 {
@@ -354,9 +342,9 @@ export const completeGenerationTool = tool({
         // Retrieve actual images from pending storage
         const images: GeneratedImage[] = [];
         for (const ref of result.imageRefs) {
-            const image = pendingImages.get(ref);
-            if (image) {
-                images.push(image);
+            const entry = pendingImages.get(ref);
+            if (entry) {
+                images.push(entry.image);
                 // Clean up after retrieval
                 pendingImages.delete(ref);
             } else {
