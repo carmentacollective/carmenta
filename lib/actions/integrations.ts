@@ -28,6 +28,7 @@ import {
     listServiceAccounts,
 } from "@/lib/integrations/connection-manager";
 import { logIntegrationEvent } from "@/lib/integrations/log-integration-event";
+import { getAdapter } from "@/lib/integrations/tools";
 import { logger } from "@/lib/logger";
 import {
     categorizeService,
@@ -232,23 +233,18 @@ export async function connectApiKeyService(
 
     // Test the API key before saving it
     try {
-        const adapter = await import(
-            `@/lib/integrations/adapters/${serviceId}.ts`
-        ).then((mod) => {
-            // Get adapter class - handle different export patterns
-            const AdapterClass =
-                mod[
-                    `${serviceId.charAt(0).toUpperCase() + serviceId.slice(1).replace(/-([a-z])/g, (_, c) => c.toUpperCase())}Adapter`
-                ] || mod.default;
-            return new AdapterClass();
-        });
-
-        const testResult = await adapter.testConnection(apiKey.trim());
-        if (!testResult.success) {
-            return {
-                success: false,
-                error: testResult.error || "We couldn't verify that API key",
-            };
+        const adapter = getAdapter(serviceId);
+        if (!adapter) {
+            logger.warn({ serviceId }, "No adapter found for API key test");
+            // Continue without test - the key might still be valid
+        } else {
+            const testResult = await adapter.testConnection(apiKey.trim());
+            if (!testResult.success) {
+                return {
+                    success: false,
+                    error: testResult.error || "We couldn't verify that API key",
+                };
+            }
         }
     } catch (error) {
         logger.warn(
