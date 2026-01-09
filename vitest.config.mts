@@ -4,25 +4,52 @@ import path from "path";
 import os from "os";
 
 /**
- * Intelligent worker count based on system load.
- *
- * The algorithm adapts to current system conditions:
- * - Low load (idle machine): Use all cores
- * - High load (busy machine): Scale back proportionally
- *
- * Formula: workers = cores * (1 - load_ratio * 0.5)
- * This ensures we use more cores when idle, fewer when busy.
- *
- * Testing showed optimal results at ~50-55% of cores when load ≈ cores.
- * At low load, using all cores is optimal.
+ * Detect if we're running a targeted test (single file/directory) vs full suite.
+ * Targeted tests have limited parallelization potential.
  */
-function calculateOptimalWorkers(): { workers: number; cpuCount: number; loadAvg: number } {
+function isTargetedTest(): boolean {
+    // Check for file/directory arguments (anything that's not a flag)
+    const args = process.argv.slice(2);
+    return args.some((arg) => !arg.startsWith("-") && (arg.includes("/") || arg.includes(".")));
+}
+
+/**
+ * Intelligent worker count based on test scope and system load.
+ *
+ * The algorithm adapts to:
+ * 1. Test scope: Single file tests use fewer workers (limited parallelization)
+ * 2. System load: Tiered reduction only when system is actually struggling
+ *
+ * Full test suite strategy (DX-focused):
+ * - Load ratio < 1.2: Use 8 workers (optimal speed)
+ * - Load ratio 1.2-1.8: Use 6 workers (modest reduction)
+ * - Load ratio > 1.8: Use 4 workers (system struggling)
+ *
+ * Single file tests: Use 2-4 workers max (limited parallelization benefit)
+ *
+ * Benchmark results (14-core M3 Max, 2026-01-09):
+ * - 8 workers: 19.77s (OPTIMAL - virtually tied with 10)
+ * - 10 workers: 19.75s (0.02s faster, not meaningful)
+ * - 14 workers: 20.64s (+4.4% slower - resource contention)
+ * - 20 workers: 20.07s (+1.5% slower)
+ * - 28 workers: 24.09s (+21.9% slower)
+ *
+ * Conclusion: 8 workers performs identically to 10 with better system headroom.
+ * Use 8 workers for this machine's full test suite.
+ */
+function calculateOptimalWorkers(): {
+    workers: number;
+    cpuCount: number;
+    loadAvg: number;
+    isTargeted: boolean;
+} {
     const cpuCount = os.cpus().length;
     const MIN_WORKERS = 2;
+    const isTargeted = isTargetedTest();
 
     // Guard against containerized environments where cpuCount may be 0
     if (cpuCount === 0) {
-        return { workers: MIN_WORKERS, cpuCount: 0, loadAvg: 0 };
+        return { workers: MIN_WORKERS, cpuCount: 0, loadAvg: 0, isTargeted };
     }
 
     // Get 1-minute load average (lightweight kernel read)
@@ -31,37 +58,75 @@ function calculateOptimalWorkers(): { workers: number; cpuCount: number; loadAvg
 
     // CI: Always use all cores (dedicated environment)
     if (process.env.CI) {
-        return { workers: cpuCount, cpuCount, loadAvg };
+        return { workers: cpuCount, cpuCount, loadAvg, isTargeted };
     }
 
     // Manual override via environment variable
     if (process.env.VITEST_WORKERS) {
         const manual = parseInt(process.env.VITEST_WORKERS, 10);
         if (!isNaN(manual) && manual > 0) {
-            return { workers: Math.min(manual, cpuCount), cpuCount, loadAvg };
+            return { workers: Math.min(manual, cpuCount), cpuCount, loadAvg, isTargeted };
         }
     }
 
+    // Single file/directory tests: Use fewer workers (limited parallelization)
+    if (isTargeted) {
+        const targetedWorkers = Math.min(4, Math.max(MIN_WORKERS, Math.floor(cpuCount / 2)));
+        return { workers: targetedWorkers, cpuCount, loadAvg, isTargeted };
+    }
+
+    // Full test suite: Scale workers based on system load
+    // Cap at optimal worker count to avoid resource contention
+    const OPTIMAL_WORKERS = 8; // From benchmark results (tied with 10, better headroom)
+
     // Calculate load ratio (0 = idle, 1 = fully loaded, >1 = overloaded)
-    const loadRatio = Math.min(1.5, loadAvg / cpuCount);
+    const loadRatio = loadAvg / cpuCount;
 
-    // Scale workers inversely with load:
-    // - loadRatio 0 → use 100% of cores
-    // - loadRatio 0.5 → use 75% of cores
-    // - loadRatio 1.0 → use 50% of cores
-    // - loadRatio 1.5 → use 25% of cores
-    const scaleFactor = 1 - loadRatio * 0.5;
-    const workers = Math.max(MIN_WORKERS, Math.floor(cpuCount * scaleFactor));
+    // DX-focused scaling: Keep tests fast unless system is actually struggling
+    // Use tiered approach instead of linear scaling
+    let workers: number;
+    if (loadRatio < 1.2) {
+        // Low to moderate load: Full speed ahead
+        workers = OPTIMAL_WORKERS;
+    } else if (loadRatio < 1.8) {
+        // High load: Modest reduction (75% capacity)
+        workers = 6;
+    } else {
+        // Very high load: System struggling, back off more (50% capacity)
+        workers = 4;
+    }
 
-    return { workers, cpuCount, loadAvg };
+    return { workers, cpuCount, loadAvg, isTargeted };
 }
 
-const { workers: maxWorkers, cpuCount, loadAvg } = calculateOptimalWorkers();
+const { workers: maxWorkers, cpuCount, loadAvg, isTargeted } = calculateOptimalWorkers();
 
 // Log the decision for visibility (only in non-CI, when not silent)
 if (!process.env.CI && !process.argv.includes("--silent")) {
+    let reason = "";
+    const scope = isTargeted ? "targeted test" : "full suite";
+
+    if (process.env.VITEST_WORKERS) {
+        reason = `manual override (VITEST_WORKERS=${process.env.VITEST_WORKERS})`;
+    } else if (cpuCount === 0) {
+        reason = "containerized environment fallback";
+    } else if (isTargeted) {
+        reason = `${scope} - limited parallelization`;
+    } else if (loadAvg === 0) {
+        reason = `${scope} - Windows/no load data`;
+    } else {
+        const loadRatio = loadAvg / cpuCount;
+        if (loadRatio < 1.2) {
+            reason = `${scope} - optimal speed (low/moderate load)`;
+        } else if (loadRatio < 1.8) {
+            reason = `${scope} - reduced load (ratio: ${loadRatio.toFixed(2)}, high load)`;
+        } else {
+            reason = `${scope} - reduced load (ratio: ${loadRatio.toFixed(2)}, system struggling)`;
+        }
+    }
+
     console.log(
-        `\x1b[36m⚡ Vitest workers: ${maxWorkers}/${cpuCount} cores (load: ${loadAvg.toFixed(1)})\x1b[0m`
+        `\x1b[36m⚡ Vitest workers: ${maxWorkers}/${cpuCount} cores (load: ${loadAvg.toFixed(1)}) - ${reason}\x1b[0m`
     );
 }
 
