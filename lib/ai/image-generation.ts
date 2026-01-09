@@ -320,7 +320,21 @@ export function selectImageModel(reasoning?: ReasoningConfig): ImageModelConfig 
 }
 
 /**
+ * Task detection priority order.
+ * Higher priority tasks are checked first to avoid misrouting.
+ * E.g., "logo for Morning Brew" should detect "logo" not "text".
+ */
+const TASK_PRIORITY: ImageTaskType[] = [
+    "logo", // Check logo first - brand names often contain text
+    "diagram", // Diagrams are explicit
+    "photo", // Photo/realistic are explicit
+    "illustration", // Illustration keywords are explicit
+    "text", // Text is broad - check last among specific types
+];
+
+/**
  * Detect task type from prompt using keyword matching.
+ * Uses priority order to avoid misrouting (logo before text).
  */
 export function detectTaskType(prompt: string): {
     taskType: ImageTaskType;
@@ -328,13 +342,13 @@ export function detectTaskType(prompt: string): {
 } {
     const promptLower = prompt.toLowerCase();
 
-    for (const [taskType, keywords] of Object.entries(TASK_KEYWORDS)) {
-        if (taskType === "default") continue;
-
+    // Check tasks in priority order
+    for (const taskType of TASK_PRIORITY) {
+        const keywords = TASK_KEYWORDS[taskType];
         for (const keyword of keywords) {
             if (promptLower.includes(keyword)) {
                 return {
-                    taskType: taskType as ImageTaskType,
+                    taskType,
                     matchedKeyword: keyword,
                 };
             }

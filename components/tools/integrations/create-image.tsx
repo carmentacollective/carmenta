@@ -37,6 +37,27 @@ const TASK_TYPE_LABELS: Record<string, string> = {
     default: "Custom",
 };
 
+/**
+ * Human-friendly model names to replace technical IDs.
+ * Maps model ID fragments to display names.
+ */
+const FRIENDLY_MODEL_NAMES: Record<string, string> = {
+    "gemini-3-pro-image": "Gemini Pro",
+    "imagen-4.0-ultra": "Imagen Ultra",
+    "imagen-4.0": "Imagen",
+    "flux-2-flex": "FLUX",
+    "flux-2-pro": "FLUX Pro",
+};
+
+/**
+ * Get human-friendly model name from technical ID.
+ */
+function getFriendlyModelName(modelId: string | undefined): string | undefined {
+    if (!modelId) return undefined;
+    const modelPart = modelId.split("/").pop() ?? modelId;
+    return FRIENDLY_MODEL_NAMES[modelPart] ?? modelPart;
+}
+
 interface CreateImageToolResultProps {
     /** toolCallId is passed but not used - images render prominently without ToolRenderer */
     toolCallId?: string;
@@ -362,14 +383,16 @@ function ImageCard({
                     onClick={() => setLightboxOpen(true)}
                 />
 
-                {/* Hover overlay with actions */}
+                {/* Hover overlay with actions - always visible on touch devices */}
                 <div
                     className={cn(
                         "absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/70 via-transparent to-transparent",
-                        "pointer-events-none opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100"
+                        // Touch-friendly: always show on mobile, hover-only on desktop
+                        "pointer-events-auto opacity-100",
+                        "md:pointer-events-none md:opacity-0 md:transition-opacity md:group-hover:pointer-events-auto md:group-hover:opacity-100"
                     )}
                 >
-                    {/* Top actions */}
+                    {/* Top actions - always accessible */}
                     <div className="flex justify-end gap-1.5 p-2">
                         <CopyImageButton src={src} ariaLabel="Copy image" size="sm" />
                         <DownloadImageButton
@@ -387,7 +410,7 @@ function ImageCard({
                         </button>
                     </div>
 
-                    {/* Bottom info - on hover */}
+                    {/* Bottom info - on hover (desktop) or always (mobile) */}
                     <div className="p-3">
                         <p className="mb-1 line-clamp-2 text-sm text-white/90">
                             {displayPrompt}
@@ -396,7 +419,7 @@ function ImageCard({
                             <p className="text-xs text-white/50">
                                 {taskLabel && <span>{taskLabel}</span>}
                                 {taskLabel && model && " · "}
-                                {model && <span>{model.split("/").pop()}</span>}
+                                {model && <span>{getFriendlyModelName(model)}</span>}
                             </p>
                         )}
                     </div>
@@ -404,28 +427,33 @@ function ImageCard({
             </div>
 
             {/* Always-visible info showing the work we did */}
-            <div className="mt-2 space-y-1">
-                {/* Model routing explanation */}
+            <div className="mt-2 space-y-1.5">
+                {/* Model routing explanation with friendly names */}
                 {(model || taskLabel) && (
                     <p className="text-foreground/50 text-xs">
                         {taskLabel && <span className="font-medium">{taskLabel}</span>}
                         {taskLabel && model && " · "}
-                        {model && <span>{model.split("/").pop()}</span>}
+                        {model && <span>{getFriendlyModelName(model)}</span>}
                     </p>
                 )}
 
-                {/* Expanded prompt - shows the enhancement we made */}
+                {/* Enhanced prompt - more discoverable with inline preview */}
                 {metadata.prompt && metadata.prompt !== (input?.prompt as string) && (
                     <details className="group/details">
-                        <summary className="text-foreground/40 hover:text-foreground/60 cursor-pointer text-xs transition-colors">
+                        <summary className="text-foreground/50 hover:text-foreground/70 cursor-pointer text-xs transition-colors">
                             <span className="group-open/details:hidden">
-                                View enhanced prompt →
+                                <span className="text-foreground/40">Enhanced:</span>{" "}
+                                <span className="italic">
+                                    {metadata.prompt.slice(0, 60)}
+                                    {metadata.prompt.length > 60 && "..."}
+                                </span>{" "}
+                                <span className="text-foreground/40">→</span>
                             </span>
-                            <span className="hidden group-open/details:inline">
+                            <span className="text-foreground/40 hidden group-open/details:inline">
                                 Enhanced prompt ↓
                             </span>
                         </summary>
-                        <p className="text-foreground/60 mt-1 text-xs leading-relaxed">
+                        <p className="text-foreground/60 mt-1 text-xs leading-relaxed italic">
                             {metadata.prompt}
                         </p>
                     </details>
@@ -478,7 +506,9 @@ function ImageCard({
                                 <p className="mt-1 text-xs text-white/50">
                                     {taskLabel && <span>{taskLabel}</span>}
                                     {taskLabel && model && " · "}
-                                    {model && <span>{model}</span>}
+                                    {model && (
+                                        <span>{getFriendlyModelName(model)}</span>
+                                    )}
                                     {aspectRatio && ` · ${aspectRatio}`}
                                 </p>
                             )}

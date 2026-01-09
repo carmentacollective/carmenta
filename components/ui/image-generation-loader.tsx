@@ -8,88 +8,73 @@
  * we analyze your prompt and choose the best model for the task.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import {
+    detectTaskType as serverDetectTaskType,
+    type ImageTaskType,
+} from "@/lib/ai/image-generation";
 
 /**
- * Task detection keywords - matches server-side routing
+ * Progress stages for image generation feedback.
+ * Time-based since we don't have real-time server feedback.
  */
-const TASK_KEYWORDS: Record<string, string[]> = {
-    diagram: [
-        "flowchart",
-        "architecture",
-        "process",
-        "diagram",
-        "infographic",
-        "steps",
-    ],
-    text: ["poster", "sign", "label", "title", "headline", "banner", "caption", "text"],
-    logo: ["logo", "wordmark", "brand", "icon", "emblem", "badge"],
-    photo: ["photo", "realistic", "portrait", "landscape", "product", "shot"],
-    illustration: [
-        "illustration",
-        "cartoon",
-        "character",
-        "scene",
-        "fantasy",
-        "drawing",
-    ],
-};
+const PROGRESS_STAGES = [
+    { minSeconds: 0, stage: "Analyzing your prompt...", icon: "🔍" },
+    { minSeconds: 3, stage: "Selecting optimal model...", icon: "🎯" },
+    { minSeconds: 6, stage: "Generating image...", icon: "🎨" },
+    { minSeconds: 15, stage: "Adding final touches...", icon: "✨" },
+    { minSeconds: 30, stage: "Almost there...", icon: "⏳" },
+    { minSeconds: 45, stage: "Complex image, worth the wait...", icon: "💎" },
+] as const;
 
 /**
- * Model info for each task type - explains WHY we chose this model
+ * Model info for each task type - explains WHY we chose this model.
+ * Matches server-side TASK_MODEL_ROUTING in lib/ai/image-generation.ts
  */
 const TASK_MODEL_INFO: Record<
-    string,
+    ImageTaskType,
     { model: string; reason: string; shortModel: string }
 > = {
     diagram: {
-        model: "Gemini 3 Pro Image",
+        model: "Gemini 3 Pro",
         shortModel: "Gemini",
-        reason: "Best for structured diagrams and technical visuals",
+        reason: "Best for diagrams (98% in evals)",
     },
     text: {
-        model: "Gemini 3 Pro Image",
+        model: "Gemini 3 Pro",
         shortModel: "Gemini",
-        reason: "Excels at rendering text accurately in images",
+        reason: "Best for text rendering (86% in evals)",
     },
     logo: {
         model: "FLUX 2 Flex",
         shortModel: "FLUX",
-        reason: "Creates clean, professional brand assets",
+        reason: "Best for logos (70% in evals)",
     },
     photo: {
         model: "Imagen 4.0 Ultra",
-        shortModel: "Imagen",
-        reason: "Our most photorealistic model",
+        shortModel: "Imagen Ultra",
+        reason: "Best for photos (70% in evals)",
     },
     illustration: {
-        model: "Gemini 3 Pro Image",
+        model: "Gemini 3 Pro",
         shortModel: "Gemini",
-        reason: "Great at creative illustrations and artistic styles",
+        reason: "Best for illustrations (75% in evals)",
     },
     default: {
         model: "Imagen 4.0",
         shortModel: "Imagen",
-        reason: "Versatile model for general image creation",
+        reason: "Versatile general-purpose model",
     },
 };
 
 /**
- * Detect task type from prompt (client-side preview of server routing)
+ * Detect task type from prompt using shared server logic.
  */
-function detectTaskType(prompt: string): string {
-    const promptLower = prompt.toLowerCase();
-    for (const [taskType, keywords] of Object.entries(TASK_KEYWORDS)) {
-        for (const keyword of keywords) {
-            if (promptLower.includes(keyword)) {
-                return taskType;
-            }
-        }
-    }
-    return "default";
+function detectTaskType(prompt: string): ImageTaskType {
+    return serverDetectTaskType(prompt).taskType;
 }
 
 interface ImageGenerationLoaderProps {
@@ -101,9 +86,29 @@ interface ImageGenerationLoaderProps {
 
 export function ImageGenerationLoader({
     className,
-    message = "Bringing your vision to life...",
+    message,
     prompt,
 }: ImageGenerationLoaderProps) {
+    // Track elapsed time for progress stages
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setElapsedSeconds((s) => s + 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Get current progress stage based on elapsed time
+    const currentStage = useMemo(() => {
+        for (let i = PROGRESS_STAGES.length - 1; i >= 0; i--) {
+            if (elapsedSeconds >= PROGRESS_STAGES[i].minSeconds) {
+                return PROGRESS_STAGES[i];
+            }
+        }
+        return PROGRESS_STAGES[0];
+    }, [elapsedSeconds]);
+
     // Truncate long prompts for display
     const displayPrompt =
         prompt && prompt.length > 80 ? prompt.slice(0, 77) + "..." : prompt;
@@ -162,7 +167,11 @@ export function ImageGenerationLoader({
             </div>
 
             <div className="max-w-md text-center">
-                <p className="text-foreground/60 text-sm">{message}</p>
+                {/* Progress stage with icon */}
+                <p className="text-foreground/60 text-sm">
+                    <span className="mr-1.5">{currentStage.icon}</span>
+                    {message ?? currentStage.stage}
+                </p>
 
                 {/* Model routing explanation - shows Carmenta's intelligence */}
                 {modelInfo && (
@@ -177,6 +186,13 @@ export function ImageGenerationLoader({
                 {displayPrompt && (
                     <p className="text-foreground/40 mt-2 max-w-xs text-xs italic">
                         "{displayPrompt}"
+                    </p>
+                )}
+
+                {/* Elapsed time indicator */}
+                {elapsedSeconds >= 5 && (
+                    <p className="text-foreground/30 mt-3 text-xs tabular-nums">
+                        {elapsedSeconds}s
                     </p>
                 )}
             </div>
