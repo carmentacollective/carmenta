@@ -274,7 +274,8 @@ ${sourcesText}
         logger.info(
             {
                 connectionId,
-                depth,
+                depth: effectiveDepth,
+                requestedDepth: depth !== effectiveDepth ? depth : undefined,
                 findingsCount: result.findings.length,
                 sourcesCount: result.sources.length,
                 durationMs,
@@ -284,9 +285,14 @@ ${sourcesText}
 
         Sentry.addBreadcrumb({
             category: "research.auto-trigger",
-            message: `Pre-executed ${depth} research`,
+            message: `Pre-executed ${effectiveDepth} research`,
             level: "info",
-            data: { connectionId, findingsCount: result.findings.length, durationMs },
+            data: {
+                connectionId,
+                findingsCount: result.findings.length,
+                durationMs,
+                requestedDepth: depth !== effectiveDepth ? depth : undefined,
+            },
         });
 
         return {
@@ -302,7 +308,8 @@ ${sourcesText}
                 connectionId,
                 error,
                 objective: objective.slice(0, 100),
-                depth,
+                depth: effectiveDepth,
+                requestedDepth: depth !== effectiveDepth ? depth : undefined,
                 durationMs,
             },
             "Failed to pre-execute research"
@@ -313,12 +320,13 @@ ${sourcesText}
             tags: {
                 component: "auto-trigger",
                 operation: "pre_execute_research",
-                depth,
+                depth: effectiveDepth,
             },
             extra: {
                 connectionId,
                 objectivePreview: objective.slice(0, 100),
                 durationMs,
+                requestedDepth: depth !== effectiveDepth ? depth : undefined,
             },
         });
 
