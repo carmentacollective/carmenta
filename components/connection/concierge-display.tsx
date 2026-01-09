@@ -26,7 +26,7 @@ import { ProviderIcon } from "@/components/icons/provider-icons";
 const SELECTING_MESSAGES = [
     "Finding the right approach for this...",
     "Considering how we can best help...",
-    "Considering what this needs...",
+    "Tuning in to what this needs...",
     "Reflecting on the best way forward...",
 ];
 
@@ -297,7 +297,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                 )}
 
                                 {/* Auto-switch indicator */}
-                                {autoSwitched && (
+                                {autoSwitched && autoSwitchReason && (
                                     <span className="flex items-center gap-1 text-xs text-amber-500/70">
                                         <ArrowsLeftRightIcon className="h-3 w-3" />
                                         <span>Switched</span>
@@ -339,7 +339,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
 
                             {/* Badges with full context */}
                             <div className="flex flex-wrap gap-2">
-                                <span className="bg-primary/8 text-primary/80 rounded-full px-3 py-1.5 text-xs font-medium">
+                                <span className="bg-primary/[0.08] text-primary/80 rounded-full px-3 py-1.5 text-xs font-medium">
                                     {tempBadge.emoji} {tempBadge.label}
                                 </span>
                                 {reasoningBadge && (
