@@ -168,12 +168,12 @@ export function GooglePicker({
                 }
             }}
             className={cn(
-                "flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-3 transition-colors hover:bg-white/10",
+                "flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-3 transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
                 className
             )}
         >
             <GoogleDriveLogo className="h-5 w-5 text-blue-400" weight="duotone" />
-            <span className="text-sm text-white/90">Choose from Google Drive</span>
+            <span className="text-sm text-white/90">Select a file</span>
         </button>
     );
 }
