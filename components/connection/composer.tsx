@@ -56,6 +56,24 @@ export interface ComposerProps {
 
 const SHIFT_ENTER_HINT_KEY = "carmenta:shift-enter-hint-shown";
 
+/** MIME types for text files created from large pastes */
+const TEXT_MIME_TYPES = [
+    "text/plain",
+    "text/markdown",
+    // Note: text/csv is handled as spreadsheet, not text file
+    "application/json",
+];
+
+/** Check if file is a text type (from paste, not to be sent as attachment) */
+function isTextFile(mimeType: string): boolean {
+    return TEXT_MIME_TYPES.includes(mimeType);
+}
+
+/** Filter files to those that should be sent as attachments */
+function getFilesToSend<T extends { mediaType: string }>(files: T[]): T[] {
+    return files.filter((f) => !isTextFile(f.mediaType) && !isSpreadsheet(f.mediaType));
+}
+
 /** Extract and join parsed content from spreadsheet uploads */
 function extractSpreadsheetContent(
     files: { mediaType: string; parsedContent?: string }[]
@@ -398,13 +416,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Auto-insert PASTED text file attachments inline (Anthropic doesn't support text files)
             // Only process text files that have pasted content stored (from large paste feature)
             // Text files from file picker don't have pasted content and should fail with clear error
-            const TEXT_MIME_TYPES = [
-                "text/plain",
-                "text/markdown",
-                "text/csv",
-                "application/json",
-            ];
-            const isTextFile = (mimeType: string) => TEXT_MIME_TYPES.includes(mimeType);
+            // Note: CSV files are now handled as spreadsheets, not expandable text files
 
             // Find pasted text files (have content in pastedTextContent Map)
             const pastedTextFiles = pendingFiles.filter(
@@ -486,11 +498,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             checkMessage(userText);
 
             try {
-                // Filter out spreadsheet files - their content is already in the message
-                // No LLM can process raw XLSX, so sending the file is redundant
-                const filesToSend = nonTextFiles.filter(
-                    (f) => !isSpreadsheet(f.mediaType)
-                );
+                // Filter to files that can be sent as attachments
+                // (excludes text files and spreadsheets - their content is in the message)
+                const filesToSend = getFilesToSend(completedFiles);
 
                 await append({
                     role: "user",
@@ -609,10 +619,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     ? `${spreadsheetContent}\n\n---\n\n${userText}`
                     : userText;
 
-                // Filter out spreadsheet files - their content is already in the message
-                const filesToSend = completedFiles.filter(
-                    (f) => !isSpreadsheet(f.mediaType)
-                );
+                // Filter to files that can be sent as attachments
+                // (excludes text files and spreadsheets - their content is in the message)
+                const filesToSend = getFilesToSend(completedFiles);
 
                 try {
                     await append({
