@@ -497,23 +497,25 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Check for secret phrases (easter egg effects)
             checkMessage(userText);
 
-            try {
-                // Filter to files that can be sent as attachments
-                // (excludes text files and spreadsheets - their content is in the message)
-                const filesToSend = getFilesToSend(completedFiles);
+            // Capture-then-clear pattern (industry standard)
+            // Files are captured into payload, then cleared BEFORE async boundary
+            // This avoids React timing issues with state updates after await
+            const filesToSend = getFilesToSend(completedFiles).map((f) => ({
+                url: f.url,
+                mediaType: f.mediaType,
+                name: f.name,
+            }));
 
+            // Clear immediately - optimistic UI, no timing issues
+            clearFiles();
+            onMessageSent();
+
+            try {
                 await append({
                     role: "user",
                     content: message,
-                    files: filesToSend.map((f) => ({
-                        url: f.url,
-                        mediaType: f.mediaType,
-                        name: f.name,
-                    })),
+                    files: filesToSend,
                 });
-                // Clear files and draft after successful send
-                clearFiles();
-                onMessageSent();
                 // Re-focus input for quick follow-up messages
                 // Use preventScroll on mobile to avoid keyboard-induced scroll jank
                 inputRef.current?.focus({ preventScroll: isMobile });
@@ -522,7 +524,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     { error: error instanceof Error ? error.message : String(error) },
                     "Failed to send message"
                 );
-                setInput(userText); // Restore original user text, not expanded message
+                setInput(userText); // Restore text for retry (files stay cleared per industry pattern)
             } finally {
                 isSubmittingRef.current = false;
             }
