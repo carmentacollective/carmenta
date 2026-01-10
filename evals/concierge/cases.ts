@@ -27,12 +27,25 @@ export interface ConciergeTestInput {
         | "sensitivity"
         | "attachments"
         | "hints"
-        | "edge-cases";
+        | "edge-cases"
+        | "context"
+        | "signals";
     /** Simulated attachments for the query */
     attachments?: Array<{
         type: "image" | "pdf" | "audio" | "video" | "file";
         mimeType: string;
     }>;
+    /** Session context for testing conversation state */
+    sessionContext?: {
+        turnCount?: number;
+        isFirstMessage?: boolean;
+        deviceType?: "mobile" | "desktop" | "unknown";
+    };
+    /** Recent context for testing follow-up queries */
+    recentContext?: {
+        lastAssistantMessage?: string;
+        conversationDepth?: number;
+    };
 }
 
 export interface ConciergeTestCase {
@@ -319,10 +332,12 @@ export const conciergeTestData: ConciergeTestCase[] = [
     },
 
     // ATTACHMENTS - Should influence routing
+    // Audio/Video FORCE Gemini (only model with native support)
+    // Images/PDFs PREFER Claude Sonnet (excellent vision, best document understanding)
     {
         input: {
             id: "attachments-audio",
-            description: "Audio attachment should force Gemini",
+            description: "Audio attachment should force Gemini (only model with audio)",
             query: "Transcribe and summarize this audio",
             category: "attachments",
             attachments: [{ type: "audio", mimeType: "audio/mp3" }],
@@ -335,17 +350,76 @@ export const conciergeTestData: ConciergeTestCase[] = [
     },
     {
         input: {
-            id: "attachments-image",
-            description: "Image analysis should route to vision-capable model",
+            id: "attachments-video",
+            description: "Video attachment should force Gemini (only model with video)",
+            query: "What's happening in this video?",
+            category: "attachments",
+            attachments: [{ type: "video", mimeType: "video/mp4" }],
+        },
+        expected: {
+            model: "gemini",
+            autoSwitched: true,
+        },
+        tags: ["attachments", "video"],
+    },
+    {
+        input: {
+            id: "attachments-image-simple",
+            description: "Simple image analysis should prefer Claude Sonnet",
             query: "What's in this image?",
             category: "attachments",
             attachments: [{ type: "image", mimeType: "image/png" }],
         },
         expected: {
-            // Vision-capable models: Claude, Gemini, GPT
-            model: "sonnet|gemini|gpt",
+            // Per prompt: images → prefer anthropic/claude-sonnet-4.5
+            model: "sonnet|claude",
+            reasoningEnabled: false,
         },
         tags: ["attachments", "image"],
+    },
+    {
+        input: {
+            id: "attachments-image-analysis",
+            description: "Deep image analysis should enable reasoning",
+            query: "Analyze this architectural diagram and explain the data flow between components",
+            category: "attachments",
+            attachments: [{ type: "image", mimeType: "image/png" }],
+        },
+        expected: {
+            model: "sonnet|claude",
+            reasoningEnabled: true,
+        },
+        tags: ["attachments", "image", "reasoning"],
+    },
+    {
+        input: {
+            id: "attachments-image-code",
+            description: "Screenshot of code should route to Claude with low temp",
+            query: "Fix the bug in this code screenshot",
+            category: "attachments",
+            attachments: [{ type: "image", mimeType: "image/png" }],
+        },
+        expected: {
+            model: "sonnet|claude",
+            temperatureRange: [0.1, 0.5],
+        },
+        tags: ["attachments", "image", "code"],
+    },
+    {
+        input: {
+            id: "attachments-multiple-images",
+            description: "Multiple images should still route to Claude",
+            query: "Compare these two design mockups and tell me which is better",
+            category: "attachments",
+            attachments: [
+                { type: "image", mimeType: "image/png" },
+                { type: "image", mimeType: "image/png" },
+            ],
+        },
+        expected: {
+            model: "sonnet|claude",
+        },
+        tags: ["attachments", "image", "multiple"],
     },
     {
         input: {
@@ -359,6 +433,20 @@ export const conciergeTestData: ConciergeTestCase[] = [
             model: "sonnet|opus|claude",
         },
         tags: ["attachments", "pdf"],
+    },
+    {
+        input: {
+            id: "attachments-pdf-complex",
+            description: "Complex PDF analysis should enable reasoning",
+            query: "Analyze this research paper and critique the methodology",
+            category: "attachments",
+            attachments: [{ type: "pdf", mimeType: "application/pdf" }],
+        },
+        expected: {
+            model: "sonnet|opus|claude",
+            reasoningEnabled: true,
+        },
+        tags: ["attachments", "pdf", "reasoning"],
     },
 
     // EDGE CASES - Various boundary conditions
@@ -465,5 +553,206 @@ export const conciergeTestData: ConciergeTestCase[] = [
             titleMaxLength: 50,
         },
         tags: ["title", "request"],
+    },
+
+    // QUERY SIGNAL TESTS - Testing signal extraction affects routing
+    {
+        input: {
+            id: "signals-depth-analyze",
+            description: "Analyze keyword should trigger reasoning",
+            query: "Analyze the root causes of inflation in emerging markets",
+            category: "signals",
+        },
+        expected: {
+            reasoningEnabled: true,
+        },
+        tags: ["signals", "depth"],
+    },
+    {
+        input: {
+            id: "signals-depth-explain-why",
+            description: "Why + explain should trigger reasoning",
+            query: "Why do neural networks work? Explain the underlying principles.",
+            category: "signals",
+        },
+        expected: {
+            reasoningEnabled: true,
+        },
+        tags: ["signals", "depth"],
+    },
+    {
+        input: {
+            id: "signals-speed-quick",
+            description: "Quick signal should route fast, no reasoning",
+            query: "Quick - what's the syntax for a Python list comprehension?",
+            category: "signals",
+        },
+        expected: {
+            model: "haiku",
+            reasoningEnabled: false,
+        },
+        tags: ["signals", "speed"],
+    },
+    {
+        input: {
+            id: "signals-speed-briefly",
+            description: "Briefly signal should route fast",
+            query: "Briefly summarize what REST APIs are",
+            category: "signals",
+        },
+        expected: {
+            model: "haiku",
+            reasoningEnabled: false,
+        },
+        tags: ["signals", "speed"],
+    },
+    {
+        input: {
+            id: "signals-explicit-think-hard",
+            description: "Think hard should enable max reasoning",
+            query: "Think hard about this: what's the optimal data structure for a LRU cache?",
+            category: "signals",
+        },
+        expected: {
+            reasoningEnabled: true,
+        },
+        tags: ["signals", "explicit-depth"],
+    },
+    {
+        input: {
+            id: "signals-explicit-step-by-step",
+            description: "Step by step should enable reasoning",
+            query: "Walk me through step by step how to debug a memory leak",
+            category: "signals",
+        },
+        expected: {
+            reasoningEnabled: true,
+        },
+        tags: ["signals", "explicit-depth"],
+    },
+    {
+        input: {
+            id: "signals-conditional",
+            description: "Conditional logic should trigger reasoning",
+            query: "If I use Redis for caching, but if the cache misses are high, should I switch to Memcached? What are the tradeoffs?",
+            category: "signals",
+        },
+        expected: {
+            reasoningEnabled: true,
+        },
+        tags: ["signals", "conditional"],
+    },
+    {
+        input: {
+            id: "signals-structured-list",
+            description: "Structured list input indicates thoughtful query",
+            query: `Please help with:
+- Database schema design for users
+- API endpoint structure
+- Authentication flow`,
+            category: "signals",
+        },
+        expected: {
+            model: "sonnet|opus",
+        },
+        tags: ["signals", "structured"],
+    },
+
+    // CONVERSATION CONTEXT TESTS - Testing multi-turn behavior
+    {
+        input: {
+            id: "context-follow-up",
+            description: "Follow-up should use context to route appropriately",
+            query: "Tell me more about that",
+            category: "context",
+            recentContext: {
+                lastAssistantMessage:
+                    "React hooks like useState and useEffect help manage component state and side effects...",
+                conversationDepth: 4,
+            },
+            sessionContext: {
+                turnCount: 2,
+                isFirstMessage: false,
+            },
+        },
+        expected: {
+            // Should continue with similar model, not route to haiku for short query
+            model: "sonnet|opus|gemini|gpt",
+        },
+        tags: ["context", "follow-up"],
+    },
+    {
+        input: {
+            id: "context-deep-conversation",
+            description: "Deep conversation should maintain quality model",
+            query: "What about the performance implications?",
+            category: "context",
+            recentContext: {
+                lastAssistantMessage:
+                    "The microservices architecture I described uses event sourcing with Kafka...",
+                conversationDepth: 10,
+            },
+            sessionContext: {
+                turnCount: 5,
+                isFirstMessage: false,
+            },
+        },
+        expected: {
+            model: "sonnet|opus",
+        },
+        tags: ["context", "deep-conversation"],
+    },
+    {
+        input: {
+            id: "context-mobile-simple",
+            description: "Mobile + simple query should prioritize speed",
+            query: "What time is it in Tokyo?",
+            category: "context",
+            sessionContext: {
+                turnCount: 1,
+                isFirstMessage: true,
+                deviceType: "mobile",
+            },
+        },
+        expected: {
+            model: "haiku",
+            reasoningEnabled: false,
+        },
+        tags: ["context", "mobile", "speed"],
+    },
+    {
+        input: {
+            id: "context-reference-previous",
+            description: "Reference to previous context should maintain continuity",
+            query: "Going back to what you said earlier about caching, can you elaborate?",
+            category: "context",
+            recentContext: {
+                lastAssistantMessage:
+                    "For caching strategies, you can use write-through, write-back, or write-around...",
+                conversationDepth: 6,
+            },
+        },
+        expected: {
+            // References previous context - should use capable model
+            model: "sonnet|opus|gemini|gpt",
+        },
+        tags: ["context", "reference"],
+    },
+    {
+        input: {
+            id: "context-first-message-complex",
+            description: "First message complex query should get full treatment",
+            query: "I need to design a distributed system for real-time bidding. What architecture would you recommend?",
+            category: "context",
+            sessionContext: {
+                turnCount: 1,
+                isFirstMessage: true,
+            },
+        },
+        expected: {
+            model: "opus|sonnet",
+            reasoningEnabled: true,
+        },
+        tags: ["context", "first-message", "complex"],
     },
 ];

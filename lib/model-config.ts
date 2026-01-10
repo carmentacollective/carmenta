@@ -487,14 +487,17 @@ export function getFallbackChain(modelId: string): string[] {
  * Based on knowledge/decisions/concierge-model-selection.md evaluation.
  *
  * Priority order:
- * 1. Gemini 3 Flash - 218 t/s, auto prompt caching (primary - fastest with caching)
- * 2. Grok 4.1 Fast - 150 t/s, no caching (fallback - still fast)
- * 3. Claude Sonnet 4.5 - Safe fallback if both fail
+ * 1. Llama 3.3 70B - 280 t/s, 96.97% accuracy (fastest with quality)
+ * 2. Gemini 3 Flash - 218 t/s, auto-caching (reliable fallback)
+ * 3. Claude Haiku 4.5 - Safe Anthropic fallback
+ *
+ * Note: Uses string[] not ModelId[] because the concierge uses Gateway models
+ * (meta/llama-3.3-70b) that aren't in the user-facing MODELS array.
  */
-export const CONCIERGE_FALLBACK_CHAIN: readonly ModelId[] = [
+export const CONCIERGE_FALLBACK_CHAIN: readonly string[] = [
+    "meta/llama-3.3-70b",
     "google/gemini-3-flash",
-    "x-ai/grok-4.1-fast",
-    "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-haiku-4.5",
 ] as const;
 
 /**

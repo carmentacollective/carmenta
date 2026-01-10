@@ -534,7 +534,7 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                     maxRetries: 1, // Single retry on network/rate limit errors
                     providerOptions: {
                         gateway: {
-                            models: CONCIERGE_FALLBACK_CHAIN.map(translateModelId), // Gemini 3 Flash → Grok 4.1 Fast → Sonnet 4.5
+                            models: CONCIERGE_FALLBACK_CHAIN.map(translateModelId), // Llama 3.3 70B → Gemini Flash → Haiku
                         },
                     },
                     tools: {

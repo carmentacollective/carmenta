@@ -3,17 +3,20 @@
  *
  * Runs the concierge logic with a configurable model, allowing comparison
  * of different model candidates for the concierge role.
+ *
+ * Uses Vercel AI Gateway for consistent provider access across all models.
  */
 
 import { readFile } from "fs/promises";
 import { join } from "path";
 
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createGateway } from "@ai-sdk/gateway";
 import { generateText, tool } from "ai";
 import { z } from "zod";
 
 import type { ConciergeResult } from "@/lib/concierge";
 import { buildConciergePrompt } from "@/lib/concierge/prompt";
+import { analyzeQueryComplexity } from "@/lib/concierge/input-builder";
 import {
     ALLOWED_MODELS,
     CONCIERGE_DEFAULTS,
@@ -23,6 +26,7 @@ import {
     TOKEN_BUDGET_MODELS,
     type ReasoningConfig,
     type ReasoningEffort,
+    type QueryComplexitySignals,
 } from "@/lib/concierge/types";
 import type { ConciergeOutput } from "./scorer";
 import type { ConciergeTestInput } from "./cases";
@@ -147,9 +151,9 @@ function processConciergeResponse(
 }
 
 export interface ConciergeRunnerOptions {
-    /** The model to use for the concierge (OpenRouter format) */
+    /** The model to use for the concierge (Vercel AI Gateway format) */
     conciergeModel: string;
-    /** OpenRouter API key */
+    /** Vercel AI Gateway API key */
     apiKey: string;
 }
 
@@ -164,21 +168,23 @@ export async function runConciergeEval(
     const startTime = performance.now();
 
     try {
-        const openrouter = createOpenRouter({
+        const gateway = createGateway({
             apiKey: options.apiKey,
         });
 
         const rubricContent = await getRubricContent();
         const systemPrompt = buildConciergePrompt(rubricContent);
 
-        // Handle audio attachment special case
-        if (input.attachments?.some((a) => a.type === "audio")) {
+        // Handle audio/video attachment special case - only Gemini supports native audio/video
+        if (input.attachments?.some((a) => a.type === "audio" || a.type === "video")) {
             const latencyMs = Math.round(performance.now() - startTime);
+            const isVideo = input.attachments.some((a) => a.type === "video");
             return {
                 modelId: "google/gemini-3-pro-preview",
                 temperature: 0.5,
-                explanation:
-                    "Audio file detected - routing to Gemini for native audio processing 🎵",
+                explanation: isVideo
+                    ? "Video file detected - routing to Gemini for native video processing 🎬"
+                    : "Audio file detected - routing to Gemini for native audio processing 🎵",
                 reasoning: { enabled: false },
                 autoSwitched: true,
                 title: generateFallbackTitle(input.query),
@@ -187,16 +193,59 @@ export async function runConciergeEval(
             };
         }
 
+        // Extract query complexity signals (same as production)
+        const querySignals = analyzeQueryComplexity(input.query);
+
+        // Build query signals block (matches production format)
+        const querySignalsBlock = `<query-signals>
+characterCount: ${querySignals.characterCount}
+questionCount: ${querySignals.questionCount}
+hasStructuredFormatting: ${querySignals.hasStructuredFormatting}
+hasDepthIndicators: ${querySignals.hasDepthIndicators}
+hasConditionalLogic: ${querySignals.hasConditionalLogic}
+referencesPreviousContext: ${querySignals.referencesPreviousContext}
+hasSpeedSignals: ${querySignals.hasSpeedSignals}
+hasExplicitDepthSignals: ${querySignals.hasExplicitDepthSignals}
+</query-signals>`;
+
+        // Build session context block
+        const sessionBlock = input.sessionContext
+            ? `<session-context>
+turnCount: ${input.sessionContext.turnCount ?? 1}
+isFirstMessage: ${input.sessionContext.isFirstMessage ?? true}
+deviceType: ${input.sessionContext.deviceType ?? "desktop"}
+</session-context>`
+            : `<session-context>
+turnCount: 1
+isFirstMessage: true
+deviceType: desktop
+</session-context>`;
+
         // Build attachment block if present
-        let messageBlock = `<user-message>\n${input.query}\n</user-message>`;
+        let attachmentBlock = "";
         if (input.attachments && input.attachments.length > 0) {
             const attachmentTypes = input.attachments.map((a) => a.type).join(", ");
-            messageBlock = `<attachments>${attachmentTypes}</attachments>\n\n${messageBlock}`;
+            attachmentBlock = `<attachments>${attachmentTypes}</attachments>\n\n`;
+        }
+
+        // Build recent context block if present
+        let recentContextBlock = "";
+        if (input.recentContext) {
+            recentContextBlock = `<recent-context>
+lastAssistantMessage: ${input.recentContext.lastAssistantMessage ?? "none"}
+conversationDepth: ${input.recentContext.conversationDepth ?? 1}
+</recent-context>\n\n`;
         }
 
         const prompt = `Analyze the following user message and select the optimal configuration (model, temperature, reasoning, title). Do NOT answer the message - only return the configuration JSON.
 
-${messageBlock}
+${querySignalsBlock}
+
+${sessionBlock}
+
+${recentContextBlock}${attachmentBlock}<user-message>
+${input.query}
+</user-message>
 
 Return ONLY the JSON configuration. No markdown code fences, no explanations, no other text.`;
 
@@ -209,7 +258,7 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
         });
 
         const result = await generateText({
-            model: openrouter.chat(options.conciergeModel),
+            model: gateway(options.conciergeModel),
             system: systemPrompt,
             prompt,
             temperature: 0.1,
@@ -271,40 +320,71 @@ function generateFallbackTitle(query: string): string {
  * These are the models we're comparing for the concierge role.
  *
  * To add or modify candidates:
- * 1. Verify the model exists on OpenRouter (check /tmp/openrouter-models.json or the API)
- * 2. Get accurate cost data from OpenRouter pricing
- * 3. Update the tokensPerSecond estimate based on benchmarks
+ * 1. Verify the model exists on Vercel AI Gateway
+ *    curl https://ai-gateway.vercel.sh/v1/models -H "Authorization: Bearer $AI_GATEWAY_API_KEY" | jq '.data[].id'
+ * 2. Get speed estimates from provider docs
  *
- * Cost estimates are approximate - verify against OpenRouter pricing page.
+ * Speed estimates from Groq docs (groq.com/docs/models).
  */
 export const CONCIERGE_MODEL_CANDIDATES = [
+    // Current production model
+    {
+        id: "google/gemini-3-flash",
+        name: "Gemini 3 Flash",
+        description: "Current production concierge - auto prompt caching",
+        costPer1M: { input: 0.15, output: 0.6 },
+        tokensPerSecond: 218,
+    },
+    // SPEED CONTENDERS - Groq-hosted models
+    {
+        id: "openai/gpt-oss-20b",
+        name: "GPT-OSS 20B (Groq)",
+        description: "Fastest available - 1000 T/s via Groq LPU",
+        costPer1M: { input: 0.06, output: 0.06 },
+        tokensPerSecond: 1000,
+    },
+    {
+        id: "meta/llama-3.1-8b",
+        name: "Llama 3.1 8B (Groq)",
+        description: "Fast small model - 560 T/s via Groq LPU",
+        costPer1M: { input: 0.05, output: 0.08 },
+        tokensPerSecond: 560,
+    },
+    {
+        id: "meta/llama-3.3-70b",
+        name: "Llama 3.3 70B (Groq)",
+        description: "Best Llama model - 280 T/s via Groq LPU",
+        costPer1M: { input: 0.59, output: 0.79 },
+        tokensPerSecond: 280,
+    },
+    {
+        id: "openai/gpt-oss-120b",
+        name: "GPT-OSS 120B (Groq)",
+        description: "Large fast model - 500 T/s via Groq LPU",
+        costPer1M: { input: 0.25, output: 0.25 },
+        tokensPerSecond: 500,
+    },
+    // Baseline comparison models
     {
         id: "anthropic/claude-haiku-4.5",
         name: "Claude Haiku 4.5",
-        description: "Current production concierge model",
+        description: "Anthropic's fast model - reliable tool calling",
         costPer1M: { input: 1.0, output: 5.0 },
-        tokensPerSecond: 150,
+        tokensPerSecond: 100,
     },
     {
-        id: "google/gemini-3-pro-preview",
-        name: "Gemini 3 Pro",
-        description: "Google's latest pro model with multimodal capabilities",
-        costPer1M: { input: 1.25, output: 5.0 },
-        tokensPerSecond: 120,
+        id: "anthropic/claude-sonnet-4.5",
+        name: "Claude Sonnet 4.5",
+        description: "Anthropic's capable model - best quality baseline",
+        costPer1M: { input: 3.0, output: 15.0 },
+        tokensPerSecond: 60,
     },
     {
-        id: "x-ai/grok-4.1-fast",
+        id: "xai/grok-4.1-fast-non-reasoning",
         name: "Grok 4.1 Fast",
-        description: "xAI's fast model - good for multi-step tool calling",
-        costPer1M: { input: 5.0, output: 15.0 },
-        tokensPerSecond: 180,
-    },
-    {
-        id: "openai/gpt-5-mini",
-        name: "GPT-5 Mini",
-        description: "OpenAI's current mid-tier model",
-        costPer1M: { input: 0.4, output: 1.6 },
-        tokensPerSecond: 160,
+        description: "xAI's fast model - 2M context",
+        costPer1M: { input: 0.2, output: 0.5 },
+        tokensPerSecond: 151,
     },
 ] as const;
 
