@@ -167,7 +167,8 @@ function PickerAction({
     }
 
     // Error state with reconnect link when needed
-    if (pickerState === "error" || error) {
+    // (Currently only token fetch failures set error state)
+    if (pickerState === "error") {
         return (
             <div className="flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
                 <Warning className="h-4 w-4 shrink-0 text-red-400" />
