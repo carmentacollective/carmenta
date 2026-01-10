@@ -458,9 +458,9 @@ function AssistantMessage({
                         {/* File previews */}
                         {fileParts.length > 0 && (
                             <div className="mb-2 flex flex-col gap-2">
-                                {fileParts.map((file) => (
+                                {fileParts.map((file, idx) => (
                                     <FilePreview
-                                        key={file.url}
+                                        key={`${file.url}-${idx}`}
                                         url={file.url}
                                         mediaType={file.mediaType}
                                         filename={file.name || "file"}
@@ -475,6 +475,7 @@ function AssistantMessage({
                                 key={part.id ?? `${part.type}-${idx}`}
                                 toolCallId={part.id ?? "data"}
                                 status="completed"
+                                // Safe cast - AskUserInputResult validates the shape and returns null if invalid
                                 output={part.data as AskUserInputOutput}
                             />
                         ))}
