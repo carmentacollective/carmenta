@@ -130,7 +130,21 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json().catch(() => ({}));
-        const connectionIds = body.connectionIds as number[] | undefined;
+
+        // Validate request body
+        const bodySchema = z.object({
+            connectionIds: z.array(z.number()).optional(),
+        });
+
+        const parsed = bodySchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json(
+                { error: "Invalid request body" },
+                { status: 400 }
+            );
+        }
+
+        const { connectionIds } = parsed.data;
 
         // Check if there are imports to process
         const unprocessed = await getUnprocessedImports(dbUser.id, 1000);

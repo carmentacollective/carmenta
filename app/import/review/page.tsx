@@ -165,6 +165,10 @@ export default function ImportReviewPage() {
         setProcessing(true);
         try {
             const res = await fetch("/api/import/extract", { method: "POST" });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || "Failed to start extraction");
+            }
             const data = await res.json();
             if (data.jobId) {
                 setJobId(data.jobId);
@@ -401,14 +405,14 @@ export default function ImportReviewPage() {
                             Review what we learned from your conversations
                         </p>
                     </div>
-                    {stats && stats.pending > 0 && (
+                    {extractions.length > 0 && (
                         <Button
                             onClick={approveAll}
                             disabled={processing}
                             variant="outline"
                         >
                             <CheckIcon className="mr-2 h-4 w-4" />
-                            Approve All ({stats.pending})
+                            Approve All ({extractions.length})
                         </Button>
                     )}
                 </div>
