@@ -341,6 +341,8 @@ export const completeGenerationTool = tool({
     execute: async (result): Promise<ImageArtistResult> => {
         // Retrieve actual images from pending storage
         const images: GeneratedImage[] = [];
+        const missingRefs: string[] = [];
+
         for (const ref of result.imageRefs) {
             const entry = pendingImages.get(ref);
             if (entry) {
@@ -348,6 +350,7 @@ export const completeGenerationTool = tool({
                 // Clean up after retrieval
                 pendingImages.delete(ref);
             } else {
+                missingRefs.push(ref);
                 logger.warn(
                     { imageRef: ref },
                     "Image reference not found in pending storage"
@@ -355,20 +358,33 @@ export const completeGenerationTool = tool({
             }
         }
 
+        // If user requested images but none were found, that's a failure
+        const allImagesMissing =
+            result.generated && result.imageRefs.length > 0 && images.length === 0;
+
+        if (allImagesMissing) {
+            logger.error(
+                { missingRefs, requestedCount: result.imageRefs.length },
+                "All image references missing from pending storage - images may have expired"
+            );
+        }
+
+        const actuallyGenerated = result.generated && !allImagesMissing;
+
         logger.info(
             {
-                generated: result.generated,
+                generated: actuallyGenerated,
                 model: result.model,
                 taskType: result.taskType,
                 durationMs: result.durationMs,
                 imageCount: images.length,
                 requestedRefs: result.imageRefs.length,
             },
-            result.generated ? "✅ Generation complete" : "⏭️ Generation failed"
+            actuallyGenerated ? "✅ Generation complete" : "⏭️ Generation failed"
         );
 
         return {
-            generated: result.generated,
+            generated: actuallyGenerated,
             images,
             expandedPrompt: result.expandedPrompt,
             originalPrompt: result.originalPrompt,

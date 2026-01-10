@@ -167,7 +167,7 @@ export async function commitImport(
             const importData: ImportData = {
                 source: dbSource,
                 externalId: conv.id,
-                customGptId: (conv as { customGptId?: string }).customGptId ?? null,
+                customGptId: conv.customGptId ?? null,
             };
 
             // Create a new connection for this conversation

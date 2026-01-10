@@ -161,7 +161,7 @@ function parseConversation(conv: AnthropicConversation): ParsedConversation | nu
             return null;
         }
 
-        // Convert messages
+        // Convert messages and sort by timestamp to ensure correct order
         const messages: ParsedMessage[] = conv.chat_messages
             .map((msg): ParsedMessage | null => {
                 const content = extractMessageContent(msg);
@@ -175,7 +175,10 @@ function parseConversation(conv: AnthropicConversation): ParsedConversation | nu
                     model: null, // Anthropic export doesn't specify model per message
                 };
             })
-            .filter((msg): msg is ParsedMessage => msg !== null);
+            .filter((msg): msg is ParsedMessage => msg !== null)
+            .sort(
+                (a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0)
+            );
 
         // Skip conversations with no messages
         if (messages.length === 0) {

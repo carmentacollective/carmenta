@@ -356,7 +356,7 @@ export default function ImportPage() {
 
     const handleImport = useCallback(async () => {
         if (filteredConversations.length === 0) {
-            setError("No chats to import—try adjusting filters");
+            setError("We need at least one chat to bring over. Loosen those filters?");
             setState("error");
             return;
         }
@@ -402,6 +402,7 @@ export default function ImportPage() {
         setState("idle");
         setError(null);
         setParsedData(null);
+        setFullConversations([]);
         setFilters(DEFAULT_FILTERS);
     }, []);
 
@@ -802,7 +803,7 @@ export default function ImportPage() {
                                                     htmlFor="keywordInclude"
                                                     className="text-sm font-medium"
                                                 >
-                                                    Must contain (comma-separated)
+                                                    Search for
                                                 </label>
                                                 <div className="relative">
                                                     <MagnifyingGlassIcon className="text-muted-foreground absolute top-2 left-2 h-4 w-4" />
@@ -830,7 +831,7 @@ export default function ImportPage() {
                                                     htmlFor="keywordExclude"
                                                     className="text-sm font-medium"
                                                 >
-                                                    Must not contain (comma-separated)
+                                                    Skip anything with
                                                 </label>
                                                 <div className="relative">
                                                     <XIcon className="text-muted-foreground absolute top-2 left-2 h-4 w-4" />
