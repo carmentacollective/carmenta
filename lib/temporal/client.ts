@@ -316,6 +316,129 @@ export async function startBackgroundResponse(params: {
 }
 
 /**
+ * Start an extraction job workflow
+ *
+ * Processes imported conversations to extract knowledge facts.
+ * Supports both Temporal mode (durable) and eager mode (inline).
+ */
+export async function startExtractionWorkflow(params: {
+    jobId: string;
+    userId: string;
+    connectionIds?: number[];
+}): Promise<string> {
+    const { jobId } = params;
+
+    // Eager mode: run activities inline without Temporal
+    if (isEagerMode()) {
+        const workflowId = `eager-extraction-${jobId}`;
+
+        logger.info(
+            { jobId, workflowId },
+            "Starting extraction workflow in eager mode (no durability)"
+        );
+
+        // Fire and forget - don't await
+        void runEagerExtractionWorkflow(params).catch((error) => {
+            logger.error(
+                {
+                    jobId,
+                    error: error instanceof Error ? error.message : error,
+                },
+                "Eager extraction workflow failed"
+            );
+
+            Sentry.captureException(error, {
+                fingerprint: ["eager-orchestration", "extraction"],
+                tags: {
+                    component: "eager-mode",
+                    action: "extraction",
+                },
+                extra: { jobId },
+            });
+        });
+
+        return workflowId;
+    }
+
+    // Temporal mode: dispatch to worker
+    const temporalClient = await getTemporalClient();
+
+    const handle = await temporalClient.workflow.start("extractionJobWorkflow", {
+        taskQueue: TASK_QUEUE,
+        workflowId: `extraction-${jobId}`,
+        args: [params],
+    });
+
+    logger.info(
+        { jobId, workflowId: handle.workflowId },
+        "Started extraction workflow"
+    );
+
+    return handle.workflowId;
+}
+
+/**
+ * Run extraction workflow activities inline (eager mode)
+ */
+async function runEagerExtractionWorkflow(params: {
+    jobId: string;
+    userId: string;
+    connectionIds?: number[];
+}): Promise<void> {
+    const { jobId } = params;
+
+    // Dynamic import to avoid loading worker deps at startup
+    const activities = await import("../../worker/activities/extraction");
+
+    const BATCH_SIZE = 10;
+    let totalProcessed = 0;
+    let totalExtracted = 0;
+
+    try {
+        // Step 1: Load context
+        const context = await activities.loadExtractionContext(params);
+
+        if (context.connectionIds.length === 0) {
+            await activities.finalizeExtractionJob(jobId, true);
+            return;
+        }
+
+        // Step 2: Process in batches
+        for (let i = 0; i < context.connectionIds.length; i += BATCH_SIZE) {
+            const batch = context.connectionIds.slice(i, i + BATCH_SIZE);
+
+            const result = await activities.processConversationBatch(context, batch);
+
+            totalProcessed += result.processedCount;
+            totalExtracted += result.extractedCount;
+
+            await activities.updateJobProgress(jobId, totalProcessed, totalExtracted);
+        }
+
+        // Step 3: Finalize
+        await activities.finalizeExtractionJob(jobId, true);
+
+        logger.info(
+            { jobId, totalProcessed, totalExtracted },
+            "Eager extraction workflow completed"
+        );
+    } catch (error) {
+        // Mark as failed
+        try {
+            const activities = await import("../../worker/activities/extraction");
+            await activities.finalizeExtractionJob(
+                jobId,
+                false,
+                error instanceof Error ? error.message : String(error)
+            );
+        } catch {
+            // Ignore finalization errors
+        }
+        throw error;
+    }
+}
+
+/**
  * Run background response activities inline (eager mode)
  *
  * Mirrors the Temporal workflow but runs in the same process.

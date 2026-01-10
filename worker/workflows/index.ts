@@ -7,3 +7,4 @@
 
 export * from "./agent-job";
 export * from "./background-response";
+export * from "./extraction-job";

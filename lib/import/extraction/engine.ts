@@ -52,7 +52,7 @@ const extractionSchema = z.object({
             ]),
             content: z.string(),
             summary: z.string(),
-            confidence: z.number().min(0).max(1),
+            confidence: z.number(),
             suggestedPath: z.string(),
         })
     ),

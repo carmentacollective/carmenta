@@ -1,11 +1,10 @@
 /**
  * Import Knowledge Extraction API
  *
- * POST - Start extraction job
+ * POST - Start extraction job (via Temporal workflow)
  * GET - Get extraction stats and pending extractions
  */
 
-import * as Sentry from "@sentry/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { z } from "zod";
@@ -13,12 +12,15 @@ import { z } from "zod";
 import { getOrCreateUser } from "@/lib/db";
 import {
     createExtractionJob,
-    processExtractionJob,
     getUnprocessedImports,
     getPendingExtractions,
     getExtractionStats,
 } from "@/lib/import/extraction";
 import { logger } from "@/lib/logger";
+import {
+    isBackgroundModeEnabled,
+    startExtractionWorkflow,
+} from "@/lib/temporal/client";
 
 /**
  * Get the database user for the current request
@@ -119,9 +121,17 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/import/extract
  *
- * Starts a new extraction job
+ * Starts a new extraction job via Temporal workflow
  */
 export async function POST(request: NextRequest) {
+    // Check if background mode is available
+    if (!isBackgroundModeEnabled()) {
+        return NextResponse.json(
+            { error: "Extraction service is temporarily unavailable" },
+            { status: 503 }
+        );
+    }
+
     const dbUser = await getDbUser();
 
     if (!dbUser) {
@@ -157,18 +167,28 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Create the job
+        // Create the job record
         const jobId = await createExtractionJob(dbUser.id, connectionIds);
 
-        // Start processing in background (fire-and-forget)
-        // In production, this would be a queue/worker
-        processExtractionJob(jobId).catch((error) => {
-            logger.error({ error, jobId }, "Background extraction job failed");
-            Sentry.captureException(error, {
-                tags: { category: "extraction", phase: "background-spawn" },
-                extra: { jobId },
+        // Start Temporal workflow for durable execution
+        try {
+            await startExtractionWorkflow({
+                jobId,
+                userId: dbUser.id,
+                connectionIds,
             });
-        });
+        } catch (temporalError) {
+            // If Temporal dispatch fails, log and return error
+            // Job is in DB with "queued" status - can be retried
+            logger.error(
+                { error: temporalError, jobId },
+                "Failed to dispatch extraction workflow"
+            );
+            return NextResponse.json(
+                { error: "Failed to start extraction" },
+                { status: 503 }
+            );
+        }
 
         return NextResponse.json({
             jobId,

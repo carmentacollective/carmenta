@@ -374,3 +374,6 @@ export async function finalizeJobRun(
 
 // Re-export background response activities
 export * from "./background-response";
+
+// Re-export extraction activities
+export * from "./extraction";
