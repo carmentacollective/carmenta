@@ -152,6 +152,27 @@ describe("Librarian Truncation", () => {
             expect(result.content.length).toBeGreaterThan(0);
         });
 
+        it("should trim huge chunks when few chunks exceed limit", () => {
+            // Two huge chunks that would exceed maxTokens even with truncation notice
+            // Each chunk is ~500 chars, ~145 tokens
+            const chunk1 = "x".repeat(500);
+            const chunk2 = "y".repeat(500);
+            const content = `${chunk1}\n\n${chunk2}`;
+
+            // Set limit that forces trimming even after taking last 2 chunks
+            // Content is ~1000 chars, ~285 tokens, but we limit to 100
+            const result = truncateConversationContent(content, 100);
+
+            expect(result.wasTruncated).toBe(true);
+            expect(result.truncatedTokens).toBeLessThanOrEqual(100);
+            // Should include truncation notice
+            expect(result.content).toContain(
+                "[Earlier conversation truncated for length]"
+            );
+            // Should have trimmed content to fit
+            expect(result.content.length).toBeLessThan(content.length);
+        });
+
         it("should add truncation notice", () => {
             // Create longer chunks to ensure truncation triggers
             const chunks = Array.from(

@@ -115,11 +115,37 @@ function truncateConversationContent(
     if (chunks.length <= 3) {
         // Too few chunks to intelligently truncate - just take the end
         const truncatedContent = chunks.slice(-2).join("\n\n");
+        const contentWithNotice = `[Earlier conversation truncated for length]\n\n${truncatedContent}`;
+        const tokensWithNotice = estimateTokens(contentWithNotice, LIBRARIAN_MODEL);
+
+        // If still too large, trim the chunks to fit
+        if (tokensWithNotice > maxTokens) {
+            // Take just the last chunk and trim if necessary
+            const lastChunk = chunks[chunks.length - 1];
+            const noticeTokens = estimateTokens(
+                "[Earlier conversation truncated for length]\n\n",
+                LIBRARIAN_MODEL
+            );
+            const availableTokens = maxTokens - noticeTokens;
+
+            // Estimate how many characters we can keep (conservative: 3 chars/token)
+            const maxChars = Math.floor(availableTokens * 3);
+            const trimmedChunk = lastChunk.slice(-maxChars);
+            const finalContent = `[Earlier conversation truncated for length]\n\n${trimmedChunk}`;
+
+            return {
+                content: finalContent,
+                wasTruncated: true,
+                originalTokens,
+                truncatedTokens: estimateTokens(finalContent, LIBRARIAN_MODEL),
+            };
+        }
+
         return {
-            content: `[Earlier conversation truncated for length]\n\n${truncatedContent}`,
+            content: contentWithNotice,
             wasTruncated: true,
             originalTokens,
-            truncatedTokens: estimateTokens(truncatedContent, LIBRARIAN_MODEL),
+            truncatedTokens: tokensWithNotice,
         };
     }
 
@@ -514,7 +540,11 @@ Focus on durable information: facts about the user, decisions made, people menti
 
         if (exhaustion.exhausted) {
             logger.warn(
-                { userId: context.userId, stepsUsed },
+                {
+                    userId: context.userId,
+                    stepsUsed,
+                    wasTruncated: truncation.wasTruncated,
+                },
                 "📚 Librarian extraction hit step limit without completing"
             );
 
@@ -529,13 +559,20 @@ Focus on durable information: facts about the user, decisions made, people menti
                     userId: context.userId,
                     stepsUsed,
                     maxSteps: MAX_EXTRACTION_STEPS,
+                    wasTruncated: truncation.wasTruncated,
                 },
             });
+
+            // Add truncation note if content was truncated
+            let summary = result.text || "Extraction completed but may be partial.";
+            if (truncation.wasTruncated) {
+                summary += " (Note: conversation was truncated due to length)";
+            }
 
             return degradedResult<ExtractionData>(
                 {
                     extracted: true,
-                    summary: result.text || "Extraction completed but may be partial.",
+                    summary,
                     stepsUsed,
                 },
                 exhaustion.message ?? "Step limit reached",
