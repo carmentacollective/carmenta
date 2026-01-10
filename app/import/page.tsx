@@ -138,15 +138,16 @@ export default function ImportPage() {
 
         return fullConversations.filter((conv) => {
             // Date range filter
+            // Parse dates with 'T00:00:00' suffix to ensure local timezone interpretation
+            // (bare YYYY-MM-DD may be parsed as UTC in some browsers)
             if (filters.dateStart) {
                 const convDate = new Date(conv.createdAt);
-                const startDate = new Date(filters.dateStart);
+                const startDate = new Date(filters.dateStart + "T00:00:00");
                 if (convDate < startDate) return false;
             }
             if (filters.dateEnd) {
                 const convDate = new Date(conv.createdAt);
-                const endDate = new Date(filters.dateEnd);
-                endDate.setHours(23, 59, 59, 999); // End of day
+                const endDate = new Date(filters.dateEnd + "T23:59:59.999");
                 if (convDate > endDate) return false;
             }
 
