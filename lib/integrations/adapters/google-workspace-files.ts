@@ -218,7 +218,13 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         // Get user's OAuth access token
         const tokenResult = await this.getOAuthAccessToken(userId, accountId);
         if ("content" in tokenResult) {
-            return tokenResult; // Error response
+            // Return structured error for UI to render IntegrationRequired component
+            return this.createJSONResponse({
+                error: "integration_not_connected",
+                message:
+                    "Google Sheets/Docs/Slides is not connected. " +
+                    "Please connect your Google account in the integrations settings.",
+            });
         }
         const { accessToken } = tokenResult;
 
