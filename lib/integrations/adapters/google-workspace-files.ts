@@ -232,7 +232,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                 case "read_sheet":
                     return await this.handleReadSheet(params, accessToken);
                 case "open_picker":
-                    return await this.handleOpenPicker(params);
+                    return this.handleOpenPicker(params);
                 default:
                     this.logError(
                         `[GOOGLE WORKSPACE FILES ADAPTER] Unknown action '${action}' requested by user ${userId}`
@@ -397,6 +397,11 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                     { documentId, error: contentError, title },
                     "Failed to insert content into newly created doc"
                 );
+                // Capture to Sentry for visibility into partial failures
+                this.captureError(contentError, {
+                    action: "create_doc_content",
+                    params: { documentId },
+                });
                 // Return partial success - doc exists but content failed
                 return this.createJSONResponse({
                     success: false,
@@ -461,7 +466,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
      * Signal frontend to open Google Picker
      * This returns an action object - the actual picker UI is handled by the frontend
      */
-    private async handleOpenPicker(params: unknown): Promise<MCPToolResponse> {
+    private handleOpenPicker(params: unknown): MCPToolResponse {
         const { file_types } = params as {
             file_types?: ("spreadsheet" | "document" | "presentation")[];
         };
