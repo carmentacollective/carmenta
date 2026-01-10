@@ -36,6 +36,14 @@ describe("ALLOWED_MIME_TYPES", () => {
         expect(ALLOWED_MIME_TYPES.document).toContain("application/pdf");
     });
 
+    it("includes spreadsheet types", () => {
+        expect(ALLOWED_MIME_TYPES.spreadsheet).toContain(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        expect(ALLOWED_MIME_TYPES.spreadsheet).toContain("application/vnd.ms-excel");
+        expect(ALLOWED_MIME_TYPES.spreadsheet).toContain("text/csv");
+    });
+
     it("does not include text types (Anthropic API limitation)", () => {
         expect(ALLOWED_MIME_TYPES).not.toHaveProperty("text");
     });
@@ -47,6 +55,7 @@ describe("MIME_TYPE_WHITELIST", () => {
             ...ALLOWED_MIME_TYPES.image,
             ...ALLOWED_MIME_TYPES.audio,
             ...ALLOWED_MIME_TYPES.document,
+            ...ALLOWED_MIME_TYPES.spreadsheet,
         ];
         expect(MIME_TYPE_WHITELIST).toEqual(expect.arrayContaining(allTypes));
         expect(MIME_TYPE_WHITELIST.length).toBe(allTypes.length);
@@ -64,6 +73,10 @@ describe("SIZE_LIMITS", () => {
 
     it("has correct document limit (25MB)", () => {
         expect(SIZE_LIMITS.document).toBe(25 * 1024 * 1024);
+    });
+
+    it("has correct spreadsheet limit (25MB)", () => {
+        expect(SIZE_LIMITS.spreadsheet).toBe(25 * 1024 * 1024);
     });
 });
 
@@ -94,6 +107,16 @@ describe("getFileCategory", () => {
         expect(getFileCategory("audio/x-m4a")).toBe("audio");
     });
 
+    it("returns 'spreadsheet' for spreadsheet MIME types", () => {
+        expect(
+            getFileCategory(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        ).toBe("spreadsheet");
+        expect(getFileCategory("application/vnd.ms-excel")).toBe("spreadsheet");
+        expect(getFileCategory("text/csv")).toBe("spreadsheet");
+    });
+
     it("returns null for unsupported types", () => {
         expect(getFileCategory("text/plain")).toBeNull();
         expect(getFileCategory("video/mp4")).toBeNull();
@@ -115,6 +138,16 @@ describe("getSizeLimit", () => {
 
     it("returns correct limit for documents", () => {
         expect(getSizeLimit("application/pdf")).toBe(25 * 1024 * 1024);
+    });
+
+    it("returns correct limit for spreadsheets", () => {
+        expect(
+            getSizeLimit(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        ).toBe(25 * 1024 * 1024);
+        expect(getSizeLimit("application/vnd.ms-excel")).toBe(25 * 1024 * 1024);
+        expect(getSizeLimit("text/csv")).toBe(25 * 1024 * 1024);
     });
 
     it("returns null for unsupported types", () => {
@@ -184,6 +217,7 @@ describe("getSupportedFormatsMessage", () => {
         expect(message).toContain("JPEG");
         expect(message).toContain("PNG");
         expect(message).toContain("PDFs");
+        expect(message).toContain("spreadsheets");
         expect(message).toContain("audio");
     });
 });

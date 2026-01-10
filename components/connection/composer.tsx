@@ -36,7 +36,7 @@ import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 import { useMessageEffects } from "@/lib/hooks/use-message-effects";
 import { useDraftPersistence } from "@/lib/hooks/use-draft-persistence";
-import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
+import { PASTE_THRESHOLD, isSpreadsheet } from "@/lib/storage/file-config";
 import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
 import { VoiceInputButton, type VoiceInputButtonRef } from "@/components/voice";
 
@@ -457,20 +457,38 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Haptic feedback on send
             triggerHaptic();
 
-            const message = input.trim();
-            lastSentMessageRef.current = message;
+            // Extract parsed content from spreadsheet files
+            // Spreadsheets are parsed to Markdown on upload for LLM consumption
+            const spreadsheetContent = completedFiles
+                .filter((f) => isSpreadsheet(f.mediaType) && f.parsedContent)
+                .map((f) => f.parsedContent)
+                .join("\n\n---\n\n");
+
+            // Build final message content with spreadsheet data prepended
+            const userText = input.trim();
+            const message = spreadsheetContent
+                ? `${spreadsheetContent}\n\n---\n\n${userText}`
+                : userText;
+
+            lastSentMessageRef.current = userText; // Store original text for stop behavior
             wasStoppedRef.current = false; // Reset stop flag for new message
             isSubmittingRef.current = true; // Set synchronously before async
             setInput("");
 
             // Check for secret phrases (easter egg effects)
-            checkMessage(message);
+            checkMessage(userText);
 
             try {
+                // Filter out spreadsheet files - their content is already in the message
+                // No LLM can process raw XLSX, so sending the file is redundant
+                const filesToSend = nonTextFiles.filter(
+                    (f) => !isSpreadsheet(f.mediaType)
+                );
+
                 await append({
                     role: "user",
                     content: message,
-                    files: nonTextFiles.map((f) => ({
+                    files: filesToSend.map((f) => ({
                         url: f.url,
                         mediaType: f.mediaType,
                         name: f.name,
@@ -487,7 +505,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     { error: error instanceof Error ? error.message : String(error) },
                     "Failed to send message"
                 );
-                setInput(message);
+                setInput(userText); // Restore original user text, not expanded message
             } finally {
                 isSubmittingRef.current = false;
             }
@@ -574,13 +592,29 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             }
             // If interrupting with current input, send that
             else if (input.trim()) {
-                const messageContent = input.trim();
+                const userText = input.trim();
                 setInput("");
+
+                // Extract parsed content from spreadsheet files for interrupt message
+                const spreadsheetContent = completedFiles
+                    .filter((f) => isSpreadsheet(f.mediaType) && f.parsedContent)
+                    .map((f) => f.parsedContent)
+                    .join("\n\n---\n\n");
+
+                const messageContent = spreadsheetContent
+                    ? `${spreadsheetContent}\n\n---\n\n${userText}`
+                    : userText;
+
+                // Filter out spreadsheet files - their content is already in the message
+                const filesToSend = completedFiles.filter(
+                    (f) => !isSpreadsheet(f.mediaType)
+                );
+
                 try {
                     await append({
                         role: "user",
                         content: messageContent,
-                        files: completedFiles.map((f) => ({
+                        files: filesToSend.map((f) => ({
                             url: f.url,
                             mediaType: f.mediaType,
                             name: f.name,
@@ -589,7 +623,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     clearFiles();
                 } catch (error) {
                     logger.error({ error }, "Failed to send interrupt message");
-                    setInput(messageContent);
+                    setInput(userText);
                 }
             }
         },

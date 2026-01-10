@@ -4,6 +4,8 @@ import { logger } from "@/lib/client-logger";
 import { STORAGE_BUCKET, type UploadedFile } from "./types";
 import { validateFile } from "./file-validator";
 import { optimizeImage, shouldOptimizeImage } from "./image-processor";
+import { isSpreadsheet } from "./file-config";
+import { parseSpreadsheet, spreadsheetToMarkdown } from "./spreadsheet-parser";
 
 /**
  * File Upload Service
@@ -40,12 +42,13 @@ export function generateStoragePath(
  * 1. Validate file format and size
  * 2. Optimize images (resize to 1092px, 85% quality) - 90% token savings
  * 3. Upload to Supabase Storage
- * 4. Return public URL and metadata
+ * 4. Parse spreadsheets to Markdown for LLM consumption
+ * 5. Return public URL and metadata
  *
  * @param file - File to upload
  * @param userId - User email for path organization
  * @param connectionId - Connection ID for path organization (null for new connections)
- * @param onStatusChange - Callback for status updates ("validating", "optimizing", "uploading", "complete")
+ * @param onStatusChange - Callback for status updates ("validating", "optimizing", "uploading", "parsing", "complete")
  * @returns Uploaded file metadata with public URL
  */
 export async function uploadFile(
@@ -53,7 +56,7 @@ export async function uploadFile(
     userId: string,
     connectionId: string | null,
     onStatusChange?: (
-        status: "validating" | "optimizing" | "uploading" | "complete"
+        status: "validating" | "optimizing" | "uploading" | "parsing" | "complete"
     ) => void
 ): Promise<UploadedFile> {
     // Step 1: Validate file
@@ -103,7 +106,32 @@ export async function uploadFile(
             data: { publicUrl },
         } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(data.path);
 
-        // Step 4: Complete
+        // Step 4: Parse spreadsheets to Markdown for LLM consumption
+        let parsedContent: string | undefined;
+        if (isSpreadsheet(file.type)) {
+            onStatusChange?.("parsing");
+            try {
+                const buffer = await file.arrayBuffer();
+                const parsed = parseSpreadsheet(buffer, file.name);
+                parsedContent = spreadsheetToMarkdown(parsed);
+                logger.info(
+                    {
+                        filename: file.name,
+                        sheets: parsed.sheets.length,
+                        totalRows: parsed.totalRows,
+                    },
+                    "Spreadsheet parsed successfully"
+                );
+            } catch (parseError) {
+                logger.error(
+                    { error: parseError, filename: file.name },
+                    "Failed to parse spreadsheet - file will be uploaded without parsed content"
+                );
+                // Continue without parsed content - file is still accessible via URL
+            }
+        }
+
+        // Step 5: Complete
         onStatusChange?.("complete");
 
         const result: UploadedFile = {
@@ -112,10 +140,15 @@ export async function uploadFile(
             name: file.name,
             size: fileToUpload.size, // Use optimized size, not original
             path: data.path,
+            ...(parsedContent && { parsedContent }),
         };
 
         logger.info(
-            { filename: file.name, url: publicUrl },
+            {
+                filename: file.name,
+                url: publicUrl,
+                hasSpreadsheetContent: !!parsedContent,
+            },
             "File uploaded successfully"
         );
 

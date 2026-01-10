@@ -15,6 +15,8 @@ export interface UploadedFile {
     size: number;
     /** Storage path in Supabase */
     path: string;
+    /** Parsed content for spreadsheets (Markdown) - included in message context */
+    parsedContent?: string;
 }
 
 /**
@@ -33,6 +35,7 @@ export type UploadStatus =
     | "validating"
     | "optimizing"
     | "uploading"
+    | "parsing"
     | "complete"
     | "error";
 
