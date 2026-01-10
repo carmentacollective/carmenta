@@ -297,7 +297,10 @@ export function parseSpreadsheet(
     buffer: Buffer | ArrayBuffer,
     filename: string
 ): ParsedSpreadsheet {
-    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+    // Convert ArrayBuffer to Uint8Array for browser compatibility
+    // SheetJS type: "array" works with both Node.js Buffer and browser Uint8Array
+    const data = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
+    const workbook = XLSX.read(data, { type: "array", cellDates: true });
 
     const sheets: SheetInfo[] = workbook.SheetNames.map((name) => {
         const sheet = workbook.Sheets[name];
