@@ -15,10 +15,10 @@
  * - Shows the conversation (same as HoloThread)
  */
 
-import { useState, useRef, useEffect, useCallback, memo } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { CaretDownIcon, SparkleIcon, type Icon } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
 import { usePullToRefresh } from "@/lib/hooks/use-pull-to-refresh";
 import { PullToRefreshIndicator } from "@/components/pwa/pull-to-refresh-indicator";
@@ -33,16 +33,29 @@ import { useDragDrop } from "@/lib/hooks/use-drag-drop";
 import { useSharedContent } from "@/lib/hooks/use-shared-content";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useUserContext } from "@/lib/auth/user-context";
-import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ThinkingIndicator } from "@/components/connection/thinking-indicator";
 import { TransientStatus } from "@/components/connection/transient-status";
 import { ConciergeDisplay } from "@/components/connection/concierge-display";
+import { ReasoningDisplay } from "@/components/connection/reasoning-display";
 import { useChatContext, useCodeMode } from "@/components/connection";
 import {
     FileAttachmentProvider,
     useFileAttachments,
 } from "@/components/connection/file-attachment-context";
 import { DragDropOverlay } from "@/components/connection/drag-drop-overlay";
+import {
+    ScrollToBottomButton,
+    MessageActions,
+    ToolPartRenderer,
+    getMessageContent,
+    getReasoningContent,
+    getToolParts,
+    getFileParts,
+    getDataParts,
+} from "@/components/chat";
+import { FilePreview } from "@/components/connection/file-preview";
+import { AskUserInputResult } from "@/components/tools/post-response";
+import type { AskUserInputOutput } from "@/lib/tools/post-response";
 import { SidecarComposer } from "./sidecar-composer";
 import type { SidecarWelcomeConfig, SidecarSuggestion } from "./carmenta-sidecar";
 
@@ -211,6 +224,7 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
                     <ScrollToBottomButton
                         isAtBottom={isAtBottom}
                         onScrollToBottom={() => scrollToBottom("smooth")}
+                        className="absolute -top-12"
                     />
                     <SidecarComposer placeholder={placeholder} />
                 </div>
@@ -311,29 +325,6 @@ function SuggestionPill({
 }
 
 /**
- * Scroll-to-bottom button
- */
-const ScrollToBottomButton = memo(function ScrollToBottomButton({
-    isAtBottom,
-    onScrollToBottom,
-}: {
-    isAtBottom: boolean;
-    onScrollToBottom: () => void;
-}) {
-    if (isAtBottom) return null;
-
-    return (
-        <button
-            onClick={onScrollToBottom}
-            className="btn-glass-interactive z-sticky absolute -top-12 flex h-9 w-9 items-center justify-center"
-            aria-label="Scroll to bottom"
-        >
-            <CaretDownIcon className="text-foreground/70 h-4 w-4" />
-        </button>
-    );
-});
-
-/**
  * Simple message bubble for sidecar
  */
 function MessageBubble({
@@ -380,7 +371,7 @@ function UserMessage({ message }: { message: UIMessage }) {
 }
 
 /**
- * Assistant message bubble
+ * Assistant message bubble with tool output, reasoning, and copy button
  */
 function AssistantMessage({
     message,
@@ -393,14 +384,33 @@ function AssistantMessage({
 }) {
     const { concierge } = useConcierge();
     const content = getMessageContent(message);
+    const reasoning = getReasoningContent(message);
+    const toolParts = getToolParts(message);
+    const fileParts = getFileParts(message);
+    const dataParts = getDataParts(message);
     const hasContent = content.trim().length > 0;
 
-    // Show thinking indicator when streaming but no content yet
-    const showThinking = isStreaming && !hasContent && isLast;
+    // Filter for askUserInput data parts specifically
+    const askUserInputParts = dataParts.filter((p) => p.type === "data-askUserInput");
+
+    // Show thinking indicator only when:
+    // - Streaming AND no content yet AND no tools running AND this is the last message
+    // Once tools start running, they provide their own progress indicators
+    const hasToolsRunning = toolParts.length > 0;
+    const showThinking = isStreaming && !hasContent && !hasToolsRunning && isLast;
 
     // Show concierge display during routing
     const showConcierge = isLast && (isStreaming || Boolean(concierge));
     const isSelectingModel = isStreaming && !concierge;
+
+    // Check if we have any output to show
+    const hasOutput =
+        reasoning ||
+        toolParts.length > 0 ||
+        fileParts.length > 0 ||
+        askUserInputParts.length > 0 ||
+        hasContent ||
+        showThinking;
 
     return (
         <div className="my-2 flex w-full flex-col gap-2">
@@ -419,19 +429,78 @@ function AssistantMessage({
             {/* Transient status */}
             {isStreaming && isLast && <TransientStatus className="mb-1" />}
 
-            {/* Message content */}
-            {(hasContent || showThinking) && (
-                <div className="max-w-[90%]">
+            {/* LLM output zone */}
+            {hasOutput && (
+                <div className="group max-w-[90%]">
                     <div className="assistant-message-bubble rounded-xl rounded-bl-sm border-l-[3px] border-l-cyan-400 px-3 py-2.5">
+                        {/* Reasoning display */}
+                        {reasoning && (
+                            <ReasoningDisplay
+                                content={reasoning}
+                                isStreaming={isStreaming && isLast}
+                                variant="nested"
+                                className="mb-2"
+                            />
+                        )}
+
+                        {/* Tool outputs */}
+                        {toolParts.length > 0 && (
+                            <div className="mb-2 space-y-2">
+                                {toolParts.map((part) => (
+                                    <ToolPartRenderer
+                                        key={part.toolCallId}
+                                        part={part}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* File previews */}
+                        {fileParts.length > 0 && (
+                            <div className="mb-2 flex flex-col gap-2">
+                                {fileParts.map((file, idx) => (
+                                    <FilePreview
+                                        key={`${file.url}-${idx}`}
+                                        url={file.url}
+                                        mediaType={file.mediaType}
+                                        filename={file.name || "file"}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* AskUserInput data parts */}
+                        {askUserInputParts.map((part, idx) => (
+                            <AskUserInputResult
+                                key={part.id ?? `${part.type}-${idx}`}
+                                toolCallId={part.id ?? "data"}
+                                status="completed"
+                                // Safe cast - AskUserInputResult validates the shape and returns null if invalid
+                                output={part.data as AskUserInputOutput}
+                            />
+                        ))}
+
+                        {/* Message content */}
                         {showThinking ? (
                             <ThinkingIndicator />
                         ) : (
-                            <MarkdownRenderer
-                                content={content}
-                                isStreaming={isStreaming}
-                            />
+                            hasContent && (
+                                <MarkdownRenderer
+                                    content={content}
+                                    isStreaming={isStreaming}
+                                />
+                            )
                         )}
                     </div>
+
+                    {/* Copy button - appears on hover for older messages, always for last */}
+                    {hasContent && (
+                        <MessageActions
+                            content={content}
+                            isLast={isLast}
+                            isStreaming={isStreaming}
+                        />
+                    )}
                 </div>
             )}
         </div>
@@ -478,16 +547,4 @@ function PendingAssistantMessage({
     );
 }
 
-/**
- * Extract text content from UIMessage parts
- */
-function getMessageContent(message: UIMessage): string {
-    if (!message?.parts) return "";
-    return message.parts
-        .filter((part) => part?.type === "text")
-        .map((part) => {
-            const textPart = part as { type: "text"; text?: string };
-            return textPart?.text ?? "";
-        })
-        .join("");
-}
+// Message part utilities are imported from @/components/chat

@@ -16,3 +16,24 @@ export {
     ScrollToBottomButton,
     type ScrollToBottomButtonProps,
 } from "./scroll-to-bottom-button";
+
+// Message part utilities - shared between HoloThread and SidecarThread
+export {
+    getMessageContent,
+    getReasoningContent,
+    getToolParts,
+    getFileParts,
+    getDataParts,
+    getToolStatus,
+    getToolError,
+    isToolPart,
+    isFilePart,
+    isDataPart,
+    type ToolPart,
+    type FilePart,
+    type DataPart,
+} from "./message-parts";
+
+// Message rendering components
+export { MessageActions, type MessageActionsProps } from "./message-actions";
+export { ToolPartRenderer } from "./tool-part-renderer";

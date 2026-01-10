@@ -19,10 +19,13 @@ LAYER 2: Specialized Interfaces
     • useCarmenta hook (DCOS transport)
 
 LAYER 1: Shared Building Blocks (this directory)
-├── SimpleComposer     Lightweight text input + send button
-├── UserBubble         User message rendering
-├── AssistantBubble    Assistant message with markdown, streaming, avatar
-└── ThinkingBubble     Loading indicator while waiting for response
+├── message-parts.ts     UIMessage parsing utilities
+├── message-actions.tsx  Copy button + action toolbar
+├── tool-part-renderer.tsx   ~40 tool output renderers
+├── SimpleComposer       Lightweight text input + send button
+├── UserBubble           User message rendering
+├── AssistantBubble      Assistant message with markdown, streaming, avatar
+└── ThinkingBubble       Loading indicator while waiting for response
 ```
 
 ## Why Two Chat Systems?
@@ -38,6 +41,55 @@ Appears as a sidebar on desktop, modal on mobile.
 Both share this layer for DRY message rendering and basic input.
 
 ## Components
+
+### Message Part Utilities
+
+Shared helpers for extracting content from `UIMessage` objects:
+
+```tsx
+import {
+  getMessageContent, // Extract text content
+  getReasoningContent, // Extract reasoning/thinking blocks
+  getToolParts, // Extract tool call results
+  getFileParts, // Extract file attachments
+  getDataParts, // Extract generative UI data
+  type ToolPart,
+  type FilePart,
+  type DataPart,
+} from "@/components/chat";
+```
+
+### MessageActions
+
+Action toolbar with copy button (+ dropdown for format options) and optional regenerate
+menu. Handles hover-reveal on desktop, always-visible on mobile.
+
+```tsx
+import { MessageActions } from "@/components/chat";
+
+<MessageActions
+  content={messageText}
+  isLast={isLastMessage}
+  isStreaming={isStreaming}
+  messageId={message.id} // Optional: for regenerate
+  onRegenerate={handleRegenerate} // Optional: for regenerate
+/>;
+```
+
+### ToolPartRenderer
+
+Routes tool output to appropriate UI components. Supports ~40 tools including research,
+integrations, Claude Code tools, and generative UI.
+
+```tsx
+import { ToolPartRenderer, getToolParts } from "@/components/chat";
+
+const toolParts = getToolParts(message);
+
+{
+  toolParts.map((part) => <ToolPartRenderer key={part.toolCallId} part={part} />);
+}
+```
 
 ### SimpleComposer
 
