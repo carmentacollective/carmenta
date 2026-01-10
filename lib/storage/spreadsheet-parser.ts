@@ -320,15 +320,15 @@ export function parseSpreadsheet(
     };
 }
 
-/**
- * Escape special characters for Markdown table cells
- * Prevents XSS and formatting injection via spreadsheet content
- */
 /** Format date consistently as YYYY-MM-DD (locale-independent) */
 function formatDate(date: Date): string {
     return date.toISOString().split("T")[0];
 }
 
+/**
+ * Escape special characters for Markdown table cells
+ * Prevents XSS and formatting injection via spreadsheet content
+ */
 function escapeCell(value: unknown): string {
     if (value === null || value === undefined) return "";
     if (value instanceof Date) {
