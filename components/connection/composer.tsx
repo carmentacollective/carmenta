@@ -56,6 +56,16 @@ export interface ComposerProps {
 
 const SHIFT_ENTER_HINT_KEY = "carmenta:shift-enter-hint-shown";
 
+/** Extract and join parsed content from spreadsheet uploads */
+function extractSpreadsheetContent(
+    files: { mediaType: string; parsedContent?: string }[]
+): string {
+    return files
+        .filter((f) => isSpreadsheet(f.mediaType) && f.parsedContent)
+        .map((f) => f.parsedContent)
+        .join("\n\n---\n\n");
+}
+
 export function Composer({ onMarkMessageStopped }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
     const { concierge, setConcierge } = useConcierge();
@@ -459,10 +469,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 
             // Extract parsed content from spreadsheet files
             // Spreadsheets are parsed to Markdown on upload for LLM consumption
-            const spreadsheetContent = completedFiles
-                .filter((f) => isSpreadsheet(f.mediaType) && f.parsedContent)
-                .map((f) => f.parsedContent)
-                .join("\n\n---\n\n");
+            const spreadsheetContent = extractSpreadsheetContent(completedFiles);
 
             // Build final message content with spreadsheet data prepended
             const userText = input.trim();
@@ -596,10 +603,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 setInput("");
 
                 // Extract parsed content from spreadsheet files for interrupt message
-                const spreadsheetContent = completedFiles
-                    .filter((f) => isSpreadsheet(f.mediaType) && f.parsedContent)
-                    .map((f) => f.parsedContent)
-                    .join("\n\n---\n\n");
+                const spreadsheetContent = extractSpreadsheetContent(completedFiles);
 
                 const messageContent = spreadsheetContent
                     ? `${spreadsheetContent}\n\n---\n\n${userText}`
