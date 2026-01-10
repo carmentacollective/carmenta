@@ -55,6 +55,16 @@ export interface ServiceDefinition {
 
     /** Brief capability summary for tool description */
     capabilities?: string[];
+
+    /**
+     * Keywords that trigger proactive integration suggestions.
+     *
+     * When a user's query contains these keywords and the integration
+     * isn't connected, we suggest connecting it.
+     *
+     * @example ["bitcoin", "crypto", "ethereum", "price"] for CoinMarketCap
+     */
+    suggestKeywords?: string[];
 }
 
 /**
@@ -77,6 +87,13 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         supportsMultipleAccounts: true,
         docsUrl: "https://clickup.com/api",
         capabilities: ["list_tasks", "create_task", "update_task", "list_spaces"],
+        suggestKeywords: [
+            "clickup",
+            "my tasks",
+            "my to-do",
+            "my backlog",
+            "in clickup",
+        ],
     },
 
     // CoinMarketCap - API Key
@@ -96,6 +113,19 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "get_quotes",
             "get_crypto_info",
             "convert_price",
+        ],
+        suggestKeywords: [
+            "bitcoin",
+            "ethereum",
+            "crypto",
+            "cryptocurrency",
+            "btc",
+            "eth",
+            "solana",
+            "sol",
+            "market cap",
+            "coin price",
+            "token",
         ],
     },
 
@@ -119,6 +149,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "delete",
             "create_shared_link",
         ],
+        suggestKeywords: ["dropbox", "files in dropbox", "my dropbox"],
     },
 
     // Fireflies.ai - API Key
@@ -134,6 +165,14 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         supportsMultipleAccounts: false,
         docsUrl: "https://docs.fireflies.ai/",
         capabilities: ["list_transcripts", "search_transcripts", "get_transcript"],
+        suggestKeywords: [
+            "fireflies",
+            "meeting transcript",
+            "meeting recording",
+            "zoom recording",
+            "what was said in the meeting",
+            "meeting notes from",
+        ],
     },
 
     // Google Calendar + Contacts - OAuth (in-house, "sensitive" scopes tier)
@@ -152,6 +191,15 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "create_event",
             "search_contacts",
             "list_calendars",
+        ],
+        suggestKeywords: [
+            "my calendar",
+            "google calendar",
+            "schedule a meeting",
+            "my schedule",
+            "when am i free",
+            "my contacts",
+            "contact info for",
         ],
     },
 
@@ -186,6 +234,14 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.google.com/workspace",
         capabilities: ["create_sheet", "create_doc", "read_sheet", "open_picker"],
+        suggestKeywords: [
+            "google sheet",
+            "google doc",
+            "google slides",
+            "export to sheets",
+            "create a spreadsheet",
+            "create a doc",
+        ],
     },
 
     // Limitless - API Key
@@ -201,6 +257,14 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         supportsMultipleAccounts: false,
         docsUrl: "https://www.limitless.ai/developers",
         capabilities: ["search", "list_recordings", "get_transcript"],
+        suggestKeywords: [
+            "limitless",
+            "pendant",
+            "what did i say",
+            "conversation",
+            "recording",
+            "what did we talk about",
+        ],
     },
 
     // Notion - OAuth (in-house)
@@ -215,6 +279,14 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.notion.com/",
         capabilities: ["search_pages", "get_page", "create_page", "update_page"],
+        suggestKeywords: [
+            "notion",
+            "my notes",
+            "wiki",
+            "documentation",
+            "notion page",
+            "notion database",
+        ],
     },
 
     // Quo (formerly OpenPhone) - API Key
@@ -236,6 +308,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "list_contacts",
             "list_phone_numbers",
         ],
+        suggestKeywords: ["quo", "send a text", "send an sms", "text message"],
     },
 
     // Slack - OAuth (in-house)
@@ -256,6 +329,13 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "get_user_info",
             "list_users",
             "add_reaction",
+        ],
+        suggestKeywords: [
+            "slack",
+            "slack message",
+            "slack channel",
+            "post to slack",
+            "in slack",
         ],
     },
 
@@ -278,6 +358,13 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "get_top_items",
             "list_playlists",
         ],
+        suggestKeywords: [
+            "spotify",
+            "play some music",
+            "my playlist",
+            "what am i listening to",
+            "currently playing",
+        ],
     },
 
     // Twitter/X - OAuth (in-house)
@@ -298,6 +385,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "like_tweet",
             "retweet",
         ],
+        suggestKeywords: ["tweet", "twitter", "x post", "post to x", "timeline"],
     },
 ];
 
@@ -366,4 +454,86 @@ export function getAvailableServiceIds(includeInternal = true): string[] {
 export function getOAuthProviderId(serviceId: string): string | undefined {
     const service = getServiceById(serviceId);
     return service?.oauthProviderId;
+}
+
+/**
+ * Integration suggestion with reason for why it would help.
+ */
+export interface IntegrationSuggestion {
+    /** Service ID */
+    serviceId: string;
+    /** Service display name */
+    serviceName: string;
+    /** Brief description of the service */
+    description: string;
+    /** What keywords triggered this suggestion */
+    matchedKeywords: string[];
+}
+
+/**
+ * Find integrations that could enhance a query based on keyword matching.
+ *
+ * Returns unconnected services whose suggestKeywords match the query.
+ * Used by the Concierge to suggest relevant integrations.
+ *
+ * Matching strategy:
+ * - Multi-word phrases: substring match (e.g., "my calendar" matches "check my calendar")
+ * - Single words: word boundary match to avoid false positives (e.g., "play" won't match "display")
+ *
+ * @param query - User's query text
+ * @param connectedServiceIds - Set of service IDs the user has connected
+ * @param maxSuggestions - Maximum number of suggestions to return (default 2)
+ */
+export function findSuggestableIntegrations(
+    query: string,
+    connectedServiceIds: Set<string>,
+    maxSuggestions = 2
+): IntegrationSuggestion[] {
+    // Guard against empty queries
+    if (!query || !query.trim()) {
+        return [];
+    }
+
+    const queryLower = query.toLowerCase();
+    const suggestions: IntegrationSuggestion[] = [];
+
+    for (const service of SERVICE_REGISTRY) {
+        // Skip if already connected, internal-only, or no keywords
+        if (connectedServiceIds.has(service.id)) continue;
+        if (service.status === "internal") continue;
+        if (!service.suggestKeywords || service.suggestKeywords.length === 0) continue;
+
+        // Check for keyword matches with appropriate strategy
+        const matchedKeywords = service.suggestKeywords.filter((keyword) => {
+            const keywordLower = keyword.toLowerCase();
+            // Multi-word phrases: use substring match
+            if (keywordLower.includes(" ")) {
+                return queryLower.includes(keywordLower);
+            }
+            // Single words: use word boundary match to avoid false positives
+            const wordBoundary = new RegExp(`\\b${escapeRegex(keywordLower)}\\b`, "i");
+            return wordBoundary.test(query);
+        });
+
+        if (matchedKeywords.length > 0) {
+            suggestions.push({
+                serviceId: service.id,
+                serviceName: service.name,
+                description: service.description,
+                matchedKeywords,
+            });
+        }
+    }
+
+    // Sort by number of matched keywords (most relevant first)
+    suggestions.sort((a, b) => b.matchedKeywords.length - a.matchedKeywords.length);
+
+    return suggestions.slice(0, maxSuggestions);
+}
+
+/**
+ * Escapes special regex characters in a string.
+ */
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

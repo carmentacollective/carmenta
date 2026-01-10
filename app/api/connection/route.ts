@@ -45,6 +45,8 @@ import { logger } from "@/lib/logger";
 import { getModel, getFallbackChain } from "@/lib/model-config";
 import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
+import { getConnectedServices } from "@/lib/integrations/connection-manager";
+import { findSuggestableIntegrations } from "@/lib/integrations/services";
 import { getMcpGatewayTools } from "@/lib/mcp/gateway";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
@@ -157,8 +159,42 @@ export async function POST(req: Request) {
             imageUrl: user?.imageUrl ?? null,
         });
 
+        // Get connected services and find potential integration suggestions
+        const connectedServiceIds = await getConnectedServices(userEmail!);
+        const connectedSet = new Set(connectedServiceIds);
+
+        // Extract user query for keyword matching
+        const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+        const userQuery =
+            lastUserMessage?.parts
+                ?.filter(
+                    (part): part is { type: "text"; text: string } =>
+                        part.type === "text"
+                )
+                .map((part) => part.text)
+                .join(" ") ?? "";
+
+        // Find integrations that might help with this query
+        const suggestableIntegrations = findSuggestableIntegrations(
+            userQuery,
+            connectedSet
+        );
+
         // Run the Concierge FIRST to get model selection AND title (for new connections)
-        const conciergeResult = await runConcierge(messages);
+        const conciergeResult = await runConcierge(messages, {
+            integrationContext:
+                suggestableIntegrations.length > 0
+                    ? {
+                          connectedServiceIds,
+                          potentialSuggestions: suggestableIntegrations.map((s) => ({
+                              serviceId: s.serviceId,
+                              serviceName: s.serviceName,
+                              description: s.description,
+                              matchedKeywords: s.matchedKeywords,
+                          })),
+                      }
+                    : undefined,
+        });
 
         // Build lightweight input for routing rules
         const conciergeInput = buildConciergeInput(messages, {
@@ -250,6 +286,8 @@ export async function POST(req: Request) {
             contextUtilization: routingResult.contextUtilization,
             // Knowledge base search configuration from concierge
             kbSearch: conciergeResult.kbSearch,
+            // Suggested integrations when query would benefit from unconnected services
+            suggestedIntegrations: conciergeResult.suggestedIntegrations,
         };
 
         // Create new connection now that we have final concierge data
@@ -1255,6 +1293,17 @@ export async function POST(req: Request) {
                     encodeURIComponent(conciergeResult.title)
                 );
             }
+        }
+
+        // Include suggested integrations when query would benefit from unconnected services
+        if (
+            concierge.suggestedIntegrations &&
+            concierge.suggestedIntegrations.length > 0
+        ) {
+            headers.set(
+                "X-Suggested-Integrations",
+                encodeURIComponent(JSON.stringify(concierge.suggestedIntegrations))
+            );
         }
 
         // ================================================================

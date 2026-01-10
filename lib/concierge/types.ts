@@ -91,6 +91,12 @@ export interface ConciergeInput {
      * Helps understand the flow and timing of the conversation.
      */
     sessionContext?: SessionContext;
+
+    /**
+     * Integration context for suggesting relevant services.
+     * Contains connected services and potential suggestions based on query keywords.
+     */
+    integrationContext?: IntegrationContext;
 }
 
 /**
@@ -142,6 +148,25 @@ export interface SessionContext {
 
     /** Milliseconds since last message (quick follow-up vs new thought) */
     timeSinceLastMessage?: number;
+}
+
+/**
+ * Integration context for suggesting relevant unconnected services.
+ *
+ * Passed to the concierge so it can suggest integrations that would
+ * enhance the user's query.
+ */
+export interface IntegrationContext {
+    /** Service IDs the user has connected */
+    connectedServiceIds: string[];
+    /** Services that matched query keywords but aren't connected */
+    potentialSuggestions: Array<{
+        serviceId: string;
+        serviceName: string;
+        description: string;
+        /** Keywords from the query that triggered this suggestion */
+        matchedKeywords: string[];
+    }>;
 }
 
 /**
@@ -217,6 +242,19 @@ export interface ClarifyingQuestion {
         label: string;
         value: string;
     }>;
+}
+
+/**
+ * A suggested integration that would enhance the user's query.
+ *
+ * When a user asks something that would benefit from an integration
+ * they haven't connected, we can proactively suggest it.
+ */
+export interface SuggestedIntegration {
+    /** Service ID (e.g., "coinmarketcap", "spotify") */
+    serviceId: string;
+    /** Brief explanation of why this integration would help (shown to user) */
+    reason: string;
 }
 
 /**
@@ -310,6 +348,15 @@ export interface ConciergeResult {
      * appended to the conversation, and a new request is made.
      */
     clarifyingQuestions?: ClarifyingQuestion[];
+
+    /**
+     * Suggested integrations that would enhance this request.
+     *
+     * When the user's query would benefit from an integration they
+     * haven't connected, we suggest it with a brief reason.
+     * Light-touch, helpful, not pushy.
+     */
+    suggestedIntegrations?: SuggestedIntegration[];
 }
 
 /**

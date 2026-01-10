@@ -20,8 +20,13 @@ import {
     CONCIERGE_FALLBACK_CHAIN,
     VIDEO_CAPABLE_MODEL,
 } from "@/lib/model-config";
+import { getServiceById } from "@/lib/integrations/services";
 
-import { buildConciergePrompt, formatQuerySignals } from "./prompt";
+import {
+    buildConciergePrompt,
+    formatIntegrationContext,
+    formatQuerySignals,
+} from "./prompt";
 import { buildConciergeInput, type BuildConciergeInputOptions } from "./input-builder";
 import {
     ALLOWED_MODELS,
@@ -40,12 +45,14 @@ import {
 export type {
     ConciergeResult,
     ConciergeInput,
+    IntegrationContext,
     KBSearchConfig,
     ReasoningConfig,
     ReasoningEffort,
     OpenRouterEffort,
     QueryComplexitySignals,
     SessionContext,
+    SuggestedIntegration,
 } from "./types";
 export { CONCIERGE_DEFAULTS, REASONING_TOKEN_BUDGETS } from "./types";
 
@@ -313,6 +320,24 @@ const conciergeSchema = z.object({
         .describe(
             "Questions to ask before deep research - helps scope the work and ensure alignment"
         ),
+    suggestedIntegrations: z
+        .array(
+            z.object({
+                serviceId: z
+                    .string()
+                    .describe("Service ID (e.g., 'coinmarketcap', 'spotify')"),
+                reason: z
+                    .string()
+                    .max(100)
+                    .describe(
+                        "Brief reason why this integration would help (shown to user)"
+                    ),
+            })
+        )
+        .optional()
+        .describe(
+            "Integrations to suggest when query would benefit from unconnected services. 1-2 suggestions max."
+        ),
 });
 
 /**
@@ -331,6 +356,7 @@ function processConciergeResponse(
         kbSearch: rawKbSearch,
         backgroundMode: rawBackgroundMode,
         clarifyingQuestions: rawClarifyingQuestions,
+        suggestedIntegrations: rawSuggestedIntegrations,
     } = raw;
 
     // Validate model against whitelist
@@ -392,6 +418,14 @@ function processConciergeResponse(
             ? rawClarifyingQuestions
             : undefined;
 
+    // Process suggested integrations - validate serviceIds exist and limit to 2
+    const suggestedIntegrations =
+        rawSuggestedIntegrations && rawSuggestedIntegrations.length > 0
+            ? rawSuggestedIntegrations
+                  .filter((s) => getServiceById(s.serviceId)) // Validate serviceId exists
+                  .slice(0, 2)
+            : undefined;
+
     return {
         modelId,
         temperature,
@@ -401,6 +435,7 @@ function processConciergeResponse(
         kbSearch,
         backgroundMode,
         clarifyingQuestions,
+        suggestedIntegrations,
     };
 }
 
@@ -447,8 +482,10 @@ export async function runConcierge(
                     return CONCIERGE_DEFAULTS;
                 }
 
-                // Format query signals for the prompt
+                // Format query signals and integration context for the prompt
                 const querySignalsBlock = formatQuerySignals(conciergeInput);
+                const integrationContextBlock =
+                    formatIntegrationContext(conciergeInput);
 
                 // AUDIO/VIDEO ROUTING: Force Gemini if audio or video attachments present
                 // Only Gemini has native audio/video support
@@ -474,10 +511,13 @@ export async function runConcierge(
                 }
 
                 // Build the prompt with clear framing to prevent the model from answering directly
-                // Include query signals to inform reasoning level decision
+                // Include query signals and integration context to inform decisions
                 let messageBlock = `<user-message>\n${userQuery}\n</user-message>`;
                 if (attachments.length > 0) {
                     messageBlock = `<attachments>${attachments.join(", ")}</attachments>\n\n${messageBlock}`;
+                }
+                if (integrationContextBlock) {
+                    messageBlock = `${integrationContextBlock}\n\n${messageBlock}`;
                 }
                 if (querySignalsBlock) {
                     messageBlock = `${querySignalsBlock}\n\n${messageBlock}`;
