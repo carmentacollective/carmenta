@@ -12,6 +12,8 @@ import {
     PlugsConnectedIcon,
     BookOpenIcon,
     ChatTeardropIcon,
+    ClockClockwiseIcon,
+    DownloadSimpleIcon,
 } from "@phosphor-icons/react";
 
 import { AnimatePresence, motion } from "framer-motion";
@@ -282,6 +284,26 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           <span className="relative">
                                               Communication
                                           </span>
+                                      </Link>
+
+                                      <Link
+                                          href="/connections"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <ClockClockwiseIcon className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">Connections</span>
+                                      </Link>
+
+                                      <Link
+                                          href="/import"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <DownloadSimpleIcon className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">Import</span>
                                       </Link>
 
                                       {/* Account & Appearance */}

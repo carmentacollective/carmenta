@@ -50,11 +50,21 @@ export interface ConciergeData {
  * @param conciergeData - Optional concierge decision data to persist for UI display
  * @returns The created connection
  */
+/**
+ * Import metadata for connections imported from external platforms
+ */
+export interface ImportData {
+    source: "openai" | "anthropic";
+    externalId: string;
+    customGptId?: string | null;
+}
+
 export async function createConnection(
     userId: string,
     title?: string,
     modelId?: string,
-    conciergeData?: ConciergeData
+    conciergeData?: ConciergeData,
+    importData?: ImportData
 ): Promise<Connection> {
     // Insert without ID - Postgres auto-generates it via SERIAL
     const [connection] = await db
@@ -72,6 +82,11 @@ export async function createConnection(
             conciergeTemperature: conciergeData?.temperature?.toString() ?? null,
             conciergeExplanation: conciergeData?.explanation ?? null,
             conciergeReasoning: conciergeData?.reasoning ?? null,
+            // Import tracking data
+            source: importData?.source ?? "carmenta",
+            externalId: importData?.externalId ?? null,
+            importedAt: importData ? new Date() : null,
+            customGptId: importData?.customGptId ?? null,
         })
         .returning();
 
@@ -104,6 +119,30 @@ export async function createConnection(
 export async function getConnection(connectionId: number): Promise<Connection | null> {
     const connection = await db.query.connections.findFirst({
         where: eq(connections.id, connectionId),
+    });
+    return connection ?? null;
+}
+
+/**
+ * Finds an existing imported connection by source and external ID.
+ * Used for duplicate detection during imports.
+ *
+ * @param userId - User's ID
+ * @param source - Source platform ('openai' or 'anthropic')
+ * @param externalId - Original conversation ID from the source platform
+ * @returns Connection if found, null otherwise
+ */
+export async function findImportedConnection(
+    userId: string,
+    source: "openai" | "anthropic",
+    externalId: string
+): Promise<Connection | null> {
+    const connection = await db.query.connections.findFirst({
+        where: and(
+            eq(connections.userId, userId),
+            eq(connections.source, source),
+            eq(connections.externalId, externalId)
+        ),
     });
     return connection ?? null;
 }

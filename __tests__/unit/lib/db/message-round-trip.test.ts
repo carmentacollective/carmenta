@@ -42,6 +42,7 @@ function roundTrip(uiMessage: UIMessageLike): UIMessageLike {
         connectionId: message.connectionId,
         role: message.role,
         createdAt: new Date(),
+        externalId: null,
         parts: parts.map((p, idx) => ({
             id: `part-${idx}`,
             messageId: p.messageId,

@@ -375,6 +375,11 @@ describe("Connection API Response Paths", () => {
                     lastActivityAt: new Date(),
                     projectPath: null,
                     codeSessionId: null,
+                    // Import tracking
+                    source: "carmenta" as const,
+                    externalId: null,
+                    importedAt: null,
+                    customGptId: null,
                 };
             }
         );

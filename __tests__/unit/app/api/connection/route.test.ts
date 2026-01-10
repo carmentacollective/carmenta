@@ -197,6 +197,11 @@ describe("POST /api/connection", () => {
                     // Code mode fields
                     projectPath: null,
                     codeSessionId: null,
+                    // Import tracking
+                    source: "carmenta" as const,
+                    externalId: null,
+                    importedAt: null,
+                    customGptId: null,
                 };
             }
         );
@@ -429,6 +434,10 @@ describe("POST /api/connection", () => {
                     lastActivityAt: new Date(),
                     projectPath: null,
                     codeSessionId: null,
+                    source: "carmenta" as const,
+                    externalId: null,
+                    importedAt: null,
+                    customGptId: null,
                 })
             );
 
@@ -488,6 +497,10 @@ describe("POST /api/connection", () => {
                     lastActivityAt: new Date(),
                     projectPath: null,
                     codeSessionId: null,
+                    source: "carmenta" as const,
+                    externalId: null,
+                    importedAt: null,
+                    customGptId: null,
                 })
             );
 

@@ -11,6 +11,26 @@ import { logger } from "@/lib/logger";
 
 // ChatGPT export types based on actual export format
 
+// All content types found in ChatGPT exports
+type ChatGPTContentType =
+    | "text"
+    | "code"
+    | "execution_output"
+    | "multimodal_text"
+    | "thoughts" // Extended thinking/reasoning
+    | "reasoning_recap" // Summary of reasoning
+    | "user_editable_context" // Memory/Custom Instructions
+    | "tether_browsing_display" // Web browsing results
+    | "tether_quote" // Quotes from web pages
+    | "system_error";
+
+interface ThoughtChunk {
+    summary: string;
+    content: string;
+    chunks: string[];
+    finished: boolean;
+}
+
 interface ChatGPTMessage {
     id: string;
     author: {
@@ -21,9 +41,14 @@ interface ChatGPTMessage {
     create_time: number | null;
     update_time: number | null;
     content: {
-        content_type: "text" | "code" | "execution_output" | "multimodal_text";
+        content_type: ChatGPTContentType;
         parts?: (string | { type: string; [key: string]: unknown })[];
         text?: string;
+        // Extended thinking content
+        thoughts?: ThoughtChunk[];
+        // User Memory/Custom Instructions
+        user_profile?: string;
+        user_instructions?: string;
     };
     status: string;
     end_turn: boolean | null;
@@ -86,6 +111,17 @@ export interface ParsedConversation {
     messageCount: number;
 }
 
+/**
+ * User's ChatGPT Memory and Custom Instructions
+ * Extracted from user_editable_context messages in conversations
+ */
+export interface UserSettings {
+    /** User's "About me" text from Memory */
+    userProfile: string | null;
+    /** User's "Custom Instructions" for how ChatGPT should respond */
+    userInstructions: string | null;
+}
+
 export interface ParseResult {
     conversations: ParsedConversation[];
     dateRange: {
@@ -94,6 +130,8 @@ export interface ParseResult {
     };
     totalMessageCount: number;
     errors: string[];
+    /** User's Memory/Custom Instructions (personality data) */
+    userSettings: UserSettings | null;
 }
 
 export interface ImportValidationResult {
@@ -104,13 +142,35 @@ export interface ImportValidationResult {
 }
 
 /**
- * Extract text content from a ChatGPT message
+ * Extract text content from a ChatGPT message based on content_type
  */
 function extractMessageContent(content: ChatGPTMessage["content"]): string {
+    const contentType = content.content_type;
+
+    // Handle thoughts (extended thinking)
+    if (contentType === "thoughts" && content.thoughts) {
+        return content.thoughts
+            .map((t) => `**${t.summary}**\n${t.content}`)
+            .join("\n\n");
+    }
+
+    // Handle execution output (code interpreter results)
+    if (contentType === "execution_output" && content.text) {
+        return `\`\`\`output\n${content.text}\n\`\`\``;
+    }
+
+    // Handle user_editable_context (Memory/Custom Instructions)
+    // We skip this content type in messages but extract it separately
+    if (contentType === "user_editable_context") {
+        return ""; // Handled separately as metadata
+    }
+
+    // Handle text content
     if (content.text) {
         return content.text;
     }
 
+    // Handle parts array (text, code, multimodal, etc.)
     if (content.parts) {
         return content.parts
             .map((part) => {
@@ -253,10 +313,57 @@ function parseConversation(
         };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        logger.warn({ error, conversationId: conv.id }, "Failed to parse conversation");
+        logger.warn(
+            { error, conversationId: conv?.id ?? "unknown" },
+            "Failed to parse conversation"
+        );
         // Return error info instead of null so caller can track failures
-        return { error: errorMessage, conversationId: conv.id };
+        return { error: errorMessage, conversationId: conv?.id ?? "unknown" };
     }
+}
+
+/**
+ * Extract user settings (Memory/Custom Instructions) from conversations
+ * These are stored in user_editable_context messages
+ */
+function extractUserSettings(
+    rawConversations: ChatGPTConversation[]
+): UserSettings | null {
+    for (const conv of rawConversations) {
+        if (!conv.mapping) continue;
+
+        for (const node of Object.values(conv.mapping)) {
+            const msg = node.message;
+            if (!msg) continue;
+
+            if (msg.content?.content_type === "user_editable_context") {
+                const userProfile = msg.content.user_profile || null;
+                const userInstructions = msg.content.user_instructions || null;
+
+                if (userProfile || userInstructions) {
+                    return { userProfile, userInstructions };
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Detect if JSON looks like an Anthropic/Claude export instead of OpenAI
+ * Anthropic exports have: chat_messages array, uuid, created_at (ISO timestamp)
+ * OpenAI exports have: mapping object, current_node, create_time (Unix timestamp)
+ */
+function looksLikeAnthropicFormat(data: unknown[]): boolean {
+    if (!data || data.length === 0) return false;
+    const first = data[0] as Record<string, unknown>;
+    // Anthropic format has chat_messages array and uuid
+    return (
+        Array.isArray(first?.chat_messages) &&
+        typeof first?.uuid === "string" &&
+        typeof first?.created_at === "string"
+    );
 }
 
 /**
@@ -275,11 +382,33 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
             dateRange: { earliest: new Date(), latest: new Date() },
             totalMessageCount: 0,
             errors: [`Invalid JSON format in conversations.json${detail}`],
+            userSettings: null,
         };
     }
 
     // Handle both array format and object format
-    const rawConversations = Array.isArray(data) ? data : (data.conversations ?? []);
+    let rawConversations: ChatGPTConversation[];
+    if (Array.isArray(data)) {
+        rawConversations = data;
+    } else if (data && typeof data === "object") {
+        if (Array.isArray(data.conversations)) {
+            rawConversations = data.conversations;
+        } else {
+            // Object format but no conversations array
+            const keys = Object.keys(data);
+            return {
+                conversations: [],
+                dateRange: { earliest: new Date(), latest: new Date() },
+                totalMessageCount: 0,
+                errors: [
+                    `Expected array or object with "conversations" key, got object with keys: ${keys.slice(0, 5).join(", ")}${keys.length > 5 ? "..." : ""}`,
+                ],
+                userSettings: null,
+            };
+        }
+    } else {
+        rawConversations = [];
+    }
 
     if (!Array.isArray(rawConversations)) {
         return {
@@ -287,8 +416,25 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
             dateRange: { earliest: new Date(), latest: new Date() },
             totalMessageCount: 0,
             errors: ["Expected conversations array in export"],
+            userSettings: null,
         };
     }
+
+    // Detect wrong format - user uploaded Anthropic export to OpenAI tab
+    if (looksLikeAnthropicFormat(rawConversations)) {
+        return {
+            conversations: [],
+            dateRange: { earliest: new Date(), latest: new Date() },
+            totalMessageCount: 0,
+            errors: [
+                "This looks like a Claude/Anthropic export. Switch to the Claude tab to import it.",
+            ],
+            userSettings: null,
+        };
+    }
+
+    // Extract user settings (Memory/Custom Instructions) from any conversation
+    const userSettings = extractUserSettings(rawConversations);
 
     const conversations: ParsedConversation[] = [];
     let totalMessageCount = 0;
@@ -297,6 +443,9 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
     let parseFailures = 0;
 
     for (const rawConv of rawConversations) {
+        // Guard against null entries in the array
+        if (!rawConv) continue;
+
         const result = parseConversation(rawConv);
 
         // Handle parse errors
@@ -305,7 +454,7 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
             // Only add to errors array if we have significant failures
             if (parseFailures <= 5) {
                 errors.push(
-                    `Failed to parse "${rawConv.title || rawConv.id}": ${result.error}`
+                    `Failed to parse "${rawConv.title || rawConv.id || "unknown"}": ${result.error}`
                 );
             }
             continue;
@@ -339,6 +488,7 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
         },
         totalMessageCount,
         errors,
+        userSettings,
     };
 }
 
@@ -367,20 +517,21 @@ export async function parseExportZip(zipBuffer: ArrayBuffer): Promise<ParseResul
                 errors: [
                     "No conversations.json found in ZIP. Please ensure you uploaded a ChatGPT data export.",
                 ],
+                userSettings: null,
             };
         }
 
         const jsonContent = await conversationsFile.async("string");
         return parseConversationsJson(jsonContent);
     } catch (error) {
-        logger.error({ error }, "Failed to parse export ZIP");
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error({ error, errorMessage }, "Failed to parse export ZIP");
         return {
             conversations: [],
             dateRange: { earliest: new Date(), latest: new Date() },
             totalMessageCount: 0,
-            errors: [
-                "Failed to read ZIP file. Please ensure it's a valid ChatGPT export.",
-            ],
+            errors: [`Failed to read ZIP file: ${errorMessage}`],
+            userSettings: null,
         };
     }
 }
@@ -414,17 +565,21 @@ export async function validateExportZip(
         const jsonContent = await conversationsFile.async("string");
         const result = parseConversationsJson(jsonContent);
 
-        if (result.errors.length > 0) {
+        // Allow partial success - errors don't invalidate the entire export
+        // Only fail if we got zero conversations AND there were errors
+        if (result.conversations.length === 0 && result.errors.length > 0) {
             return {
                 valid: false,
                 error: result.errors[0],
             };
         }
 
+        // Empty exports (no conversations) are valid
         if (result.conversations.length === 0) {
             return {
-                valid: false,
-                error: "No conversations found in export.",
+                valid: true,
+                conversationCount: 0,
+                dateRange: result.dateRange,
             };
         }
 

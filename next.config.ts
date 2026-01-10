@@ -13,6 +13,14 @@ const config: NextConfig = {
 
     reactStrictMode: true,
 
+    // Allow large file uploads for import feature (ChatGPT/Claude exports can be 200MB+)
+    experimental: {
+        serverActions: {
+            bodySizeLimit: "500mb",
+        },
+        proxyClientMaxBodySize: "500mb",
+    },
+
     // Hide Next.js dev indicators (build indicator, etc)
     devIndicators: false,
 

@@ -1,7 +1,7 @@
 /**
- * ChatGPT Import API
+ * Anthropic/Claude Import API
  *
- * Handles parsing and importing ChatGPT data exports.
+ * Handles parsing and importing Claude data exports.
  * POST: Upload and parse ZIP file, return conversation metadata
  */
 
@@ -10,7 +10,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
 
 import { logger } from "@/lib/logger";
-import { parseExportZip, type ParsedConversation } from "@/lib/import/chatgpt-parser";
+import { parseExportZip, type ParsedConversation } from "@/lib/import/anthropic-parser";
 import {
     unauthorizedResponse,
     validationErrorResponse,
@@ -33,7 +33,6 @@ export interface ConversationPreview {
     messageCount: number;
     model: string | null;
     isArchived: boolean;
-    customGptId: string | null;
 }
 
 /**
@@ -53,7 +52,6 @@ export interface ConversationForImport {
     }>;
     model: string | null;
     isArchived: boolean;
-    customGptId: string | null;
     messageCount: number;
 }
 
@@ -80,8 +78,8 @@ export interface ImportErrorResponse {
 }
 
 /**
- * POST /api/import/chatgpt
- * Upload and parse a ChatGPT export ZIP file
+ * POST /api/import/anthropic
+ * Upload and parse a Claude export ZIP file
  */
 export async function POST(request: NextRequest): Promise<Response> {
     const user = await currentUser();
@@ -91,7 +89,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const userEmail = user.primaryEmailAddress.emailAddress;
-    const requestLogger = logger.child({ userEmail, route: "import/chatgpt" });
+    const requestLogger = logger.child({ userEmail, route: "import/anthropic" });
 
     try {
         // Get form data with file
@@ -101,7 +99,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         if (!file || !(file instanceof File)) {
             return validationErrorResponse(
                 { file: "No file provided" },
-                "Please select a ChatGPT export ZIP file to upload."
+                "Please select a Claude export ZIP file to upload."
             );
         }
 
@@ -109,7 +107,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         if (!file.name.endsWith(".zip")) {
             return validationErrorResponse(
                 { file: "Invalid file type" },
-                "Please upload a ZIP file. ChatGPT exports are downloaded as .zip files."
+                "Please upload a ZIP file. Claude exports are downloaded as .zip files."
             );
         }
 
@@ -123,7 +121,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
         requestLogger.info(
             { fileName: file.name, fileSize: file.size },
-            "Parsing ChatGPT export"
+            "Parsing Claude export"
         );
 
         // Parse the ZIP file
@@ -135,7 +133,7 @@ export async function POST(request: NextRequest): Promise<Response> {
             const errorMessage =
                 result.errors.length > 0
                     ? result.errors[0]
-                    : "No conversations found in the export. Please ensure you uploaded a valid ChatGPT data export.";
+                    : "No conversations found in the export. Please ensure you uploaded a valid Claude data export.";
 
             return validationErrorResponse(
                 { conversations: "empty", parseErrors: result.errors },
@@ -158,17 +156,13 @@ export async function POST(request: NextRequest): Promise<Response> {
         // Generate import ID for tracking
         const importId = `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-        // Store parsed data in memory/cache for commit step
-        // For now, we'll include full data in response
-        // Production should use Redis or similar for large exports
-
         requestLogger.info(
             {
                 importId,
                 conversationCount: result.conversations.length,
                 messageCount: result.totalMessageCount,
             },
-            "ChatGPT export parsed successfully"
+            "Claude export parsed successfully"
         );
 
         const response: ImportParseResponse = {
@@ -182,7 +176,6 @@ export async function POST(request: NextRequest): Promise<Response> {
                 messageCount: conv.messageCount,
                 model: conv.model,
                 isArchived: conv.isArchived,
-                customGptId: conv.customGptId,
             })),
             // Full data for commit step
             fullConversations: result.conversations.map((conv: ParsedConversation) => ({
@@ -199,7 +192,6 @@ export async function POST(request: NextRequest): Promise<Response> {
                 })),
                 model: conv.model,
                 isArchived: conv.isArchived,
-                customGptId: conv.customGptId,
                 messageCount: conv.messageCount,
             })),
             stats: {
@@ -220,13 +212,13 @@ export async function POST(request: NextRequest): Promise<Response> {
         requestLogger.error({ error }, "Import request failed");
 
         Sentry.captureException(error, {
-            tags: { component: "import", platform: "chatgpt" },
+            tags: { component: "import", platform: "anthropic" },
             extra: { userEmail },
         });
 
         return serverErrorResponse(error, {
             userEmail,
-            route: "import/chatgpt",
+            route: "import/anthropic",
         });
     }
 }

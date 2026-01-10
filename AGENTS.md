@@ -77,6 +77,11 @@ Don't assume a server already running on port 3000 is serving the current workin
 directory—it may be serving a different copy of the repo. If the lock file error
 appears, a dev server for THIS repo is already running—use that one.
 
+**ALWAYS include the full URL with port** when reporting dev server status. Nick works
+across multiple repos and branches in parallel—"dev server is running" is useless
+without context. Say "Dev server running at http://localhost:3001" not "server is
+running".
+
 ## Context Management
 
 When compacting, preserve operational state: current branch, worktree location,

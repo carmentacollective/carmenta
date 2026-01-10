@@ -78,6 +78,18 @@ export const connectionStatusEnum = pgEnum("connection_status", [
 ]);
 
 /**
+ * Connection source - where this connection originated
+ * - carmenta: Created natively in Carmenta
+ * - openai: Imported from OpenAI/ChatGPT export
+ * - anthropic: Imported from Anthropic/Claude export
+ */
+export const connectionSourceEnum = pgEnum("connection_source", [
+    "carmenta",
+    "openai",
+    "anthropic",
+]);
+
+/**
  * Streaming status for background save
  * - idle: No streaming in progress
  * - streaming: Currently receiving chunks
@@ -323,6 +335,33 @@ export const connections = pgTable(
          */
         codeSessionId: text("code_session_id"),
 
+        // ---- Import Tracking ----
+
+        /**
+         * Where this connection originated from.
+         * 'carmenta' for native connections, 'openai' or 'anthropic' for imports.
+         */
+        source: connectionSourceEnum("source").notNull().default("carmenta"),
+
+        /**
+         * Original conversation ID from the source platform.
+         * Used for duplicate detection during re-imports.
+         * Format varies by source (ChatGPT uses UUIDs, Anthropic uses UUIDs).
+         */
+        externalId: text("external_id"),
+
+        /**
+         * When this connection was imported (null for native Carmenta connections).
+         * Used to track import history and identify imported content.
+         */
+        importedAt: timestamp("imported_at", { withTimezone: true }),
+
+        /**
+         * Original Custom GPT ID for ChatGPT imports.
+         * Allows filtering/grouping by Custom GPT.
+         */
+        customGptId: text("custom_gpt_id"),
+
         createdAt: timestamp("created_at", { withTimezone: true })
             .notNull()
             .defaultNow(),
@@ -349,6 +388,12 @@ export const connections = pgTable(
             table.userId,
             table.isStarred,
             table.lastActivityAt
+        ),
+        /** Duplicate detection: find imported connection by source + externalId */
+        uniqueIndex("connections_source_external_id_idx").on(
+            table.userId,
+            table.source,
+            table.externalId
         ),
     ]
 );
@@ -382,6 +427,13 @@ export const messages = pgTable(
             .notNull(),
 
         role: messageRoleEnum("role").notNull(),
+
+        /**
+         * Original message ID from source platform (for imported messages).
+         * Used for deduplication during re-imports.
+         * Null for native Carmenta messages.
+         */
+        externalId: text("external_id"),
 
         /** Immutable creation time - never updated */
         createdAt: timestamp("created_at", { withTimezone: true })
