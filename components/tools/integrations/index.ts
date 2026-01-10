@@ -10,7 +10,6 @@ export { CoinMarketCapToolResult } from "./coinmarketcap";
 export { DropboxToolResult } from "./dropbox";
 export { FirefliesToolResult } from "./fireflies";
 export { GiphyToolResult } from "./giphy";
-export { GmailToolResult } from "./gmail";
 export { GoogleCalendarContactsToolResult } from "./google-calendar-contacts";
 export { ImgflipToolResult } from "./imgflip";
 export { LimitlessToolResult } from "./limitless";

@@ -105,20 +105,20 @@ For key features:
 
 ### Implemented Services (12 total)
 
-| Service                  | Auth    | Status    | In Catalog | In Docs |
-| ------------------------ | ------- | --------- | ---------- | ------- |
-| Gmail                    | OAuth   | Internal  | ✅         | ✅      |
-| Google Calendar/Contacts | OAuth   | Available | ✅         | ✅      |
-| Notion                   | OAuth   | Available | ✅         | ✅      |
-| Slack                    | OAuth   | Beta      | ✅         | ✅      |
-| ClickUp                  | OAuth   | Available | ✅         | ✅      |
-| Dropbox                  | OAuth   | Beta      | ✅         | ✅      |
-| Twitter/X                | OAuth   | Beta      | ✅         | ✅      |
-| Fireflies                | API Key | Available | ✅         | ✅      |
-| Limitless                | API Key | Available | ✅         | ✅      |
-| CoinMarketCap            | API Key | Available | ✅         | ✅      |
-| **Spotify**              | OAuth   | Available | ❌         | ✅      |
-| **Quo** (SMS)            | API Key | Beta      | ❌         | ❌      |
+| Service                   | Auth    | Status    | In Catalog | In Docs |
+| ------------------------- | ------- | --------- | ---------- | ------- |
+| Google Internal (testing) | OAuth   | Internal  | N/A        | N/A     |
+| Google Calendar/Contacts  | OAuth   | Available | ✅         | ✅      |
+| Notion                    | OAuth   | Available | ✅         | ✅      |
+| Slack                     | OAuth   | Beta      | ✅         | ✅      |
+| ClickUp                   | OAuth   | Available | ✅         | ✅      |
+| Dropbox                   | OAuth   | Beta      | ✅         | ✅      |
+| Twitter/X                 | OAuth   | Beta      | ✅         | ✅      |
+| Fireflies                 | API Key | Available | ✅         | ✅      |
+| Limitless                 | API Key | Available | ✅         | ✅      |
+| CoinMarketCap             | API Key | Available | ✅         | ✅      |
+| **Spotify**               | OAuth   | Available | ❌         | ✅      |
+| **Quo** (SMS)             | API Key | Beta      | ❌         | ❌      |
 
 ### Services Mentioned But NOT Implemented
 
@@ -200,7 +200,6 @@ conflates them.
 | Notion          | docs/integrations/notion.md          | ✅          | ✅            |
 | ClickUp         | docs/integrations/clickup.md         | ✅          | ✅            |
 | Slack           | docs/integrations/slack.md           | ✅          | ✅            |
-| Gmail           | docs/integrations/gmail.md           | ✅          | ✅            |
 | Google Calendar | docs/integrations/google-calendar.md | ✅          | ✅            |
 | Dropbox         | docs/integrations/dropbox.md         | ✅          | ✅            |
 | Twitter/X       | docs/integrations/twitter.md         | ✅          | ✅            |
@@ -208,9 +207,11 @@ conflates them.
 | Limitless       | docs/integrations/limitless.md       | ✅          | ✅            |
 | CoinMarketCap   | docs/integrations/coinmarketcap.md   | ✅          | ✅            |
 
-**Integration docs status: 10/10 accurate.** All operations documented match their
-adapter implementations. Transparent about limitations (Dropbox: no uploads, Gmail:
-restricted scopes, Slack: beta).
+**Integration docs status: 9/9 accurate.** All operations documented match their adapter
+implementations. Transparent about limitations (Dropbox: no uploads, Slack: beta).
+
+**Note:** Google Internal provider is OAuth-only for testing (no adapter, no user-facing
+docs).
 
 ---
 

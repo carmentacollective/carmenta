@@ -72,7 +72,6 @@ import {
     FirefliesToolResult,
     GiphyToolResult,
     ImgflipToolResult,
-    GmailToolResult,
     GoogleCalendarContactsToolResult,
     LimitlessToolResult,
     NotionToolResult,
@@ -830,18 +829,6 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Imgflip request failed")}
-                />
-            );
-
-        case "gmail":
-            return (
-                <GmailToolResult
-                    toolCallId={part.toolCallId}
-                    status={status}
-                    action={(input?.action as string) ?? "unknown"}
-                    input={input}
-                    output={output}
-                    error={getToolError(part, output, "Gmail request failed")}
                 />
             );
 
