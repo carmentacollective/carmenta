@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, type ChangeEvent } from "react";
 import {
-    CheckCircleIcon,
     XCircleIcon,
     PencilIcon,
     BrainIcon,
@@ -16,6 +15,7 @@ import {
     CheckIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { Button } from "@/components/ui/button";
@@ -123,6 +123,9 @@ export default function ImportReviewPage() {
             setHasUnprocessed(data.hasUnprocessedImports || false);
         } catch (error) {
             logger.error({ error }, "Failed to fetch extractions");
+            toast.error("Failed to load extractions", {
+                description: "Please try refreshing the page",
+            });
         } finally {
             setLoading(false);
         }
@@ -168,6 +171,9 @@ export default function ImportReviewPage() {
             }
         } catch (error) {
             logger.error({ error }, "Failed to start extraction");
+            toast.error("Failed to start extraction", {
+                description: "Please try again",
+            });
         } finally {
             setProcessing(false);
         }
@@ -207,9 +213,16 @@ export default function ImportReviewPage() {
                           }
                         : null
                 );
+            } else {
+                toast.error("Failed to review extraction", {
+                    description: data.errors?.join(", ") || "Please try again",
+                });
             }
         } catch (error) {
             logger.error({ error }, "Failed to review extraction");
+            toast.error("Failed to review extraction", {
+                description: "Please try again",
+            });
         } finally {
             setProcessing(false);
             setEditingId(null);
@@ -232,9 +245,19 @@ export default function ImportReviewPage() {
             const data = await res.json();
             if (data.success || data.approved > 0) {
                 fetchExtractions();
+                toast.success("Approved all extractions", {
+                    description: `${data.approved} extractions saved to knowledge base`,
+                });
+            } else {
+                toast.error("Failed to approve all", {
+                    description: data.errors?.join(", ") || "Please try again",
+                });
             }
         } catch (error) {
             logger.error({ error }, "Failed to approve all");
+            toast.error("Failed to approve all", {
+                description: "Please try again",
+            });
         } finally {
             setProcessing(false);
         }
@@ -501,7 +524,7 @@ export default function ImportReviewPage() {
                                                         disabled={processing}
                                                         title="Approve"
                                                     >
-                                                        <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                                                        <CheckIcon className="h-4 w-4 text-green-600" />
                                                     </Button>
                                                     <Button
                                                         size="icon"

@@ -5,6 +5,7 @@
  * GET - Get extraction stats and pending extractions
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { z } from "zod";
@@ -149,6 +150,10 @@ export async function POST(request: NextRequest) {
         // In production, this would be a queue/worker
         processExtractionJob(jobId).catch((error) => {
             logger.error({ error, jobId }, "Background extraction job failed");
+            Sentry.captureException(error, {
+                tags: { category: "extraction", phase: "background-spawn" },
+                extra: { jobId },
+            });
         });
 
         return NextResponse.json({
