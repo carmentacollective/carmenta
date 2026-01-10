@@ -2008,6 +2008,205 @@ export type SmsOutboundMessage = typeof smsOutboundMessages.$inferSelect;
 export type NewSmsOutboundMessage = typeof smsOutboundMessages.$inferInsert;
 
 // ============================================================================
+// IMPORT EXTRACTION TABLES
+// ============================================================================
+
+/**
+ * Extraction category for knowledge extracted from imports
+ */
+export const extractionCategoryEnum = pgEnum("extraction_category", [
+    "identity",
+    "preference",
+    "person",
+    "project",
+    "decision",
+    "expertise",
+]);
+
+/**
+ * Extraction status for tracking review workflow
+ */
+export const extractionStatusEnum = pgEnum("extraction_status", [
+    "pending",
+    "approved",
+    "rejected",
+    "edited",
+]);
+
+/**
+ * Extraction job status for tracking batch processing
+ */
+export const extractionJobStatusEnum = pgEnum("extraction_job_status", [
+    "queued",
+    "processing",
+    "completed",
+    "failed",
+]);
+
+/**
+ * Pending knowledge extractions from imported conversations
+ *
+ * Stores extracted facts for user review before committing to KB.
+ * Links back to source conversation for context and deduplication.
+ */
+export const pendingExtractions = pgTable(
+    "pending_extractions",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** Owner of this extraction */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Source conversation this was extracted from */
+        connectionId: integer("connection_id")
+            .references(() => connections.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Extraction category (maps to KB path) */
+        category: extractionCategoryEnum("category").notNull(),
+
+        /** Extracted content/fact */
+        content: text("content").notNull(),
+
+        /** One-line summary for display */
+        summary: text("summary").notNull(),
+
+        /** Extraction confidence (0-1) */
+        confidence: real("confidence").notNull(),
+
+        /** Source message ID within the connection */
+        sourceMessageId: text("source_message_id"),
+
+        /** When the user originally stated this */
+        sourceTimestamp: timestamp("source_timestamp", { withTimezone: true }),
+
+        /** IDs of conflicting extractions or KB documents */
+        conflictsWith: text("conflicts_with").array(),
+
+        /** Review status */
+        status: extractionStatusEnum("status").notNull().default("pending"),
+
+        /** User-edited content (if status is 'edited') */
+        editedContent: text("edited_content"),
+
+        /** When the extraction was reviewed */
+        reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+
+        /** Suggested KB path based on category and content */
+        suggestedPath: text("suggested_path"),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** User's pending extractions */
+        index("pending_extractions_user_idx").on(table.userId),
+        /** Filter by status for review UI */
+        index("pending_extractions_user_status_idx").on(table.userId, table.status),
+        /** Find extractions for a specific connection */
+        index("pending_extractions_connection_idx").on(table.connectionId),
+    ]
+);
+
+export type PendingExtraction = typeof pendingExtractions.$inferSelect;
+export type NewPendingExtraction = typeof pendingExtractions.$inferInsert;
+
+/**
+ * Extraction jobs for tracking batch processing of imports
+ */
+export const extractionJobs = pgTable(
+    "extraction_jobs",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+
+        /** User who owns this job */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Job status */
+        status: extractionJobStatusEnum("status").notNull().default("queued"),
+
+        /** Total conversations to process */
+        totalConversations: integer("total_conversations").notNull(),
+
+        /** Conversations processed so far */
+        processedConversations: integer("processed_conversations").notNull().default(0),
+
+        /** Number of facts extracted */
+        extractedCount: integer("extracted_count").notNull().default(0),
+
+        /** Connection IDs to process (null means all unprocessed imports) */
+        connectionIds: integer("connection_ids").array(),
+
+        /** Error message if failed */
+        errorMessage: text("error_message"),
+
+        /** When processing started */
+        startedAt: timestamp("started_at", { withTimezone: true }),
+
+        /** When processing completed */
+        completedAt: timestamp("completed_at", { withTimezone: true }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** User's extraction jobs */
+        index("extraction_jobs_user_idx").on(table.userId),
+        /** Find active jobs */
+        index("extraction_jobs_user_status_idx").on(table.userId, table.status),
+    ]
+);
+
+export type ExtractionJob = typeof extractionJobs.$inferSelect;
+export type NewExtractionJob = typeof extractionJobs.$inferInsert;
+
+/**
+ * Tracks which connections have been processed for extraction
+ */
+export const extractionProcessedConnections = pgTable(
+    "extraction_processed_connections",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+
+        /** User who owns this record */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Connection that was processed */
+        connectionId: integer("connection_id")
+            .references(() => connections.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Job that processed this connection */
+        jobId: uuid("job_id").references(() => extractionJobs.id, {
+            onDelete: "set null",
+        }),
+
+        /** Number of extractions produced */
+        extractionCount: integer("extraction_count").notNull().default(0),
+
+        /** When this connection was processed */
+        processedAt: timestamp("processed_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        /** Quick lookup: has this connection been processed? */
+        uniqueIndex("extraction_processed_connection_idx").on(
+            table.userId,
+            table.connectionId
+        ),
+    ]
+);
+
+// ============================================================================
 // SMS RELATIONS
 // ============================================================================
 
