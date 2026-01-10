@@ -82,9 +82,11 @@ export function EnterAuthWrapper() {
                 <h1 className="text-foreground/90 text-2xl font-semibold tracking-tight">
                     Enter Carmenta
                 </h1>
-                <p className="text-muted-foreground mt-2 text-sm">
-                    {rememberedEmail ? "Ready to continue." : "Begin."}
-                </p>
+                {rememberedEmail && (
+                    <p className="text-muted-foreground mt-2 text-sm">
+                        Ready to continue.
+                    </p>
+                )}
             </div>
 
             {/* Clerk SignIn with all auth methods */}
