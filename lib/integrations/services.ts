@@ -136,27 +136,6 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         capabilities: ["list_transcripts", "search_transcripts", "get_transcript"],
     },
 
-    // Gmail - OAuth (in-house, "restricted" scopes tier - requires Google verification)
-    // Uses "internal" status because restricted Google scopes require special approval
-    {
-        id: "gmail",
-        name: "Gmail",
-        description: "Send emails and search your inbox",
-        logo: "/logos/gmail.svg",
-        authMethod: "oauth",
-        status: "internal",
-        oauthProviderId: "gmail",
-        supportsMultipleAccounts: true,
-        docsUrl: "https://developers.google.com/gmail/api/guides",
-        capabilities: [
-            "send_message",
-            "search_messages",
-            "get_message",
-            "list_threads",
-            "create_draft",
-        ],
-    },
-
     // Google Calendar + Contacts - OAuth (in-house, "sensitive" scopes tier)
     {
         id: "google-calendar-contacts",
@@ -174,6 +153,24 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
             "search_contacts",
             "list_calendars",
         ],
+    },
+
+    // Google Internal - OAuth (unverified, ALL scopes, internal testing only)
+    // Uses "internal" status - separate GCP project that will never go through CASA audit
+    // Users will see "This app isn't verified by Google" warning - expected
+    // NOTE: No adapter exists - this is for OAuth token acquisition/testing only
+    {
+        id: "google-internal",
+        name: "Google (Full Access - Internal)",
+        description:
+            "Full Google access for internal testing only (OAuth token acquisition)",
+        logo: "/logos/google-internal.svg",
+        authMethod: "oauth",
+        status: "internal",
+        oauthProviderId: "google-internal",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developers.google.com/workspace",
+        // No capabilities - no adapter exists. This is for OAuth testing only.
     },
 
     // Google Sheets/Docs/Slides - OAuth (in-house, "non-sensitive" drive.file scope)

@@ -516,28 +516,6 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             ],
         },
     },
-    gmail: {
-        displayName: "Gmail",
-        icon: "/logos/gmail.svg",
-        getDescription: (args) => {
-            const action = args.action as string | undefined;
-            if (action === "send_email") return "sending email";
-            if (action === "search_emails") return "searching inbox";
-            if (action === "read_email") return "reading email";
-            if (action === "list_labels") return "checking labels";
-            return action;
-        },
-        messages: {
-            pending: "Getting ready...",
-            running: "Working with our email...",
-            completed: "Email ready",
-            error: "Had trouble with Gmail. Our monitoring caught it. 🤖",
-        },
-        delightMessages: {
-            completed: ["Done", "Inbox checked", "All set"],
-            fast: ["Quick!", "Sent!"],
-        },
-    },
     "google-calendar-contacts": {
         displayName: "Calendar & Contacts",
         icon: "/logos/google-calendar-contacts.svg",

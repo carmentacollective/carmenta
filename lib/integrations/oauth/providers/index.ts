@@ -12,8 +12,8 @@ import { slackProvider } from "./slack";
 import { clickupProvider } from "./clickup";
 import { dropboxProvider } from "./dropbox";
 import { googleCalendarContactsProvider } from "./google-calendar-contacts";
+import { googleInternalProvider } from "./google-internal";
 import { googleWorkspaceFilesProvider } from "./google-workspace-files";
-import { gmailProvider } from "./gmail";
 import { spotifyProvider } from "./spotify";
 import { twitterProvider } from "./twitter";
 
@@ -24,8 +24,8 @@ import { twitterProvider } from "./twitter";
 const providers: Record<string, OAuthProviderConfig> = {
     clickup: clickupProvider,
     dropbox: dropboxProvider,
-    gmail: gmailProvider,
     "google-calendar-contacts": googleCalendarContactsProvider,
+    "google-internal": googleInternalProvider,
     "google-workspace-files": googleWorkspaceFilesProvider,
     notion: notionProvider,
     slack: slackProvider,
@@ -120,13 +120,12 @@ export { clickupProvider } from "./clickup";
 export { CLICKUP_API_BASE } from "./clickup";
 export { dropboxProvider } from "./dropbox";
 export { DROPBOX_API_BASE, DROPBOX_CONTENT_API_BASE } from "./dropbox";
-export { gmailProvider } from "./gmail";
-export { GMAIL_API_BASE } from "./gmail";
 export { googleCalendarContactsProvider } from "./google-calendar-contacts";
 export {
     GOOGLE_CALENDAR_API_BASE,
     GOOGLE_PEOPLE_API_BASE,
 } from "./google-calendar-contacts";
+export { googleInternalProvider } from "./google-internal";
 export { googleWorkspaceFilesProvider } from "./google-workspace-files";
 export {
     GOOGLE_DOCS_API_BASE,
