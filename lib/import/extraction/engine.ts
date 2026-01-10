@@ -504,9 +504,11 @@ export async function getPendingExtractions(
  * Get extraction stats for the review UI
  */
 export async function getExtractionStats(userId: string): Promise<{
+    total: number;
     pending: number;
     approved: number;
     rejected: number;
+    edited: number;
     byCategory: Record<string, number>;
 }> {
     const [statusCounts, categoryCounts] = await Promise.all([
@@ -538,10 +540,17 @@ export async function getExtractionStats(userId: string): Promise<{
         categoryCounts.map((c) => [c.category, c.count])
     );
 
+    const pending = statusMap.pending ?? 0;
+    const approved = statusMap.approved ?? 0;
+    const edited = statusMap.edited ?? 0;
+    const rejected = statusMap.rejected ?? 0;
+
     return {
-        pending: statusMap.pending ?? 0,
-        approved: (statusMap.approved ?? 0) + (statusMap.edited ?? 0),
-        rejected: statusMap.rejected ?? 0,
+        total: pending + approved + edited + rejected,
+        pending,
+        approved,
+        rejected,
+        edited,
         byCategory: categoryMap,
     };
 }

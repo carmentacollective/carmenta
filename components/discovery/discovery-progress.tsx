@@ -73,11 +73,7 @@ export function DiscoveryProgress({
 
                 // Check if job is complete (no more unprocessed imports)
                 // Guard against calling onComplete multiple times
-                if (
-                    !hasCalledComplete.current &&
-                    !data.hasUnprocessedImports &&
-                    totalExtracted > 0
-                ) {
+                if (!hasCalledComplete.current && !data.hasUnprocessedImports) {
                     hasCalledComplete.current = true;
                     setIsComplete(true);
                     onComplete(data.stats);

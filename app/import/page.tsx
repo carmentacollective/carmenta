@@ -451,6 +451,7 @@ export default function ImportPage() {
         setDiscoveryState("idle");
         setDiscoveryJobId(null);
         setExtractionStats(null);
+        setIsApprovingAll(false);
     }, []);
 
     // Discovery handlers
