@@ -111,6 +111,11 @@ vi.mock("@/lib/db/users", () => ({
     }),
 }));
 
+// Mock connection manager for integration suggestions
+vi.mock("@/lib/integrations/connection-manager", () => ({
+    getConnectedServices: vi.fn().mockResolvedValue([]),
+}));
+
 // Import after mocks are set up
 import { POST } from "@/app/api/connection/route";
 import { currentUser } from "@clerk/nextjs/server";
@@ -321,7 +326,8 @@ describe("POST /api/connection", () => {
 
             // Verify concierge was called to get model selection AND title
             expect(vi.mocked(runConcierge)).toHaveBeenCalledWith(
-                expect.arrayContaining([expect.objectContaining({ role: "user" })])
+                expect.arrayContaining([expect.objectContaining({ role: "user" })]),
+                expect.any(Object) // Options object (may include integrationContext)
             );
 
             // Verify connection was created with title and concierge data
