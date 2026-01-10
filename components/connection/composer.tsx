@@ -497,16 +497,13 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Check for secret phrases (easter egg effects)
             checkMessage(userText);
 
-            // Capture-then-clear pattern (industry standard)
-            // Files are captured into payload, then cleared BEFORE async boundary
-            // This avoids React timing issues with state updates after await
+            // Capture files before clearing - files clear optimistically, text restores on error
             const filesToSend = getFilesToSend(completedFiles).map((f) => ({
                 url: f.url,
                 mediaType: f.mediaType,
                 name: f.name,
             }));
 
-            // Clear immediately - optimistic UI, no timing issues
             clearFiles();
             onMessageSent();
 
@@ -524,7 +521,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     { error: error instanceof Error ? error.message : String(error) },
                     "Failed to send message"
                 );
-                setInput(userText); // Restore text for retry (files stay cleared per industry pattern)
+                setInput(userText); // Restore text for retry (files stay cleared)
             } finally {
                 isSubmittingRef.current = false;
             }
