@@ -30,6 +30,8 @@ export interface ImportCommitResult {
     messagesImported: number;
     skippedDuplicates: number;
     errors: string[];
+    /** IDs of connections created, for triggering discovery */
+    connectionIds: number[];
 }
 
 /**
@@ -120,6 +122,7 @@ export async function commitImport(
             messagesImported: 0,
             skippedDuplicates: 0,
             errors: ["Sign in to import your connections"],
+            connectionIds: [],
         };
     }
 
@@ -132,10 +135,12 @@ export async function commitImport(
             messagesImported: 0,
             skippedDuplicates: 0,
             errors: ["Cannot import native Carmenta connections"],
+            connectionIds: [],
         };
     }
 
     const errors: string[] = [];
+    const createdConnectionIds: number[] = [];
     let connectionsCreated = 0;
     let messagesImported = 0;
     let skippedDuplicates = 0;
@@ -204,6 +209,7 @@ export async function commitImport(
             }
 
             connectionsCreated++;
+            createdConnectionIds.push(connection.id);
 
             logger.debug(
                 {
@@ -244,5 +250,6 @@ export async function commitImport(
         messagesImported,
         skippedDuplicates,
         errors,
+        connectionIds: createdConnectionIds,
     };
 }

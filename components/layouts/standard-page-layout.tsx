@@ -29,6 +29,11 @@ interface StandardPageLayoutProps {
      */
     showThemeSwitcher?: boolean;
     /**
+     * Hide the logo watermark in the holographic background.
+     * Use for pages with prominent interactive elements that compete visually.
+     */
+    hideWatermark?: boolean;
+    /**
      * Additional classes for the content wrapper
      */
     contentClassName?: string;
@@ -70,12 +75,13 @@ export function StandardPageLayout({
     verticalPadding,
     showFooter = true,
     showThemeSwitcher = false,
+    hideWatermark = false,
     contentClassName,
     style,
 }: StandardPageLayoutProps) {
     return (
         <div className="bg-background relative min-h-screen" style={style}>
-            <HolographicBackground />
+            <HolographicBackground hideWatermark={hideWatermark} />
             <div className="z-content relative">
                 {/* Header with safe-area padding for iPhone PWA */}
                 <div className="pt-safe-top">
