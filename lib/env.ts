@@ -58,7 +58,7 @@ export const env = createEnv({
         // In-house OAuth credentials - Google Sensitive (Calendar/Contacts)
         GOOGLE_SENSITIVE_CLIENT_ID: z.string().min(1).optional(),
         GOOGLE_SENSITIVE_CLIENT_SECRET: z.string().min(1).optional(),
-        // In-house OAuth credentials - Google Restricted (Gmail)
+        // In-house OAuth credentials - Google Restricted (full access, internal testing only)
         GOOGLE_RESTRICTED_CLIENT_ID: z.string().min(1).optional(),
         GOOGLE_RESTRICTED_CLIENT_SECRET: z.string().min(1).optional(),
         // In-house OAuth credentials - Spotify
