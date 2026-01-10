@@ -402,6 +402,7 @@ export default function ImportPage() {
         setState("idle");
         setError(null);
         setParsedData(null);
+        setFilters(DEFAULT_FILTERS);
     }, []);
 
     const formatDate = (dateString: string) => {

@@ -33,6 +33,7 @@ export interface ConversationPreview {
     messageCount: number;
     model: string | null;
     isArchived: boolean;
+    customGptId: string | null;
 }
 
 /**
@@ -52,6 +53,7 @@ export interface ConversationForImport {
     }>;
     model: string | null;
     isArchived: boolean;
+    customGptId: string | null;
     messageCount: number;
 }
 
@@ -180,6 +182,7 @@ export async function POST(request: NextRequest): Promise<Response> {
                 messageCount: conv.messageCount,
                 model: conv.model,
                 isArchived: conv.isArchived,
+                customGptId: conv.customGptId,
             })),
             // Full data for commit step
             fullConversations: result.conversations.map((conv: ParsedConversation) => ({
@@ -196,6 +199,7 @@ export async function POST(request: NextRequest): Promise<Response> {
                 })),
                 model: conv.model,
                 isArchived: conv.isArchived,
+                customGptId: conv.customGptId,
                 messageCount: conv.messageCount,
             })),
             stats: {
