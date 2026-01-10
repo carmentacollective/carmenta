@@ -7,6 +7,10 @@
 declare namespace google.picker {
     /**
      * Actions that can be taken by the user in the picker
+     *
+     * Note: Only terminal actions (CANCEL, PICKED) are included here.
+     * Non-terminal actions like LOADED are intentionally omitted as they
+     * are ignored in our picker callback implementation.
      */
     enum Action {
         CANCEL = "cancel",

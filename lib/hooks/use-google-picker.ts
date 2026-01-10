@@ -151,6 +151,10 @@ export function useGooglePicker(): UseGooglePickerReturn {
 
     // Track current picker instance for cleanup
     const pickerRef = useRef<google.picker.Picker | null>(null);
+    // Track pending promise resolve function for cleanup
+    const resolveRef = useRef<((files: GooglePickerFile[] | null) => void) | null>(
+        null
+    );
 
     // Load the API on mount (only if not already loaded)
     useEffect(() => {
@@ -182,6 +186,12 @@ export function useGooglePicker(): UseGooglePickerReturn {
     // Cleanup picker on unmount
     useEffect(() => {
         return () => {
+            // Resolve any pending promise to prevent memory leak
+            if (resolveRef.current) {
+                resolveRef.current(null);
+                resolveRef.current = null;
+            }
+            // Dispose picker
             if (pickerRef.current) {
                 pickerRef.current.dispose();
                 pickerRef.current = null;
@@ -192,8 +202,12 @@ export function useGooglePicker(): UseGooglePickerReturn {
     const openPicker = useCallback(
         (options: GooglePickerOptions): Promise<GooglePickerFile[] | null> => {
             return new Promise((resolve) => {
+                // Store resolve function for cleanup
+                resolveRef.current = resolve;
+
                 if (!isReady) {
                     setError("Google Picker API not loaded");
+                    resolveRef.current = null;
                     resolve(null);
                     return;
                 }
@@ -202,6 +216,7 @@ export function useGooglePicker(): UseGooglePickerReturn {
                 if (!apiKey) {
                     setError("Google API key not configured");
                     logger.error({}, "NEXT_PUBLIC_GOOGLE_API_KEY is not set");
+                    resolveRef.current = null;
                     resolve(null);
                     return;
                 }
@@ -255,6 +270,7 @@ export function useGooglePicker(): UseGooglePickerReturn {
                                     pickerRef.current.dispose();
                                     pickerRef.current = null;
                                 }
+                                resolveRef.current = null;
                                 resolve(files);
                             } else if (data.action === google.picker.Action.CANCEL) {
                                 setIsLoading(false);
@@ -264,6 +280,7 @@ export function useGooglePicker(): UseGooglePickerReturn {
                                     pickerRef.current.dispose();
                                     pickerRef.current = null;
                                 }
+                                resolveRef.current = null;
                                 resolve(null);
                             }
                             // Non-terminal actions (LOADED, etc.) are ignored
@@ -293,6 +310,7 @@ export function useGooglePicker(): UseGooglePickerReturn {
                             : "Failed to open Google Picker";
                     setError(message);
                     logger.error({ error: err }, "Failed to open Google Picker");
+                    resolveRef.current = null;
                     resolve(null);
                 }
             });
