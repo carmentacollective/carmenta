@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/*.{ts,tsx}",
+    "evals/**/eval.ts",
+    "scripts/*.{ts,mts}",
+    "worker/index.ts"
+  ],
+  "project": ["**/*.{ts,tsx}"],
+  "ignore": ["evals/**", "worker/**", "components/design-lab/**"],
+  "ignoreDependencies": [
+    "import-in-the-middle",
+    "require-in-the-middle",
+    "pino-pretty",
+    "@temporalio/worker"
+  ]
+}

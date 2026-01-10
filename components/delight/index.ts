@@ -6,4 +6,3 @@
  */
 
 export { FloatingEmojiProvider, useFloatingEmoji } from "./floating-emoji";
-export { InteractiveLogo } from "./interactive-logo";
