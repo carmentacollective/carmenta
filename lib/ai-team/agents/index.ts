@@ -7,4 +7,5 @@
 
 export { createLibrarianTool } from "./librarian-tool";
 export { createMcpConfigTool } from "./mcp-config-tool";
+export { createImageArtistTool } from "./image-artist-tool";
 // export { createResearcherTool } from './researcher-tool';

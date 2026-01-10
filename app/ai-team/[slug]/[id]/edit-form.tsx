@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
     ArrowLeftIcon,
@@ -44,6 +45,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
     const [triggering, setTriggering] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [infoMessage, setInfoMessage] = useState<string | null>(null);
     const [developerMode, setDeveloperMode] = useState(false);
     const [viewingRun, setViewingRun] = useState<{ id: string } | null>(null);
 
@@ -58,8 +60,12 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
 
     // Load developer mode preference from localStorage
     useEffect(() => {
-        const stored = localStorage.getItem("carmenta:developer-mode");
-        setDeveloperMode(stored === "true");
+        try {
+            const stored = localStorage.getItem("carmenta:developer-mode");
+            setDeveloperMode(stored === "true");
+        } catch {
+            // localStorage unavailable (private browsing, disabled, etc.)
+        }
     }, []);
 
     const handleScheduleChange = (schedule: {
@@ -203,6 +209,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
     const handleRunNow = async () => {
         setTriggering(true);
         setError(null);
+        setInfoMessage(null);
 
         try {
             const response = await fetch(`/api/jobs/${job.internalId}/trigger`, {
@@ -224,10 +231,8 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
             if (runId) {
                 setViewingRun({ id: runId });
             } else {
-                // Run triggered but we couldn't find it - show inline message
-                setError(
-                    "Started in the background. Check the activity feed to see progress."
-                );
+                // Run triggered but we couldn't find it - show info with link
+                setInfoMessage("background-started");
             }
         } catch (error) {
             logger.error(
@@ -282,6 +287,21 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                         <div className="flex items-center gap-2 rounded-xl bg-red-500/10 p-4 text-red-500">
                             <WarningCircleIcon className="h-5 w-5" />
                             <span>{error}</span>
+                        </div>
+                    )}
+
+                    {infoMessage === "background-started" && (
+                        <div className="bg-primary/10 text-primary flex items-center gap-2 rounded-xl p-4">
+                            <SparkleIcon className="h-5 w-5" />
+                            <span>
+                                Started in the background.{" "}
+                                <Link
+                                    href="/ai-team#activity"
+                                    className="font-medium underline hover:no-underline"
+                                >
+                                    View Activity
+                                </Link>
+                            </span>
                         </div>
                     )}
 

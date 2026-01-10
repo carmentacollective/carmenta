@@ -57,7 +57,6 @@ const createJobSchema = z.object({
     }),
     scheduleDisplayText: z.string().optional(),
     timezone: z.string().default("UTC"),
-    integrations: z.array(z.string()).default([]),
 });
 
 /**
@@ -168,8 +167,7 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    const { name, prompt, scheduleCron, scheduleDisplayText, timezone, integrations } =
-        parsed.data;
+    const { name, prompt, scheduleCron, scheduleDisplayText, timezone } = parsed.data;
 
     // Create job in database
     const [job] = await db
@@ -181,7 +179,6 @@ export async function POST(request: NextRequest) {
             scheduleCron,
             scheduleDisplayText,
             timezone,
-            integrations,
             memory: {},
             isActive: true,
         })

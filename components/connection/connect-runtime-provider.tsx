@@ -763,6 +763,102 @@ function getLastUserMessageOnly(messages: UIMessage[]): UIMessage[] {
 }
 
 /**
+ * Strip large binary data (base64 images) from tool outputs.
+ *
+ * When sending conversation history to the server, large image data in tool
+ * outputs can exceed request size limits and cause context_length_exceeded
+ * errors. The UI already has the images rendered, so we only need metadata
+ * for continuity.
+ */
+function stripLargeToolOutputs(messages: UIMessage[]): UIMessage[] {
+    return messages.map((msg) => {
+        if (!msg.parts) return msg;
+
+        const strippedParts = msg.parts.map((part) => {
+            // Only process tool output parts
+            if (
+                !part.type?.startsWith("tool-") ||
+                !("output" in part) ||
+                typeof part.output !== "object" ||
+                part.output === null
+            ) {
+                return part;
+            }
+
+            const output = part.output as Record<string, unknown>;
+
+            // Check for SubagentResult: { data: { images: [{ base64 }] } }
+            if (
+                typeof output.data === "object" &&
+                output.data !== null &&
+                Array.isArray((output.data as Record<string, unknown>).images)
+            ) {
+                const data = output.data as Record<string, unknown>;
+                const images = data.images as Array<Record<string, unknown>>;
+                const hasLargeImages = images.some(
+                    (img) => typeof img.base64 === "string" && img.base64.length > 1000
+                );
+
+                if (hasLargeImages) {
+                    return {
+                        ...part,
+                        output: {
+                            ...output,
+                            data: {
+                                ...data,
+                                images: images.map((img) => ({
+                                    ...img,
+                                    base64:
+                                        typeof img.base64 === "string" &&
+                                        img.base64.length > 1000
+                                            ? "[CLIENT_STRIPPED]"
+                                            : img.base64,
+                                })),
+                            },
+                        },
+                    };
+                }
+            }
+
+            // Check for direct base64 in output
+            if (typeof output.base64 === "string" && output.base64.length > 1000) {
+                return {
+                    ...part,
+                    output: {
+                        ...output,
+                        base64: "[CLIENT_STRIPPED]",
+                    },
+                };
+            }
+
+            // Check for nested image object
+            if (
+                typeof output.image === "object" &&
+                output.image !== null &&
+                typeof (output.image as Record<string, unknown>).base64 === "string" &&
+                ((output.image as Record<string, unknown>).base64 as string).length >
+                    1000
+            ) {
+                return {
+                    ...part,
+                    output: {
+                        ...output,
+                        image: {
+                            ...(output.image as Record<string, unknown>),
+                            base64: "[CLIENT_STRIPPED]",
+                        },
+                    },
+                };
+            }
+
+            return part;
+        });
+
+        return { ...msg, parts: strippedParts };
+    });
+}
+
+/**
  * Inner provider that has access to concierge context.
  *
  * Supports two modes:
@@ -1001,9 +1097,13 @@ function ConnectRuntimeProviderInner({
                     // so sending full history just bloats the request body (screenshots can
                     // be 500KB+ and get re-sent on every request, quickly hitting 10MB limit)
                     const isCodeMode = !!projectPathRef.current;
+
+                    // Strip large binary data (images) from tool outputs before sending
+                    // The UI already has the images rendered, sending them again just
+                    // bloats context and can cause context_length_exceeded errors
                     const messages = isCodeMode
                         ? getLastUserMessageOnly(request.messages)
-                        : request.messages;
+                        : stripLargeToolOutputs(request.messages);
 
                     // Include pageContext for DCOS routing in standalone mode
                     const currentPageContext = getPageContext();
