@@ -15,7 +15,11 @@ import { z } from "zod";
 
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
-import { AUDIO_CAPABLE_MODEL, CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
+import {
+    AUDIO_CAPABLE_MODEL,
+    CONCIERGE_FALLBACK_CHAIN,
+    VIDEO_CAPABLE_MODEL,
+} from "@/lib/model-config";
 
 import { buildConciergePrompt, formatQuerySignals } from "./prompt";
 import { buildConciergeInput, type BuildConciergeInputOptions } from "./input-builder";
@@ -409,8 +413,8 @@ export type RunConciergeOptions = BuildConciergeInputOptions;
 /**
  * Runs the Concierge to select the optimal model, temperature, and reasoning config.
  *
- * Uses Gemini 3 Flash for fast inference with prompt caching. If the concierge fails,
- * returns sensible defaults (Sonnet 4.5 with temperature 0.5, no reasoning).
+ * Uses Llama 3.3 70B via Vercel AI Gateway for fast inference (280 t/s). If the
+ * concierge fails, returns sensible defaults (Sonnet 4.5 with temperature 0.5, no reasoning).
  *
  * Now accepts optional context signals (device type, time of day) that inform
  * reasoning level decisions.
@@ -446,23 +450,26 @@ export async function runConcierge(
                 // Format query signals for the prompt
                 const querySignalsBlock = formatQuerySignals(conciergeInput);
 
-                // AUDIO ROUTING: Force Gemini if audio attachments present
-                // Audio files can ONLY be processed by Gemini (native support)
-                if (attachments.includes("audio")) {
+                // AUDIO/VIDEO ROUTING: Force Gemini if audio/video attachments present
+                // Audio and video files can ONLY be processed by Gemini (native support)
+                if (attachments.includes("audio") || attachments.includes("video")) {
+                    const isVideo = attachments.includes("video");
                     logger.info(
                         { attachments },
-                        "Audio attachment detected - forcing audio-capable model"
+                        `${isVideo ? "Video" : "Audio"} attachment detected - forcing ${isVideo ? "video" : "audio"}-capable model`
                     );
                     // Simple title from query (concierge handles title generation normally)
+                    const emoji = isVideo ? "🎬" : "🎵";
                     const title = userQuery.trim()
-                        ? `🎵 ${userQuery.slice(0, 35).trim()}`
-                        : "🎵 Audio conversation";
+                        ? `${emoji} ${userQuery.slice(0, 35).trim()}`
+                        : `${emoji} ${isVideo ? "Video" : "Audio"} conversation`;
                     return {
-                        modelId: AUDIO_CAPABLE_MODEL,
+                        modelId: isVideo ? VIDEO_CAPABLE_MODEL : AUDIO_CAPABLE_MODEL,
                         temperature: 0.5,
-                        explanation:
-                            "Audio file detected - routing to audio-capable model for native audio processing 🎵",
-                        reasoning: { enabled: false }, // Audio model doesn't support reasoning tokens
+                        explanation: isVideo
+                            ? "Video file detected - routing to video-capable model for native video processing 🎬"
+                            : "Audio file detected - routing to audio-capable model for native audio processing 🎵",
+                        reasoning: { enabled: false }, // Audio/video model doesn't support reasoning tokens
                         autoSwitched: true,
                         title,
                     };

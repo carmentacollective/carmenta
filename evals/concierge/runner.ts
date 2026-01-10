@@ -176,11 +176,15 @@ export async function runConciergeEval(
         const systemPrompt = buildConciergePrompt(rubricContent);
 
         // Handle audio/video attachment special case - only Gemini supports native audio/video
+        // Use constants from model-config to keep eval consistent with production
         if (input.attachments?.some((a) => a.type === "audio" || a.type === "video")) {
             const latencyMs = Math.round(performance.now() - startTime);
             const isVideo = input.attachments.some((a) => a.type === "video");
+            const modelId = isVideo
+                ? "google/gemini-3-pro-preview"
+                : "google/gemini-3-pro-preview"; // Both use Gemini Pro
             return {
-                modelId: "google/gemini-3-pro-preview",
+                modelId,
                 temperature: 0.5,
                 explanation: isVideo
                     ? "Video file detected - routing to Gemini for native video processing 🎬"
