@@ -393,8 +393,11 @@ function AssistantMessage({
     // Filter for askUserInput data parts specifically
     const askUserInputParts = dataParts.filter((p) => p.type === "data-askUserInput");
 
-    // Show thinking indicator when streaming but no content yet
-    const showThinking = isStreaming && !hasContent && isLast;
+    // Show thinking indicator only when:
+    // - Streaming AND no content yet AND no tools running AND this is the last message
+    // Once tools start running, they provide their own progress indicators
+    const hasToolsRunning = toolParts.length > 0;
+    const showThinking = isStreaming && !hasContent && !hasToolsRunning && isLast;
 
     // Show concierge display during routing
     const showConcierge = isLast && (isStreaming || Boolean(concierge));

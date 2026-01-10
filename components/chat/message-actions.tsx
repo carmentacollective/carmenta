@@ -16,6 +16,7 @@ import { PencilIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/ui/copy-button";
 import { RegenerateMenu } from "@/components/ui/regenerate-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface MessageActionsProps {
     /** Content to copy */
@@ -94,20 +95,23 @@ export function MessageActions({
             )}
             {/* Edit button for user messages */}
             {onEdit && (
-                <button
-                    onClick={onEdit}
-                    aria-label="Edit message"
-                    data-tooltip-id="tip"
-                    data-tooltip-content="Let's try that differently"
-                    className={cn(
-                        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-all",
-                        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-                        "hover:bg-foreground/10 active:bg-foreground/15",
-                        "text-foreground/60 hover:text-foreground/90"
-                    )}
-                >
-                    <PencilIcon className="h-4 w-4" />
-                </button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            onClick={onEdit}
+                            aria-label="Edit message"
+                            className={cn(
+                                "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-all",
+                                "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                                "hover:bg-foreground/10 active:bg-foreground/15",
+                                "text-foreground/60 hover:text-foreground/90"
+                            )}
+                        >
+                            <PencilIcon className="h-4 w-4" />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Let's try that differently</TooltipContent>
+                </Tooltip>
             )}
             <CopyButton
                 text={content}

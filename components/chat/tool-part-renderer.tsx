@@ -385,6 +385,22 @@ export function ToolPartRenderer({ part }: ToolPartRendererProps) {
                 />
             );
 
+        // DCOS subagent tools - used by Carmenta orchestrator
+        case "dcos":
+        case "librarian":
+        case "mcpConfig":
+        case "smsUser":
+            return (
+                <ToolRenderer
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "DCOS operation failed")}
+                />
+            );
+
         // Tool-UI Components - Rich interactive displays
         case "plan":
         case "taskPlan": {
