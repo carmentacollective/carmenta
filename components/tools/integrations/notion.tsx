@@ -9,8 +9,8 @@
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { ToolRenderer } from "../shared";
-import { NotionSearchResults } from "@/components/generative-ui/notion-search-results";
-import type { NotionPageData } from "@/components/generative-ui/notion-page-card";
+import { NotionSearchResults } from "../primitives/notion-search-results";
+import type { NotionPageData } from "../primitives/notion-page-card";
 
 interface NotionToolResultProps {
     toolCallId: string;

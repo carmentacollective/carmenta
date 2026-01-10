@@ -1,6 +1,6 @@
 "use client";
 
-import { POIMapWrapper } from "@/components/generative-ui/poi-map-wrapper";
+import { POIMapWrapper } from "../primitives/poi-map-wrapper";
 import type { POI, MapCenter } from "@/components/tool-ui/poi-map/schema";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { ToolRenderer } from "../shared";

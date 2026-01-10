@@ -16,8 +16,8 @@
 import Image from "next/image";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
-import { GifCard, type GifData } from "@/components/generative-ui/gif-card";
-import { GifGallery } from "@/components/generative-ui/gif-gallery";
+import { GifCard, type GifData } from "../primitives/gif-card";
+import { GifGallery } from "../primitives/gif-gallery";
 import { ToolRenderer } from "../shared";
 
 interface GiphyToolResultProps {
