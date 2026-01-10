@@ -71,6 +71,20 @@ export interface ToolProgressChunk {
 }
 
 /**
+ * Per-model usage breakdown (new in SDK 0.2.x)
+ */
+export interface ModelUsage {
+    inputTokens: number;
+    outputTokens: number;
+    cacheReadInputTokens: number;
+    cacheCreationInputTokens: number;
+    webSearchRequests: number;
+    costUSD: number;
+    contextWindow: number;
+    maxOutputTokens: number;
+}
+
+/**
  * Final result with timing and usage
  */
 export interface ResultChunk {
@@ -86,6 +100,8 @@ export interface ResultChunk {
         cacheReadInputTokens: number;
         cacheCreationInputTokens: number;
     };
+    /** Per-model usage breakdown (SDK 0.2.x) */
+    modelUsage?: Record<string, ModelUsage>;
 }
 
 export interface StatusChunk {
@@ -120,6 +136,23 @@ export interface SDKAdapterOptions {
     settingSources?: Array<"user" | "project" | "local">;
     /** Abort signal for cancellation */
     abortSignal?: AbortSignal;
+    /**
+     * Enable beta features.
+     * - 'context-1m-2025-08-07': Enable 1M token context window (Sonnet 4/4.5 only)
+     */
+    betas?: Array<"context-1m-2025-08-07">;
+    /**
+     * When false, disables session persistence to disk.
+     * Sessions will not be saved to ~/.claude/projects/
+     * Useful for ephemeral or automated workflows.
+     * @default false for Carmenta (cleaner operation)
+     */
+    persistSession?: boolean;
+    /**
+     * Enable file checkpointing to track file changes during the session.
+     * When enabled, files can be rewound to their state at any user message.
+     */
+    enableFileCheckpointing?: boolean;
 }
 
 /**
@@ -187,9 +220,14 @@ export async function* streamSDK(
                 maxTurns: options.maxTurns,
                 settingSources: options.settingSources,
                 permissionMode: "bypassPermissions",
+                allowDangerouslySkipPermissions: true,
                 abortController,
                 // Enable partial messages to get streaming deltas
                 includePartialMessages: true,
+                // SDK 0.2.x features
+                betas: options.betas ?? ["context-1m-2025-08-07"],
+                persistSession: options.persistSession ?? false,
+                enableFileCheckpointing: options.enableFileCheckpointing ?? true,
             },
         });
 
@@ -395,6 +433,27 @@ function* processSDKMessage(
         case "result": {
             // Final result with metrics
             const result = message as ResultMessage;
+
+            // Transform model_usage to our ModelUsage format if present
+            const modelUsage = result.model_usage
+                ? Object.fromEntries(
+                      Object.entries(result.model_usage).map(([model, usage]) => [
+                          model,
+                          {
+                              inputTokens: usage.inputTokens ?? 0,
+                              outputTokens: usage.outputTokens ?? 0,
+                              cacheReadInputTokens: usage.cacheReadInputTokens ?? 0,
+                              cacheCreationInputTokens:
+                                  usage.cacheCreationInputTokens ?? 0,
+                              webSearchRequests: usage.webSearchRequests ?? 0,
+                              costUSD: usage.costUSD ?? 0,
+                              contextWindow: usage.contextWindow ?? 0,
+                              maxOutputTokens: usage.maxOutputTokens ?? 0,
+                          },
+                      ])
+                  )
+                : undefined;
+
             yield {
                 type: "result",
                 success: result.subtype === "success",
@@ -409,6 +468,7 @@ function* processSDKMessage(
                     cacheCreationInputTokens:
                         result.usage?.cache_creation_input_tokens ?? 0,
                 },
+                modelUsage,
             };
             break;
         }
@@ -557,6 +617,20 @@ interface ResultMessage {
         cache_read_input_tokens?: number;
         cache_creation_input_tokens?: number;
     };
+    /** Per-model usage breakdown (SDK 0.2.x) */
+    model_usage?: Record<
+        string,
+        {
+            inputTokens?: number;
+            outputTokens?: number;
+            cacheReadInputTokens?: number;
+            cacheCreationInputTokens?: number;
+            webSearchRequests?: number;
+            costUSD?: number;
+            contextWindow?: number;
+            maxOutputTokens?: number;
+        }
+    >;
 }
 
 interface SystemMessage {
