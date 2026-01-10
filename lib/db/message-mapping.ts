@@ -47,6 +47,7 @@ export interface UIMessageLike {
  */
 export interface MessageWithParts extends Message {
     parts: MessagePart[];
+    externalId: string | null;
 }
 
 /**
@@ -76,6 +77,11 @@ export interface ConnectionWithMessages {
     // Code mode (Dev Mode)
     projectPath: string | null;
     codeSessionId: string | null;
+    // Import tracking
+    source: "carmenta" | "openai" | "anthropic";
+    externalId: string | null;
+    importedAt: Date | null;
+    customGptId: string | null;
     messages: MessageWithParts[];
 }
 

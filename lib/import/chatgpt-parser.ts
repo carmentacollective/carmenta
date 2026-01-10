@@ -348,6 +348,22 @@ function extractUserSettings(
 }
 
 /**
+ * Detect if JSON looks like an Anthropic/Claude export instead of OpenAI
+ * Anthropic exports have: chat_messages array, uuid, created_at (ISO timestamp)
+ * OpenAI exports have: mapping object, current_node, create_time (Unix timestamp)
+ */
+function looksLikeAnthropicFormat(data: unknown[]): boolean {
+    if (!data || data.length === 0) return false;
+    const first = data[0] as Record<string, unknown>;
+    // Anthropic format has chat_messages array and uuid
+    return (
+        Array.isArray(first?.chat_messages) &&
+        typeof first?.uuid === "string" &&
+        typeof first?.created_at === "string"
+    );
+}
+
+/**
  * Parse the conversations.json content from a ChatGPT export
  */
 export function parseConversationsJson(jsonContent: string): ParseResult {
@@ -376,6 +392,19 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
             dateRange: { earliest: new Date(), latest: new Date() },
             totalMessageCount: 0,
             errors: ["Expected conversations array in export"],
+            userSettings: null,
+        };
+    }
+
+    // Detect wrong format - user uploaded Anthropic export to OpenAI tab
+    if (looksLikeAnthropicFormat(rawConversations)) {
+        return {
+            conversations: [],
+            dateRange: { earliest: new Date(), latest: new Date() },
+            totalMessageCount: 0,
+            errors: [
+                "This looks like a Claude/Anthropic export. Switch to the Claude tab to import it.",
+            ],
             userSettings: null,
         };
     }

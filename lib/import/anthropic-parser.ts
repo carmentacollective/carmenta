@@ -207,6 +207,20 @@ function parseConversation(conv: AnthropicConversation): ParsedConversation | nu
 }
 
 /**
+ * Detect if JSON looks like an OpenAI/ChatGPT export instead of Anthropic
+ * ChatGPT exports have: mapping, current_node, create_time (Unix timestamp)
+ * Anthropic exports have: chat_messages, uuid, created_at (ISO timestamp)
+ */
+function looksLikeOpenAIFormat(data: unknown[]): boolean {
+    if (!data || data.length === 0) return false;
+    const first = data[0] as Record<string, unknown>;
+    // ChatGPT format has mapping object and current_node
+    return (
+        typeof first?.mapping === "object" && typeof first?.current_node === "string"
+    );
+}
+
+/**
  * Parse the conversations JSON content from an Anthropic export
  */
 export function parseConversationsJson(jsonContent: string): ParseResult {
@@ -233,6 +247,19 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
             dateRange: { earliest: new Date(), latest: new Date() },
             totalMessageCount: 0,
             errors: ["Expected conversations array in export"],
+            userSettings: null,
+        };
+    }
+
+    // Detect wrong format - user uploaded OpenAI export to Anthropic tab
+    if (looksLikeOpenAIFormat(data)) {
+        return {
+            conversations: [],
+            dateRange: { earliest: new Date(), latest: new Date() },
+            totalMessageCount: 0,
+            errors: [
+                "This looks like an OpenAI/ChatGPT export. Switch to the ChatGPT tab to import it.",
+            ],
             userSettings: null,
         };
     }
