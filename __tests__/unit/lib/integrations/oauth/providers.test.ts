@@ -79,14 +79,15 @@ describe("OAuth Provider Registry", () => {
         it("returns only currently registered providers", () => {
             const ids = getOAuthProviderIds();
 
-            // All 8 OAuth providers are now registered
-            expect(ids).toHaveLength(8);
+            // All 9 OAuth providers are now registered
+            expect(ids).toHaveLength(9);
             expect(ids).toContain("notion");
             expect(ids).toContain("slack");
             expect(ids).toContain("clickup");
             expect(ids).toContain("dropbox");
             expect(ids).toContain("gmail");
             expect(ids).toContain("google-calendar-contacts");
+            expect(ids).toContain("google-workspace-files");
             expect(ids).toContain("spotify");
             expect(ids).toContain("twitter");
         });
