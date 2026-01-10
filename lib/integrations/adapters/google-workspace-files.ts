@@ -296,7 +296,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                             startRow: 0,
                             startColumn: 0,
                             rowData: data.map((row) => ({
-                                values: row.map((cell) => ({
+                                values: (Array.isArray(row) ? row : []).map((cell) => ({
                                     userEnteredValue: {
                                         stringValue: cell == null ? "" : String(cell),
                                     },
