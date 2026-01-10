@@ -54,6 +54,7 @@ const extractionSchema = z.object({
                 "project",
                 "decision",
                 "expertise",
+                "voice",
             ]),
             content: z.string(),
             summary: z.string(),

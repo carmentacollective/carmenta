@@ -55,6 +55,8 @@ function categoryToPathPrefix(category: ExtractionCategory): string {
             return "knowledge.decisions";
         case "expertise":
             return "knowledge.expertise";
+        case "voice":
+            return "knowledge.voice";
     }
 }
 

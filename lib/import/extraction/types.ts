@@ -10,7 +10,8 @@ export type ExtractionCategory =
     | "person"
     | "project"
     | "decision"
-    | "expertise";
+    | "expertise"
+    | "voice";
 
 export type ExtractionStatus = "pending" | "approved" | "rejected" | "edited";
 

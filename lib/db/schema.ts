@@ -2021,6 +2021,7 @@ export const extractionCategoryEnum = pgEnum("extraction_category", [
     "project",
     "decision",
     "expertise",
+    "voice",
 ]);
 
 /**
