@@ -199,7 +199,7 @@ function parseConversation(conv: AnthropicConversation): ParsedConversation | nu
         };
     } catch (error) {
         logger.warn(
-            { error, conversationId: conv.uuid },
+            { error, conversationId: conv?.uuid ?? "unknown" },
             "Failed to parse conversation"
         );
         return null;
@@ -229,7 +229,8 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
 
     try {
         const parsed = JSON.parse(jsonContent);
-        data = Array.isArray(parsed) ? parsed : [];
+        // Handle both array format and object format like {conversations: [...]}
+        data = Array.isArray(parsed) ? parsed : (parsed.conversations ?? []);
     } catch (error) {
         const detail = error instanceof SyntaxError ? `: ${error.message}` : "";
         return {
@@ -406,17 +407,21 @@ export async function validateExportZip(
         const jsonContent = await conversationsFile.async("string");
         const result = parseConversationsJson(jsonContent);
 
-        if (result.errors.length > 0) {
+        // Allow partial success - errors don't invalidate the entire export
+        // Only fail if we got zero conversations AND there were errors
+        if (result.conversations.length === 0 && result.errors.length > 0) {
             return {
                 valid: false,
                 error: result.errors[0],
             };
         }
 
+        // Empty exports (no conversations) are valid
         if (result.conversations.length === 0) {
             return {
-                valid: false,
-                error: "No conversations found in export.",
+                valid: true,
+                conversationCount: 0,
+                dateRange: result.dateRange,
             };
         }
 

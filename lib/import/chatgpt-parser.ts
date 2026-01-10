@@ -313,9 +313,12 @@ function parseConversation(
         };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        logger.warn({ error, conversationId: conv.id }, "Failed to parse conversation");
+        logger.warn(
+            { error, conversationId: conv?.id ?? "unknown" },
+            "Failed to parse conversation"
+        );
         // Return error info instead of null so caller can track failures
-        return { error: errorMessage, conversationId: conv.id };
+        return { error: errorMessage, conversationId: conv?.id ?? "unknown" };
     }
 }
 
@@ -538,17 +541,21 @@ export async function validateExportZip(
         const jsonContent = await conversationsFile.async("string");
         const result = parseConversationsJson(jsonContent);
 
-        if (result.errors.length > 0) {
+        // Allow partial success - errors don't invalidate the entire export
+        // Only fail if we got zero conversations AND there were errors
+        if (result.conversations.length === 0 && result.errors.length > 0) {
             return {
                 valid: false,
                 error: result.errors[0],
             };
         }
 
+        // Empty exports (no conversations) are valid
         if (result.conversations.length === 0) {
             return {
-                valid: false,
-                error: "No conversations found in export.",
+                valid: true,
+                conversationCount: 0,
+                dateRange: result.dateRange,
             };
         }
 
