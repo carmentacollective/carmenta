@@ -41,6 +41,7 @@ import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
 import { commitImport, type ImportCommitResult } from "@/lib/actions/import";
 import type { ConversationForImport } from "@/app/api/import/chatgpt/route";
+import type { ExtractionStats } from "@/lib/import/extraction/types";
 
 type Provider = "chatgpt" | "anthropic";
 type ImportState =
@@ -53,22 +54,6 @@ type ImportState =
     | "error";
 
 type DiscoveryState = "idle" | "invited" | "starting" | "processing" | "complete";
-
-interface ExtractionStats {
-    total: number;
-    pending: number;
-    approved: number;
-    rejected: number;
-    edited: number;
-    byCategory: {
-        identity: number;
-        preference: number;
-        person: number;
-        project: number;
-        decision: number;
-        expertise: number;
-    };
-}
 
 interface ConversationPreview {
     id: string;
@@ -504,6 +489,7 @@ export default function ImportPage() {
             }
         } catch (err) {
             logger.error({ error: err }, "Failed to start discovery");
+            setError("Network error starting discovery. Please try again.");
             setDiscoveryState("idle");
         }
     }, [importResult?.connectionIds]);
@@ -520,11 +506,6 @@ export default function ImportPage() {
 
     const handleContinueToApp = useCallback(() => {
         router.push("/");
-    }, [router]);
-
-    // Temporarily unused until review page is built
-    const _handleReviewFindings = useCallback(() => {
-        router.push("/knowledge/review");
     }, [router]);
 
     const handleKeepEverything = useCallback(async () => {
@@ -1164,6 +1145,15 @@ export default function ImportPage() {
                 {/* Success State - Discovery Flow */}
                 {state === "success" && importResult && (
                     <>
+                        {/* Show errors during discovery flow */}
+                        {error && (
+                            <Card className="mb-6 border-red-500/30 bg-red-500/5">
+                                <CardContent className="py-4">
+                                    <p className="text-sm text-red-600">{error}</p>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         {/* Phase 1: Discovery Invitation (including starting state) */}
                         {(discoveryState === "invited" ||
                             discoveryState === "starting") && (

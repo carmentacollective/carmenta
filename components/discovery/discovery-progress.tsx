@@ -6,22 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { logger } from "@/lib/client-logger";
-
-interface ExtractionStats {
-    total: number;
-    pending: number;
-    approved: number;
-    rejected: number;
-    edited: number;
-    byCategory: {
-        identity: number;
-        preference: number;
-        person: number;
-        project: number;
-        decision: number;
-        expertise: number;
-    };
-}
+import type { ExtractionStats } from "@/lib/import/extraction/types";
 
 interface DiscoveryProgressProps {
     jobId: string;
@@ -82,8 +67,8 @@ export function DiscoveryProgress({
             if (data.stats) {
                 setStats(data.stats);
 
-                // Calculate processed from stats
-                const totalExtracted = data.stats.total || 0;
+                // Total extractions count is at root level, not in stats
+                const totalExtracted = data.total || 0;
                 setProcessedCount(Math.min(totalConversations, totalExtracted));
 
                 // Check if job is complete (no more unprocessed imports)

@@ -8,22 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
-interface ExtractionStats {
-    total: number;
-    pending: number;
-    approved: number;
-    rejected: number;
-    edited: number;
-    byCategory: {
-        identity: number;
-        preference: number;
-        person: number;
-        project: number;
-        decision: number;
-        expertise: number;
-    };
-}
+import type { ExtractionStats } from "@/lib/import/extraction/types";
 
 interface DiscoveryCompleteProps {
     stats: ExtractionStats;

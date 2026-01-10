@@ -85,9 +85,11 @@ export interface ExtractionReviewAction {
  * Stats for the extraction review UI
  */
 export interface ExtractionStats {
+    total: number;
     pending: number;
     approved: number;
     rejected: number;
+    edited: number;
     byCategory: Record<ExtractionCategory, number>;
 }
 
