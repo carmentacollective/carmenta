@@ -94,6 +94,8 @@ export const env = createEnv({
         // PostHog analytics (production-only, see instrumentation-client.ts)
         NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
         NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+        // Google API key for client-side Google Picker
+        NEXT_PUBLIC_GOOGLE_API_KEY: z.string().min(1).optional(),
     },
     runtimeEnv: {
         NODE_ENV: process.env.NODE_ENV,
@@ -137,6 +139,7 @@ export const env = createEnv({
             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
         NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
         NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+        NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
         GIPHY_API_KEY: process.env.GIPHY_API_KEY,
         IMGFLIP_USERNAME: process.env.IMGFLIP_USERNAME,
         IMGFLIP_PASSWORD: process.env.IMGFLIP_PASSWORD,

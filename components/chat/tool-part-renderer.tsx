@@ -23,8 +23,9 @@ import {
     DropboxToolResult,
     FirefliesToolResult,
     GiphyToolResult,
-    ImgflipToolResult,
     GoogleCalendarContactsToolResult,
+    GoogleWorkspaceFilesToolResult,
+    ImgflipToolResult,
     LimitlessToolResult,
     NotionToolResult,
     QuoToolResult,
@@ -294,6 +295,22 @@ export function ToolPartRenderer({ part }: ToolPartRendererProps) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Google Calendar request failed")}
+                />
+            );
+
+        case "google-workspace-files":
+            return (
+                <GoogleWorkspaceFilesToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(
+                        part,
+                        output,
+                        "Google Workspace request failed"
+                    )}
                 />
             );
 
