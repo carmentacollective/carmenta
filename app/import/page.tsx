@@ -157,15 +157,18 @@ export default function ImportPage() {
                     .split(",")
                     .map((k) => k.trim())
                     .filter(Boolean);
-                const titleLower = conv.title.toLowerCase();
-                const contentLower = conv.messages
-                    .map((m) => m.content)
-                    .join(" ")
-                    .toLowerCase();
-                const hasKeyword = keywords.some(
-                    (kw) => titleLower.includes(kw) || contentLower.includes(kw)
-                );
-                if (!hasKeyword) return false;
+                // Skip filter if no valid keywords after cleaning (e.g., just commas)
+                if (keywords.length > 0) {
+                    const titleLower = conv.title.toLowerCase();
+                    const contentLower = conv.messages
+                        .map((m) => m.content)
+                        .join(" ")
+                        .toLowerCase();
+                    const hasKeyword = keywords.some(
+                        (kw) => titleLower.includes(kw) || contentLower.includes(kw)
+                    );
+                    if (!hasKeyword) return false;
+                }
             }
 
             // Keyword exclude filter
@@ -175,15 +178,18 @@ export default function ImportPage() {
                     .split(",")
                     .map((k) => k.trim())
                     .filter(Boolean);
-                const titleLower = conv.title.toLowerCase();
-                const contentLower = conv.messages
-                    .map((m) => m.content)
-                    .join(" ")
-                    .toLowerCase();
-                const hasExcludedKeyword = keywords.some(
-                    (kw) => titleLower.includes(kw) || contentLower.includes(kw)
-                );
-                if (hasExcludedKeyword) return false;
+                // Skip filter if no valid keywords after cleaning
+                if (keywords.length > 0) {
+                    const titleLower = conv.title.toLowerCase();
+                    const contentLower = conv.messages
+                        .map((m) => m.content)
+                        .join(" ")
+                        .toLowerCase();
+                    const hasExcludedKeyword = keywords.some(
+                        (kw) => titleLower.includes(kw) || contentLower.includes(kw)
+                    );
+                    if (hasExcludedKeyword) return false;
+                }
             }
 
             // Min messages filter
