@@ -118,6 +118,30 @@ jobs:
 
           echo "✅ Schema and migrations are in sync"
 
+      - name: 🔢 Check journal timestamp order
+        run: |
+          # Verify migration timestamps are in ascending order
+          # Out-of-order timestamps from branch merges cause migrations to be skipped
+          node -e "
+            const journal = require('./drizzle/migrations/meta/_journal.json');
+            let prevWhen = 0;
+            let prevTag = '';
+            for (const entry of journal.entries) {
+              if (entry.when < prevWhen) {
+                console.error('❌ Migration timestamps out of order!');
+                console.error('   ' + prevTag + ': ' + prevWhen);
+                console.error('   ' + entry.tag + ': ' + entry.when + ' (earlier!)');
+                console.error('');
+                console.error('This happens when migrations are created on parallel branches.');
+                console.error('Fix: Update the \"when\" timestamp in _journal.json to be after the previous migration.');
+                process.exit(1);
+              }
+              prevWhen = entry.when;
+              prevTag = entry.tag;
+            }
+            console.log('✅ Migration timestamps are in order');
+          "
+
       - name: 📚 Sync documentation to knowledge base
         run: pnpm run docs:sync
         env:
