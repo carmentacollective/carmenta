@@ -144,8 +144,13 @@ export interface SDKAdapterOptions {
     /**
      * When false, disables session persistence to disk.
      * Sessions will not be saved to ~/.claude/projects/
-     * Useful for ephemeral or automated workflows.
-     * @default false for Carmenta (cleaner operation)
+     *
+     * WARNING: Carmenta's code-mode relies on SDK session persistence for
+     * multi-turn context (see app/api/code/route.ts convertUIMessagesToPrompt).
+     * Only send the latest user message to the SDK and let it handle conversation
+     * history via persisted sessions.
+     *
+     * @default true (required for multi-turn conversations)
      */
     persistSession?: boolean;
     /**
@@ -226,7 +231,7 @@ export async function* streamSDK(
                 includePartialMessages: true,
                 // SDK 0.2.x features
                 betas: options.betas ?? ["context-1m-2025-08-07"],
-                persistSession: options.persistSession ?? false,
+                persistSession: options.persistSession ?? true,
                 enableFileCheckpointing: options.enableFileCheckpointing ?? true,
             },
         });
