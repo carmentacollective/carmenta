@@ -497,15 +497,15 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Check for secret phrases (easter egg effects)
             checkMessage(userText);
 
-            // Capture files before clearing - files clear optimistically, text restores on error
+            // Capture files before clearing state
             const filesToSend = getFilesToSend(completedFiles).map((f) => ({
                 url: f.url,
                 mediaType: f.mediaType,
                 name: f.name,
             }));
 
+            // Files clear optimistically (industry standard - don't restore on failure)
             clearFiles();
-            onMessageSent();
 
             try {
                 await append({
@@ -513,6 +513,8 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     content: message,
                     files: filesToSend,
                 });
+                // Draft clears on success only (preserves draft if send fails)
+                onMessageSent();
                 // Re-focus input for quick follow-up messages
                 // Use preventScroll on mobile to avoid keyboard-induced scroll jank
                 inputRef.current?.focus({ preventScroll: isMobile });
