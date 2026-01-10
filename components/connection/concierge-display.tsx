@@ -2,7 +2,7 @@
 
 import { memo, useState, useLayoutEffect, useRef } from "react";
 import { CaretDownIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { CarmentaReflection } from "@/components/ui/carmenta-reflection";
 
@@ -18,17 +18,16 @@ import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 
 /**
- * Selecting state messages - warm, varied, "we" language.
- * Hash-based selection ensures consistency without randomness.
+ * Selecting state messages - warm, explanatory, "we" language.
+ * These explain what Carmenta is actually doing, building trust.
  *
- * Voice: Reflection metaphor - Carmenta contemplating before responding.
- * Brief because this state is transient (typically 1-2 seconds).
+ * Voice: Contemplative pause before responding together.
  */
 const SELECTING_MESSAGES = [
-    "Reflecting...",
-    "Finding our approach...",
-    "Tuning in...",
-    "Contemplating...",
+    "Finding the right approach for this...",
+    "Considering how we can best help...",
+    "Tuning in to what this needs...",
+    "Reflecting on the best way forward...",
 ];
 
 function getSelectingMessage(seed: string): string {
@@ -57,9 +56,9 @@ function getModelDisplayName(modelId: string): string {
 }
 
 /**
- * Temperature → emoji badge mapping
+ * Temperature → badge with label (always shown together)
  */
-function getTemperatureEmoji(temperature: number): { emoji: string; label: string } {
+function getTemperatureBadge(temperature: number): { emoji: string; label: string } {
     if (temperature <= 0.3) return { emoji: "🎯", label: "Precise" };
     if (temperature <= 0.6) return { emoji: "⚖️", label: "Balanced" };
     if (temperature <= 0.8) return { emoji: "🎨", label: "Creative" };
@@ -67,22 +66,23 @@ function getTemperatureEmoji(temperature: number): { emoji: string; label: strin
 }
 
 /**
- * Reasoning config → emoji badge mapping
+ * Reasoning config → badge with label
  */
-function getReasoningEmoji(
-    reasoning: ReasoningConfig
-): { emoji: string; label: string } | null {
+function getReasoningBadge(reasoning: ReasoningConfig): {
+    emoji: string;
+    label: string;
+} {
     if (!reasoning.enabled) return { emoji: "⚡", label: "Quick" };
 
     const effort = reasoning.effort ?? "medium";
     const badges: Record<string, { emoji: string; label: string }> = {
-        high: { emoji: "🧠", label: "Deep" },
-        medium: { emoji: "⚖️", label: "Thorough" },
-        low: { emoji: "🏃", label: "Thoughtful" },
+        high: { emoji: "🧠", label: "Deep thinking" },
+        medium: { emoji: "💭", label: "Thorough" },
+        low: { emoji: "💡", label: "Thoughtful" },
         none: { emoji: "⚡", label: "Quick" },
     };
 
-    return badges[effort] ?? { emoji: "🧠", label: "Thinking" };
+    return badges[effort] ?? { emoji: "💭", label: "Thinking" };
 }
 
 interface ConciergeDisplayProps {
@@ -90,7 +90,7 @@ interface ConciergeDisplayProps {
     modelId?: string | null;
     /** Temperature setting (0.0 to 1.0) */
     temperature?: number;
-    /** One sentence explaining the choice */
+    /** One sentence explaining the choice - THE KEY CONTENT */
     explanation?: string;
     /** Reasoning configuration */
     reasoning?: ReasoningConfig;
@@ -109,19 +109,19 @@ interface ConciergeDisplayProps {
 }
 
 /**
- * Unified Concierge Display - Orchestrator Line Design
+ * Concierge Display - Trust-Building Model Selection
  *
- * Compact, elegant attribution line:
- * [Carmenta Avatar] → [Provider Icon] Model Name · 🎨 · 🧠
+ * Philosophy: This is a moment of partnership, not a loading state.
+ * Carmenta is genuinely reflecting on how to best approach the user's request.
  *
- * Expandable panel shows "Why this choice" reasoning.
- * Transparent background lets holographic background shine through.
+ * Waiting State:
+ * - Centered CarmentaReflection (48px) with generous breathing room
+ * - Warm message explaining what's happening
  *
- * Animation Philosophy:
- * - Entrance: Fade in with gentle upward motion (0.3s)
- * - Thinking → Selected: Crossfade (not sequential swap)
- * - Selected → Muted: Subtle opacity drop (0.5s delayed)
- * - All transitions should feel like one continuous flow
+ * Selected State:
+ * - Lead with the explanation (the "why")
+ * - Model name + badges with visible labels
+ * - Expandable for technical details
  */
 export const ConciergeDisplay = memo(function ConciergeDisplay({
     modelId,
@@ -145,8 +145,8 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     const selectingMessage = getSelectingMessage(messageSeed);
 
     // Get badges
-    const tempBadge = getTemperatureEmoji(temperature);
-    const reasoningBadge = reasoning ? getReasoningEmoji(reasoning) : null;
+    const tempBadge = getTemperatureBadge(temperature);
+    const reasoningBadge = reasoning ? getReasoningBadge(reasoning) : null;
 
     // Settling phase: Brief moment when selection completes before showing result
     // useLayoutEffect runs synchronously before paint, preventing flash of selected state
@@ -154,14 +154,13 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
         if (hasSelected && !prevHasSelectedRef.current) {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: synchronous state before paint
             setIsSettling(true);
-            const timer = setTimeout(() => setIsSettling(false), 350);
+            const timer = setTimeout(() => setIsSettling(false), 400);
             return () => clearTimeout(timer);
         }
         prevHasSelectedRef.current = hasSelected;
     }, [hasSelected]);
 
-    // Determine which text state to show
-    // Show selecting state during selection OR during settling phase
+    // Determine which state to show
     const showSelecting = isSelecting && !hasSelected;
     const showSettling = isSettling && hasSelected;
     const showSelected = hasSelected && !isSettling;
@@ -171,178 +170,145 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
         return null;
     }
 
-    // SELECTING or SETTLING STATE: Show CarmentaReflection
-    // Settling phase shows ripple effect before transitioning to selected
+    // SELECTING or SETTLING STATE: Centered reflection with warm message
     if (showSelecting || showSettling) {
         return (
             <motion.div
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className={cn("not-prose flex items-center gap-3 py-2", className)}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className={cn(
+                    "not-prose flex flex-col items-center justify-center py-6",
+                    className
+                )}
             >
+                {/* Centered reflection with breathing room */}
                 <CarmentaReflection
-                    size={32}
+                    size={48}
                     animate={!showSettling}
                     isSettling={showSettling}
                 />
-                <motion.span
-                    className="text-foreground/60 text-sm italic"
-                    animate={{ opacity: showSettling ? 0 : 1 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    {selectingMessage}
-                </motion.span>
+
+                {/* Warm, explanatory message */}
+                <AnimatePresence mode="wait">
+                    {!showSettling && (
+                        <motion.p
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.3, delay: 0.1 }}
+                            className="text-foreground/50 mt-4 text-center text-sm"
+                        >
+                            {selectingMessage}
+                        </motion.p>
+                    )}
+                </AnimatePresence>
             </motion.div>
         );
     }
 
+    // SELECTED STATE: Lead with explanation, show details
     return (
         <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
-                duration: 0.3,
-                ease: [0.16, 1, 0.3, 1], // Expo out
+                duration: 0.4,
+                ease: [0.16, 1, 0.3, 1],
             }}
-            className={cn("not-prose", className)}
+            className={cn("not-prose py-2", className)}
         >
             <Collapsible open={isOpen} onOpenChange={setIsOpen} disabled={!hasSelected}>
-                {/* ORCHESTRATOR LINE - Compact attribution (only shown after selection) */}
                 <CollapsibleTrigger
                     className={cn(
-                        "group -mx-2 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors duration-200 @md:gap-2.5 @md:py-2",
-                        // Transparent by default, subtle hover state
+                        "group -mx-2 flex w-full flex-col gap-1.5 rounded-lg px-3 py-2.5 text-left transition-colors duration-200",
                         "hover:bg-foreground/[0.03] bg-transparent",
                         !hasSelected && "cursor-default",
-                        // Subtle glow during celebrating
                         isCelebrating && "bg-purple-500/5"
                     )}
                 >
-                    {/* Status content */}
-                    <div className="relative min-w-0 flex-1">
-                        {/* Selected state layer - only render when selected */}
-                        {showSelected && (
+                    {showSelected && (
+                        <>
+                            {/* Primary: Model name with provider icon + explanation */}
                             <motion.div
-                                initial={{ opacity: 1, y: 4, scale: 0.98 }}
-                                animate={{ opacity: 0.7, y: 0, scale: 1 }}
-                                transition={{
-                                    duration: 0.4,
-                                    delay: 0.1, // Slight delay for crossfade overlap
-                                    ease: [0.16, 1, 0.3, 1],
-                                }}
-                                className="flex min-w-0 items-center gap-2.5"
+                                initial={{ opacity: 0, y: 4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: 0.05 }}
+                                className="flex min-w-0 items-center gap-2"
                             >
-                                {/* Arrow with fade-in */}
-                                <motion.span
-                                    initial={{ opacity: 0, x: -4 }}
-                                    animate={{ opacity: 0.3, x: 0 }}
-                                    transition={{ duration: 0.3, delay: 0.15 }}
-                                    className="text-foreground text-sm"
-                                >
-                                    →
-                                </motion.span>
-
                                 {/* Provider icon */}
                                 {modelConfig?.provider && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ duration: 0.25, delay: 0.2 }}
-                                    >
-                                        <ProviderIcon
-                                            provider={modelConfig.provider}
-                                            className="text-foreground/60 h-4 w-4 shrink-0"
-                                        />
-                                    </motion.div>
+                                    <ProviderIcon
+                                        provider={modelConfig.provider}
+                                        className="text-foreground/50 h-4 w-4 shrink-0"
+                                    />
                                 )}
 
                                 {/* Model name */}
-                                <motion.span
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.25, delay: 0.25 }}
-                                    className="text-foreground/80 truncate text-sm font-medium"
-                                >
+                                <span className="text-foreground/70 text-sm font-medium">
                                     {displayName}
-                                </motion.span>
+                                </span>
 
-                                {/* Separator */}
-                                <motion.span
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 0.25 }}
-                                    transition={{ duration: 0.2, delay: 0.3 }}
-                                    className="text-foreground text-sm"
-                                >
-                                    ·
-                                </motion.span>
-
-                                {/* Temperature badge */}
-                                <motion.span
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{
-                                        duration: 0.25,
-                                        delay: 0.35,
-                                        type: "spring",
-                                        stiffness: 400,
-                                        damping: 20,
-                                    }}
-                                    className="text-sm"
-                                >
-                                    {tempBadge.emoji}
-                                </motion.span>
-
-                                {/* Reasoning badge */}
-                                {reasoningBadge && (
-                                    <motion.span
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{
-                                            duration: 0.25,
-                                            delay: 0.4,
-                                            type: "spring",
-                                            stiffness: 400,
-                                            damping: 20,
-                                        }}
-                                        className="text-sm"
-                                    >
-                                        {reasoningBadge.emoji}
-                                    </motion.span>
+                                {/* Explanation - the key content */}
+                                {explanation && (
+                                    <>
+                                        <span className="text-foreground/30 text-sm">
+                                            —
+                                        </span>
+                                        <span
+                                            className="text-foreground/60 min-w-0 truncate text-sm"
+                                            title={explanation}
+                                        >
+                                            {explanation}
+                                        </span>
+                                    </>
                                 )}
 
-                                {/* Auto-switch indicator */}
-                                {autoSwitched && autoSwitchReason && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{
-                                            delay: 0.45,
-                                            type: "spring",
-                                            stiffness: 400,
-                                            damping: 15,
-                                        }}
-                                        className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5"
-                                    >
-                                        <ArrowsLeftRightIcon className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                                    </motion.div>
-                                )}
-
-                                {/* Expand chevron - appears on hover */}
+                                {/* Expand chevron */}
                                 <CaretDownIcon
                                     className={cn(
-                                        "text-foreground/25 ml-auto h-4 w-4 shrink-0 transition-all duration-200",
+                                        "text-foreground/20 ml-auto h-4 w-4 shrink-0 transition-all duration-200",
                                         "opacity-0 group-hover:opacity-100",
                                         isOpen && "rotate-180 opacity-100"
                                     )}
                                 />
                             </motion.div>
-                        )}
-                    </div>
+
+                            {/* Secondary: Badges with labels */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.3, delay: 0.15 }}
+                                className="flex items-center gap-3"
+                            >
+                                {/* Temperature badge with label */}
+                                <span className="text-foreground/40 flex items-center gap-1.5 text-xs">
+                                    <span>{tempBadge.emoji}</span>
+                                    <span>{tempBadge.label}</span>
+                                </span>
+
+                                {/* Reasoning badge with label */}
+                                {reasoningBadge && (
+                                    <span className="text-foreground/40 flex items-center gap-1.5 text-xs">
+                                        <span>{reasoningBadge.emoji}</span>
+                                        <span>{reasoningBadge.label}</span>
+                                    </span>
+                                )}
+
+                                {/* Auto-switch indicator */}
+                                {autoSwitched && autoSwitchReason && (
+                                    <span className="flex items-center gap-1 text-xs text-amber-500/70">
+                                        <ArrowsLeftRightIcon className="h-3 w-3" />
+                                        <span>Switched</span>
+                                    </span>
+                                )}
+                            </motion.div>
+                        </>
+                    )}
                 </CollapsibleTrigger>
 
-                {/* Expanded "Why this choice" panel */}
+                {/* Expanded details panel */}
                 {hasSelected && (
                     <CollapsibleContent
                         className={cn(
@@ -354,38 +320,40 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                         <motion.div
                             initial={{ opacity: 0, y: -4 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="mt-2 rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 text-sm"
+                            className="mt-2 rounded-xl border border-purple-500/15 bg-purple-500/[0.03] p-4 text-sm"
                         >
                             {/* Header */}
                             <div className="mb-3 flex items-center gap-2">
                                 <CarmentaAvatar size="xs" state="idle" />
-                                <span className="text-foreground/80 font-medium">
-                                    Why this choice
+                                <span className="text-foreground/70 font-medium">
+                                    Why we chose this
                                 </span>
                             </div>
 
-                            {/* Explanation */}
+                            {/* Full explanation */}
                             {explanation && (
-                                <p className="text-foreground/70 mb-4">{explanation}</p>
+                                <p className="text-foreground/60 mb-4 leading-relaxed">
+                                    {explanation}
+                                </p>
                             )}
 
-                            {/* Badges row */}
+                            {/* Badges with full context */}
                             <div className="flex flex-wrap gap-2">
-                                <span className="bg-primary/10 text-primary rounded-full px-3 py-1 font-medium">
+                                <span className="bg-primary/[0.08] text-primary/80 rounded-full px-3 py-1.5 text-xs font-medium">
                                     {tempBadge.emoji} {tempBadge.label}
                                 </span>
                                 {reasoningBadge && (
-                                    <span className="rounded-full bg-amber-500/10 px-3 py-1 font-medium text-amber-600 dark:text-amber-400">
+                                    <span className="rounded-full bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                                         {reasoningBadge.emoji} {reasoningBadge.label}
                                     </span>
                                 )}
                             </div>
 
-                            {/* Auto-switch notice */}
+                            {/* Auto-switch explanation */}
                             {autoSwitched && autoSwitchReason && (
-                                <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                                    <ArrowsLeftRightIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                    <p className="text-amber-700 dark:text-amber-300">
+                                <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/15 bg-amber-500/5 px-3 py-2.5">
+                                    <ArrowsLeftRightIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                                    <p className="text-xs leading-relaxed text-amber-600 dark:text-amber-400">
                                         {autoSwitchReason}
                                     </p>
                                 </div>

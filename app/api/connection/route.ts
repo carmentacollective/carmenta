@@ -14,7 +14,7 @@ import {
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
-import { filterReasoningFromMessages } from "@/lib/ai/messages";
+import { filterReasoningFromMessages, filterLargeToolOutputs } from "@/lib/ai/messages";
 import { getGatewayClient, translateModelId, translateOptions } from "@/lib/ai/gateway";
 
 import {
@@ -47,11 +47,8 @@ import { buildSystemMessages } from "@/lib/prompts/system-messages";
 import { getIntegrationTools } from "@/lib/integrations/tools";
 import { getMcpGatewayTools } from "@/lib/mcp/gateway";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
-import {
-    builtInTools,
-    createSearchKnowledgeTool,
-    createImageTool,
-} from "@/lib/tools/built-in";
+import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
+import { createImageArtistTool } from "@/lib/ai-team/agents/image-artist-tool";
 import { createSmsUserTool } from "@/lib/ai-team/agents/sms-user-tool";
 import { postResponseTools } from "@/lib/tools/post-response";
 import {
@@ -62,6 +59,7 @@ import {
 import { triggerLibrarian } from "@/lib/ai-team/librarian/trigger";
 // Discovery is disabled - type import kept for pendingDiscoveries typing
 import { type DiscoveryItem } from "@/lib/discovery";
+import { detectDepthSelection, preExecuteResearch } from "@/lib/research/auto-trigger";
 import { writeStatus, STATUS_MESSAGES } from "@/lib/streaming";
 import { getStreamContext } from "@/lib/streaming/stream-context";
 import {
@@ -585,9 +583,12 @@ export async function POST(req: Request) {
         // This allows the AI to explicitly query the knowledge base mid-conversation
         const searchKnowledgeTool = createSearchKnowledgeTool(dbUser.id);
 
-        // Create image tool with reasoning context
-        // Higher reasoning level = higher quality (and more expensive) image model
-        const imageTool = createImageTool({ reasoning: concierge.reasoning });
+        // Create Image Artist agent tool
+        // Uses task-based model routing from 195-image eval results
+        const imageArtistTool = createImageArtistTool({
+            userId: dbUser.id,
+            userEmail: userEmail!,
+        });
 
         // Create SMS tool for Carmenta to text the user
         // This is system-level messaging (Carmenta → user), not the user's own Quo account
@@ -609,7 +610,7 @@ export async function POST(req: Request) {
             ...mcpTools,
             ...postResponseTools,
             searchKnowledge: searchKnowledgeTool,
-            createImage: imageTool,
+            imageArtist: imageArtistTool,
             smsUser: smsUserTool,
             ...discoveryTools,
         };
@@ -689,8 +690,12 @@ export async function POST(req: Request) {
             });
         }
 
-        // Strip reasoning parts before sending to API (Anthropic rejects modified thinking blocks)
-        const messagesWithoutReasoning = filterReasoningFromMessages(messages);
+        // Filter messages for LLM consumption:
+        // 1. Strip reasoning parts (Anthropic rejects modified thinking blocks in history)
+        // 2. Strip large base64 image data (causes context_length_exceeded errors)
+        const messagesWithoutReasoning = filterLargeToolOutputs(
+            filterReasoningFromMessages(messages)
+        );
 
         // Build system messages with Anthropic prompt caching on static content.
         // These are prepended to messages array (not via `system` param) so we can
@@ -724,19 +729,69 @@ export async function POST(req: Request) {
                     return "Reading page...";
                 case "searchKnowledge":
                     return STATUS_MESSAGES.knowledgeBase.searching;
+                case "imageArtist":
+                    return "Creating image...";
                 default:
                     // Integration tools (clickup, notion, etc.)
                     return STATUS_MESSAGES.integration.connecting(toolName);
             }
         };
 
+        // ================================================================
+        // AUTO-TRIGGER RESEARCH: Pre-execute when depth is selected
+        // ================================================================
+        // When user selects a research depth (like "Quick overview ~15s"),
+        // pre-execute deepResearch before the AI runs. This ensures the
+        // time promise is honored instead of the AI doing manual searches.
+        const depthSelection = detectDepthSelection(messages, connectionId);
+        let researchSystemContext: string | null = null;
+
+        if (
+            depthSelection.isDepthResponse &&
+            depthSelection.depth &&
+            depthSelection.originalQuery
+        ) {
+            logger.info(
+                {
+                    connectionId,
+                    depth: depthSelection.depth,
+                    queryPreview: depthSelection.originalQuery.slice(0, 100),
+                },
+                "Auto-triggering deepResearch for depth selection"
+            );
+
+            const preExecuted = await preExecuteResearch(
+                depthSelection.originalQuery,
+                depthSelection.depth,
+                connectionId
+            );
+
+            if (preExecuted) {
+                researchSystemContext = preExecuted.systemContext;
+                logger.info(
+                    {
+                        connectionId,
+                        findingsCount: preExecuted.result.findings.length,
+                        sourcesCount: preExecuted.result.sources.length,
+                    },
+                    "Pre-executed research complete, adding to system context"
+                );
+            }
+        }
+
+        // Build final messages, including pre-executed research as system context
+        const modelMessages = await convertToModelMessages(messagesWithoutReasoning);
+        const finalSystemMessages = researchSystemContext
+            ? [
+                  ...systemMessages,
+                  { role: "system" as const, content: researchSystemContext },
+              ]
+            : systemMessages;
+
         const result = await streamText({
             model: gateway(translateModelId(concierge.modelId)),
-            // System messages are in the messages array with providerOptions for caching
-            messages: [
-                ...systemMessages,
-                ...(await convertToModelMessages(messagesWithoutReasoning)),
-            ],
+            // System messages include pre-executed research context if applicable
+            messages: [...finalSystemMessages, ...modelMessages],
             // Only pass tools if the model supports tool calling (e.g., Perplexity does not)
             // allTools includes both built-in tools and integration tools for connected services
             ...(modelSupportsTools && { tools: allTools }),

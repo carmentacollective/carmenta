@@ -27,34 +27,35 @@ function springLerp(
 }
 
 /**
- * Light mode holographic colors - soft pastels
+ * Light mode holographic colors - Sky Lavender (55% feminine)
+ *
+ * Light lavender with sky blue dominance. Soft and feminine.
  */
 const LIGHT_COLORS = [
-    { r: 255, g: 200, b: 220 }, // Pink
-    { r: 255, g: 180, b: 200 }, // Hot Pink
-    { r: 230, g: 200, b: 255 }, // Lavender
-    { r: 200, g: 220, b: 255 }, // Periwinkle
-    { r: 180, g: 240, b: 240 }, // Cyan
-    { r: 200, g: 255, b: 220 }, // Mint
-    { r: 255, g: 250, b: 200 }, // Soft Yellow
-    { r: 255, g: 220, b: 230 }, // Blush
+    { r: 210, g: 210, b: 245 }, // Soft Lavender
+    { r: 195, g: 220, b: 255 }, // Sky Blue
+    { r: 185, g: 230, b: 250 }, // Light Cyan
+    { r: 200, g: 225, b: 245 }, // Powder Blue
+    { r: 220, g: 210, b: 240 }, // Pale Violet
+    { r: 180, g: 225, b: 245 }, // Ice Blue
+    { r: 200, g: 215, b: 250 }, // Periwinkle
+    { r: 195, g: 235, b: 245 }, // Aqua Mist
 ];
 
 /**
- * Dark mode holographic colors - cosmic violet depths.
+ * Dark mode holographic colors - Sky Lavender (55% feminine)
  *
- * Rich purples, deep magentas, and ethereal blues that shimmer
- * against the cosmic background like consciousness made visible.
+ * Rich lavender-blue with violet warmth. Ethereal depths.
  */
 const DARK_COLORS = [
-    { r: 150, g: 100, b: 180 }, // Deep Amethyst
-    { r: 180, g: 110, b: 200 }, // Luminous Violet
-    { r: 140, g: 120, b: 200 }, // Royal Purple
-    { r: 120, g: 130, b: 210 }, // Twilight Indigo
-    { r: 160, g: 100, b: 220 }, // Mystic Magenta
-    { r: 130, g: 110, b: 190 }, // Deep Lavender
-    { r: 170, g: 120, b: 210 }, // Ethereal Orchid
-    { r: 140, g: 110, b: 200 }, // Cosmic Plum
+    { r: 110, g: 115, b: 180 }, // Deep Lavender
+    { r: 90, g: 135, b: 200 }, // Royal Blue
+    { r: 80, g: 150, b: 195 }, // Ocean
+    { r: 95, g: 145, b: 190 }, // Steel Blue
+    { r: 115, g: 105, b: 170 }, // Violet
+    { r: 80, g: 145, b: 190 }, // Azure
+    { r: 95, g: 130, b: 195 }, // Periwinkle
+    { r: 80, g: 155, b: 200 }, // Cyan Blue
 ];
 
 const DARK_BACKGROUND = "#0D0818"; // Deep cosmic indigo - consciousness depths
@@ -205,12 +206,12 @@ const WARM_PRESENCE_COLORS: Record<
 > = {
     carmenta: {
         light: {
-            inner: "rgba(255, 180, 210, 0.4)",
-            outer: "rgba(230, 200, 255, 0.25)",
+            inner: "rgba(210, 210, 245, 0.4)", // Soft Lavender glow
+            outer: "rgba(195, 220, 255, 0.25)", // Sky Blue fade
         },
         dark: {
-            inner: "rgba(180, 110, 200, 0.25)",
-            outer: "rgba(140, 120, 200, 0.12)",
+            inner: "rgba(110, 115, 180, 0.28)", // Deep Lavender glow
+            outer: "rgba(90, 135, 200, 0.14)", // Royal Blue fade
         },
     },
     "warm-earth": {

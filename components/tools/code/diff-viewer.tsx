@@ -143,8 +143,8 @@ const getDiffStyles = (isDark: boolean) => ({
             removedGutterBackground: "rgba(239, 68, 68, 0.25)",
             gutterBackground: "rgba(0, 0, 0, 0.2)",
             gutterBackgroundDark: "rgba(0, 0, 0, 0.3)",
-            highlightBackground: "rgba(139, 102, 184, 0.3)",
-            highlightGutterBackground: "rgba(139, 102, 184, 0.4)",
+            highlightBackground: "rgba(110, 115, 180, 0.3)", // Sky Lavender
+            highlightGutterBackground: "rgba(110, 115, 180, 0.4)",
             codeFoldGutterBackground: "rgba(0, 0, 0, 0.3)",
             codeFoldBackground: "rgba(0, 0, 0, 0.2)",
             emptyLineBackground: "transparent",
@@ -164,8 +164,8 @@ const getDiffStyles = (isDark: boolean) => ({
             removedGutterBackground: "rgba(239, 68, 68, 0.2)",
             gutterBackground: "rgba(0, 0, 0, 0.03)",
             gutterBackgroundDark: "rgba(0, 0, 0, 0.05)",
-            highlightBackground: "rgba(139, 102, 184, 0.2)",
-            highlightGutterBackground: "rgba(139, 102, 184, 0.3)",
+            highlightBackground: "rgba(110, 115, 180, 0.2)", // Sky Lavender
+            highlightGutterBackground: "rgba(110, 115, 180, 0.3)",
             codeFoldGutterBackground: "rgba(0, 0, 0, 0.05)",
             codeFoldBackground: "rgba(0, 0, 0, 0.02)",
             emptyLineBackground: "transparent",

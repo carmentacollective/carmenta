@@ -60,6 +60,7 @@
   "dependencies": {
     "@47ng/simple-e2ee": "^1.1.0",
     "@ai-sdk/gateway": "^3.0.2",
+    "@ai-sdk/openai": "^3.0.7",
     "@ai-sdk/react": "^3.0.0",
     "@anthropic-ai/claude-agent-sdk": "^0.1.76",
     "@clerk/nextjs": "^6.36.3",

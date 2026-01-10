@@ -3,7 +3,7 @@
 description: "Merge PR, sync local to main, clean up branch - the satisfying end to a feature workflow"
 argument-hint: [pr-number]
 model: haiku
-version: 1.0.0
+version: 1.0.1
 ---
 
 # /wrap-up - Complete the Feature Workflow
@@ -33,14 +33,17 @@ If blocked by conflicts or missing approvals, tell user what's blocking and exit
 </merge-readiness>
 
 <merge-and-cleanup>
-Merge the PR and delete the remote branch. Then sync local: switch to main, pull the
-merged changes, delete the local feature branch.
-
 Use `gh pr merge --merge --delete-branch` for the merge.
 
-If local branch deletion fails (uncommitted changes, unmerged commits), warn user and
-provide the manual command. Don't force-delete without confirmation - local work might
-be lost. </merge-and-cleanup>
+This single command handles everything:
+
+1. Merges the PR with a merge commit
+2. Deletes the remote branch
+3. Switches to main and pulls merged changes
+4. Deletes the local branch automatically
+
+Do NOT attempt to delete the local branch manually - `--delete-branch` already did it.
+You'll get "branch not found" errors if you try. </merge-and-cleanup>
 
 <completion-state>
 After merge, show clear state so Nick knows exactly where he is when he context-switches
@@ -88,6 +91,6 @@ CI failing: Warn but allow proceeding.
 ## Key Behaviors
 
 - Merge commit preserves full branch history
-- Remote branch deleted by GitHub, local branch deleted manually
+- `--delete-branch` handles both remote and local branch cleanup automatically
 - Worktrees preserved for user to clean up when ready
 - Output prioritizes state clarity for context-switching back later
