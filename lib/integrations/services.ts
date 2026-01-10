@@ -185,13 +185,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         oauthProviderId: "google-workspace-files",
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.google.com/workspace",
-        capabilities: [
-            "create_sheet",
-            "create_doc",
-            "create_slides",
-            "read_picked_file",
-            "update_picked_file",
-        ],
+        capabilities: ["create_sheet", "create_doc", "read_sheet", "open_picker"],
     },
 
     // Limitless - API Key

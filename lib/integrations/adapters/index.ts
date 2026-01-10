@@ -25,6 +25,7 @@ export { CoinMarketCapAdapter } from "./coinmarketcap";
 export { DropboxAdapter } from "./dropbox";
 export { FirefliesAdapter } from "./fireflies";
 export { GoogleCalendarContactsAdapter } from "./google-calendar-contacts";
+export { GoogleWorkspaceFilesAdapter } from "./google-workspace-files";
 export { LimitlessAdapter } from "./limitless";
 export { NotionAdapter } from "./notion";
 export { QuoAdapter } from "./quo";
