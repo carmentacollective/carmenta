@@ -20,7 +20,7 @@ import { searchKnowledge } from "@/lib/kb/search";
 import { kb } from "@/lib/kb";
 import { createLibrarianAgent } from "@/lib/ai-team/librarian";
 import { estimateTokens } from "@/lib/context/token-estimation";
-import { getModel } from "@/lib/model-config";
+import { getModel, LIBRARIAN_FALLBACK_CHAIN } from "@/lib/model-config";
 import {
     type SubagentResult,
     type SubagentDescription,
@@ -42,16 +42,18 @@ const LIBRARIAN_ID = "librarian";
 const MAX_EXTRACTION_STEPS = 10;
 
 /**
- * Librarian model ID - matches LIBRARIAN_FALLBACK_CHAIN[0]
+ * Librarian model ID - derived from LIBRARIAN_FALLBACK_CHAIN to stay in sync
  */
-const LIBRARIAN_MODEL = "anthropic/claude-haiku-4.5";
+const LIBRARIAN_MODEL = LIBRARIAN_FALLBACK_CHAIN[0];
 
 /**
- * Safety margin for context window (leave room for system prompt + output)
- * The librarian system prompt + tool definitions take ~3-5K tokens,
- * plus we need room for agent output. 80% leaves ~40K buffer on 200K model.
+ * Safety margin for librarian context window.
+ *
+ * Lower than the general CONTEXT_SAFETY_BUFFER (95%) because librarian needs more
+ * headroom: system prompt (~3-5K tokens), tool definitions, and agent output.
+ * 80% leaves ~40K buffer on 200K model.
  */
-const CONTEXT_SAFETY_MARGIN = 0.8;
+const LIBRARIAN_CONTEXT_MARGIN = 0.8;
 
 /**
  * Patterns that indicate high-value content to preserve during truncation.
@@ -449,7 +451,7 @@ async function executeExtract(
     // Get model context limit and calculate safe maximum for content
     const modelConfig = getModel(LIBRARIAN_MODEL);
     const contextLimit = modelConfig?.contextWindow ?? 200_000;
-    const maxContentTokens = Math.floor(contextLimit * CONTEXT_SAFETY_MARGIN);
+    const maxContentTokens = Math.floor(contextLimit * LIBRARIAN_CONTEXT_MARGIN);
 
     // Truncate if needed
     const truncation = truncateConversationContent(
@@ -1215,6 +1217,6 @@ export {
     hasPreserveMarkers,
     type TruncationResult,
     PRESERVE_PATTERNS,
-    CONTEXT_SAFETY_MARGIN,
+    LIBRARIAN_CONTEXT_MARGIN,
     LIBRARIAN_MODEL,
 };
