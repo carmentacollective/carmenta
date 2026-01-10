@@ -122,6 +122,7 @@
     "streamdown": "^1.6.10",
     "svix": "^1.82.0",
     "tailwind-merge": "^3.4.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.4"
   },
   "devDependencies": {

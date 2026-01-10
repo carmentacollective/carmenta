@@ -36,7 +36,7 @@ import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 import { useMessageEffects } from "@/lib/hooks/use-message-effects";
 import { useDraftPersistence } from "@/lib/hooks/use-draft-persistence";
-import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
+import { PASTE_THRESHOLD, isSpreadsheet } from "@/lib/storage/file-config";
 import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
 import { VoiceInputButton, type VoiceInputButtonRef } from "@/components/voice";
 
@@ -55,6 +55,34 @@ export interface ComposerProps {
 }
 
 const SHIFT_ENTER_HINT_KEY = "carmenta:shift-enter-hint-shown";
+
+/** MIME types for text files created from large pastes */
+const TEXT_MIME_TYPES = [
+    "text/plain",
+    "text/markdown",
+    // Note: text/csv is handled as spreadsheet, not text file
+    "application/json",
+];
+
+/** Check if file is a text type (from paste, not to be sent as attachment) */
+function isTextFile(mimeType: string): boolean {
+    return TEXT_MIME_TYPES.includes(mimeType);
+}
+
+/** Filter files to those that should be sent as attachments */
+function getFilesToSend<T extends { mediaType: string }>(files: T[]): T[] {
+    return files.filter((f) => !isTextFile(f.mediaType) && !isSpreadsheet(f.mediaType));
+}
+
+/** Extract and join parsed content from spreadsheet uploads */
+function extractSpreadsheetContent(
+    files: { mediaType: string; parsedContent?: string }[]
+): string {
+    return files
+        .filter((f) => isSpreadsheet(f.mediaType) && f.parsedContent)
+        .map((f) => f.parsedContent)
+        .join("\n\n---\n\n");
+}
 
 export function Composer({ onMarkMessageStopped }: ComposerProps) {
     const { overrides, setOverrides } = useModelOverrides();
@@ -388,13 +416,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Auto-insert PASTED text file attachments inline (Anthropic doesn't support text files)
             // Only process text files that have pasted content stored (from large paste feature)
             // Text files from file picker don't have pasted content and should fail with clear error
-            const TEXT_MIME_TYPES = [
-                "text/plain",
-                "text/markdown",
-                "text/csv",
-                "application/json",
-            ];
-            const isTextFile = (mimeType: string) => TEXT_MIME_TYPES.includes(mimeType);
+            // Note: CSV files are now handled as spreadsheets, not expandable text files
 
             // Find pasted text files (have content in pastedTextContent Map)
             const pastedTextFiles = pendingFiles.filter(
@@ -457,20 +479,33 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Haptic feedback on send
             triggerHaptic();
 
-            const message = input.trim();
-            lastSentMessageRef.current = message;
+            // Extract parsed content from spreadsheet files
+            // Spreadsheets are parsed to Markdown on upload for LLM consumption
+            const spreadsheetContent = extractSpreadsheetContent(completedFiles);
+
+            // Build final message content with spreadsheet data prepended
+            const userText = input.trim();
+            const message = spreadsheetContent
+                ? `${spreadsheetContent}\n\n---\n\n${userText}`
+                : userText;
+
+            lastSentMessageRef.current = userText; // Store original text for stop behavior
             wasStoppedRef.current = false; // Reset stop flag for new message
             isSubmittingRef.current = true; // Set synchronously before async
             setInput("");
 
             // Check for secret phrases (easter egg effects)
-            checkMessage(message);
+            checkMessage(userText);
 
             try {
+                // Filter to files that can be sent as attachments
+                // (excludes text files and spreadsheets - their content is in the message)
+                const filesToSend = getFilesToSend(completedFiles);
+
                 await append({
                     role: "user",
                     content: message,
-                    files: nonTextFiles.map((f) => ({
+                    files: filesToSend.map((f) => ({
                         url: f.url,
                         mediaType: f.mediaType,
                         name: f.name,
@@ -487,7 +522,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     { error: error instanceof Error ? error.message : String(error) },
                     "Failed to send message"
                 );
-                setInput(message);
+                setInput(userText); // Restore original user text, not expanded message
             } finally {
                 isSubmittingRef.current = false;
             }
@@ -574,13 +609,25 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             }
             // If interrupting with current input, send that
             else if (input.trim()) {
-                const messageContent = input.trim();
+                const userText = input.trim();
                 setInput("");
+
+                // Extract parsed content from spreadsheet files for interrupt message
+                const spreadsheetContent = extractSpreadsheetContent(completedFiles);
+
+                const messageContent = spreadsheetContent
+                    ? `${spreadsheetContent}\n\n---\n\n${userText}`
+                    : userText;
+
+                // Filter to files that can be sent as attachments
+                // (excludes text files and spreadsheets - their content is in the message)
+                const filesToSend = getFilesToSend(completedFiles);
+
                 try {
                     await append({
                         role: "user",
                         content: messageContent,
-                        files: completedFiles.map((f) => ({
+                        files: filesToSend.map((f) => ({
                             url: f.url,
                             mediaType: f.mediaType,
                             name: f.name,
@@ -589,7 +636,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     clearFiles();
                 } catch (error) {
                     logger.error({ error }, "Failed to send interrupt message");
-                    setInput(messageContent);
+                    setInput(userText);
                 }
             }
         },

@@ -7,7 +7,7 @@
 
 /**
  * Supported MIME types by category
- * Phase 1: Images, PDFs, Audio, Text (no HEIC, no Video)
+ * Phase 1: Images, PDFs, Audio, Spreadsheets (no HEIC, no Video)
  */
 export const ALLOWED_MIME_TYPES = {
     image: ["image/jpeg", "image/png", "image/gif", "image/webp"],
@@ -24,6 +24,21 @@ export const ALLOWED_MIME_TYPES = {
         "audio/x-m4a", // Alternative MIME type some browsers use
     ],
     document: ["application/pdf"],
+    spreadsheet: [
+        // Modern Excel (.xlsx)
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        // Legacy Excel (.xls) - browsers report various MIME types
+        "application/vnd.ms-excel",
+        "application/msexcel",
+        "application/x-msexcel",
+        "application/x-ms-excel",
+        "application/x-excel",
+        "application/x-dos_ms_excel",
+        "application/xls",
+        "application/x-xls",
+        // CSV
+        "text/csv",
+    ],
     // Text files removed - Anthropic API doesn't support text attachments
     // Large pasted text is still converted to attachments, then auto-inserted inline on send
 } as const;
@@ -41,6 +56,7 @@ export const SIZE_LIMITS = {
     image: 10 * 1024 * 1024, // 10MB (before client-side resize)
     audio: 25 * 1024 * 1024, // 25MB
     document: 25 * 1024 * 1024, // 25MB (PDFs)
+    spreadsheet: 25 * 1024 * 1024, // 25MB (XLSX, XLS, CSV)
 } as const;
 
 /**
@@ -77,8 +93,18 @@ export function getFileCategory(mimeType: string): FileCategory | null {
     if ((ALLOWED_MIME_TYPES.audio as readonly string[]).includes(mimeType)) {
         return "audio";
     }
+    if ((ALLOWED_MIME_TYPES.spreadsheet as readonly string[]).includes(mimeType)) {
+        return "spreadsheet";
+    }
     // Text files not supported as attachments (Anthropic API limitation)
     return null;
+}
+
+/**
+ * Check if a MIME type is a spreadsheet format
+ */
+export function isSpreadsheet(mimeType: string): boolean {
+    return (ALLOWED_MIME_TYPES.spreadsheet as readonly string[]).includes(mimeType);
 }
 
 /**
@@ -119,5 +145,5 @@ export function formatFileSizeDetailed(bytes: number): string {
  * Human-readable list of supported formats
  */
 export function getSupportedFormatsMessage(): string {
-    return "Images (JPEG, PNG, GIF, WebP), PDFs, or audio files (MP3, WAV, FLAC, etc.)";
+    return "Images (JPEG, PNG, GIF, WebP), PDFs, spreadsheets (XLSX, XLS, CSV), or audio files (MP3, WAV, FLAC, etc.)";
 }
