@@ -78,6 +78,14 @@ export function GooglePicker({
     const hasOpened = useRef(false);
     const isOpeningRef = useRef(false);
 
+    // Store latest callbacks in refs to avoid stale closures
+    const onSelectRef = useRef(onSelect);
+    const onCancelRef = useRef(onCancel);
+    useEffect(() => {
+        onSelectRef.current = onSelect;
+        onCancelRef.current = onCancel;
+    }, [onSelect, onCancel]);
+
     // Auto-open picker when ready
     useEffect(() => {
         if (!isReady || !accessToken || hasOpened.current || isOpeningRef.current) {
@@ -99,25 +107,16 @@ export function GooglePicker({
             const files = await openPicker(options);
 
             if (files && files.length > 0) {
-                onSelect(files);
+                onSelectRef.current(files);
             } else {
-                onCancel();
+                onCancelRef.current();
             }
 
             isOpeningRef.current = false;
         };
 
         open();
-    }, [
-        isReady,
-        accessToken,
-        mimeTypes,
-        multiSelect,
-        title,
-        openPicker,
-        onSelect,
-        onCancel,
-    ]);
+    }, [isReady, accessToken, mimeTypes, multiSelect, title, openPicker]);
 
     // Render loading state while waiting for picker API
     if (!isReady || isLoading) {
