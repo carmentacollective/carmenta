@@ -387,7 +387,28 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
     }
 
     // Handle both array format and object format
-    const rawConversations = Array.isArray(data) ? data : (data.conversations ?? []);
+    let rawConversations: ChatGPTConversation[];
+    if (Array.isArray(data)) {
+        rawConversations = data;
+    } else if (data && typeof data === "object") {
+        if (Array.isArray(data.conversations)) {
+            rawConversations = data.conversations;
+        } else {
+            // Object format but no conversations array
+            const keys = Object.keys(data);
+            return {
+                conversations: [],
+                dateRange: { earliest: new Date(), latest: new Date() },
+                totalMessageCount: 0,
+                errors: [
+                    `Expected array or object with "conversations" key, got object with keys: ${keys.slice(0, 5).join(", ")}${keys.length > 5 ? "..." : ""}`,
+                ],
+                userSettings: null,
+            };
+        }
+    } else {
+        rawConversations = [];
+    }
 
     if (!Array.isArray(rawConversations)) {
         return {
@@ -422,6 +443,9 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
     let parseFailures = 0;
 
     for (const rawConv of rawConversations) {
+        // Guard against null entries in the array
+        if (!rawConv) continue;
+
         const result = parseConversation(rawConv);
 
         // Handle parse errors
@@ -430,7 +454,7 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
             // Only add to errors array if we have significant failures
             if (parseFailures <= 5) {
                 errors.push(
-                    `Failed to parse "${rawConv.title || rawConv.id}": ${result.error}`
+                    `Failed to parse "${rawConv.title || rawConv.id || "unknown"}": ${result.error}`
                 );
             }
             continue;

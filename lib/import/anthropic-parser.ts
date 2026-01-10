@@ -230,7 +230,27 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
     try {
         const parsed = JSON.parse(jsonContent);
         // Handle both array format and object format like {conversations: [...]}
-        data = Array.isArray(parsed) ? parsed : (parsed.conversations ?? []);
+        if (Array.isArray(parsed)) {
+            data = parsed;
+        } else if (parsed && typeof parsed === "object") {
+            if (Array.isArray(parsed.conversations)) {
+                data = parsed.conversations;
+            } else {
+                // Object format but no conversations array - check for common mistakes
+                const keys = Object.keys(parsed);
+                return {
+                    conversations: [],
+                    dateRange: { earliest: new Date(), latest: new Date() },
+                    totalMessageCount: 0,
+                    errors: [
+                        `Expected array or object with "conversations" key, got object with keys: ${keys.slice(0, 5).join(", ")}${keys.length > 5 ? "..." : ""}`,
+                    ],
+                    userSettings: null,
+                };
+            }
+        } else {
+            data = [];
+        }
     } catch (error) {
         const detail = error instanceof SyntaxError ? `: ${error.message}` : "";
         return {
@@ -270,8 +290,12 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
     let earliest: Date | null = null;
     let latest: Date | null = null;
     let parseFailures = 0;
+    let emptyConversations = 0;
 
     for (const rawConv of data) {
+        // Guard against null entries in the array
+        if (!rawConv) continue;
+
         const result = parseConversation(rawConv);
 
         if (result) {
@@ -280,16 +304,30 @@ export function parseConversationsJson(jsonContent: string): ParseResult {
 
             if (!earliest || result.createdAt < earliest) earliest = result.createdAt;
             if (!latest || result.updatedAt > latest) latest = result.updatedAt;
+        } else if (
+            rawConv.chat_messages &&
+            Array.isArray(rawConv.chat_messages) &&
+            rawConv.chat_messages.length === 0
+        ) {
+            // Empty conversations are valid, just skip them silently
+            emptyConversations++;
         } else {
+            // Actual parse failures get logged
             parseFailures++;
             if (parseFailures <= 5) {
-                errors.push(`Failed to parse "${rawConv.name || rawConv.uuid}"`);
+                errors.push(
+                    `Failed to parse "${rawConv.name || rawConv.uuid || "unknown"}"`
+                );
             }
         }
     }
 
     if (parseFailures > 5) {
         errors.push(`...and ${parseFailures - 5} more conversations failed to parse`);
+    }
+
+    if (emptyConversations > 0) {
+        logger.debug({ emptyConversations }, "Skipped empty conversations");
     }
 
     // Sort by created date, newest first

@@ -33,12 +33,11 @@ describe("Anthropic Parser", () => {
             const arrayBuffer = bufferToArrayBuffer(exportZipBuffer);
             const result = await parseExportZip(arrayBuffer);
 
-            // Should have 2 conversations (empty one is skipped but counted as parse failure)
+            // Should have 2 conversations (empty one is silently skipped - it's valid, just empty)
             expect(result.conversations.length).toBe(2);
             expect(result.totalMessageCount).toBeGreaterThan(0);
-            // Empty conversation causes one parse failure (expected behavior)
-            expect(result.errors.length).toBe(1);
-            expect(result.errors[0]).toContain("Empty conversation test");
+            // Empty conversations are valid (just skipped), not errors
+            expect(result.errors.length).toBe(0);
         });
 
         it("extracts conversation metadata correctly", async () => {
