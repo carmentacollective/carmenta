@@ -216,7 +216,7 @@ export async function approveAllExtractions(): Promise<{
         };
     }
 
-    // Get all pending extractions
+    // Get all pending extractions (limit to 500 to prevent memory issues)
     const pending = await db
         .select()
         .from(pendingExtractions)
@@ -225,7 +225,8 @@ export async function approveAllExtractions(): Promise<{
                 eq(pendingExtractions.userId, dbUser.id),
                 eq(pendingExtractions.status, "pending")
             )
-        );
+        )
+        .limit(500);
 
     const actions: ExtractionReviewAction[] = pending.map((e) => ({
         id: e.id,
