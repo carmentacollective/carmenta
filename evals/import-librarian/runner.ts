@@ -1,7 +1,7 @@
 /**
- * Extraction Runner
+ * Import Librarian Runner
  *
- * Runs the extraction LLM call for evaluation.
+ * Runs the import librarian LLM call for evaluation.
  * Uses the same prompt and schema as production.
  */
 

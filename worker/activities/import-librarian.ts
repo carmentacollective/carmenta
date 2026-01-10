@@ -1,10 +1,10 @@
 /**
- * Extraction Activities - Process imported conversations to extract knowledge
+ * Import Librarian Activities - Process imported conversations to learn about the user
  *
  * Activities handle:
- * - Loading unprocessed conversations
- * - LLM extraction calls
- * - Database updates for progress and results
+ * - Loading unprocessed imported conversations
+ * - LLM calls to extract knowledge (same logic as real-time Librarian)
+ * - Database updates for progress and pending extractions
  */
 
 import { and, eq, notInArray, inArray } from "drizzle-orm";
@@ -26,21 +26,21 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { z } from "zod";
 import { extractionSystemPrompt } from "../../lib/import/extraction/prompt";
 
-const EXTRACTION_MODEL = "anthropic/claude-sonnet-4.5";
+const IMPORT_LIBRARIAN_MODEL = "anthropic/claude-sonnet-4.5";
 
 /**
- * Extraction job input from workflow
+ * Import librarian job input from workflow
  */
-export interface ExtractionJobInput {
+export interface ImportLibrarianJobInput {
     jobId: string;
     userId: string;
     connectionIds?: number[];
 }
 
 /**
- * Context for extraction job
+ * Context for import librarian job
  */
-export interface ExtractionContext {
+export interface ImportLibrarianContext {
     jobId: string;
     userId: string;
     userEmail: string;
@@ -58,11 +58,11 @@ export interface BatchResult {
 }
 
 /**
- * Load extraction context - get user info and connections to process
+ * Load import librarian context - get user info and connections to process
  */
-export async function loadExtractionContext(
-    input: ExtractionJobInput
-): Promise<ExtractionContext> {
+export async function loadImportLibrarianContext(
+    input: ImportLibrarianJobInput
+): Promise<ImportLibrarianContext> {
     const { jobId, userId, connectionIds } = input;
 
     try {
@@ -125,7 +125,7 @@ export async function loadExtractionContext(
         };
     } catch (error) {
         captureActivityError(error, {
-            activityName: "loadExtractionContext",
+            activityName: "loadImportLibrarianContext",
             jobId,
             userId,
         });
@@ -137,7 +137,7 @@ export async function loadExtractionContext(
  * Process a batch of conversations through the LLM
  */
 export async function processConversationBatch(
-    context: ExtractionContext,
+    context: ImportLibrarianContext,
     batchConnectionIds: number[]
 ): Promise<BatchResult> {
     const { jobId, userId } = context;
@@ -259,9 +259,9 @@ export async function updateJobProgress(
 }
 
 /**
- * Finalize extraction job - mark as completed or failed
+ * Finalize import librarian job - mark as completed or failed
  */
-export async function finalizeExtractionJob(
+export async function finalizeImportLibrarianJob(
     jobId: string,
     success: boolean,
     errorMessage?: string
@@ -278,11 +278,11 @@ export async function finalizeExtractionJob(
 
         logger.info(
             { jobId, success, errorMessage },
-            success ? "Extraction job completed" : "Extraction job failed"
+            success ? "Import librarian job completed" : "Import librarian job failed"
         );
     } catch (error) {
         captureActivityError(error, {
-            activityName: "finalizeExtractionJob",
+            activityName: "finalizeImportLibrarianJob",
             jobId,
             success,
         });
@@ -380,7 +380,7 @@ async function extractFromConversation(
         .join("\n\n---\n\n");
 
     const result = await generateObject({
-        model: openrouter(EXTRACTION_MODEL),
+        model: openrouter(IMPORT_LIBRARIAN_MODEL),
         schema: extractionSchema,
         prompt: `${extractionSystemPrompt}\n\n<conversation>\n${conversationText}\n</conversation>`,
     });

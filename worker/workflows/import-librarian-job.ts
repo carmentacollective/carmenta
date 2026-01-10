@@ -1,5 +1,5 @@
 /**
- * Extraction Job Workflow
+ * Import Librarian Job Workflow
  *
  * Orchestrates knowledge extraction from imported conversations.
  * Processes conversations in batches with progress updates.
@@ -8,14 +8,14 @@
  */
 
 import { proxyActivities, ApplicationFailure } from "@temporalio/workflow";
-import type * as activities from "../activities/extraction";
+import type * as activities from "../activities/import-librarian";
 
 // Proxy activities with retry configuration
 const {
-    loadExtractionContext,
+    loadImportLibrarianContext,
     processConversationBatch,
     updateJobProgress,
-    finalizeExtractionJob,
+    finalizeImportLibrarianJob,
 } = proxyActivities<typeof activities>({
     startToCloseTimeout: "10 minutes",
     retry: {
@@ -26,13 +26,13 @@ const {
 
 const BATCH_SIZE = 10;
 
-export interface ExtractionJobInput {
+export interface ImportLibrarianJobInput {
     jobId: string;
     userId: string;
     connectionIds?: number[];
 }
 
-export interface ExtractionJobResult {
+export interface ImportLibrarianJobResult {
     success: boolean;
     totalProcessed: number;
     totalExtracted: number;
@@ -40,16 +40,16 @@ export interface ExtractionJobResult {
 }
 
 /**
- * Main extraction workflow
+ * Main import librarian workflow
  *
  * 1. Load context (user, connections to process)
  * 2. Process conversations in batches
  * 3. Update progress after each batch
  * 4. Finalize job status
  */
-export async function extractionJobWorkflow(
-    input: ExtractionJobInput
-): Promise<ExtractionJobResult> {
+export async function importLibrarianJobWorkflow(
+    input: ImportLibrarianJobInput
+): Promise<ImportLibrarianJobResult> {
     const { jobId } = input;
     let totalProcessed = 0;
     let totalExtracted = 0;
@@ -57,11 +57,11 @@ export async function extractionJobWorkflow(
 
     try {
         // Step 1: Load context
-        const context = await loadExtractionContext(input);
+        const context = await loadImportLibrarianContext(input);
 
         if (context.connectionIds.length === 0) {
             // Nothing to process
-            await finalizeExtractionJob(jobId, true);
+            await finalizeImportLibrarianJob(jobId, true);
             return {
                 success: true,
                 totalProcessed: 0,
@@ -86,7 +86,7 @@ export async function extractionJobWorkflow(
         }
 
         // Step 3: Finalize as success
-        await finalizeExtractionJob(jobId, true);
+        await finalizeImportLibrarianJob(jobId, true);
 
         return {
             success: true,
@@ -99,12 +99,12 @@ export async function extractionJobWorkflow(
         const errorMessage = extractRootCauseMessage(error);
 
         // Mark job as failed
-        await finalizeExtractionJob(jobId, false, errorMessage).catch(() => {
+        await finalizeImportLibrarianJob(jobId, false, errorMessage).catch(() => {
             // Ignore finalization errors - main error is more important
         });
 
         // Throw non-retryable failure so Temporal doesn't keep retrying
-        throw ApplicationFailure.nonRetryable(errorMessage, "ExtractionJobFailed");
+        throw ApplicationFailure.nonRetryable(errorMessage, "ImportLibrarianJobFailed");
     }
 }
 

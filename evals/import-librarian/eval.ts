@@ -1,23 +1,23 @@
 /**
- * Knowledge Extraction Evaluation
+ * Import Librarian Evaluation
  *
- * Tests extraction quality from imported conversations.
+ * Tests knowledge extraction quality from imported conversations.
  *
  * Usage:
  *   # Local mode (no Braintrust, console output only)
- *   npx tsx evals/extraction/eval.ts
+ *   npx tsx evals/import-librarian/eval.ts
  *
  *   # Braintrust mode (logs to dashboard)
- *   pnpm braintrust eval evals/extraction/eval.ts
+ *   pnpm braintrust eval evals/import-librarian/eval.ts
  *
  *   # Compare all model candidates
- *   EXTRACTION_COMPARE_ALL=true npx tsx evals/extraction/eval.ts
+ *   EXTRACTION_COMPARE_ALL=true npx tsx evals/import-librarian/eval.ts
  *
  *   # Test a specific model
- *   EXTRACTION_MODEL=anthropic/claude-haiku-4-5-20250514 npx tsx evals/extraction/eval.ts
+ *   EXTRACTION_MODEL=anthropic/claude-haiku-4.5 npx tsx evals/import-librarian/eval.ts
  *
  *   # Debug mode - show failures
- *   EXTRACTION_DEBUG=true npx tsx evals/extraction/eval.ts
+ *   EXTRACTION_DEBUG=true npx tsx evals/import-librarian/eval.ts
  *
  * Requirements:
  *   - OPENROUTER_API_KEY in .env.local
@@ -231,7 +231,7 @@ async function runBraintrust() {
     const { Eval } = await import("braintrust");
 
     for (const model of modelsToTest) {
-        Eval(`Knowledge Extraction - ${model.name}`, {
+        Eval(`Import Librarian - ${model.name}`, {
             data: () =>
                 extractionTestData.map((t) => ({
                     input: t.input,

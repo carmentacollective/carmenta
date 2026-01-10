@@ -318,10 +318,10 @@ export async function startBackgroundResponse(params: {
 /**
  * Start an extraction job workflow
  *
- * Processes imported conversations to extract knowledge facts.
+ * Processes imported conversations to learn about the user.
  * Supports both Temporal mode (durable) and eager mode (inline).
  */
-export async function startExtractionWorkflow(params: {
+export async function startImportLibrarianWorkflow(params: {
     jobId: string;
     userId: string;
     connectionIds?: number[];
@@ -330,28 +330,28 @@ export async function startExtractionWorkflow(params: {
 
     // Eager mode: run activities inline without Temporal
     if (isEagerMode()) {
-        const workflowId = `eager-extraction-${jobId}`;
+        const workflowId = `eager-import-librarian-${jobId}`;
 
         logger.info(
             { jobId, workflowId },
-            "Starting extraction workflow in eager mode (no durability)"
+            "Starting import librarian workflow in eager mode (no durability)"
         );
 
         // Fire and forget - don't await
-        void runEagerExtractionWorkflow(params).catch((error) => {
+        void runEagerImportLibrarianWorkflow(params).catch((error) => {
             logger.error(
                 {
                     jobId,
                     error: error instanceof Error ? error.message : error,
                 },
-                "Eager extraction workflow failed"
+                "Eager import librarian workflow failed"
             );
 
             Sentry.captureException(error, {
-                fingerprint: ["eager-orchestration", "extraction"],
+                fingerprint: ["eager-orchestration", "import-librarian"],
                 tags: {
                     component: "eager-mode",
-                    action: "extraction",
+                    action: "import-librarian",
                 },
                 extra: { jobId },
             });
@@ -363,24 +363,24 @@ export async function startExtractionWorkflow(params: {
     // Temporal mode: dispatch to worker
     const temporalClient = await getTemporalClient();
 
-    const handle = await temporalClient.workflow.start("extractionJobWorkflow", {
+    const handle = await temporalClient.workflow.start("importLibrarianJobWorkflow", {
         taskQueue: TASK_QUEUE,
-        workflowId: `extraction-${jobId}`,
+        workflowId: `import-librarian-${jobId}`,
         args: [params],
     });
 
     logger.info(
         { jobId, workflowId: handle.workflowId },
-        "Started extraction workflow"
+        "Started import librarian workflow"
     );
 
     return handle.workflowId;
 }
 
 /**
- * Run extraction workflow activities inline (eager mode)
+ * Run import librarian workflow activities inline (eager mode)
  */
-async function runEagerExtractionWorkflow(params: {
+async function runEagerImportLibrarianWorkflow(params: {
     jobId: string;
     userId: string;
     connectionIds?: number[];
@@ -388,7 +388,7 @@ async function runEagerExtractionWorkflow(params: {
     const { jobId } = params;
 
     // Dynamic import to avoid loading worker deps at startup
-    const activities = await import("../../worker/activities/extraction");
+    const activities = await import("../../worker/activities/import-librarian");
 
     const BATCH_SIZE = 10;
     let totalProcessed = 0;
@@ -396,10 +396,10 @@ async function runEagerExtractionWorkflow(params: {
 
     try {
         // Step 1: Load context
-        const context = await activities.loadExtractionContext(params);
+        const context = await activities.loadImportLibrarianContext(params);
 
         if (context.connectionIds.length === 0) {
-            await activities.finalizeExtractionJob(jobId, true);
+            await activities.finalizeImportLibrarianJob(jobId, true);
             return;
         }
 
@@ -416,17 +416,17 @@ async function runEagerExtractionWorkflow(params: {
         }
 
         // Step 3: Finalize
-        await activities.finalizeExtractionJob(jobId, true);
+        await activities.finalizeImportLibrarianJob(jobId, true);
 
         logger.info(
             { jobId, totalProcessed, totalExtracted },
-            "Eager extraction workflow completed"
+            "Eager import librarian workflow completed"
         );
     } catch (error) {
         // Mark as failed
         try {
-            const activities = await import("../../worker/activities/extraction");
-            await activities.finalizeExtractionJob(
+            const activities = await import("../../worker/activities/import-librarian");
+            await activities.finalizeImportLibrarianJob(
                 jobId,
                 false,
                 error instanceof Error ? error.message : String(error)

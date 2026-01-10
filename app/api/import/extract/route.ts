@@ -19,7 +19,7 @@ import {
 import { logger } from "@/lib/logger";
 import {
     isBackgroundModeEnabled,
-    startExtractionWorkflow,
+    startImportLibrarianWorkflow,
 } from "@/lib/temporal/client";
 
 /**
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
 
         // Start Temporal workflow for durable execution
         try {
-            await startExtractionWorkflow({
+            await startImportLibrarianWorkflow({
                 jobId,
                 userId: dbUser.id,
                 connectionIds,
