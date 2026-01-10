@@ -11,6 +11,7 @@ import {
     createTestPDFFile,
     createTestTextFile,
     createTestAudioFile,
+    createTestVideoFile,
 } from "@/__tests__/fixtures/file-fixtures";
 
 describe("validateFile", () => {
@@ -32,6 +33,12 @@ describe("validateFile", () => {
             const result = validateFile(file);
             expect(result).toEqual({ valid: true });
         });
+
+        it("accepts valid video files", () => {
+            const file = createTestVideoFile();
+            const result = validateFile(file);
+            expect(result).toEqual({ valid: true });
+        });
     });
 
     describe("empty files", () => {
@@ -49,15 +56,6 @@ describe("validateFile", () => {
             const result = validateFile(file);
             expect(result.valid).toBe(false);
             expect(result.error).toContain("don't support text/plain");
-        });
-
-        it("rejects video files", () => {
-            const file = new File([new ArrayBuffer(1024)], "video.mp4", {
-                type: "video/mp4",
-            });
-            const result = validateFile(file);
-            expect(result.valid).toBe(false);
-            expect(result.error).toContain("don't support video/mp4");
         });
 
         it("rejects archive files", () => {
@@ -84,47 +82,57 @@ describe("validateFile", () => {
             expect(result.error).toContain("Images");
             expect(result.error).toContain("PDFs");
             expect(result.error).toContain("audio");
+            expect(result.error).toContain("video");
         });
     });
 
     describe("size limits", () => {
-        it("rejects images over 10MB", () => {
-            const bigFile = new File([new ArrayBuffer(11 * 1024 * 1024)], "big.jpg", {
+        it("rejects images over 20MB", () => {
+            const bigFile = new File([new ArrayBuffer(21 * 1024 * 1024)], "big.jpg", {
                 type: "image/jpeg",
             });
             const result = validateFile(bigFile);
             expect(result.valid).toBe(false);
-            expect(result.error).toContain("10.0 MB");
+            expect(result.error).toContain("20.0 MB");
         });
 
-        it("accepts images under 10MB", () => {
-            const file = new File([new ArrayBuffer(5 * 1024 * 1024)], "medium.jpg", {
+        it("accepts images under 20MB", () => {
+            const file = new File([new ArrayBuffer(15 * 1024 * 1024)], "medium.jpg", {
                 type: "image/jpeg",
             });
             const result = validateFile(file);
             expect(result).toEqual({ valid: true });
         });
 
-        it("rejects audio over 25MB", () => {
-            const bigFile = new File([new ArrayBuffer(26 * 1024 * 1024)], "big.mp3", {
+        it("rejects audio over 20MB", () => {
+            const bigFile = new File([new ArrayBuffer(21 * 1024 * 1024)], "big.mp3", {
                 type: "audio/mp3",
             });
             const result = validateFile(bigFile);
             expect(result.valid).toBe(false);
-            expect(result.error).toContain("25.0 MB");
+            expect(result.error).toContain("20.0 MB");
         });
 
-        it("rejects PDFs over 25MB", () => {
-            const bigFile = new File([new ArrayBuffer(26 * 1024 * 1024)], "big.pdf", {
+        it("rejects video over 20MB", () => {
+            const bigFile = new File([new ArrayBuffer(21 * 1024 * 1024)], "big.mp4", {
+                type: "video/mp4",
+            });
+            const result = validateFile(bigFile);
+            expect(result.valid).toBe(false);
+            expect(result.error).toContain("20.0 MB");
+        });
+
+        it("rejects PDFs over 32MB", () => {
+            const bigFile = new File([new ArrayBuffer(33 * 1024 * 1024)], "big.pdf", {
                 type: "application/pdf",
             });
             const result = validateFile(bigFile);
             expect(result.valid).toBe(false);
-            expect(result.error).toContain("25.0 MB");
+            expect(result.error).toContain("32.0 MB");
         });
 
         it("includes file category in size error", () => {
-            const bigFile = new File([new ArrayBuffer(11 * 1024 * 1024)], "big.png", {
+            const bigFile = new File([new ArrayBuffer(21 * 1024 * 1024)], "big.png", {
                 type: "image/png",
             });
             const result = validateFile(bigFile);
@@ -132,12 +140,12 @@ describe("validateFile", () => {
         });
 
         it("includes actual file size in error", () => {
-            const bigFile = new File([new ArrayBuffer(15 * 1024 * 1024)], "big.jpg", {
+            const bigFile = new File([new ArrayBuffer(25 * 1024 * 1024)], "big.jpg", {
                 type: "image/jpeg",
             });
             const result = validateFile(bigFile);
             // Uses detailed formatting (one decimal) to prevent ambiguity
-            expect(result.error).toContain("15.0 MB");
+            expect(result.error).toContain("25.0 MB");
         });
     });
 });

@@ -32,6 +32,12 @@ describe("ALLOWED_MIME_TYPES", () => {
         expect(ALLOWED_MIME_TYPES.audio).toContain("audio/flac");
     });
 
+    it("includes video types", () => {
+        expect(ALLOWED_MIME_TYPES.video).toContain("video/mp4");
+        expect(ALLOWED_MIME_TYPES.video).toContain("video/webm");
+        expect(ALLOWED_MIME_TYPES.video).toContain("video/quicktime");
+    });
+
     it("includes document types", () => {
         expect(ALLOWED_MIME_TYPES.document).toContain("application/pdf");
     });
@@ -54,6 +60,7 @@ describe("MIME_TYPE_WHITELIST", () => {
         const allTypes = [
             ...ALLOWED_MIME_TYPES.image,
             ...ALLOWED_MIME_TYPES.audio,
+            ...ALLOWED_MIME_TYPES.video,
             ...ALLOWED_MIME_TYPES.document,
             ...ALLOWED_MIME_TYPES.spreadsheet,
         ];
@@ -63,16 +70,20 @@ describe("MIME_TYPE_WHITELIST", () => {
 });
 
 describe("SIZE_LIMITS", () => {
-    it("has correct image limit (10MB)", () => {
-        expect(SIZE_LIMITS.image).toBe(10 * 1024 * 1024);
+    it("has correct image limit (20MB - Gemini inline limit)", () => {
+        expect(SIZE_LIMITS.image).toBe(20 * 1024 * 1024);
     });
 
-    it("has correct audio limit (25MB)", () => {
-        expect(SIZE_LIMITS.audio).toBe(25 * 1024 * 1024);
+    it("has correct audio limit (20MB - Gemini inline limit)", () => {
+        expect(SIZE_LIMITS.audio).toBe(20 * 1024 * 1024);
     });
 
-    it("has correct document limit (25MB)", () => {
-        expect(SIZE_LIMITS.document).toBe(25 * 1024 * 1024);
+    it("has correct video limit (20MB - Gemini inline limit)", () => {
+        expect(SIZE_LIMITS.video).toBe(20 * 1024 * 1024);
+    });
+
+    it("has correct document limit (32MB - Anthropic limit)", () => {
+        expect(SIZE_LIMITS.document).toBe(32 * 1024 * 1024);
     });
 
     it("has correct spreadsheet limit (25MB)", () => {
@@ -107,6 +118,13 @@ describe("getFileCategory", () => {
         expect(getFileCategory("audio/x-m4a")).toBe("audio");
     });
 
+    it("returns 'video' for video MIME types", () => {
+        expect(getFileCategory("video/mp4")).toBe("video");
+        expect(getFileCategory("video/webm")).toBe("video");
+        expect(getFileCategory("video/quicktime")).toBe("video");
+        expect(getFileCategory("video/x-msvideo")).toBe("video");
+    });
+
     it("returns 'spreadsheet' for spreadsheet MIME types", () => {
         expect(
             getFileCategory(
@@ -119,25 +137,29 @@ describe("getFileCategory", () => {
 
     it("returns null for unsupported types", () => {
         expect(getFileCategory("text/plain")).toBeNull();
-        expect(getFileCategory("video/mp4")).toBeNull();
         expect(getFileCategory("application/zip")).toBeNull();
         expect(getFileCategory("application/octet-stream")).toBeNull();
     });
 });
 
 describe("getSizeLimit", () => {
-    it("returns correct limit for images", () => {
-        expect(getSizeLimit("image/jpeg")).toBe(10 * 1024 * 1024);
-        expect(getSizeLimit("image/png")).toBe(10 * 1024 * 1024);
+    it("returns correct limit for images (20MB)", () => {
+        expect(getSizeLimit("image/jpeg")).toBe(20 * 1024 * 1024);
+        expect(getSizeLimit("image/png")).toBe(20 * 1024 * 1024);
     });
 
-    it("returns correct limit for audio", () => {
-        expect(getSizeLimit("audio/mp3")).toBe(25 * 1024 * 1024);
-        expect(getSizeLimit("audio/wav")).toBe(25 * 1024 * 1024);
+    it("returns correct limit for audio (20MB)", () => {
+        expect(getSizeLimit("audio/mp3")).toBe(20 * 1024 * 1024);
+        expect(getSizeLimit("audio/wav")).toBe(20 * 1024 * 1024);
     });
 
-    it("returns correct limit for documents", () => {
-        expect(getSizeLimit("application/pdf")).toBe(25 * 1024 * 1024);
+    it("returns correct limit for video (20MB)", () => {
+        expect(getSizeLimit("video/mp4")).toBe(20 * 1024 * 1024);
+        expect(getSizeLimit("video/webm")).toBe(20 * 1024 * 1024);
+    });
+
+    it("returns correct limit for documents (32MB)", () => {
+        expect(getSizeLimit("application/pdf")).toBe(32 * 1024 * 1024);
     });
 
     it("returns correct limit for spreadsheets", () => {
@@ -152,7 +174,7 @@ describe("getSizeLimit", () => {
 
     it("returns null for unsupported types", () => {
         expect(getSizeLimit("text/plain")).toBeNull();
-        expect(getSizeLimit("video/mp4")).toBeNull();
+        expect(getSizeLimit("application/zip")).toBeNull();
     });
 });
 
@@ -219,5 +241,6 @@ describe("getSupportedFormatsMessage", () => {
         expect(message).toContain("PDFs");
         expect(message).toContain("spreadsheets");
         expect(message).toContain("audio");
+        expect(message).toContain("video");
     });
 });

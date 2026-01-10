@@ -7,7 +7,7 @@
 
 /**
  * Supported MIME types by category
- * Phase 1: Images, PDFs, Audio, Spreadsheets (no HEIC, no Video)
+ * Images, PDFs, Audio, Video, Spreadsheets (no HEIC)
  */
 export const ALLOWED_MIME_TYPES = {
     image: ["image/jpeg", "image/png", "image/gif", "image/webp"],
@@ -22,6 +22,12 @@ export const ALLOWED_MIME_TYPES = {
         "audio/webm",
         "audio/mp4", // Covers M4A files (browsers report audio/mp4 for .m4a)
         "audio/x-m4a", // Alternative MIME type some browsers use
+    ],
+    video: [
+        "video/mp4",
+        "video/webm",
+        "video/quicktime", // .mov files
+        "video/x-msvideo", // .avi files
     ],
     document: ["application/pdf"],
     spreadsheet: [
@@ -50,12 +56,14 @@ export const MIME_TYPE_WHITELIST = Object.values(ALLOWED_MIME_TYPES).flat();
 
 /**
  * File size limits by category (in bytes)
- * Based on knowledge/components/file-attachments.md architecture decisions
+ * Aligned with Gemini's 20MB inline request limit for media files.
+ * PDFs can be larger (Anthropic supports 32MB) but we cap at 32MB.
  */
 export const SIZE_LIMITS = {
-    image: 10 * 1024 * 1024, // 10MB (before client-side resize)
-    audio: 25 * 1024 * 1024, // 25MB
-    document: 25 * 1024 * 1024, // 25MB (PDFs)
+    image: 20 * 1024 * 1024, // 20MB (Gemini inline limit)
+    audio: 20 * 1024 * 1024, // 20MB (Gemini inline limit)
+    video: 20 * 1024 * 1024, // 20MB (Gemini inline limit)
+    document: 32 * 1024 * 1024, // 32MB (Anthropic limit)
     spreadsheet: 25 * 1024 * 1024, // 25MB (XLSX, XLS, CSV)
 } as const;
 
@@ -92,6 +100,9 @@ export function getFileCategory(mimeType: string): FileCategory | null {
     }
     if ((ALLOWED_MIME_TYPES.audio as readonly string[]).includes(mimeType)) {
         return "audio";
+    }
+    if ((ALLOWED_MIME_TYPES.video as readonly string[]).includes(mimeType)) {
+        return "video";
     }
     if ((ALLOWED_MIME_TYPES.spreadsheet as readonly string[]).includes(mimeType)) {
         return "spreadsheet";
@@ -145,5 +156,5 @@ export function formatFileSizeDetailed(bytes: number): string {
  * Human-readable list of supported formats
  */
 export function getSupportedFormatsMessage(): string {
-    return "Images (JPEG, PNG, GIF, WebP), PDFs, spreadsheets (XLSX, XLS, CSV), or audio files (MP3, WAV, FLAC, etc.)";
+    return "Images (JPEG, PNG, GIF, WebP), PDFs, spreadsheets (XLSX, XLS, CSV), audio (MP3, WAV, etc.), or video (MP4, WebM, MOV)";
 }

@@ -39,15 +39,15 @@ import {
 // LLM-as-judge scoring is expensive - enable with env var
 const ENABLE_LLM_JUDGE = process.env.ENABLE_LLM_JUDGE === "true";
 
-// Configuration
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+// Configuration - uses Vercel AI Gateway for consistent model access
+const AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
 
-if (!OPENROUTER_API_KEY) {
-    console.error("❌ Missing OPENROUTER_API_KEY environment variable");
+if (!AI_GATEWAY_API_KEY) {
+    console.error("❌ Missing AI_GATEWAY_API_KEY environment variable");
     console.error("\n📋 Setup required:");
-    console.error("   1. Get an API key from https://openrouter.ai");
-    console.error("   2. Add to .env.local: OPENROUTER_API_KEY=<your_key>");
-    console.error("\n▶️  Then run: pnpm braintrust eval evals/concierge.eval.ts");
+    console.error("   1. Get API key from Vercel AI Gateway settings");
+    console.error("   2. Add to .env.local: AI_GATEWAY_API_KEY=<your_key>");
+    console.error("\n▶️  Then run: pnpm braintrust eval evals/concierge/eval.ts");
     process.exit(1);
 }
 
@@ -96,7 +96,7 @@ for (const model of modelsToTest) {
         task: async (input: ConciergeTestInput): Promise<ConciergeOutput> => {
             return runConciergeEval(input, {
                 conciergeModel: model.id,
-                apiKey: OPENROUTER_API_KEY,
+                apiKey: AI_GATEWAY_API_KEY,
             });
         },
 

@@ -39,9 +39,9 @@ interface FileTestInput {
     id: string;
     description: string;
     prompt: string;
-    fileType: "image" | "pdf" | "audio" | "text";
-    fixturePath: string;
-    mimeType: string;
+    fileType: "image" | "pdf" | "audio" | "video" | "text" | "multi";
+    fixturePath: string | string[];
+    mimeType: string | string[];
     sendAsInline?: boolean;
 }
 
@@ -150,39 +150,94 @@ async function consumeStream(response: Response): Promise<string> {
 }
 
 /**
+ * Build UIMessage format with multiple file attachments
+ */
+function buildMessageWithMultipleFiles(
+    prompt: string,
+    files: Array<{ url: string; mimeType: string; filename: string }>
+) {
+    const parts: Array<{
+        type: string;
+        text?: string;
+        url?: string;
+        mediaType?: string;
+        filename?: string;
+    }> = [{ type: "text", text: prompt }];
+
+    for (const file of files) {
+        parts.push({
+            type: "file",
+            url: file.url,
+            mediaType: file.mimeType,
+            filename: file.filename,
+        });
+    }
+
+    return {
+        id: `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        role: "user",
+        content: prompt,
+        parts,
+    };
+}
+
+/**
  * Execute a file attachment test
  */
 async function executeFileTest(input: FileTestInput): Promise<FileTestOutput> {
-    const fixturePath = path.join(FIXTURES_DIR, input.fixturePath);
+    // Handle multiple files
+    const fixturePaths = Array.isArray(input.fixturePath)
+        ? input.fixturePath
+        : [input.fixturePath];
+    const mimeTypes = Array.isArray(input.mimeType) ? input.mimeType : [input.mimeType];
 
-    // Check if fixture exists
-    if (!fs.existsSync(fixturePath)) {
-        return {
-            text: `Fixture not found: ${input.fixturePath}`,
-            status: 404,
-        };
+    // Check if all fixtures exist
+    for (const fp of fixturePaths) {
+        const fullPath = path.join(FIXTURES_DIR, fp);
+        if (!fs.existsSync(fullPath)) {
+            return {
+                text: `Fixture not found: ${fp}`,
+                status: 404,
+            };
+        }
     }
 
     let message;
 
     if (input.sendAsInline) {
-        // Text files: send content inline
+        // Text files: send content inline (only supports single file)
+        const fixturePath = path.join(FIXTURES_DIR, fixturePaths[0]);
         const fileContent = fs.readFileSync(fixturePath, "utf-8");
         message = buildMessageWithInlineText(
             input.prompt,
-            input.fixturePath,
+            fixturePaths[0],
             fileContent
         );
+    } else if (fixturePaths.length > 1) {
+        // Multiple files: build multi-file message
+        const files = fixturePaths.map((fp, i) => {
+            const fullPath = path.join(FIXTURES_DIR, fp);
+            const fileBuffer = fs.readFileSync(fullPath);
+            const base64 = fileBuffer.toString("base64");
+            const mimeType = mimeTypes[i] || mimeTypes[0];
+            return {
+                url: `data:${mimeType};base64,${base64}`,
+                mimeType,
+                filename: fp,
+            };
+        });
+        message = buildMessageWithMultipleFiles(input.prompt, files);
     } else {
-        // Binary files: send as base64 data URL
+        // Single binary file: send as base64 data URL
+        const fixturePath = path.join(FIXTURES_DIR, fixturePaths[0]);
         const fileBuffer = fs.readFileSync(fixturePath);
         const base64 = fileBuffer.toString("base64");
-        const dataUrl = `data:${input.mimeType};base64,${base64}`;
+        const dataUrl = `data:${mimeTypes[0]};base64,${base64}`;
         message = buildMessageWithFile(
             input.prompt,
             dataUrl,
-            input.mimeType,
-            input.fixturePath
+            mimeTypes[0],
+            fixturePaths[0]
         );
     }
 
@@ -347,6 +402,41 @@ const testData: TestCase[] = [
             shouldSucceed: true,
         },
         tags: ["audio", "mp3"],
+    },
+
+    // VIDEO TESTS
+    {
+        input: {
+            id: "video-mp4-describe",
+            description:
+                "MP4 video should route to Gemini (only model with native video)",
+            prompt: "Describe what you see in this video.",
+            fileType: "video",
+            fixturePath: "sample.mp4",
+            mimeType: "video/mp4",
+        },
+        expected: {
+            model: "gemini",
+            shouldSucceed: true,
+        },
+        tags: ["video", "mp4"],
+    },
+
+    // MULTI-ATTACHMENT TESTS
+    {
+        input: {
+            id: "multi-video-pdf",
+            description: "Video + PDF should route to Gemini (video forces Gemini)",
+            prompt: "I have a video and a document. Describe the video and summarize the document.",
+            fileType: "multi",
+            fixturePath: ["sample.mp4", "sample.pdf"],
+            mimeType: ["video/mp4", "application/pdf"],
+        },
+        expected: {
+            model: "gemini",
+            shouldSucceed: true,
+        },
+        tags: ["multi", "video", "pdf"],
     },
 
     // TEXT FILE TESTS (sent inline)

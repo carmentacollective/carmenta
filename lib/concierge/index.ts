@@ -2,8 +2,8 @@
  * Concierge - Intelligent model routing for Carmenta.
  *
  * The Concierge analyzes incoming requests and selects the optimal model,
- * temperature, and reasoning configuration. It uses Haiku 4.5 for fast
- * inference, reading the model rubric to make informed decisions.
+ * temperature, and reasoning configuration. It uses Llama 3.3 70B for fast
+ * inference (280 t/s), reading the model rubric to make informed decisions.
  */
 
 import { readFile } from "fs/promises";
@@ -15,7 +15,11 @@ import { z } from "zod";
 
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
-import { AUDIO_CAPABLE_MODEL, CONCIERGE_FALLBACK_CHAIN } from "@/lib/model-config";
+import {
+    AUDIO_CAPABLE_MODEL,
+    CONCIERGE_FALLBACK_CHAIN,
+    VIDEO_CAPABLE_MODEL,
+} from "@/lib/model-config";
 
 import { buildConciergePrompt, formatQuerySignals } from "./prompt";
 import { buildConciergeInput, type BuildConciergeInputOptions } from "./input-builder";
@@ -409,8 +413,8 @@ export type RunConciergeOptions = BuildConciergeInputOptions;
 /**
  * Runs the Concierge to select the optimal model, temperature, and reasoning config.
  *
- * Uses Gemini 3 Flash for fast inference with prompt caching. If the concierge fails,
- * returns sensible defaults (Sonnet 4.5 with temperature 0.5, no reasoning).
+ * Uses Llama 3.3 70B via Vercel AI Gateway for fast inference (280 t/s). If the
+ * concierge fails, returns sensible defaults (Sonnet 4.5 with temperature 0.5, no reasoning).
  *
  * Now accepts optional context signals (device type, time of day) that inform
  * reasoning level decisions.
@@ -446,23 +450,24 @@ export async function runConcierge(
                 // Format query signals for the prompt
                 const querySignalsBlock = formatQuerySignals(conciergeInput);
 
-                // AUDIO ROUTING: Force Gemini if audio attachments present
-                // Audio files can ONLY be processed by Gemini (native support)
-                if (attachments.includes("audio")) {
+                // AUDIO/VIDEO ROUTING: Force Gemini if audio or video attachments present
+                // Only Gemini has native audio/video support
+                if (attachments.includes("audio") || attachments.includes("video")) {
+                    const isVideo = attachments.includes("video");
+                    const emoji = isVideo ? "🎬" : "🎵";
+                    const mediaType = isVideo ? "Video" : "Audio";
                     logger.info(
                         { attachments },
-                        "Audio attachment detected - forcing audio-capable model"
+                        `${mediaType} attachment detected - forcing ${mediaType.toLowerCase()}-capable model`
                     );
-                    // Simple title from query (concierge handles title generation normally)
                     const title = userQuery.trim()
-                        ? `🎵 ${userQuery.slice(0, 35).trim()}`
-                        : "🎵 Audio conversation";
+                        ? `${emoji} ${userQuery.slice(0, 35).trim()}`
+                        : `${emoji} ${mediaType} conversation`;
                     return {
-                        modelId: AUDIO_CAPABLE_MODEL,
+                        modelId: isVideo ? VIDEO_CAPABLE_MODEL : AUDIO_CAPABLE_MODEL,
                         temperature: 0.5,
-                        explanation:
-                            "Audio file detected - routing to audio-capable model for native audio processing 🎵",
-                        reasoning: { enabled: false }, // Audio model doesn't support reasoning tokens
+                        explanation: `${mediaType} file detected - routing to Gemini for native ${mediaType.toLowerCase()} processing ${emoji}`,
+                        reasoning: { enabled: false }, // Gemini doesn't support reasoning tokens
                         autoSwitched: true,
                         title,
                     };
@@ -534,7 +539,7 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                     maxRetries: 1, // Single retry on network/rate limit errors
                     providerOptions: {
                         gateway: {
-                            models: CONCIERGE_FALLBACK_CHAIN.map(translateModelId), // Gemini 3 Flash → Grok 4.1 Fast → Sonnet 4.5
+                            models: CONCIERGE_FALLBACK_CHAIN.map(translateModelId), // Llama 3.3 70B → Gemini Flash → Haiku
                         },
                     },
                     tools: {

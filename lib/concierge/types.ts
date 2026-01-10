@@ -338,12 +338,11 @@ export const CONCIERGE_DEFAULTS: ConciergeResult = {
 
 /**
  * The model used to run the Concierge itself.
- * Gemini 3 Flash offers automatic prompt caching (2048 token min) and
- * 218 t/s output speed. The ~4-5K token system prompt qualifies for
- * caching, giving sub-second latency after the first call.
- * Source: https://ai.google.dev/gemini-api/docs/gemini-3
+ * Llama 3.3 70B via Vercel AI Gateway achieves 280 t/s output speed
+ * with 96.97% model selection accuracy (matching Sonnet quality).
+ * See knowledge/decisions/concierge-model-selection.md for eval data.
  */
-export const CONCIERGE_MODEL = "google/gemini-3-flash";
+export const CONCIERGE_MODEL = "meta/llama-3.3-70b";
 
 /**
  * Whitelist of allowed models the concierge can select.
