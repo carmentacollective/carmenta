@@ -540,7 +540,7 @@ export async function getExtractionStats(userId: string): Promise<{
 
     return {
         pending: statusMap.pending ?? 0,
-        approved: statusMap.approved ?? 0,
+        approved: (statusMap.approved ?? 0) + (statusMap.edited ?? 0),
         rejected: statusMap.rejected ?? 0,
         byCategory: categoryMap,
     };

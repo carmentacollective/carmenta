@@ -99,19 +99,20 @@ export async function reviewExtractions(actions: ExtractionReviewAction[]): Prom
 
     for (const action of actions) {
         try {
-            // Get the extraction
+            // Get the extraction - only process if status is "pending"
             const [extraction] = await db
                 .select()
                 .from(pendingExtractions)
                 .where(
                     and(
                         eq(pendingExtractions.id, action.id),
-                        eq(pendingExtractions.userId, dbUser.id)
+                        eq(pendingExtractions.userId, dbUser.id),
+                        eq(pendingExtractions.status, "pending")
                     )
                 );
 
             if (!extraction) {
-                errors.push(`Extraction ${action.id} not found`);
+                // Skip silently - extraction may have already been reviewed
                 continue;
             }
 

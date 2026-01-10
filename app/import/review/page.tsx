@@ -13,6 +13,7 @@ import {
     SpinnerGapIcon,
     ArrowLeftIcon,
     CheckIcon,
+    MicrophoneIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -36,7 +37,8 @@ type ExtractionCategory =
     | "person"
     | "project"
     | "decision"
-    | "expertise";
+    | "expertise"
+    | "voice";
 
 interface Extraction {
     id: string;
@@ -92,6 +94,11 @@ const CATEGORY_CONFIG: Record<
         label: "Expertise",
         color: "bg-pink-100 text-pink-700",
     },
+    voice: {
+        icon: MicrophoneIcon,
+        label: "Voice",
+        color: "bg-indigo-100 text-indigo-700",
+    },
 };
 
 /**
@@ -117,6 +124,9 @@ export default function ImportReviewPage() {
     const fetchExtractions = useCallback(async () => {
         try {
             const res = await fetch("/api/import/extract?status=pending");
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
             const data = await res.json();
             setExtractions(data.extractions || []);
             setStats(data.stats || null);
@@ -138,12 +148,21 @@ export default function ImportReviewPage() {
         const pollStatus = async () => {
             try {
                 const res = await fetch(`/api/import/extract/${jobId}`);
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
                 const data = await res.json();
                 setJobStatus(data);
 
-                if (data.status === "completed" || data.status === "failed") {
+                if (data.status === "completed") {
                     setJobId(null);
                     fetchExtractions();
+                } else if (data.status === "failed") {
+                    setJobId(null);
+                    fetchExtractions();
+                    toast.error("Extraction failed", {
+                        description: data.errorMessage || "Please try again",
+                    });
                 }
             } catch (error) {
                 logger.error({ error }, "Failed to poll job status");
@@ -235,12 +254,31 @@ export default function ImportReviewPage() {
 
     // Approve all
     const approveAll = async () => {
+        if (!stats) return;
+
         setProcessing(true);
         try {
-            const actions = extractions.map((e) => ({
+            // Fetch ALL pending extractions (not just currently loaded 50)
+            const allExtractions: Extraction[] = [];
+            let offset = 0;
+            const batchSize = 100;
+
+            while (allExtractions.length < stats.pending) {
+                const res = await fetch(
+                    `/api/import/extract?status=pending&limit=${batchSize}&offset=${offset}`
+                );
+                if (!res.ok) break;
+                const data = await res.json();
+                if (!data.extractions || data.extractions.length === 0) break;
+                allExtractions.push(...data.extractions);
+                offset += batchSize;
+            }
+
+            const actions = allExtractions.map((e) => ({
                 id: e.id,
                 action: "approve" as const,
             }));
+
             const res = await fetch("/api/import/extract/review", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
