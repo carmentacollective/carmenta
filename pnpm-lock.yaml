@@ -12,14 +12,14 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
       '@ai-sdk/gateway':
-        specifier: ^3.0.2
-        version: 3.0.2(zod@4.3.4)
+        specifier: ^3.0.11
+        version: 3.0.11(zod@4.3.4)
       '@ai-sdk/openai':
         specifier: ^3.0.7
         version: 3.0.7(zod@4.3.4)
       '@ai-sdk/react':
-        specifier: ^3.0.0
-        version: 3.0.3(react@19.2.3)(zod@4.3.4)
+        specifier: ^3.0.29
+        version: 3.0.29(react@19.2.3)(zod@4.3.4)
       '@anthropic-ai/claude-agent-sdk':
         specifier: ^0.1.76
         version: 0.1.76(zod@4.3.4)
@@ -162,8 +162,8 @@ importers:
         specifier: ^3.4.7
         version: 3.4.7
       posthog-js:
-        specifier: ^1.309.1
-        version: 1.309.1
+        specifier: ^1.318.1
+        version: 1.318.1
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -334,6 +334,12 @@ packages:
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
 
+  '@ai-sdk/gateway@3.0.11':
+    resolution: {integrity: sha512-gLrgNXA95wdo/zAlA0miX/SJEYKSYCHg+e0Y/uQeABLScZAMjPw3jWaeANta/Db1T4xfi8cBvY3nnV8Pa27z+w==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/gateway@3.0.2':
     resolution: {integrity: sha512-giJEg9ob45htbu3iautK+2kvplY2JnTj7ir4wZzYSQWvqGatWfBBfDuNCU5wSJt9BCGjymM5ZS9ziD42JGCZBw==}
     engines: {node: '>=18'}
@@ -370,8 +376,8 @@ packages:
     resolution: {integrity: sha512-HrEmNt/BH/hkQ7zpi2o6N3k1ZR1QTb7z85WYhYygiTxOQuaml4CMtHCWRbric5WPU+RNsYI7r1EpyVQMKO1pYw==}
     engines: {node: '>=18'}
 
-  '@ai-sdk/react@3.0.3':
-    resolution: {integrity: sha512-mLIgQuBdIX9gxCYQN3Pv/J8ARoFreIKYr/TVQtI+FwEzejuGFimTyhDln7UIBfrnm3Mpn1xENIWZfDfCRF7wkw==}
+  '@ai-sdk/react@3.0.29':
+    resolution: {integrity: sha512-e17Id+43xCjHApsjane3dVl5xuUdP9lXgZMtNcgMlg3NHhv6UYpRGuH4+d/5W8+VHhhpNfTZEf7J5DkKehGgJQ==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
@@ -1823,8 +1829,11 @@ packages:
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
 
-  '@posthog/core@1.8.1':
-    resolution: {integrity: sha512-jfzBtQIk9auRi/biO+G/gumK5KxqsD5wOr7XpYMROE/I3pazjP4zIziinp21iQuIQJMXrDvwt9Af3njgOGwtew==}
+  '@posthog/core@1.9.1':
+    resolution: {integrity: sha512-kRb1ch2dhQjsAapZmu6V66551IF2LnCbc1rnrQqnR7ArooVyJN9KOPXre16AJ3ObJz2eTfuP7x25BMyS2Y5Exw==}
+
+  '@posthog/types@1.318.1':
+    resolution: {integrity: sha512-FYjHp4wlYvt4xc7MM+zIjfYICY/+lvjby/nOib29psTuUMT3nJXwqWz65QBox6XldaJdeId5F+UW6IOtJ1Q9iA==}
 
   '@prisma/instrumentation@6.19.0':
     resolution: {integrity: sha512-QcuYy25pkXM8BJ37wVFBO7Zh34nyRV1GOb2n3lPkkbRYfl4hWl3PTcImP41P0KrzVXfa/45p6eVCos27x3exIg==}
@@ -3293,6 +3302,10 @@ packages:
     resolution: {integrity: sha512-fnYhv671l+eTTp48gB4zEsTW/YtRgRPnkI2nT7x6qw5rkI1Lq2hTmQIpHPgyThI0znLK+vX2n9XxKdXZ7BUbbw==}
     engines: {node: '>= 20'}
 
+  '@vercel/oidc@3.1.0':
+    resolution: {integrity: sha512-Fw28YZpRnA3cAHHDlkt7xQHiJ0fcL+NRcIqsocZQUSmbzeIKRpwttJjik5ZGanXP+vlA4SbTg+AbA3bP363l+w==}
+    engines: {node: '>= 20'}
+
   '@vitejs/plugin-react@5.1.2':
     resolution: {integrity: sha512-EcA07pHJouywpzsoTUqNh5NwGayl2PPVEJKUSinGGSxFGYn+shYbqMGBg6FXDqgXum9Ou/ecb+411ssw8HImJQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -3439,6 +3452,12 @@ packages:
   agentkeepalive@4.6.0:
     resolution: {integrity: sha512-kja8j7PjmncONqaTsB8fQ+wE2mSU2DJ9D4XKoJ5PFWIdRMa6SLSN1ff4mOr4jCbfRSsxR4keIiySJU0N9T5hIQ==}
     engines: {node: '>= 8.0.0'}
+
+  ai@6.0.27:
+    resolution: {integrity: sha512-a4ToMt5+4xOzHuYdoTy2GQXuNa2/Tpuhxfs5QESHtEV/Vf2HAzSwmTwikrIs8CDKPuMWV1I9YqAvaN5xexMCiQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   ai@6.0.3:
     resolution: {integrity: sha512-OOo+/C+sEyscoLnbY3w42vjQDICioVNyS+F+ogwq6O5RJL/vgWGuiLzFwuP7oHTeni/MkmX8tIge48GTdaV7QQ==}
@@ -6256,8 +6275,8 @@ packages:
     resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
     engines: {node: '>=12'}
 
-  posthog-js@1.309.1:
-    resolution: {integrity: sha512-JUJcQhYzNNKO0cgnSbowCsVi2RTu75XGZ2EmnTQti4tMGRCTOv/HCnZasdFniBGZ0rLugQkaScYca/84Ta2u5Q==}
+  posthog-js@1.318.1:
+    resolution: {integrity: sha512-8zG02pcTYILB8At/9P2B2MJjuGq+DY3BeE01I4IPi6bnWNh3hka6+ZQhn9GfgtCQs7Ygk6qMaOxpUFvsDGQaQQ==}
 
   preact@10.28.0:
     resolution: {integrity: sha512-rytDAoiXr3+t6OIP3WGlDd0ouCUG1iCWzkcY3++Nreuoi17y6T5i/zRhe6uYfoVcxq6YU+sBtJouuRDsq8vvqA==}
@@ -6371,6 +6390,9 @@ packages:
   qs@6.14.1:
     resolution: {integrity: sha512-4EK3+xJl8Ts67nLYNwqw/dsFVnCf+qR7RgXSK9jEEm9unao3njwMDdmsdvoKBKHzxd7tCYz5e5M+SnMjdtXGQQ==}
     engines: {node: '>=0.6'}
+
+  query-selector-shadow-dom@1.0.1:
+    resolution: {integrity: sha512-lT5yCqEBgfoMYpf3F2xQRK7zEr1rhIIZuceDK6+xRkJQ4NMbHTwXqk4NkwDwQMNqXgG9r9fyHnzwNVs6zV5KRw==}
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -7647,6 +7669,13 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
+  '@ai-sdk/gateway@3.0.11(zod@4.3.4)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.2
+      '@ai-sdk/provider-utils': 4.0.4(zod@4.3.4)
+      '@vercel/oidc': 3.1.0
+      zod: 4.3.4
+
   '@ai-sdk/gateway@3.0.2(zod@4.3.4)':
     dependencies:
       '@ai-sdk/provider': 3.0.0
@@ -7686,10 +7715,10 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@3.0.3(react@19.2.3)(zod@4.3.4)':
+  '@ai-sdk/react@3.0.29(react@19.2.3)(zod@4.3.4)':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.3.4)
-      ai: 6.0.3(zod@4.3.4)
+      '@ai-sdk/provider-utils': 4.0.4(zod@4.3.4)
+      ai: 6.0.27(zod@4.3.4)
       react: 19.2.3
       swr: 2.3.8(react@19.2.3)
       throttleit: 2.1.0
@@ -8995,9 +9024,11 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@posthog/core@1.8.1':
+  '@posthog/core@1.9.1':
     dependencies:
       cross-spawn: 7.0.6
+
+  '@posthog/types@1.318.1': {}
 
   '@prisma/instrumentation@6.19.0(@opentelemetry/api@1.9.0)':
     dependencies:
@@ -10549,6 +10580,8 @@ snapshots:
 
   '@vercel/oidc@3.0.5': {}
 
+  '@vercel/oidc@3.1.0': {}
+
   '@vitejs/plugin-react@5.1.2(vite@7.3.0(@types/node@25.0.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@babel/core': 7.28.5
@@ -10740,6 +10773,14 @@ snapshots:
   agentkeepalive@4.6.0:
     dependencies:
       humanize-ms: 1.2.1
+
+  ai@6.0.27(zod@4.3.4):
+    dependencies:
+      '@ai-sdk/gateway': 3.0.11(zod@4.3.4)
+      '@ai-sdk/provider': 3.0.2
+      '@ai-sdk/provider-utils': 4.0.4(zod@4.3.4)
+      '@opentelemetry/api': 1.9.0
+      zod: 4.3.4
 
   ai@6.0.3(zod@4.3.4):
     dependencies:
@@ -14102,12 +14143,15 @@ snapshots:
 
   postgres@3.4.7: {}
 
-  posthog-js@1.309.1:
+  posthog-js@1.318.1:
     dependencies:
-      '@posthog/core': 1.8.1
+      '@posthog/core': 1.9.1
+      '@posthog/types': 1.318.1
       core-js: 3.47.0
+      dompurify: 3.3.1
       fflate: 0.4.8
       preact: 10.28.0
+      query-selector-shadow-dom: 1.0.1
       web-vitals: 4.2.4
 
   preact@10.28.0: {}
@@ -14176,6 +14220,8 @@ snapshots:
   qs@6.14.1:
     dependencies:
       side-channel: 1.1.0
+
+  query-selector-shadow-dom@1.0.1: {}
 
   queue-microtask@1.2.3: {}
 

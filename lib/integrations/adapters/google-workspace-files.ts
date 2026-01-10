@@ -46,10 +46,23 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                 { error, userId },
                 "Failed to verify Google Workspace Files connection"
             );
+
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            // Expected OAuth failures - don't capture to Sentry
+            if (errorMessage.includes("401") || errorMessage.includes("403")) {
+                return {
+                    success: false,
+                    error: "The Google connection may have expired. Try reconnecting.",
+                };
+            }
+
+            // Unexpected error - capture to Sentry
             this.captureError(error, {
                 action: "testConnection",
                 userId,
             });
+
             return {
                 success: false,
                 error:
@@ -150,7 +163,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                             type: "string",
                             required: false,
                             description:
-                                "A1 notation range to read. Defaults to entire first sheet.",
+                                "A1 notation range to read. Defaults to all rows in columns A-ZZ (702 columns).",
                             example: "Sheet1!A1:D10",
                         },
                     ],
@@ -247,7 +260,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
     ): Promise<MCPToolResponse> {
         const { title, data, sheet_name } = params as {
             title: string;
-            data?: string[][];
+            data?: unknown[][];
             sheet_name?: string;
         };
 
