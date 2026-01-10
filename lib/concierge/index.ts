@@ -2,8 +2,8 @@
  * Concierge - Intelligent model routing for Carmenta.
  *
  * The Concierge analyzes incoming requests and selects the optimal model,
- * temperature, and reasoning configuration. It uses Haiku 4.5 for fast
- * inference, reading the model rubric to make informed decisions.
+ * temperature, and reasoning configuration. It uses Llama 3.3 70B for fast
+ * inference (280 t/s), reading the model rubric to make informed decisions.
  */
 
 import { readFile } from "fs/promises";
