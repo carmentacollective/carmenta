@@ -186,16 +186,34 @@ export function ToolPartRenderer({ part }: ToolPartRendererProps) {
                 >
                     {hasWeatherData && (
                         <div className="text-sm">
-                            <div className="text-lg font-medium">
-                                {weatherOutput.temperature}°F {weatherOutput.condition}
-                            </div>
-                            <div className="text-muted-foreground">
-                                {weatherOutput.location}
-                            </div>
-                            <div className="text-muted-foreground mt-2 text-xs">
-                                Humidity: {weatherOutput.humidity}% · Wind:{" "}
-                                {weatherOutput.windSpeed} mph
-                            </div>
+                            {(weatherOutput.temperature !== undefined ||
+                                weatherOutput.condition) && (
+                                <div className="text-lg font-medium">
+                                    {weatherOutput.temperature !== undefined &&
+                                        `${weatherOutput.temperature}°F`}
+                                    {weatherOutput.temperature !== undefined &&
+                                        weatherOutput.condition &&
+                                        " "}
+                                    {weatherOutput.condition}
+                                </div>
+                            )}
+                            {weatherOutput.location && (
+                                <div className="text-muted-foreground">
+                                    {weatherOutput.location}
+                                </div>
+                            )}
+                            {(weatherOutput.humidity !== undefined ||
+                                weatherOutput.windSpeed !== undefined) && (
+                                <div className="text-muted-foreground mt-2 text-xs">
+                                    {weatherOutput.humidity !== undefined &&
+                                        `Humidity: ${weatherOutput.humidity}%`}
+                                    {weatherOutput.humidity !== undefined &&
+                                        weatherOutput.windSpeed !== undefined &&
+                                        " · "}
+                                    {weatherOutput.windSpeed !== undefined &&
+                                        `Wind: ${weatherOutput.windSpeed} mph`}
+                                </div>
+                            )}
                         </div>
                     )}
                 </ToolRenderer>
