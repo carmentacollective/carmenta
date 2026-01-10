@@ -128,6 +128,11 @@ vi.mock("@/lib/db/users", () => ({
     }),
 }));
 
+// Mock connection manager for integration suggestions
+vi.mock("@/lib/integrations/connection-manager", () => ({
+    getConnectedServices: vi.fn().mockResolvedValue([]),
+}));
+
 // Mock Temporal client
 vi.mock("@/lib/temporal/client", () => ({
     isBackgroundModeEnabled: vi.fn().mockReturnValue(false),

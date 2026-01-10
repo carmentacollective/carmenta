@@ -13,7 +13,12 @@ import {
     calculateContextUtilization,
 } from "@/lib/context/token-estimation";
 
-import type { ConciergeInput, QueryComplexitySignals, SessionContext } from "./types";
+import type {
+    ConciergeInput,
+    IntegrationContext,
+    QueryComplexitySignals,
+    SessionContext,
+} from "./types";
 
 /** Maximum characters for text previews in recent context */
 const PREVIEW_MAX_LENGTH = 200;
@@ -236,6 +241,8 @@ export interface BuildConciergeInputOptions {
     hourOfDay?: number;
     /** Milliseconds since last message (provided by caller since UIMessage lacks timestamps) */
     timeSinceLastMessage?: number;
+    /** Integration context for suggesting relevant services */
+    integrationContext?: IntegrationContext;
 }
 
 /**
@@ -336,6 +343,7 @@ export function buildConciergeInput(
         userSignals,
         querySignals,
         sessionContext,
+        integrationContext: options.integrationContext,
     };
 }
 

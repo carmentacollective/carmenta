@@ -153,6 +153,9 @@ Your JSON response must match this exact schema:
         { "label": "Option 2", "value": "option2" }
       ]
     }
+  ],
+  "suggestedIntegrations": [
+    { "serviceId": "service-id", "reason": "Brief reason why this would help" }
   ]
 }
 
@@ -170,6 +173,7 @@ title: Short title for future reference (15-35 chars)
 kbSearch: Knowledge base search configuration for retrieving relevant context
 backgroundMode: For long-running work that needs durable execution
 clarifyingQuestions: Rare - ONE question with clickable options for scoping research depth
+suggestedIntegrations: When query would benefit from an unconnected service
 
 Selection approach:
 
@@ -318,6 +322,29 @@ Clarifying questions are for **quick decisions with clickable options**, not ope
 **Example bad use:** "What symptoms are you experiencing?" - this needs text, ask conversationally
 
 When you include clarifyingQuestions, don't enable backgroundMode yet. Never set allowFreeform - if they need to type, they use the normal composer.
+
+### Integration Suggestions
+
+When an <integration-context> block is provided, it contains:
+- connectedServiceIds: Services the user has already connected
+- potentialSuggestions: Unconnected services that matched keywords in the query
+
+**Only suggest integrations when:**
+- potentialSuggestions contains relevant services
+- The query would genuinely benefit from live data the integration provides
+- The service would unlock capabilities we can't provide otherwise
+
+**Don't suggest integrations when:**
+- No integration-context provided
+- potentialSuggestions is empty
+- The query can be answered well without the integration
+- It's a simple greeting or unrelated question
+
+**Suggestion format:**
+- serviceId: Must match exactly from potentialSuggestions
+- reason: Brief, helpful explanation (max 100 chars) like "Get real-time crypto prices"
+
+Keep it light-touch: 0-2 suggestions max. Never pushy. If in doubt, skip suggestions entirely.
 
 ### Explanation Style
 
@@ -585,7 +612,82 @@ Research AI coding assistants - I want to understand the full competitive landsc
   "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] },
   "backgroundMode": { "enabled": true, "reason": "Deep research ahead - we'll keep working while you're away" }
 }
+
+<integration-context>
+connectedServiceIds: []
+potentialSuggestions: [{ serviceId: "coinmarketcap", serviceName: "CoinMarketCap", description: "Cryptocurrency market data and pricing" }]
+</integration-context>
+
+<user-message>
+What's the current price of Bitcoin?
+</user-message>
+
+{
+  "modelId": "anthropic/claude-haiku-4.5",
+  "temperature": 0.3,
+  "explanation": "Quick lookup - I can share what I know, though connecting CoinMarketCap would give you live prices 💰",
+  "reasoning": { "enabled": false },
+  "responseDepth": "concise",
+  "title": "💰 Bitcoin price",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] },
+  "suggestedIntegrations": [{ "serviceId": "coinmarketcap", "reason": "Get real-time crypto prices and market data" }]
+}
+
+<integration-context>
+connectedServiceIds: ["google-calendar-contacts"]
+potentialSuggestions: []
+</integration-context>
+
+<user-message>
+What's on my calendar tomorrow?
+</user-message>
+
+{
+  "modelId": "anthropic/claude-sonnet-4.5",
+  "temperature": 0.4,
+  "explanation": "Let me check your calendar 📅",
+  "reasoning": { "enabled": false },
+  "responseDepth": "balanced",
+  "title": "📅 Tomorrow's schedule",
+  "kbSearch": { "shouldSearch": false, "queries": [], "entities": [] }
+}
 </examples>`;
 }
 
-export { formatQuerySignals };
+/**
+ * Formats integration context into a readable block for the concierge.
+ */
+function formatIntegrationContext(input: ConciergeInput): string {
+    const { integrationContext } = input;
+
+    if (!integrationContext) {
+        return "";
+    }
+
+    // Only include if there are potential suggestions
+    if (
+        !integrationContext.potentialSuggestions ||
+        integrationContext.potentialSuggestions.length === 0
+    ) {
+        return "";
+    }
+
+    const lines: string[] = ["<integration-context>"];
+    lines.push(
+        `connectedServiceIds: [${integrationContext.connectedServiceIds.map((id) => `"${id}"`).join(", ")}]`
+    );
+
+    const suggestions = integrationContext.potentialSuggestions
+        .map(
+            (s) =>
+                `{ serviceId: "${s.serviceId}", serviceName: "${s.serviceName}", description: "${s.description}", matchedKeywords: [${s.matchedKeywords.map((k) => `"${k}"`).join(", ")}] }`
+        )
+        .join(", ");
+    lines.push(`potentialSuggestions: [${suggestions}]`);
+
+    lines.push("</integration-context>");
+
+    return lines.join("\n");
+}
+
+export { formatQuerySignals, formatIntegrationContext };
