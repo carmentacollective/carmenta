@@ -12,6 +12,7 @@ import { slackProvider } from "./slack";
 import { clickupProvider } from "./clickup";
 import { dropboxProvider } from "./dropbox";
 import { googleCalendarContactsProvider } from "./google-calendar-contacts";
+import { googleWorkspaceFilesProvider } from "./google-workspace-files";
 import { gmailProvider } from "./gmail";
 import { spotifyProvider } from "./spotify";
 import { twitterProvider } from "./twitter";
@@ -25,6 +26,7 @@ const providers: Record<string, OAuthProviderConfig> = {
     dropbox: dropboxProvider,
     gmail: gmailProvider,
     "google-calendar-contacts": googleCalendarContactsProvider,
+    "google-workspace-files": googleWorkspaceFilesProvider,
     notion: notionProvider,
     slack: slackProvider,
     spotify: spotifyProvider,
@@ -125,6 +127,13 @@ export {
     GOOGLE_CALENDAR_API_BASE,
     GOOGLE_PEOPLE_API_BASE,
 } from "./google-calendar-contacts";
+export { googleWorkspaceFilesProvider } from "./google-workspace-files";
+export {
+    GOOGLE_DOCS_API_BASE,
+    GOOGLE_DRIVE_API_BASE,
+    GOOGLE_SHEETS_API_BASE,
+    GOOGLE_SLIDES_API_BASE,
+} from "./google-workspace-files";
 export { notionProvider } from "./notion";
 export { NOTION_API_BASE, NOTION_API_VERSION } from "./notion";
 export { slackProvider } from "./slack";

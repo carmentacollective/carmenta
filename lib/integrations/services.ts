@@ -176,6 +176,27 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         ],
     },
 
+    // Google Sheets/Docs/Slides - OAuth (in-house, "non-sensitive" drive.file scope)
+    {
+        id: "google-workspace-files",
+        name: "Google Sheets/Docs/Slides",
+        description:
+            "Create and work with Sheets, Docs, and Slides in your Carmenta workspace",
+        logo: "/logos/google-workspace-files.svg",
+        authMethod: "oauth",
+        status: "available",
+        oauthProviderId: "google-workspace-files",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developers.google.com/workspace",
+        capabilities: [
+            "create_sheet",
+            "create_doc",
+            "create_slides",
+            "read_picked_file",
+            "update_picked_file",
+        ],
+    },
+
     // Limitless - API Key
     {
         id: "limitless",
