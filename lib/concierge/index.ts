@@ -450,26 +450,24 @@ export async function runConcierge(
                 // Format query signals for the prompt
                 const querySignalsBlock = formatQuerySignals(conciergeInput);
 
-                // AUDIO/VIDEO ROUTING: Force Gemini if audio/video attachments present
-                // Audio and video files can ONLY be processed by Gemini (native support)
+                // AUDIO/VIDEO ROUTING: Force Gemini if audio or video attachments present
+                // Only Gemini has native audio/video support
                 if (attachments.includes("audio") || attachments.includes("video")) {
                     const isVideo = attachments.includes("video");
+                    const emoji = isVideo ? "🎬" : "🎵";
+                    const mediaType = isVideo ? "Video" : "Audio";
                     logger.info(
                         { attachments },
-                        `${isVideo ? "Video" : "Audio"} attachment detected - forcing ${isVideo ? "video" : "audio"}-capable model`
+                        `${mediaType} attachment detected - forcing ${mediaType.toLowerCase()}-capable model`
                     );
-                    // Simple title from query (concierge handles title generation normally)
-                    const emoji = isVideo ? "🎬" : "🎵";
                     const title = userQuery.trim()
                         ? `${emoji} ${userQuery.slice(0, 35).trim()}`
-                        : `${emoji} ${isVideo ? "Video" : "Audio"} conversation`;
+                        : `${emoji} ${mediaType} conversation`;
                     return {
                         modelId: isVideo ? VIDEO_CAPABLE_MODEL : AUDIO_CAPABLE_MODEL,
                         temperature: 0.5,
-                        explanation: isVideo
-                            ? "Video file detected - routing to video-capable model for native video processing 🎬"
-                            : "Audio file detected - routing to audio-capable model for native audio processing 🎵",
-                        reasoning: { enabled: false }, // Audio/video model doesn't support reasoning tokens
+                        explanation: `${mediaType} file detected - routing to Gemini for native ${mediaType.toLowerCase()} processing ${emoji}`,
+                        reasoning: { enabled: false }, // Gemini doesn't support reasoning tokens
                         autoSwitched: true,
                         title,
                     };

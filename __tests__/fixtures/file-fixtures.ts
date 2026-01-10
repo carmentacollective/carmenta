@@ -46,6 +46,14 @@ export function createTestAudioFile(filename = "test.mp3"): File {
 }
 
 /**
+ * Create a mock video file
+ */
+export function createTestVideoFile(filename = "test.mp4"): File {
+    const blob = new Blob([new ArrayBuffer(1024)], { type: "video/mp4" });
+    return new File([blob], filename, { type: "video/mp4" });
+}
+
+/**
  * Mock Supabase upload response
  */
 export function createMockSupabaseUploadResponse(
