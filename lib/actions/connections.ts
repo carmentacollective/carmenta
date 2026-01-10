@@ -8,6 +8,7 @@
  */
 
 import { currentUser } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
@@ -272,7 +273,14 @@ export async function updateConnection(
     }
 
     const updated = await dbUpdateConnection(connection.id, updates);
-    return updated ? toPublicConnection(updated) : null;
+    if (!updated) return null;
+
+    // Invalidate Next.js cache so server-rendered pages pick up the new title
+    // Without this, optimistic updates work but navigation serves stale cached data
+    revalidatePath("/connection", "layout");
+    revalidatePath("/connections");
+
+    return toPublicConnection(updated);
 }
 
 /**
@@ -291,6 +299,9 @@ export async function archiveConnection(connectionId: string): Promise<void> {
     }
 
     await dbArchiveConnection(connection.id);
+
+    revalidatePath("/connection", "layout");
+    revalidatePath("/connections");
 }
 
 /**
@@ -309,6 +320,9 @@ export async function deleteConnection(connectionId: string): Promise<void> {
     }
 
     await dbDeleteConnection(connection.id);
+
+    revalidatePath("/connection", "layout");
+    revalidatePath("/connections");
 }
 
 /**
@@ -332,7 +346,12 @@ export async function toggleStarConnection(
     }
 
     const updated = await dbToggleStar(connection.id, isStarred);
-    return updated ? toPublicConnection(updated) : null;
+    if (!updated) return null;
+
+    revalidatePath("/connection", "layout");
+    revalidatePath("/connections");
+
+    return toPublicConnection(updated);
 }
 
 /**

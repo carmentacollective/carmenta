@@ -35,6 +35,12 @@ vi.mock("next/navigation", () => ({
     redirect: (url: string) => mockRedirect(url),
 }));
 
+// Mock next/cache - revalidatePath requires Next.js runtime context
+vi.mock("next/cache", () => ({
+    revalidatePath: vi.fn(),
+    revalidateTag: vi.fn(),
+}));
+
 // Import after mocks are set up
 import {
     createNewConnection,
