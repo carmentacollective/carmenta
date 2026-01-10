@@ -131,7 +131,7 @@ function ConnectLayoutInner({ children }: { children: ReactNode }) {
                     holographic background while maintaining the ethereal feel.
                 ═══════════════════════════════════════════════════════════════ */}
                 <motion.div
-                    className="relative flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/20 shadow-2xl shadow-black/5 dark:border-white/10"
+                    className="border-foreground/10 dark:border-foreground/5 relative flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-2xl border-2 shadow-lg shadow-black/5"
                     variants={containerEntranceVariants}
                     initial="hidden"
                     animate="visible"
