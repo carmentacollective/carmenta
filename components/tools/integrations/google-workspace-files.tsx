@@ -128,10 +128,11 @@ function PickerAction({
                 "Google file selected"
             );
 
-            // Send file info back to conversation (file ID logged above for debugging)
+            // Send file info back to conversation
+            // Include ID for downstream tool calls (read_sheet, etc.) but keep it unobtrusive
             append({
                 role: "user",
-                content: `I selected "${file.name}" (${formatFileType(file.mimeType)})`,
+                content: `I selected "${file.name}" (${formatFileType(file.mimeType)}) - ID: ${file.id}`,
             });
         },
         [append, toolCallId]
