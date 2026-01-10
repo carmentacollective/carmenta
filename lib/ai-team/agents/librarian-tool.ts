@@ -19,6 +19,8 @@ import { logger } from "@/lib/logger";
 import { searchKnowledge } from "@/lib/kb/search";
 import { kb } from "@/lib/kb";
 import { createLibrarianAgent } from "@/lib/ai-team/librarian";
+import { estimateTokens } from "@/lib/context/token-estimation";
+import { getModel } from "@/lib/model-config";
 import {
     type SubagentResult,
     type SubagentDescription,
@@ -38,6 +40,154 @@ const LIBRARIAN_ID = "librarian";
  * Maximum steps for extraction agent
  */
 const MAX_EXTRACTION_STEPS = 10;
+
+/**
+ * Librarian model ID - matches LIBRARIAN_FALLBACK_CHAIN[0]
+ */
+const LIBRARIAN_MODEL = "anthropic/claude-haiku-4.5";
+
+/**
+ * Safety margin for context window (leave room for system prompt + output)
+ * The librarian system prompt + tool definitions take ~3-5K tokens,
+ * plus we need room for agent output. 80% leaves ~40K buffer on 200K model.
+ */
+const CONTEXT_SAFETY_MARGIN = 0.8;
+
+/**
+ * Patterns that indicate high-value content to preserve during truncation.
+ * Case-insensitive matching.
+ */
+const PRESERVE_PATTERNS = [
+    /remember\s+this/i,
+    /don't\s+forget/i,
+    /important:/i,
+    /note\s+to\s+self/i,
+    /save\s+this/i,
+    /keep\s+in\s+mind/i,
+];
+
+/**
+ * Check if content contains patterns worth preserving
+ */
+function hasPreserveMarkers(content: string): boolean {
+    return PRESERVE_PATTERNS.some((pattern) => pattern.test(content));
+}
+
+/**
+ * Truncation result with metadata
+ */
+interface TruncationResult {
+    content: string;
+    wasTruncated: boolean;
+    originalTokens: number;
+    truncatedTokens: number;
+}
+
+/**
+ * Intelligently truncates conversation content to fit within model context.
+ *
+ * Strategy:
+ * 1. If content fits, return as-is
+ * 2. Split into chunks (paragraphs/sections)
+ * 3. Always preserve: first chunk (context), last 30% of chunks (recency), chunks with preserve markers
+ * 4. Truncate from middle, keeping structure intact
+ */
+function truncateConversationContent(
+    content: string,
+    maxTokens: number
+): TruncationResult {
+    const originalTokens = estimateTokens(content, LIBRARIAN_MODEL);
+
+    if (originalTokens <= maxTokens) {
+        return {
+            content,
+            wasTruncated: false,
+            originalTokens,
+            truncatedTokens: originalTokens,
+        };
+    }
+
+    // Split by double newlines (message boundaries) or single newlines for dense content
+    const chunks = content.split(/\n\n+/).filter((c) => c.trim());
+
+    if (chunks.length <= 3) {
+        // Too few chunks to intelligently truncate - just take the end
+        const truncatedContent = chunks.slice(-2).join("\n\n");
+        return {
+            content: `[Earlier conversation truncated for length]\n\n${truncatedContent}`,
+            wasTruncated: true,
+            originalTokens,
+            truncatedTokens: estimateTokens(truncatedContent, LIBRARIAN_MODEL),
+        };
+    }
+
+    // Determine how many chunks to keep from the end (recency bias)
+    const recentChunkCount = Math.max(3, Math.ceil(chunks.length * 0.3));
+    const recentChunks = chunks.slice(-recentChunkCount);
+    const olderChunks = chunks.slice(0, -recentChunkCount);
+
+    // From older chunks, preserve first (context) and any with preserve markers
+    const preservedOlderChunks: string[] = [];
+    if (olderChunks.length > 0) {
+        preservedOlderChunks.push(olderChunks[0]); // Always keep first chunk
+
+        // Keep chunks with preserve markers
+        for (let i = 1; i < olderChunks.length; i++) {
+            if (hasPreserveMarkers(olderChunks[i])) {
+                preservedOlderChunks.push(olderChunks[i]);
+            }
+        }
+    }
+
+    // Build truncated content
+    const truncationNotice = "[Middle of conversation truncated for length]";
+    let result = [...preservedOlderChunks, truncationNotice, ...recentChunks].join(
+        "\n\n"
+    );
+
+    // If still too long, progressively remove preserved older chunks (except first)
+    let iterations = 0;
+    while (
+        estimateTokens(result, LIBRARIAN_MODEL) > maxTokens &&
+        preservedOlderChunks.length > 1 &&
+        iterations < 10
+    ) {
+        preservedOlderChunks.pop();
+        result = [...preservedOlderChunks, truncationNotice, ...recentChunks].join(
+            "\n\n"
+        );
+        iterations++;
+    }
+
+    // Final fallback: if still too long, just keep the most recent chunks
+    if (estimateTokens(result, LIBRARIAN_MODEL) > maxTokens) {
+        const fallbackChunks = recentChunks.slice(
+            -Math.max(2, Math.floor(recentChunks.length / 2))
+        );
+        result = `[Conversation heavily truncated for length]\n\n${fallbackChunks.join("\n\n")}`;
+    }
+
+    return {
+        content: result,
+        wasTruncated: true,
+        originalTokens,
+        truncatedTokens: estimateTokens(result, LIBRARIAN_MODEL),
+    };
+}
+
+/**
+ * Check if an error is a context overflow error from the gateway
+ */
+function isContextOverflowError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    const message = error.message.toLowerCase();
+    return (
+        message.includes("input is too long") ||
+        message.includes("context length") ||
+        message.includes("maximum context") ||
+        message.includes("token limit")
+    );
+}
 
 /**
  * Describe librarian operations for progressive disclosure
@@ -284,12 +434,40 @@ interface ExtractionData {
 
 /**
  * Execute extraction action
+ *
+ * Handles long conversations by:
+ * 1. Pre-truncating content to fit within model context
+ * 2. Returning degraded result (not error) for context overflow
+ * 3. Logging truncation for observability
  */
 async function executeExtract(
     params: { conversationContent: string; conversationTitle?: string },
     context: SubagentContext
 ): Promise<SubagentResult<ExtractionData>> {
     const { conversationContent, conversationTitle } = params;
+
+    // Get model context limit and calculate safe maximum for content
+    const modelConfig = getModel(LIBRARIAN_MODEL);
+    const contextLimit = modelConfig?.contextWindow ?? 200_000;
+    const maxContentTokens = Math.floor(contextLimit * CONTEXT_SAFETY_MARGIN);
+
+    // Truncate if needed
+    const truncation = truncateConversationContent(
+        conversationContent,
+        maxContentTokens
+    );
+
+    if (truncation.wasTruncated) {
+        logger.info(
+            {
+                userId: context.userId,
+                originalTokens: truncation.originalTokens,
+                truncatedTokens: truncation.truncatedTokens,
+                maxTokens: maxContentTokens,
+            },
+            "📚 Truncated conversation for librarian extraction"
+        );
+    }
 
     try {
         const agent = createLibrarianAgent();
@@ -298,16 +476,21 @@ async function executeExtract(
             ? `<conversation-topic>${conversationTitle}</conversation-topic>\n\n`
             : "";
 
+        // Add truncation notice to prompt if content was truncated
+        const truncationNotice = truncation.wasTruncated
+            ? "\n\nNote: This conversation was truncated due to length. Focus on the preserved content, especially any explicit 'remember this' requests and recent messages."
+            : "";
+
         const result = await agent.generate({
             prompt: `<user-id>${context.userId}</user-id>
 
 ${titleContext}<conversation>
-${conversationContent}
+${truncation.content}
 </conversation>
 
 Analyze this conversation and extract any worth-preserving knowledge to the knowledge base. Start by listing the current knowledge base to understand what already exists.
 
-Focus on durable information: facts about the user, decisions made, people mentioned, preferences expressed, or explicit "remember this" requests. Skip transient task help, general knowledge questions, and greetings.`,
+Focus on durable information: facts about the user, decisions made, people mentioned, preferences expressed, or explicit "remember this" requests. Skip transient task help, general knowledge questions, and greetings.${truncationNotice}`,
             abortSignal: context.abortSignal,
         });
 
@@ -383,6 +566,11 @@ Focus on durable information: facts about the user, decisions made, people menti
             }
         }
 
+        // Add truncation note to summary if content was truncated
+        if (truncation.wasTruncated) {
+            summaryText += " (Note: conversation was truncated due to length)";
+        }
+
         const data: ExtractionData = {
             extracted: extractedFlag,
             summary: summaryText,
@@ -394,6 +582,7 @@ Focus on durable information: facts about the user, decisions made, people menti
                 userId: context.userId,
                 extracted: data.extracted,
                 stepsUsed,
+                wasTruncated: truncation.wasTruncated,
             },
             data.extracted
                 ? "✅ Librarian extraction completed"
@@ -402,6 +591,43 @@ Focus on durable information: facts about the user, decisions made, people menti
 
         return successResult(data, { stepsUsed });
     } catch (error) {
+        // Handle context overflow as degraded result, not permanent error
+        if (isContextOverflowError(error)) {
+            logger.warn(
+                {
+                    userId: context.userId,
+                    originalTokens: truncation.originalTokens,
+                    truncatedTokens: truncation.truncatedTokens,
+                    error: error instanceof Error ? error.message : String(error),
+                },
+                "📚 Librarian extraction failed due to context overflow despite truncation"
+            );
+
+            Sentry.captureMessage("Librarian context overflow after truncation", {
+                level: "warning",
+                tags: {
+                    component: "librarian",
+                    action: "extract",
+                    quality: "degraded",
+                },
+                extra: {
+                    userId: context.userId,
+                    originalTokens: truncation.originalTokens,
+                    truncatedTokens: truncation.truncatedTokens,
+                },
+            });
+
+            return degradedResult<ExtractionData>(
+                {
+                    extracted: false,
+                    summary:
+                        "Could not extract knowledge - conversation too long even after truncation. Try breaking into smaller conversations.",
+                    stepsUsed: 0,
+                },
+                "Context overflow"
+            );
+        }
+
         logger.error(
             {
                 error,
@@ -981,3 +1207,14 @@ export function createLibrarianTool(context: SubagentContext) {
         },
     });
 }
+
+// Export for testing
+export {
+    truncateConversationContent,
+    isContextOverflowError,
+    hasPreserveMarkers,
+    type TruncationResult,
+    PRESERVE_PATTERNS,
+    CONTEXT_SAFETY_MARGIN,
+    LIBRARIAN_MODEL,
+};
