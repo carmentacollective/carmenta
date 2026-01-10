@@ -61,16 +61,26 @@ argument or asking which to update if no argument provided. </ecosystem-detectio
 <tooling-matrix>
 | Operation | pnpm | npm | yarn | bun | pip | poetry | uv |
 |-----------|------|-----|------|-----|-----|--------|-----|
-| Outdated | `pnpm outdated` | `npm outdated` | `yarn outdated` | `bun outdated` | `pip list --outdated` | `poetry show --outdated` | `uv pip list --outdated` |
-| Install | `pnpm install` | `npm install` | `yarn install` | `bun install` | `pip install -r requirements.txt` | `poetry install` | `uv sync` |
-| Update one | `pnpm update {pkg}` | `npm update {pkg}` | `yarn upgrade {pkg}` | `bun update {pkg}` | `pip install --upgrade {pkg}` | `poetry update {pkg}` | `uv add {pkg}@latest` |
-| Type check | `pnpm tsc --noEmit` | `npm run tsc -- --noEmit` | `yarn tsc --noEmit` | `bun tsc --noEmit` | `mypy .` (if configured) | `mypy .` | `mypy .` |
+| Outdated | `pnpm outdated` | `npm outdated` | `yarn outdated` or `yarn up -i` (v2+) | `bun outdated` | `pip list --outdated` | `poetry show --outdated` | `uv pip list --outdated` |
+| Install | `pnpm install` | `npm install` | `yarn install` | `bun install` | `pip install .` or `-r requirements.txt` | `poetry install` | `uv sync` |
+| Update one | `pnpm update {pkg}` | `npm update {pkg}` | `yarn upgrade {pkg}` (v1) or `yarn up {pkg}` (v2+) | `bun update {pkg}` | `pip install --upgrade {pkg}` | `poetry update {pkg}` | `uv add {pkg}@latest` |
+| Type check | `pnpm tsc --noEmit` | `npx tsc --noEmit` | `yarn tsc --noEmit` | `bun tsc --noEmit` | `mypy .` (if configured) | `mypy .` | `mypy .` |
 | Tests | `pnpm test` | `npm test` | `yarn test` | `bun test` | `pytest` | `pytest` | `pytest` |
+
+**Note on Yarn versions:** Detect Yarn classic vs Berry/v2+ by checking `yarn.lock` for
+`__metadata` field. Classic uses `yarn upgrade`, Berry uses `yarn up`.
+
+**Note on pip install:** Check for `requirements.txt` first. If absent but
+`pyproject.toml` exists, use `pip install .` for pyproject-only projects.
 </tooling-matrix>
 
 ## Workflow
 
 <scan>
+Before starting updates, verify the baseline: run type check and tests to confirm they
+pass. If either fails, note this and ask how to proceed—updating on a broken baseline
+makes it impossible to isolate which update caused issues.
+
 Identify all packages with available updates using the appropriate outdated command.
 Group by update type:
 
@@ -134,7 +144,7 @@ Quick wins (implement inline):
 - New API that directly replaces existing code
 - Simplified syntax for patterns we already use
 - Removal of workarounds for fixed bugs
-- 10 minutes or less of work
+- Single-file changes with clear before/after (roughly 20 lines or fewer)
 
 Medium scope (create GitHub issue):
 
