@@ -11,6 +11,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
     ArrowSquareOut,
+    ArrowsClockwise,
     CircleNotch,
     File,
     GoogleDriveLogo,
@@ -20,6 +21,7 @@ import {
     Warning,
     PlugsConnected,
 } from "@phosphor-icons/react";
+import Link from "next/link";
 
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useIntegrationToken } from "@/lib/hooks/use-integration-token";
@@ -86,6 +88,7 @@ function PickerAction({
     >("loading");
     const [selectedFile, setSelectedFile] = useState<GooglePickerFile | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [needsReconnect, setNeedsReconnect] = useState(false);
 
     // Fetch token on mount
     useEffect(() => {
@@ -100,10 +103,8 @@ function PickerAction({
                 setPickerState("ready");
             } else {
                 setPickerState("error");
-                // Don't use tokenError here - it's captured at effect start and may be stale
-                setError(
-                    "Failed to get Google access. Please reconnect the integration."
-                );
+                setNeedsReconnect(true);
+                setError("Couldn't connect to your Google account");
             }
         };
 
@@ -127,10 +128,10 @@ function PickerAction({
                 "Google file selected"
             );
 
-            // Send file info back to conversation
+            // Send file info back to conversation (file ID logged above for debugging)
             append({
                 role: "user",
-                content: `I selected "${file.name}" (${formatFileType(file.mimeType)}). File ID: ${file.id}`,
+                content: `I selected "${file.name}" (${formatFileType(file.mimeType)})`,
             });
         },
         [append, toolCallId]
@@ -147,24 +148,41 @@ function PickerAction({
         });
     }, [append, toolCallId]);
 
+    // Retry handler for cancelled state (must be declared before early returns)
+    const handleRetry = useCallback(() => {
+        setPickerState("ready");
+    }, []);
+
     // Loading state
     if (pickerState === "loading" || tokenLoading) {
         return (
             <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
                 <CircleNotch className="h-4 w-4 animate-spin text-blue-400" />
-                <span className="text-sm text-white/70">Preparing file picker...</span>
+                <span className="text-sm text-white/70">
+                    Getting your files ready...
+                </span>
             </div>
         );
     }
 
-    // Error state
+    // Error state with reconnect link when needed
     if (pickerState === "error" || error) {
         return (
-            <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
-                <Warning className="h-4 w-4 text-red-400" />
-                <span className="text-sm text-red-300">
-                    {error || "Failed to open file picker"}
-                </span>
+            <div className="flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
+                <Warning className="h-4 w-4 shrink-0 text-red-400" />
+                <div className="min-w-0 flex-1">
+                    <p className="text-sm text-red-300">
+                        {error || "Something went sideways with the file picker"}
+                    </p>
+                    {needsReconnect && (
+                        <Link
+                            href="/integrations"
+                            className="mt-1 inline-flex items-center gap-1 text-xs text-red-300/70 underline underline-offset-2 transition-colors hover:text-red-200"
+                        >
+                            Reconnect Google account
+                        </Link>
+                    )}
+                </div>
             </div>
         );
     }
@@ -195,12 +213,21 @@ function PickerAction({
         );
     }
 
-    // Cancelled state
+    // Cancelled state with retry option
     if (pickerState === "cancelled") {
         return (
-            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+            <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
                 <GoogleDriveLogo className="h-4 w-4 text-white/50" />
-                <span className="text-sm text-white/50">File selection cancelled</span>
+                <span className="flex-1 text-sm text-white/50">
+                    File selection cancelled
+                </span>
+                <button
+                    onClick={handleRetry}
+                    className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                >
+                    <ArrowsClockwise className="h-3.5 w-3.5" />
+                    Try again
+                </button>
             </div>
         );
     }
@@ -245,12 +272,19 @@ function FileCreatedConfirmation({
         slides: "Google Slides",
     };
 
+    // Explicit mapping for action text (avoids brittle string split)
+    const openInLabels = {
+        sheet: "Open in Sheets",
+        doc: "Open in Docs",
+        slides: "Open in Slides",
+    };
+
     return (
         <div className="rounded-md border border-white/10 bg-white/5 p-4">
             <div className="flex items-center gap-2 text-sm">
                 {icons[type]}
                 <span className="font-medium text-white">
-                    {typeNames[type]} created
+                    Your {typeNames[type]} is ready
                 </span>
             </div>
             <div className="mt-3 space-y-2 text-sm">
@@ -259,10 +293,10 @@ function FileCreatedConfirmation({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1.5 rounded text-blue-400 transition-colors hover:text-blue-300"
+                    className="mt-2 inline-flex items-center gap-1.5 rounded text-blue-400 transition-colors hover:text-blue-300 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                 >
                     <ArrowSquareOut className="h-3.5 w-3.5" />
-                    Open in Google {typeNames[type].split(" ")[1]}
+                    {openInLabels[type]}
                 </a>
             </div>
         </div>
@@ -270,19 +304,22 @@ function FileCreatedConfirmation({
 }
 
 /**
- * Integration not connected message
+ * Integration not connected message with direct link
  */
 function IntegrationRequired() {
     return (
         <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-            <PlugsConnected className="h-5 w-5 text-amber-400" />
+            <PlugsConnected className="h-5 w-5 shrink-0 text-amber-400" />
             <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-amber-200">
                     Google Sheets/Docs/Slides not connected
                 </p>
-                <p className="text-xs text-amber-200/70">
-                    Connect in Settings → Integrations to work with Google files
-                </p>
+                <Link
+                    href="/integrations"
+                    className="mt-1 inline-flex items-center gap-1 text-xs text-amber-200/70 underline underline-offset-2 transition-colors hover:text-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+                >
+                    Connect your Google account
+                </Link>
             </div>
         </div>
     );
