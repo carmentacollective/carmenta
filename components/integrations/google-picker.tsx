@@ -174,7 +174,7 @@ export function GooglePicker({
             )}
         >
             <GoogleDriveLogo className="h-5 w-5 text-blue-400" weight="duotone" />
-            <span className="text-sm text-white/90">Open Google Drive</span>
+            <span className="text-sm text-white/90">Choose from Google Drive</span>
         </button>
     );
 }
