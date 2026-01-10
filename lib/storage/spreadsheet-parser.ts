@@ -389,7 +389,7 @@ function formatStatistics(stats: SheetStatistics): string {
 export function spreadsheetToMarkdown(parsed: ParsedSpreadsheet): string {
     const sections = parsed.sheets.map((sheet) => {
         if (sheet.columns.length === 0) {
-            return `## Sheet: ${sheet.name}\n\n*Empty sheet*`;
+            return `## Sheet: ${escapeCell(sheet.name)}\n\n*Empty sheet*`;
         }
 
         const header = `| ${sheet.columns.map((c) => escapeCell(c.name)).join(" | ")} |`;
@@ -412,7 +412,7 @@ export function spreadsheetToMarkdown(parsed: ParsedSpreadsheet): string {
 
         const statsSection = formatStatistics(sheet.statistics);
 
-        return `## Sheet: ${sheet.name}
+        return `## Sheet: ${escapeCell(sheet.name)}
 
 **Structure:** ${structureInfo}
 **Rows:** ${sheet.rowCount}${rowNote}
@@ -424,7 +424,7 @@ ${rows}
 ${statsSection}`;
     });
 
-    return `# Spreadsheet: ${parsed.filename}
+    return `# Spreadsheet: ${escapeCell(parsed.filename)}
 
 ${sections.join("\n\n---\n\n")}`;
 }
