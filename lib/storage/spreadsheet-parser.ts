@@ -324,10 +324,15 @@ export function parseSpreadsheet(
  * Escape special characters for Markdown table cells
  * Prevents XSS and formatting injection via spreadsheet content
  */
+/** Format date consistently as YYYY-MM-DD (locale-independent) */
+function formatDate(date: Date): string {
+    return date.toISOString().split("T")[0];
+}
+
 function escapeCell(value: unknown): string {
     if (value === null || value === undefined) return "";
     if (value instanceof Date) {
-        return value.toLocaleDateString();
+        return formatDate(value);
     }
     return String(value)
         .replace(/\|/g, "\\|") // Table cell delimiter
@@ -367,7 +372,7 @@ function formatStatistics(stats: SheetStatistics): string {
     // Date range
     if (stats.dateRange) {
         sections.push(
-            `**Date Range:** ${stats.dateRange.earliest.toLocaleDateString()} to ${stats.dateRange.latest.toLocaleDateString()}`
+            `**Date Range:** ${formatDate(stats.dateRange.earliest)} to ${formatDate(stats.dateRange.latest)}`
         );
     }
 
