@@ -157,10 +157,10 @@ function ServerList({
             >
                 <PlugsIcon className="text-foreground/20 mx-auto h-10 w-10" />
                 <h3 className="text-foreground/60 mt-3 text-sm font-medium">
-                    No servers yet
+                    No servers connected
                 </h3>
                 <p className="text-foreground/40 mt-1 text-xs">
-                    Click "Let Carmenta Help" to add your first server
+                    Add a server to expand what we can do together.
                 </p>
             </div>
         );
@@ -248,7 +248,10 @@ function ServerList({
                                 )}
                                 <div className="text-foreground/40 text-right text-xs">
                                     {server.toolCount > 0 && (
-                                        <span>{server.toolCount} tools</span>
+                                        <span>
+                                            {server.toolCount}{" "}
+                                            {server.toolCount === 1 ? "tool" : "tools"}
+                                        </span>
                                     )}
                                 </div>
 
@@ -256,7 +259,7 @@ function ServerList({
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <button
-                                            className="hover:bg-foreground/10 rounded-lg p-1.5 transition-colors"
+                                            className="hover:bg-foreground/10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-colors"
                                             aria-label={`Actions for ${server.displayName}`}
                                         >
                                             <DotsThreeIcon className="text-foreground/50 h-5 w-5" />
@@ -326,12 +329,14 @@ function McpConfigContent({
     // Add server dialog state
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [newServerUrl, setNewServerUrl] = useState("");
+    const [newServerIdentifier, setNewServerIdentifier] = useState("");
     const [newServerName, setNewServerName] = useState("");
     const [addingServer, setAddingServer] = useState(false);
     const [addError, setAddError] = useState<string | null>(null);
 
     // Delete confirmation state
     const [deleteTarget, setDeleteTarget] = useState<McpServerSummary | null>(null);
+    const [deletingServer, setDeletingServer] = useState(false);
 
     const loadServers = useCallback(async () => {
         try {
@@ -432,6 +437,7 @@ function McpConfigContent({
 
     const handleDelete = useCallback(
         async (server: McpServerSummary) => {
+            setDeletingServer(true);
             try {
                 const response = await fetch(`/api/mcp/servers/${server.id}`, {
                     method: "DELETE",
@@ -452,14 +458,30 @@ function McpConfigContent({
                     tags: { component: "mcp-config-page", action: "delete_server" },
                     extra: { serverId: server.id },
                 });
+            } finally {
+                setDeletingServer(false);
             }
         },
         [loadServers]
     );
 
     const handleAddServer = useCallback(async () => {
+        // Validate required fields
+        if (!newServerIdentifier.trim()) {
+            setAddError("Identifier is required");
+            return;
+        }
         if (!newServerUrl.trim()) {
             setAddError("Server URL is required");
+            return;
+        }
+
+        // Validate identifier format
+        const identifierRegex = /^[a-z0-9][a-z0-9-_.]*$/i;
+        if (!identifierRegex.test(newServerIdentifier.trim())) {
+            setAddError(
+                "Identifier must start with a letter or number and contain only letters, numbers, hyphens, underscores, and dots"
+            );
             return;
         }
 
@@ -471,8 +493,9 @@ function McpConfigContent({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    identifier: newServerIdentifier.trim(),
                     url: newServerUrl.trim(),
-                    displayName: newServerName.trim() || undefined,
+                    displayName: newServerName.trim() || newServerIdentifier.trim(),
                 }),
             });
 
@@ -480,10 +503,13 @@ function McpConfigContent({
                 await loadServers();
                 setAddDialogOpen(false);
                 setNewServerUrl("");
+                setNewServerIdentifier("");
                 setNewServerName("");
             } else {
                 const data = await response.json().catch(() => ({}));
-                setAddError(data.error ?? "Failed to add server");
+                setAddError(
+                    data.error ?? "Couldn't add server. Check the URL and try again."
+                );
             }
         } catch (error) {
             logger.error({ error }, "Failed to add server");
@@ -494,7 +520,7 @@ function McpConfigContent({
         } finally {
             setAddingServer(false);
         }
-    }, [newServerUrl, newServerName, loadServers]);
+    }, [newServerUrl, newServerIdentifier, newServerName, loadServers]);
 
     // Count servers needing reconnection for badge
     const serversNeedingReconnect = servers.filter(
@@ -605,6 +631,7 @@ function McpConfigContent({
                     setAddDialogOpen(open);
                     if (!open) {
                         setNewServerUrl("");
+                        setNewServerIdentifier("");
                         setNewServerName("");
                         setAddError(null);
                     }
@@ -620,6 +647,27 @@ function McpConfigContent({
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <label
+                                htmlFor="server-identifier"
+                                className="text-foreground/80 text-sm font-medium"
+                            >
+                                Identifier
+                            </label>
+                            <input
+                                id="server-identifier"
+                                type="text"
+                                value={newServerIdentifier}
+                                onChange={(e) => setNewServerIdentifier(e.target.value)}
+                                placeholder="my-server"
+                                className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-base focus:outline-none"
+                            />
+                            <p className="text-foreground/40 text-xs">
+                                A unique name for this server (letters, numbers,
+                                hyphens)
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label
                                 htmlFor="server-url"
                                 className="text-foreground/80 text-sm font-medium"
                             >
@@ -631,7 +679,7 @@ function McpConfigContent({
                                 value={newServerUrl}
                                 onChange={(e) => setNewServerUrl(e.target.value)}
                                 placeholder="https://mcp.example.com"
-                                className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
+                                className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-base focus:outline-none"
                             />
                         </div>
 
@@ -649,7 +697,7 @@ function McpConfigContent({
                                 value={newServerName}
                                 onChange={(e) => setNewServerName(e.target.value)}
                                 placeholder="My MCP Server"
-                                className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
+                                className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-base focus:outline-none"
                             />
                         </div>
 
@@ -663,16 +711,22 @@ function McpConfigContent({
                     <DialogFooter className="gap-2 sm:gap-0">
                         <button
                             onClick={() => setAddDialogOpen(false)}
-                            className="text-foreground/70 hover:bg-foreground/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                            className="text-foreground/70 hover:bg-foreground/10 min-h-[44px] rounded-lg px-4 py-2 text-sm font-medium transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleAddServer}
-                            disabled={addingServer || !newServerUrl.trim()}
+                            disabled={
+                                addingServer ||
+                                !newServerUrl.trim() ||
+                                !newServerIdentifier.trim()
+                            }
                             className={cn(
-                                "flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors",
-                                addingServer || !newServerUrl.trim()
+                                "flex min-h-[44px] items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors",
+                                addingServer ||
+                                    !newServerUrl.trim() ||
+                                    !newServerIdentifier.trim()
                                     ? "cursor-not-allowed opacity-50"
                                     : "hover:bg-emerald-600"
                             )}
@@ -687,7 +741,14 @@ function McpConfigContent({
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+            <Dialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => {
+                    if (!open && !deletingServer) {
+                        setDeleteTarget(null);
+                    }
+                }}
+            >
                 <DialogContent className="p-6">
                     <DialogHeader>
                         <DialogTitle className="text-foreground text-lg font-medium">
@@ -703,14 +764,24 @@ function McpConfigContent({
                     <DialogFooter className="gap-2 sm:gap-0">
                         <button
                             onClick={() => setDeleteTarget(null)}
-                            className="text-foreground/70 hover:bg-foreground/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                            disabled={deletingServer}
+                            className="text-foreground/70 hover:bg-foreground/10 min-h-[44px] rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={() => deleteTarget && handleDelete(deleteTarget)}
-                            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600"
+                            disabled={deletingServer}
+                            className={cn(
+                                "flex min-h-[44px] items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors",
+                                deletingServer
+                                    ? "cursor-not-allowed opacity-50"
+                                    : "hover:bg-red-600"
+                            )}
                         >
+                            {deletingServer && (
+                                <CircleNotchIcon className="h-4 w-4 animate-spin" />
+                            )}
                             Remove
                         </button>
                     </DialogFooter>
