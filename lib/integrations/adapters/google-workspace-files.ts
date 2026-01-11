@@ -218,7 +218,20 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         // Get user's OAuth access token
         const tokenResult = await this.getOAuthAccessToken(userId, accountId);
         if ("content" in tokenResult) {
-            return tokenResult; // Error response
+            // Extract error message from the original error response
+            const errorMessage =
+                tokenResult.content[0]?.type === "text"
+                    ? tokenResult.content[0].text
+                    : "Integration not connected";
+
+            // Return structured error for UI to render IntegrationRequired component
+            // We use isError: false so lib/integrations/tools.ts parses the JSON response.
+            // When isError: true, tools.ts returns { error: true, message: "..." } which breaks
+            // the UI check for output.error === "integration_not_connected" (string value).
+            return this.createJSONResponse({
+                error: "integration_not_connected",
+                message: errorMessage,
+            });
         }
         const { accessToken } = tokenResult;
 
