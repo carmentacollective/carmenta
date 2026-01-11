@@ -62,6 +62,7 @@ export {
     saveMessage,
     updateMessage,
     upsertMessage,
+    upsertToolPart,
     loadMessages,
     updateStreamingStatus,
     updateActiveStreamId,
@@ -74,6 +75,7 @@ export {
     type MessageWithParts,
     type UIMessageLike,
     type UIMessagePartLike,
+    type ToolResultData,
 } from "./connections";
 
 // Re-export notification operations

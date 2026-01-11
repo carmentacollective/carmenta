@@ -30,6 +30,7 @@ import {
     createConnection,
     getConnection,
     upsertMessage,
+    upsertToolPart,
     updateStreamingStatus,
     updateActiveStreamId,
     updateConnection,
@@ -826,6 +827,14 @@ export async function POST(req: Request) {
               ]
             : systemMessages;
 
+        // Pre-generate message ID for progressive tool persistence
+        // This allows onStepFinish to persist tool results before onFinish runs
+        // IMPORTANT: onFinish must use this same ID for consistency
+        const assistantMessageId = nanoid();
+        // Track tool part order for proper reconstruction (needs let for increment)
+        // biome-ignore lint: intentionally mutable for tracking state across async callbacks
+        let toolPartOrder = 0;
+
         const result = await streamText({
             model: gateway(translateModelId(concierge.modelId)),
             // System messages include pre-executed research context if applicable
@@ -861,6 +870,71 @@ export async function POST(req: Request) {
                 if (chunk.type === "tool-result") {
                     // Write empty text to clear the transient message
                     writeStatus(transientWriter, `tool-${chunk.toolCallId}`, "");
+                }
+            },
+            // ================================================================
+            // PROGRESSIVE PERSISTENCE: Save tool results as they complete
+            // ================================================================
+            // onStepFinish fires after each step (tool execution round) completes.
+            // Persisting here prevents tool state from getting stuck in "Working"
+            // if the stream fails before onFinish.
+            // See: knowledge/components/streaming-tool-state.md
+            onStepFinish: async ({ toolCalls, toolResults }) => {
+                if (!currentConnectionId || toolResults.length === 0) return;
+
+                // Claim order range upfront to prevent race conditions with concurrent steps
+                // Each onStepFinish may run concurrently, so we atomically claim our range
+                const baseOrder = toolPartOrder;
+                toolPartOrder += toolResults.length;
+
+                try {
+                    for (let i = 0; i < toolResults.length; i++) {
+                        const toolResult = toolResults[i];
+                        // Find the matching tool call to get input
+                        const toolCall = toolCalls.find(
+                            (tc) => tc.toolCallId === toolResult.toolCallId
+                        );
+                        if (!toolCall) {
+                            logger.warn(
+                                {
+                                    toolCallId: toolResult.toolCallId,
+                                    connectionId: currentConnectionId,
+                                },
+                                "Tool result has no matching tool call - skipping persistence"
+                            );
+                            continue;
+                        }
+
+                        await upsertToolPart(
+                            currentConnectionId,
+                            assistantMessageId,
+                            {
+                                toolCallId: toolResult.toolCallId,
+                                toolName: toolCall.toolName,
+                                // AI SDK 5.0+: uses 'input' and 'output' (not 'args' and 'result')
+                                // Defensive cast - SDK types these as 'unknown' but they're always objects
+                                input: (toolCall.input ?? {}) as Record<
+                                    string,
+                                    unknown
+                                >,
+                                output: (toolResult.output ?? {}) as Record<
+                                    string,
+                                    unknown
+                                >,
+                            },
+                            baseOrder + i
+                        );
+                    }
+                } catch (error) {
+                    // Log but don't fail - onFinish will persist the final state
+                    logger.warn(
+                        {
+                            error,
+                            connectionId: currentConnectionId,
+                            messageId: assistantMessageId,
+                        },
+                        "Progressive tool persistence failed (will retry in onFinish)"
+                    );
                 }
             },
             // Enable Sentry LLM tracing via Vercel AI SDK telemetry
@@ -988,22 +1062,10 @@ export async function POST(req: Request) {
                         });
                     }
 
-                    // Get message ID from response if available, fallback to nanoid
-                    const assistantMessage = response.messages.find(
-                        (m) => m.role === "assistant"
-                    );
-                    const existingId = assistantMessage
-                        ? (assistantMessage as { id?: string }).id
-                        : undefined;
-
-                    if (!existingId) {
-                        logger.debug(
-                            { connectionId: currentConnectionId },
-                            "AI SDK did not provide message ID, generating with nanoid"
-                        );
-                    }
-
-                    const messageId = existingId ?? nanoid();
+                    // Use pre-generated message ID for consistency with onStepFinish
+                    // This ensures progressive tool persistence and final persistence
+                    // reference the same message record
+                    const messageId = assistantMessageId;
 
                     // Save assistant message
                     const uiMessage: UIMessageLike = {
@@ -1234,6 +1296,16 @@ export async function POST(req: Request) {
             },
         });
 
+        // ================================================================
+        // CONSUME STREAM: Ensure onFinish fires even if client disconnects
+        // ================================================================
+        // consumeStream() removes backpressure from the stream, allowing it to
+        // run to completion server-side regardless of client connection status.
+        // This prevents tool state from getting stuck in "Working" when the
+        // client disconnects mid-stream.
+        // See: knowledge/components/streaming-tool-state.md
+        result.consumeStream();
+
         logger.debug(
             { messageCount: messages?.length ?? 0 },
             "Connect stream initiated"
@@ -1323,6 +1395,9 @@ export async function POST(req: Request) {
                     result.toUIMessageStream({
                         originalMessages: messagesWithoutReasoning,
                         sendReasoning: concierge.reasoning.enabled,
+                        // Use pre-generated message ID so stream and DB agree on the ID
+                        // This prevents duplicate assistant messages after reload
+                        generateMessageId: () => assistantMessageId,
                     })
                 );
             },
