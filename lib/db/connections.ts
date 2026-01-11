@@ -5,7 +5,7 @@
  * Supports background saving and never-lose-data patterns.
  */
 
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 import { db } from "./client";
 import {
@@ -447,6 +447,104 @@ export async function upsertMessage(
             })
             .where(eq(connections.id, connectionId));
     });
+}
+
+/**
+ * Tool result data for progressive persistence during streaming
+ */
+export interface ToolResultData {
+    toolCallId: string;
+    toolName: string;
+    input: Record<string, unknown>;
+    output: Record<string, unknown>;
+}
+
+/**
+ * Progressively persists a tool result during streaming
+ *
+ * Called from onStepFinish to persist tool state as each tool completes,
+ * rather than waiting for onFinish. This prevents tool state from getting
+ * stuck in "Working" if the stream fails mid-execution.
+ *
+ * Creates the message record if it doesn't exist, then upserts the tool part.
+ * Uses delete-then-insert for the tool part since toolCallId is in JSONB.
+ *
+ * See: knowledge/components/streaming-tool-state.md
+ *
+ * @param connectionId - ID of the connection
+ * @param messageId - Pre-generated message ID for the assistant response
+ * @param toolResult - Tool result data to persist
+ * @param order - Order of this part within the message
+ */
+export async function upsertToolPart(
+    connectionId: number,
+    messageId: string,
+    toolResult: ToolResultData,
+    order: number
+): Promise<void> {
+    try {
+        await db.transaction(async (tx) => {
+            // Ensure message exists (upsert with conflict ignore)
+            await tx
+                .insert(messages)
+                .values({
+                    id: messageId,
+                    connectionId,
+                    role: "assistant",
+                })
+                .onConflictDoNothing({ target: messages.id });
+
+            // Delete any existing part with this toolCallId using single SQL query
+            // This avoids N+1 pattern of fetch-all-then-filter-in-JS-then-delete-one-by-one
+            await tx
+                .delete(messageParts)
+                .where(
+                    and(
+                        eq(messageParts.messageId, messageId),
+                        sql`${messageParts.toolCall}->>'toolCallId' = ${toolResult.toolCallId}`
+                    )
+                );
+
+            // Insert the new tool part with output-available state
+            await tx.insert(messageParts).values({
+                messageId,
+                order,
+                type: "tool_call",
+                toolCall: {
+                    toolName: toolResult.toolName,
+                    toolCallId: toolResult.toolCallId,
+                    state: "output_available",
+                    input: toolResult.input,
+                    output: toolResult.output,
+                },
+            });
+
+            // Update connection's last activity
+            await tx
+                .update(connections)
+                .set({ lastActivityAt: new Date() })
+                .where(eq(connections.id, connectionId));
+        });
+
+        logger.debug(
+            { connectionId, messageId, toolCallId: toolResult.toolCallId },
+            "Progressive tool state persisted"
+        );
+    } catch (error) {
+        // Log with full context at point of failure, then re-throw for caller to handle
+        logger.error(
+            {
+                error,
+                connectionId,
+                messageId,
+                toolCallId: toolResult.toolCallId,
+                toolName: toolResult.toolName,
+                order,
+            },
+            "Failed to persist tool state"
+        );
+        throw error;
+    }
 }
 
 /**
