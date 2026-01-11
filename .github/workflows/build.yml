@@ -228,12 +228,12 @@ jobs:
           du -sh .next
 
           # Verify worker build
-          if [ ! -f "dist/worker/index.js" ] || [ ! -f "dist/worker/workflows.js" ]; then
+          if [ ! -f "dist/worker/index.cjs" ] || [ ! -f "dist/worker/workflows.cjs" ]; then
             echo "❌ Error: Worker build files not found"
             exit 1
           fi
           echo "✅ Worker build successful! Files:"
-          ls -la dist/worker/*.js
+          ls -la dist/worker/*.cjs
 
       - name: 📊 Analyze bundle size
         id: bundle
