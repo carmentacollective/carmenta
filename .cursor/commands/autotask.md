@@ -1,7 +1,7 @@
 ---
 # prettier-ignore
-description: "Execute development task autonomously from description to PR-ready - handles implementation, testing, and git workflow without supervision"
-version: 1.2.1
+description: "Autonomous end-to-end task execution: implement feature, fix bug, or build functionality from description to merged PR without supervision. Use when you want hands-off development, 'just do it', or 'take it from here'."
+version: 1.2.2
 ---
 
 # /autotask - Autonomous Task Execution
