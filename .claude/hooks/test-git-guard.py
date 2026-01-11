@@ -363,6 +363,20 @@ def test_confirmation_flag_parsing():
         "GITGUARD_CONFIRMED=1 FOO=bar git push origin main → allowed"
     )
 
+    # cd && ... prefix (common for worktrees)
+    exit_code, _, _ = run_hook("cd /repo && GITGUARD_CONFIRMED=1 git push origin main")
+    results.check(
+        exit_code == 0,
+        "cd /repo && GITGUARD_CONFIRMED=1 git push origin main → allowed"
+    )
+
+    # Confirmation after command separator
+    exit_code, _, _ = run_hook("cd /tmp ; GITGUARD_CONFIRMED=1 git push origin master")
+    results.check(
+        exit_code == 0,
+        "cd /tmp ; GITGUARD_CONFIRMED=1 git push → allowed (semicolon separator)"
+    )
+
     return results
 
 

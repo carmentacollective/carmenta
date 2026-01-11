@@ -57,17 +57,25 @@ def has_confirmation_flag(command: str) -> bool:
 
     Examples:
         "GITGUARD_CONFIRMED=1 git push origin main" → True
+        "cd /repo && GITGUARD_CONFIRMED=1 git push origin main" → True
         "git push origin main" → False
     """
     try:
         tokens = shlex.split(command)
-        # Check first few tokens for the env var pattern
-        for token in tokens[:3]:  # Only check beginning of command
+
+        # Scan tokens up to the git command, handling cd && ... prefixes
+        # We need to check env vars that appear before 'git', even if there's
+        # a cd or other command before them (e.g., "cd /repo && GITGUARD_CONFIRMED=1 git push")
+        for i, token in enumerate(tokens):
             if token == "GITGUARD_CONFIRMED=1":
                 return True
-            # Stop at first non-env-var token
-            if "=" not in token:
+            # Stop searching once we hit the actual git command
+            if token == "git":
                 break
+            # Continue past command separators like &&
+            if token in ("&&", "||", ";"):
+                continue
+
         return False
     except ValueError:
         return False
