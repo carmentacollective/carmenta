@@ -61,8 +61,8 @@ async function build() {
             // Temporal native bindings
             "@temporalio/core-bridge",
             "@temporalio/worker",
-            // Workflows are bundled separately
-            "./workflows",
+            // Workflows are bundled separately (must match require.resolve path exactly)
+            "./workflows.cjs",
             ...nodeExternals,
         ],
     });
