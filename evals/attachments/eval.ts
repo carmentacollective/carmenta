@@ -474,6 +474,132 @@ const testData: TestCase[] = [
         },
         tags: ["text", "markdown"],
     },
+
+    // ============================================================
+    // DOCLING TEST CASES
+    // These test document extraction scenarios that benefit from
+    // Docling processing vs native model handling
+    // ============================================================
+
+    // WORD DOCUMENT TESTS
+    {
+        input: {
+            id: "docx-extract-content",
+            description: "Word document should be processed and content extracted",
+            prompt: "What is this document about? Summarize the key points.",
+            fileType: "text",
+            fixturePath: "sample.docx",
+            mimeType:
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        },
+        expected: {
+            shouldSucceed: true,
+            responseIndicates: "markdown", // sample.md converted to docx mentions markdown
+        },
+        tags: ["docx", "docling", "word"],
+    },
+
+    // LARGE DOCUMENT TESTS (inline for now, will use PDF when Docling integrated)
+    {
+        input: {
+            id: "large-doc-chapters",
+            description: "Large document with chapters should have structure extracted",
+            prompt: "What chapters are in this document? List them.",
+            fileType: "text",
+            fixturePath: "large-document.md",
+            mimeType: "text/markdown",
+            sendAsInline: true,
+        },
+        expected: {
+            shouldSucceed: true,
+            responseIndicates: "Chapter", // Document has Chapter 1, 2, 3, etc.
+        },
+        tags: ["large", "structure", "docling"],
+    },
+    {
+        input: {
+            id: "large-doc-specific-section",
+            description: "Should retrieve specific section from large document",
+            prompt: "What does the document say about token cost savings?",
+            fileType: "text",
+            fixturePath: "large-document.md",
+            mimeType: "text/markdown",
+            sendAsInline: true,
+        },
+        expected: {
+            shouldSucceed: true,
+            responseIndicates: "83%", // Key finding: 83% cost reduction
+        },
+        tags: ["large", "retrieval", "docling"],
+    },
+
+    // TABLE EXTRACTION TESTS
+    {
+        input: {
+            id: "table-extract-metrics",
+            description: "Should extract data from complex tables",
+            prompt: "What was the Q4 revenue for North America according to the table?",
+            fileType: "text",
+            fixturePath: "complex-tables.md",
+            mimeType: "text/markdown",
+            sendAsInline: true,
+        },
+        expected: {
+            shouldSucceed: true,
+            responseIndicates: "3.1M", // Q4 North America revenue
+        },
+        tags: ["tables", "extraction", "docling"],
+    },
+    {
+        input: {
+            id: "table-extract-comparison",
+            description: "Should compare values across table columns",
+            prompt: "Which region had the highest year-over-year growth?",
+            fileType: "text",
+            fixturePath: "complex-tables.md",
+            mimeType: "text/markdown",
+            sendAsInline: true,
+        },
+        expected: {
+            shouldSucceed: true,
+            responseIndicates: "Asia Pacific", // +23.4% is highest
+        },
+        tags: ["tables", "comparison", "docling"],
+    },
+    {
+        input: {
+            id: "table-extract-kpis",
+            description: "Should extract KPI status from dashboard table",
+            prompt: "Which KPIs exceeded their targets according to the metrics dashboard?",
+            fileType: "text",
+            fixturePath: "complex-tables.md",
+            mimeType: "text/markdown",
+            sendAsInline: true,
+        },
+        expected: {
+            shouldSucceed: true,
+            responseIndicates: "MRR", // MRR Growth exceeded target
+        },
+        tags: ["tables", "kpi", "docling"],
+    },
+
+    // MULTI-TABLE DOCUMENT TEST
+    {
+        input: {
+            id: "multi-table-summary",
+            description: "Should summarize document with multiple tables",
+            prompt: "How many tables are in this financial report and what do they cover?",
+            fileType: "text",
+            fixturePath: "complex-tables.md",
+            mimeType: "text/markdown",
+            sendAsInline: true,
+        },
+        expected: {
+            shouldSucceed: true,
+            responseIndicates: "Revenue", // Should mention revenue breakdown table
+        },
+        tags: ["tables", "summary", "docling"],
+    },
 ];
 
 /**

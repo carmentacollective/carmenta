@@ -70,17 +70,26 @@ function isTextFile(mimeType: string): boolean {
 }
 
 /** Filter files to those that should be sent as attachments */
-function getFilesToSend<T extends { mediaType: string }>(files: T[]): T[] {
-    return files.filter((f) => !isTextFile(f.mediaType) && !isSpreadsheet(f.mediaType));
+function getFilesToSend<T extends { mediaType: string; parsedContent?: string }>(
+    files: T[]
+): T[] {
+    // Exclude:
+    // - Text files (pasted into message)
+    // - Files with parsed content (spreadsheets, PDFs, DOCX - content is in message)
+    return files.filter((f) => !isTextFile(f.mediaType) && !f.parsedContent);
 }
 
-/** Extract and join parsed content from spreadsheet uploads */
-function extractSpreadsheetContent(
-    files: { mediaType: string; parsedContent?: string }[]
+/** Extract and join parsed content from uploaded files */
+function extractParsedContent(
+    files: { mediaType: string; parsedContent?: string; name: string }[]
 ): string {
-    return files
-        .filter((f) => isSpreadsheet(f.mediaType) && f.parsedContent)
-        .map((f) => f.parsedContent)
+    // Any file with parsed content (spreadsheets, PDFs, DOCX via Docling, etc.)
+    // gets its content extracted and prepended to the message
+    const withContent = files.filter((f) => f.parsedContent);
+    if (withContent.length === 0) return "";
+
+    return withContent
+        .map((f) => `## ${f.name}\n\n${f.parsedContent}`)
         .join("\n\n---\n\n");
 }
 
@@ -479,14 +488,14 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Haptic feedback on send
             triggerHaptic();
 
-            // Extract parsed content from spreadsheet files
-            // Spreadsheets are parsed to Markdown on upload for LLM consumption
-            const spreadsheetContent = extractSpreadsheetContent(completedFiles);
+            // Extract parsed content from documents (spreadsheets, PDFs, DOCX)
+            // These are parsed/extracted to Markdown on upload for LLM consumption
+            const documentContent = extractParsedContent(completedFiles);
 
-            // Build final message content with spreadsheet data prepended
+            // Build final message content with document data prepended
             const userText = input.trim();
-            const message = spreadsheetContent
-                ? `${spreadsheetContent}\n\n---\n\n${userText}`
+            const message = documentContent
+                ? `${documentContent}\n\n---\n\n${userText}`
                 : userText;
 
             lastSentMessageRef.current = userText; // Store original text for stop behavior
@@ -613,15 +622,15 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 const userText = input.trim();
                 setInput("");
 
-                // Extract parsed content from spreadsheet files for interrupt message
-                const spreadsheetContent = extractSpreadsheetContent(completedFiles);
+                // Extract parsed content from documents for interrupt message
+                const documentContent = extractParsedContent(completedFiles);
 
-                const messageContent = spreadsheetContent
-                    ? `${spreadsheetContent}\n\n---\n\n${userText}`
+                const messageContent = documentContent
+                    ? `${documentContent}\n\n---\n\n${userText}`
                     : userText;
 
                 // Filter to files that can be sent as attachments
-                // (excludes text files and spreadsheets - their content is in the message)
+                // (excludes text files and documents with parsed content)
                 const filesToSend = getFilesToSend(completedFiles);
 
                 try {
