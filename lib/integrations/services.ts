@@ -209,9 +209,8 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
     // NOTE: No adapter exists - this is for OAuth token acquisition/testing only
     {
         id: "google-internal",
-        name: "Google (Full Access - Internal)",
-        description:
-            "Full Google access for internal testing only (OAuth token acquisition)",
+        name: "Google Workspace",
+        description: "Access Gmail, Google Drive, Calendar, Contacts, and Photos",
         logo: "/logos/google-internal.svg",
         authMethod: "oauth",
         status: "internal",
