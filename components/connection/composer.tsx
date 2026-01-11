@@ -48,6 +48,10 @@ import { useConnectionSafe } from "./connection-context";
 import { DraftRecoveryBanner } from "./draft-recovery-banner";
 import { UploadProgressDisplay } from "./upload-progress";
 import { MessageQueueDisplay } from "./message-queue-display";
+import {
+    SyntaxHighlightInput,
+    type SyntaxHighlightInputHandle,
+} from "./syntax-highlight-input";
 
 export interface ComposerProps {
     /** Callback to mark a message as stopped (for visual indicator) */
@@ -113,7 +117,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
     // Safe version - works outside ConnectionProvider (e.g., CarmentaSheet)
     const connectionContext = useConnectionSafe();
     const activeConnectionId = connectionContext?.activeConnectionId ?? null;
-    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const inputRef = useRef<SyntaxHighlightInputHandle>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const isMobile = useIsMobile();
     const { trigger: triggerHaptic } = useHapticFeedback();
@@ -406,7 +410,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
     // Pattern: reset to auto → measure scrollHeight → set explicit height
     useEffect(() => {
         const textarea = inputRef.current;
-        if (!textarea) return;
+        if (!textarea?.style) return;
 
         // Reset height to auto so scrollHeight reflects actual content
         textarea.style.height = "auto";
@@ -834,7 +838,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     shouldFlash && "ring-primary/40 ring-2"
                 )}
             >
-                <textarea
+                <SyntaxHighlightInput
                     ref={inputRef}
                     value={input}
                     onChange={handleInputChangeWithEngagement}
@@ -852,15 +856,11 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                         // IME composition ends before value updates, defer flag reset
                         setTimeout(() => setIsComposing(false), 0);
                     }}
-                    placeholder="Message Carmenta..."
-                    // Mobile: enterKeyHint="enter" shows "return" key (creates newlines)
-                    // Desktop: enterKeyHint="send" shows "send" key (though desktop keyboards ignore this)
-                    // This provides proper visual affordance - users see "return" and expect newlines
-                    enterKeyHint={isMobile ? "enter" : "send"}
                     // Prevent aggressive autocorrect/capitalize on mobile that can disrupt coding
                     autoCapitalize="sentences"
                     autoCorrect="off"
                     spellCheck={false}
+                    rotatePlaceholders={true}
                     className={cn(
                         // Layout - use container queries for width responsiveness
                         "w-full flex-none resize-none @md:flex-1",
@@ -881,7 +881,6 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                         // Multi-line gets slightly darker bg
                         /\n/.test(input) && "bg-background/30"
                     )}
-                    rows={1}
                     data-testid="composer-input"
                 />
 

@@ -136,6 +136,10 @@ export interface SyntaxHighlightInputHandle {
     get selectionStart(): number;
     get selectionEnd(): number;
     get value(): string;
+    /** For auto-resize: access underlying element's scrollHeight */
+    get scrollHeight(): number;
+    /** For auto-resize: access underlying element's style */
+    get style(): CSSStyleDeclaration | undefined;
 }
 
 export interface SyntaxHighlightInputProps extends Omit<
@@ -196,6 +200,12 @@ export const SyntaxHighlightInput = forwardRef<
             },
             get value() {
                 return textareaRef.current?.value ?? "";
+            },
+            get scrollHeight() {
+                return textareaRef.current?.scrollHeight ?? 0;
+            },
+            get style() {
+                return textareaRef.current?.style;
             },
         }));
 
