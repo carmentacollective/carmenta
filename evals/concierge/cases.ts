@@ -662,6 +662,7 @@ export const conciergeTestData: ConciergeTestCase[] = [
             category: "modifiers",
         },
         expected: {
+            model: "opus|sonnet",
             reasoningEnabled: true,
         },
         tags: ["modifiers", "inline", "override"],

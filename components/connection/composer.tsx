@@ -860,6 +860,8 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     autoCapitalize="sentences"
                     autoCorrect="off"
                     spellCheck={false}
+                    // Mobile keyboard hint: "Return" on mobile, "Send" on desktop
+                    enterKeyHint={isMobile ? "enter" : "send"}
                     rotatePlaceholders={true}
                     className={cn(
                         // Layout - use container queries for width responsiveness

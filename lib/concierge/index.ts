@@ -660,8 +660,10 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                                 ),
                             };
                         } else if (parsedModifiers.reasoning === "quick") {
+                            // #quick forces fast model AND disables reasoning
                             conciergeResult = {
                                 ...conciergeResult,
+                                modelId: "anthropic/claude-haiku-4.5",
                                 reasoning: { enabled: false },
                             };
                         }
