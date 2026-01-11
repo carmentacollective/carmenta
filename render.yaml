@@ -113,7 +113,7 @@ services:
     region: oregon
     plan: starter
     buildCommand: pnpm install --frozen-lockfile && pnpm run build:worker
-    startCommand: node dist/worker/index.js
+    startCommand: node dist/worker/index.cjs
     autoDeploy: true
     envVars:
       - fromGroup: carmenta-oauth-credentials
