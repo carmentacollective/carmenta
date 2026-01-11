@@ -57,6 +57,7 @@ async function build() {
     await esbuild.build({
         ...commonConfig,
         entryPoints: [resolve(process.cwd(), "worker/index.ts")],
+        outfile: resolve(outdir, "index.cjs"),
         external: [
             // Temporal native bindings
             "@temporalio/core-bridge",
@@ -78,7 +79,7 @@ async function build() {
             "process.env.NODE_ENV": '"production"',
         },
         entryPoints: [resolve(process.cwd(), "worker/workflows/index.ts")],
-        outfile: resolve(outdir, "workflows.js"),
+        outfile: resolve(outdir, "workflows.cjs"),
         external: [
             // Temporal workflow API
             "@temporalio/workflow",

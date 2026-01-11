@@ -52,7 +52,7 @@ async function run() {
         connection,
         namespace: "default",
         taskQueue: "scheduled-agents",
-        workflowsPath: require.resolve("./workflows"),
+        workflowsPath: require.resolve("./workflows.cjs"),
         activities,
     });
 
