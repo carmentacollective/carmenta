@@ -173,14 +173,14 @@ export async function sendPushNotification(
 
                 span.setAttribute("push.subscription_count", subscriptions.length);
 
-                // Prepare payload
+                // Prepare payload (spread data first so explicit fields take precedence)
                 const payload = JSON.stringify({
+                    ...notification.data,
                     title: notification.title,
                     body: notification.body,
                     icon: notification.icon ?? "/logos/icon-transparent-192.png",
                     url: notification.url ?? "/",
                     actions: notification.actions ?? [],
-                    ...notification.data,
                 });
 
                 // Send to all subscriptions in parallel
