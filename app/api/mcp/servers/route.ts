@@ -17,6 +17,7 @@ import {
     serverErrorResponse,
     validationErrorResponse,
 } from "@/lib/api/responses";
+import { parseAuthHeaders } from "@/lib/mcp/auth-helpers";
 
 /**
  * Schema for creating an MCP server
@@ -116,25 +117,8 @@ export async function POST(request: NextRequest) {
 
         const { identifier, displayName, url, transport, headers } = parseResult.data;
 
-        // Determine auth type from headers
-        let authType: "none" | "bearer" | "header" = "none";
-        let token: string | undefined;
-        let authHeaderName: string | undefined;
-
-        if (headers && Object.keys(headers).length > 0) {
-            // Check for Bearer token in Authorization header
-            const authHeader = headers["Authorization"] || headers["authorization"];
-            if (authHeader?.startsWith("Bearer ")) {
-                authType = "bearer";
-                token = authHeader.slice(7); // Remove "Bearer " prefix
-            } else {
-                // Use the first header as custom header auth
-                const [headerName, headerValue] = Object.entries(headers)[0];
-                authType = "header";
-                authHeaderName = headerName;
-                token = headerValue;
-            }
-        }
+        // Parse auth configuration from headers
+        const { authType, token, authHeaderName } = parseAuthHeaders(headers);
 
         // Create the server
         const server = await createMcpServer({

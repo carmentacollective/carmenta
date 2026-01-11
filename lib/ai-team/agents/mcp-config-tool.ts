@@ -18,6 +18,7 @@ import { z } from "zod";
 
 import { logger } from "@/lib/logger";
 import { getConnectedServices } from "@/lib/integrations/connection-manager";
+import { parseAuthHeaders } from "@/lib/mcp/auth-helpers";
 import { getServicesWithStatus } from "@/lib/actions/integrations";
 import {
     type SubagentResult,
@@ -389,25 +390,8 @@ async function executeCreate(
         // Import the db function
         const { createMcpServer } = await import("@/lib/db/mcp-servers");
 
-        // Determine auth type from headers
-        let authType: "none" | "bearer" | "header" = "none";
-        let token: string | undefined;
-        let authHeaderName: string | undefined;
-
-        if (headers && Object.keys(headers).length > 0) {
-            // Check for Bearer token in Authorization header
-            const authHeader = headers["Authorization"] || headers["authorization"];
-            if (authHeader?.startsWith("Bearer ")) {
-                authType = "bearer";
-                token = authHeader.slice(7); // Remove "Bearer " prefix
-            } else {
-                // Use the first header as custom header auth
-                const [headerName, headerValue] = Object.entries(headers)[0];
-                authType = "header";
-                authHeaderName = headerName;
-                token = headerValue;
-            }
-        }
+        // Parse auth configuration from headers
+        const { authType, token, authHeaderName } = parseAuthHeaders(headers);
 
         // Create the server
         const server = await createMcpServer({
@@ -505,9 +489,27 @@ function validateMcpParams(
         case "create":
             if (!params.identifier)
                 return { valid: false, error: "identifier is required" };
+            // Validate identifier format (must match API schema)
+            if (!/^[a-z0-9][a-z0-9-_.]*$/i.test(params.identifier)) {
+                return {
+                    valid: false,
+                    error: "identifier must start with alphanumeric and contain only letters, numbers, hyphens, underscores, and dots",
+                };
+            }
             if (!params.url) return { valid: false, error: "url is required" };
+            // Validate URL format and protocol
             try {
-                new URL(params.url);
+                const parsedUrl = new URL(params.url);
+                // Require HTTPS in production for security
+                if (
+                    parsedUrl.protocol !== "https:" &&
+                    process.env.NODE_ENV === "production"
+                ) {
+                    return {
+                        valid: false,
+                        error: "MCP servers must use HTTPS in production",
+                    };
+                }
             } catch {
                 return { valid: false, error: "url must be a valid URL" };
             }
