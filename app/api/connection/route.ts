@@ -874,8 +874,15 @@ export async function POST(req: Request) {
                                 toolCallId: toolResult.toolCallId,
                                 toolName: toolCall.toolName,
                                 // AI SDK 5.0+: uses 'input' and 'output' (not 'args' and 'result')
-                                input: toolCall.input as Record<string, unknown>,
-                                output: toolResult.output as Record<string, unknown>,
+                                // Defensive cast - SDK types these as 'unknown' but they're always objects
+                                input: (toolCall.input ?? {}) as Record<
+                                    string,
+                                    unknown
+                                >,
+                                output: (toolResult.output ?? {}) as Record<
+                                    string,
+                                    unknown
+                                >,
                             },
                             baseOrder + i
                         );
