@@ -52,6 +52,7 @@ import { getMcpGatewayTools } from "@/lib/mcp/gateway";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
 import { createImageArtistTool } from "@/lib/ai-team/agents/image-artist-tool";
+import { createLibrarianTool } from "@/lib/ai-team/agents/librarian-tool";
 import { createSmsUserTool } from "@/lib/ai-team/agents/sms-user-tool";
 import { postResponseTools } from "@/lib/tools/post-response";
 import {
@@ -636,6 +637,14 @@ export async function POST(req: Request) {
             userEmail: userEmail!,
         });
 
+        // Create Librarian tool for explicit KB updates
+        // Enables "remember this", "save that", etc. - explicit user requests to update KB
+        // Post-hoc extraction still runs for implicit knowledge capture
+        const librarianTool = createLibrarianTool({
+            userId: dbUser.id,
+            userEmail: userEmail!,
+        });
+
         // Discovery mode is disabled until we refine the experience
         // It was interrupting substantive responses and degrading quality
         // TODO: Re-enable when discovery is less intrusive
@@ -650,6 +659,7 @@ export async function POST(req: Request) {
             ...postResponseTools,
             searchKnowledge: searchKnowledgeTool,
             imageArtist: imageArtistTool,
+            librarian: librarianTool,
             smsUser: smsUserTool,
             ...discoveryTools,
         };
