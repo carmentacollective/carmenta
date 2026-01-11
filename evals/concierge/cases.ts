@@ -27,6 +27,7 @@ export interface ConciergeTestInput {
         | "sensitivity"
         | "attachments"
         | "hints"
+        | "modifiers"
         | "edge-cases"
         | "context"
         | "signals";
@@ -512,6 +513,171 @@ export const conciergeTestData: ConciergeTestCase[] = [
             reasoningEnabled: true,
         },
         tags: ["edge-cases", "mixed-signals"],
+    },
+
+    // EXPLICIT MODIFIERS - Hashtag-based overrides (highest priority)
+    // These are explicit user commands, not inferred from natural language.
+    // The concierge should honor #modifiers as hard overrides.
+    {
+        input: {
+            id: "modifier-ultrathink",
+            description: "#ultrathink forces maximum reasoning depth",
+            query: "#ultrathink What's 2+2?",
+            category: "modifiers",
+        },
+        expected: {
+            model: "opus|sonnet",
+            reasoningEnabled: true,
+        },
+        tags: ["modifiers", "reasoning", "override"],
+    },
+    {
+        input: {
+            id: "modifier-ultrathink-complex",
+            description: "#ultrathink with complex query enables deep reasoning",
+            query: "#ultrathink Analyze the implications of quantum computing on current encryption standards",
+            category: "modifiers",
+        },
+        expected: {
+            model: "opus",
+            reasoningEnabled: true,
+        },
+        tags: ["modifiers", "reasoning", "override"],
+    },
+    {
+        input: {
+            id: "modifier-quick",
+            description: "#quick forces fast model regardless of query complexity",
+            query: "#quick Explain the entire history of computing",
+            category: "modifiers",
+        },
+        expected: {
+            model: "haiku",
+            reasoningEnabled: false,
+        },
+        tags: ["modifiers", "speed", "override"],
+    },
+    {
+        input: {
+            id: "modifier-opus",
+            description: "#opus forces Opus model",
+            query: "#opus What time is it in Paris?",
+            category: "modifiers",
+        },
+        expected: {
+            model: "opus",
+        },
+        tags: ["modifiers", "model-override"],
+    },
+    {
+        input: {
+            id: "modifier-sonnet",
+            description: "#sonnet forces Sonnet model",
+            query: "#sonnet Explain quantum entanglement",
+            category: "modifiers",
+        },
+        expected: {
+            model: "sonnet",
+        },
+        tags: ["modifiers", "model-override"],
+    },
+    {
+        input: {
+            id: "modifier-haiku",
+            description: "#haiku forces Haiku model",
+            query: "#haiku Analyze this complex distributed system architecture",
+            category: "modifiers",
+        },
+        expected: {
+            model: "haiku",
+        },
+        tags: ["modifiers", "model-override"],
+    },
+    {
+        input: {
+            id: "modifier-grok",
+            description: "#grok forces Grok model",
+            query: "#grok What's the weather like?",
+            category: "modifiers",
+        },
+        expected: {
+            model: "grok",
+        },
+        tags: ["modifiers", "model-override"],
+    },
+    {
+        input: {
+            id: "modifier-gemini",
+            description: "#gemini forces Gemini model",
+            query: "#gemini Summarize this text",
+            category: "modifiers",
+        },
+        expected: {
+            model: "gemini",
+        },
+        tags: ["modifiers", "model-override"],
+    },
+    {
+        input: {
+            id: "modifier-creative",
+            description: "#creative forces high temperature",
+            query: "#creative Write a factual report about climate change",
+            category: "modifiers",
+        },
+        expected: {
+            temperatureRange: [0.7, 1.0],
+        },
+        tags: ["modifiers", "temperature", "override"],
+    },
+    {
+        input: {
+            id: "modifier-precise",
+            description: "#precise forces low temperature",
+            query: "#precise Write a creative poem about love",
+            category: "modifiers",
+        },
+        expected: {
+            temperatureRange: [0.0, 0.3],
+        },
+        tags: ["modifiers", "temperature", "override"],
+    },
+    {
+        input: {
+            id: "modifier-multiple",
+            description: "Multiple modifiers: #opus #ultrathink",
+            query: "#opus #ultrathink What's 1+1?",
+            category: "modifiers",
+        },
+        expected: {
+            model: "opus",
+            reasoningEnabled: true,
+        },
+        tags: ["modifiers", "multiple", "override"],
+    },
+    {
+        input: {
+            id: "modifier-inline",
+            description: "Modifier inline within query",
+            query: "I need help with #ultrathink debugging this code",
+            category: "modifiers",
+        },
+        expected: {
+            reasoningEnabled: true,
+        },
+        tags: ["modifiers", "inline", "override"],
+    },
+    {
+        input: {
+            id: "modifier-case-insensitive",
+            description: "Modifiers should be case-insensitive",
+            query: "#ULTRATHINK #Opus solve this puzzle",
+            category: "modifiers",
+        },
+        expected: {
+            model: "opus",
+            reasoningEnabled: true,
+        },
+        tags: ["modifiers", "case-insensitive", "override"],
     },
 
     // TITLE QUALITY TESTS - Focus on title generation
