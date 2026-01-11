@@ -31,7 +31,7 @@ import {
     PlugsIcon,
     KeyIcon,
     ArrowsClockwiseIcon,
-    ArrowRightIcon,
+    ArrowElbowDownLeftIcon,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Sentry from "@sentry/nextjs";
@@ -258,7 +258,7 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
         if (!textarea) return;
         textarea.style.height = "auto";
         textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-    }, [inputValue, inputRef]);
+    }, [inputValue]);
 
     // Cleanup timeout on unmount to prevent setState on unmounted component
     useEffect(() => {
@@ -339,7 +339,6 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
         .trim();
 
     const hasResponse = !!lastAssistantMessage;
-    const isComplete = hasResponse && !isLoading;
 
     const handleSubmit = useCallback(
         async (e?: React.FormEvent) => {
@@ -477,7 +476,10 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
                                 )}
                                 aria-label="Connect server"
                             >
-                                <ArrowRightIcon className="h-4 w-4" weight="bold" />
+                                <ArrowElbowDownLeftIcon
+                                    className="h-4 w-4"
+                                    weight="bold"
+                                />
                             </button>
                         )}
                     </div>
@@ -617,7 +619,7 @@ function ServerList({
                     No servers yet
                 </h3>
                 <p className="text-foreground/40 mt-1 text-xs">
-                    Add your first—paste a URL, JSON config, or describe the connection
+                    Paste a URL, JSON, or describe what to connect—we'll handle the rest
                 </p>
             </div>
         );
