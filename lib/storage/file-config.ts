@@ -29,7 +29,11 @@ export const ALLOWED_MIME_TYPES = {
         "video/quicktime", // .mov files
         "video/x-msvideo", // .avi files
     ],
-    document: ["application/pdf"],
+    document: [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
+    ],
     spreadsheet: [
         // Modern Excel (.xlsx)
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -156,5 +160,5 @@ export function formatFileSizeDetailed(bytes: number): string {
  * Human-readable list of supported formats
  */
 export function getSupportedFormatsMessage(): string {
-    return "Images (JPEG, PNG, GIF, WebP), PDFs, spreadsheets (XLSX, XLS, CSV), audio (MP3, WAV, etc.), or video (MP4, WebM, MOV)";
+    return "Images (JPEG, PNG, GIF, WebP), documents (PDF, DOCX, PPTX), spreadsheets (XLSX, XLS, CSV), audio (MP3, WAV, etc.), or video (MP4, WebM, MOV)";
 }

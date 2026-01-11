@@ -250,7 +250,8 @@ export function FileAttachmentProvider({ children }: { children: ReactNode }) {
         (u) =>
             u.status === "validating" ||
             u.status === "optimizing" ||
-            u.status === "uploading"
+            u.status === "uploading" ||
+            u.status === "extracting" // Block send during document extraction (can take several seconds)
     );
 
     const completedFiles = pendingFiles
