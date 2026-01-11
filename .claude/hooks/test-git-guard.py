@@ -377,6 +377,20 @@ def test_confirmation_flag_parsing():
         "cd /tmp ; GITGUARD_CONFIRMED=1 git push → allowed (semicolon separator)"
     )
 
+    # Security test: flag AFTER command (suffix bypass attempt) should be blocked
+    exit_code, _, stderr = run_hook("gh pr merge 123 GITGUARD_CONFIRMED=1")
+    results.check(
+        exit_code == 2,
+        "gh pr merge 123 GITGUARD_CONFIRMED=1 → blocked (suffix bypass attempt)"
+    )
+
+    # Same for git
+    exit_code, _, stderr = run_hook("git push origin main GITGUARD_CONFIRMED=1")
+    results.check(
+        exit_code == 2,
+        "git push origin main GITGUARD_CONFIRMED=1 → blocked (suffix bypass attempt)"
+    )
+
     return results
 
 

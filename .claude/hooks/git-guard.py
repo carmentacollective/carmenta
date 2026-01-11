@@ -63,14 +63,15 @@ def has_confirmation_flag(command: str) -> bool:
     try:
         tokens = shlex.split(command)
 
-        # Scan tokens up to the git command, handling cd && ... prefixes
-        # We need to check env vars that appear before 'git', even if there's
+        # Scan tokens up to the git/gh command, handling cd && ... prefixes
+        # We need to check env vars that appear before 'git' or 'gh', even if there's
         # a cd or other command before them (e.g., "cd /repo && GITGUARD_CONFIRMED=1 git push")
         for i, token in enumerate(tokens):
             if token == "GITGUARD_CONFIRMED=1":
                 return True
-            # Stop searching once we hit the actual git command
-            if token == "git":
+            # Stop searching once we hit the actual git or gh command
+            # This prevents suffix bypass like "gh pr merge 123 GITGUARD_CONFIRMED=1"
+            if token in ("git", "gh"):
                 break
             # Continue past command separators like &&
             if token in ("&&", "||", ";"):
