@@ -9,6 +9,7 @@
  * - list: List connected integrations and their status
  * - test: Test a specific integration's connectivity
  * - guide: Get guidance on setting up a new integration
+ * - create: Add a new MCP server configuration
  */
 
 import { tool } from "ai";
@@ -17,6 +18,7 @@ import { z } from "zod";
 
 import { logger } from "@/lib/logger";
 import { getConnectedServices } from "@/lib/integrations/connection-manager";
+import { parseAuthHeaders } from "@/lib/mcp/auth-helpers";
 import { getServicesWithStatus } from "@/lib/actions/integrations";
 import {
     type SubagentResult,
@@ -79,6 +81,40 @@ function describeOperations(): SubagentDescription {
                         type: "string",
                         description: "Service to get setup guidance for",
                         required: true,
+                    },
+                ],
+            },
+            {
+                name: "create",
+                description:
+                    "Add a new MCP server configuration. Use this when the user provides MCP server details (URL, headers, etc.).",
+                params: [
+                    {
+                        name: "identifier",
+                        type: "string",
+                        description:
+                            "Unique identifier for the server (e.g., 'machina', 'my-custom-server')",
+                        required: true,
+                    },
+                    {
+                        name: "displayName",
+                        type: "string",
+                        description:
+                            "Human-readable name for display (defaults to identifier if not provided)",
+                        required: false,
+                    },
+                    {
+                        name: "url",
+                        type: "string",
+                        description: "MCP server endpoint URL",
+                        required: true,
+                    },
+                    {
+                        name: "headers",
+                        type: "object",
+                        description:
+                            "HTTP headers for authentication (e.g., {'Authorization': 'Bearer <token>'} or {'X-API-Key': '<key>'})",
+                        required: false,
                     },
                 ],
             },
@@ -323,6 +359,91 @@ async function executeGuide(
 }
 
 /**
+ * Create MCP server result
+ */
+interface CreateData {
+    success: boolean;
+    server: {
+        id: number;
+        identifier: string;
+        displayName: string;
+        url: string;
+        status: string;
+    };
+}
+
+/**
+ * Execute create action - adds a new MCP server configuration
+ */
+async function executeCreate(
+    params: {
+        identifier: string;
+        displayName?: string;
+        url: string;
+        headers?: Record<string, string>;
+    },
+    context: SubagentContext
+): Promise<SubagentResult<CreateData>> {
+    const { identifier, displayName, url, headers } = params;
+
+    try {
+        // Import the db function
+        const { createMcpServer } = await import("@/lib/db/mcp-servers");
+
+        // Parse auth configuration from headers
+        const { authType, token, authHeaderName } = parseAuthHeaders(headers);
+
+        // Create the server
+        const server = await createMcpServer({
+            userEmail: context.userEmail,
+            identifier,
+            displayName: displayName || identifier,
+            url,
+            transport: "sse",
+            authType,
+            credentials: token ? { token } : undefined,
+            authHeaderName,
+        });
+
+        logger.info(
+            {
+                userEmail: context.userEmail,
+                serverId: server.id,
+                identifier,
+                url,
+            },
+            "🔧 Created MCP server configuration"
+        );
+
+        return successResult<CreateData>({
+            success: true,
+            server: {
+                id: server.id,
+                identifier: server.identifier,
+                displayName: server.displayName,
+                url: server.url,
+                status: server.status,
+            },
+        });
+    } catch (error) {
+        logger.error(
+            { error, userEmail: context.userEmail, identifier, url },
+            "🔧 Failed to create MCP server"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "mcp-config", action: "create" },
+            extra: { userEmail: context.userEmail, identifier, url },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Failed to create MCP server"
+        );
+    }
+}
+
+/**
  * MCP Config action parameter schema
  *
  * Flat object schema because discriminatedUnion produces oneOf which
@@ -330,12 +451,22 @@ async function executeGuide(
  */
 const mcpConfigActionSchema = z.object({
     action: z
-        .enum(["describe", "list", "test", "guide"])
+        .enum(["describe", "list", "test", "guide", "create"])
         .describe(
             "Operation to perform. Use 'describe' to see all available operations."
         ),
     serviceId: z.string().optional().describe("Service ID (for 'test' and 'guide')"),
     accountId: z.string().optional().describe("Specific account ID (for 'test')"),
+    identifier: z.string().optional().describe("Server identifier (for 'create')"),
+    displayName: z
+        .string()
+        .optional()
+        .describe("Human-readable display name (for 'create')"),
+    url: z.string().optional().describe("MCP server endpoint URL (for 'create')"),
+    headers: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe("HTTP headers for auth (for 'create')"),
 });
 
 type McpConfigAction = z.infer<typeof mcpConfigActionSchema>;
@@ -355,6 +486,34 @@ function validateMcpParams(
             if (!params.serviceId)
                 return { valid: false, error: "serviceId is required" };
             return { valid: true };
+        case "create":
+            if (!params.identifier)
+                return { valid: false, error: "identifier is required" };
+            // Validate identifier format (must match API schema)
+            if (!/^[a-z0-9][a-z0-9-_.]*$/i.test(params.identifier)) {
+                return {
+                    valid: false,
+                    error: "identifier must start with alphanumeric and contain only letters, numbers, hyphens, underscores, and dots",
+                };
+            }
+            if (!params.url) return { valid: false, error: "url is required" };
+            // Validate URL format and protocol
+            try {
+                const parsedUrl = new URL(params.url);
+                // Require HTTPS in production for security
+                if (
+                    parsedUrl.protocol !== "https:" &&
+                    process.env.NODE_ENV === "production"
+                ) {
+                    return {
+                        valid: false,
+                        error: "MCP servers must use HTTPS in production",
+                    };
+                }
+            } catch {
+                return { valid: false, error: "url must be a valid URL" };
+            }
+            return { valid: true };
         default:
             return { valid: false, error: `Unknown action: ${params.action}` };
     }
@@ -368,7 +527,7 @@ function validateMcpParams(
 export function createMcpConfigTool(context: SubagentContext) {
     return tool({
         description:
-            "Integration management - list services, test connections, setup guidance. Use action='describe' for operations.",
+            "Integration and MCP server management - list services, test connections, add MCP servers. Use action='describe' for operations.",
         inputSchema: mcpConfigActionSchema,
         execute: async (params: McpConfigAction) => {
             if (params.action === "describe") {
@@ -400,6 +559,16 @@ export function createMcpConfigTool(context: SubagentContext) {
                             );
                         case "guide":
                             return executeGuide({ serviceId: params.serviceId! }, ctx);
+                        case "create":
+                            return executeCreate(
+                                {
+                                    identifier: params.identifier!,
+                                    displayName: params.displayName,
+                                    url: params.url!,
+                                    headers: params.headers,
+                                },
+                                ctx
+                            );
                         default:
                             return errorResult(
                                 "VALIDATION",

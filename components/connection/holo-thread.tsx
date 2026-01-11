@@ -903,11 +903,12 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                 />
             );
 
-        // Knowledge & Discovery tools - internal tools for context management
+        // Internal knowledge tools - knowledge discovery and retrieval
         case "searchKnowledge":
         case "updateDiscovery":
         case "completeDiscovery":
         case "skipDiscovery":
+        case "librarian":
             return (
                 <ToolRenderer
                     toolName={toolName}
@@ -916,6 +917,19 @@ function ToolPartRenderer({ part }: { part: ToolPart }) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Knowledge operation failed")}
+                />
+            );
+
+        // Configuration tools - MCP and integration setup
+        case "mcpConfig":
+            return (
+                <ToolRenderer
+                    toolName={toolName}
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "MCP configuration failed")}
                 />
             );
 
