@@ -386,7 +386,8 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.personal_finance.*/,
+            expectedPath:
+                /knowledge\.(projects|preferences)\.(personal_finance|financial).*/,
             expectedAction: "create",
             contentPatterns: [/financial management/i, /budgeting/i, /monthly budget/i],
         },
@@ -454,7 +455,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [/dating/i, /workshop/i, /self-discovery/i],
         },
@@ -662,7 +663,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [
                 /joined.*film club/i,
@@ -878,7 +879,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [/financial literacy/i, /investment/i, /learning/i],
         },
@@ -1018,7 +1019,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [/study habits/i, /academic/i, /learning/i],
         },
@@ -1086,7 +1087,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [/digital music remix/i, /2010/i, /late nights/i],
         },
@@ -1154,7 +1155,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [/digital music remix/i, /2010/i, /music production/i],
         },
@@ -1502,7 +1503,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [
                 /health.*journey/i,
@@ -1574,7 +1575,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [
                 /attended.*workshop.*note-taking/i,
@@ -1858,7 +1859,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [
                 /joined.*local film club/i,
@@ -1930,7 +1931,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [/dating/i, /workshop/i, /self-discovery/i],
         },
@@ -2214,7 +2215,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [
                 /personal finance blog/i,
@@ -2811,5 +2812,716 @@ export const librarianTestData: LibrarianTestCase[] = [
             shouldSave: false,
         },
         tags: ["adversarial", "no-save", "situational"],
+    },
+
+    // =============================================================================
+    // SUPERMEMORY-INSPIRED CASES
+    // Tests for user outcomes inspired by supermemory's capabilities.
+    // These focus on fact evolution, entity-attribute relationships, and KB updates.
+    // =============================================================================
+
+    // Category 1: Real-Time Fact Evolution
+    // Tests the librarian's ability to UPDATE existing knowledge during live conversations.
+
+    {
+        input: {
+            id: "fact-evolution-job-change",
+            description:
+                "User mentions job change - should update existing identity, not create duplicate",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "I finally left Google! Started as CTO at a startup called Acme last week.",
+                },
+                {
+                    role: "assistant",
+                    content:
+                        "Congratulations on the new role! That's a big career move.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a senior software engineer at Google.",
+                },
+            ],
+            category: "fact-evolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [/CTO/i, /Acme/i],
+            excludedContent: [/Google.*engineer/i],
+            updateTarget: "profile.identity",
+        },
+        tags: ["supermemory-inspired", "fact-evolution", "identity", "job-change"],
+    },
+    {
+        input: {
+            id: "fact-evolution-location-move",
+            description:
+                "User mentions they moved - should update location, not create new doc",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "We finally made the move to Austin last month. Still unpacking boxes!",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick lives in Las Vegas, Nevada.",
+                },
+            ],
+            category: "fact-evolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [/Austin/i],
+            // Should not say "lives in Las Vegas" as current, but CAN mention Vegas as previous
+            excludedContent: [/lives in Las Vegas/i],
+            updateTarget: "profile.identity",
+        },
+        tags: ["supermemory-inspired", "fact-evolution", "identity", "location"],
+    },
+    {
+        input: {
+            id: "fact-evolution-relationship-change",
+            description:
+                "User's relationship status changed - update existing or create new person entry",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Unity and I broke up last month. It was amicable but hard. I've started seeing someone new - her name is Julianna.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.unity",
+                    name: "Unity",
+                    content:
+                        "Nick's girlfriend is Unity. They've been together for 2 years.",
+                },
+            ],
+            category: "fact-evolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.people\.(unity|julianna)/i,
+            // Both "update" (Unity to ex) and "create" (new Julianna entry) are valid
+            contentPatterns: [/julianna|ex|girlfriend/i],
+        },
+        tags: ["supermemory-inspired", "fact-evolution", "relationship", "person"],
+    },
+    {
+        input: {
+            id: "fact-evolution-preference-change",
+            description:
+                "User explicitly changes a preference - should update, not duplicate",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "I've completely switched from VS Code to Cursor now. The AI features are incredible. Haven't touched VS Code in months.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.preferences.tools",
+                    name: "Tools",
+                    content: "Nick uses VS Code as his primary editor.",
+                },
+            ],
+            category: "fact-evolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.preferences\.tools/,
+            expectedAction: "update",
+            contentPatterns: [/Cursor/i],
+            excludedContent: [/VS Code.*primary/i],
+            updateTarget: "knowledge.preferences.tools",
+        },
+        tags: ["supermemory-inspired", "fact-evolution", "preference", "tools"],
+    },
+
+    // Category 2: Entity-Attribute Relationships
+    // Tests whether we properly capture attributes about entities that can be recalled later.
+
+    {
+        input: {
+            id: "entity-person-attribute",
+            description:
+                "User mentions attribute about a person - should append to existing person entry",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "My girlfriend Julianna is really into clean eating. She doesn't like seed oils and avoids processed food.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.julianna",
+                    name: "Julianna",
+                    content: "Nick's girlfriend is Julianna.",
+                },
+            ],
+            category: "entity-attribute",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.people\.julianna/i,
+            expectedAction: "update",
+            contentPatterns: [/seed oils/i, /clean eating|processed food/i],
+            updateTarget: "knowledge.people.julianna",
+        },
+        tags: ["supermemory-inspired", "entity-attribute", "person", "preference"],
+    },
+    {
+        input: {
+            id: "entity-project-attribute",
+            description:
+                "User adds technical context about existing project - should append to project",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "We decided to use PostgreSQL for Carmenta's database. The ltree extension is perfect for our knowledge base structure.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.projects.carmenta",
+                    name: "Carmenta",
+                    content: "Nick is building Carmenta, an AI interface for builders.",
+                },
+            ],
+            category: "entity-attribute",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.projects\.carmenta/i,
+            expectedAction: "update",
+            contentPatterns: [/PostgreSQL/i, /ltree/i],
+            updateTarget: "knowledge.projects.carmenta",
+        },
+        tags: ["supermemory-inspired", "entity-attribute", "project", "decision"],
+    },
+
+    // Category 3: Cross-Source Conflict Resolution
+    // Tests what happens when live conversation overrides existing knowledge.
+
+    {
+        input: {
+            id: "cross-source-override",
+            description:
+                "Live conversation explicitly overrides imported fact - should update",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Actually, I need to update something - I don't work at Cloudflare anymore. I left to work on Carmenta full-time.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a software engineer at Cloudflare.",
+                },
+            ],
+            category: "conflict-resolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [/Carmenta/i, /full-time/i],
+            excludedContent: [/Cloudflare.*engineer/i],
+            updateTarget: "profile.identity",
+        },
+        tags: [
+            "supermemory-inspired",
+            "conflict-resolution",
+            "cross-source",
+            "identity",
+        ],
+    },
+
+    // Category 4: Soft Correction
+    // User corrects a fact without requesting full deletion.
+
+    {
+        input: {
+            id: "soft-correction",
+            description:
+                "User corrects a fact without requesting deletion - should update",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Oh, I think I told you my favorite color is blue, but it's actually green. Blue was my ex's favorite.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.preferences.general",
+                    name: "General Preferences",
+                    content: "Nick's favorite color is blue.",
+                },
+            ],
+            category: "soft-correction",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.preferences\.general/,
+            expectedAction: "update",
+            contentPatterns: [/green/i],
+            // Should not say Nick's favorite is blue, but CAN mention blue was ex's favorite
+            excludedContent: [/Nick's favorite.*blue/i],
+            updateTarget: "knowledge.preferences.general",
+        },
+        tags: ["supermemory-inspired", "soft-correction", "preference"],
+    },
+
+    // Category 5: High-Confidence Auto-Learn
+    // Tests obvious facts that should be captured with high confidence.
+
+    {
+        input: {
+            id: "high-confidence-identity",
+            description:
+                "Clear identity statement that should be captured - new user introduction",
+            conversation: [
+                {
+                    role: "user",
+                    content: "My name is Nick Sullivan and I live in Austin, Texas.",
+                },
+            ],
+            existingKB: [],
+            category: "high-confidence",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "create",
+            contentPatterns: [/Nick Sullivan/i, /Austin/i],
+        },
+        tags: ["supermemory-inspired", "high-confidence", "identity", "auto-learn"],
+    },
+
+    // Category 6: Noise Filtering with Existing KB
+    // Tests that ephemeral content doesn't pollute existing knowledge.
+
+    {
+        input: {
+            id: "no-ephemeral-update",
+            description:
+                "Temporary state should not overwrite durable knowledge - tired complaint",
+            conversation: [
+                {
+                    role: "user",
+                    content: "I'm so tired today. Can barely focus.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a software engineer who works on AI products.",
+                },
+            ],
+            category: "noise-filtering",
+        },
+        expected: {
+            shouldSave: false,
+        },
+        tags: ["supermemory-inspired", "noise-filtering", "ephemeral"],
+    },
+    {
+        input: {
+            id: "no-task-context-pollution",
+            description: "Current task context should not pollute identity knowledge",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "I'm debugging a memory leak in the image processing service right now.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a software engineer working on Carmenta.",
+                },
+            ],
+            category: "noise-filtering",
+        },
+        expected: {
+            shouldSave: false,
+        },
+        tags: ["supermemory-inspired", "noise-filtering", "task-context"],
+    },
+
+    // =============================================================================
+    // CURRENT VS HISTORICAL PARADIGM
+    // Tests the paradigm: current facts by default, historical context preserved.
+    // Key principle: Primary documents reflect current state, history is either
+    // inline ("Previously at Google") or in dedicated knowledge.history.* docs.
+    // =============================================================================
+
+    // Category 1: History Preserved Inline
+    // When updating, preserve relevant history in prose form within the document.
+
+    {
+        input: {
+            id: "history-inline-job-tenure",
+            description:
+                "Job change with tenure mentioned - should update identity AND preserve history inline",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "After 5 years at Google, I finally made the jump. Started as CTO at Acme last week. Bittersweet leaving but excited for the challenge.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a senior software engineer at Google.",
+                },
+            ],
+            category: "history-inline",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [
+                /CTO/i,
+                /Acme/i,
+                // History preservation - should mention Google in some way
+                /Google|previous|former|5 years/i,
+            ],
+            updateTarget: "profile.identity",
+        },
+        tags: ["current-vs-historical", "history-inline", "job-change", "tenure"],
+    },
+    {
+        input: {
+            id: "history-inline-location-context",
+            description:
+                "Location move with emotional context - should capture Austin as current location",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "We sold the house in Vegas and moved to Austin last month. Gonna miss that pool, but Austin's tech scene is incredible.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick lives in Las Vegas, Nevada with his girlfriend.",
+                },
+            ],
+            category: "history-inline",
+        },
+        expected: {
+            shouldSave: true,
+            // Either update identity OR create history doc - both are valid approaches
+            expectedPath: /profile\.identity|knowledge\.history\.locations/,
+            contentPatterns: [
+                /Austin/i,
+                // History preservation - Vegas should be mentioned somewhere
+                /Vegas|previous|former|moved from/i,
+            ],
+        },
+        tags: ["current-vs-historical", "history-inline", "location", "move"],
+    },
+    {
+        input: {
+            id: "history-inline-preference-evolution",
+            description:
+                "Preference change with reasoning - preserve why they switched",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "I've completely switched from React to Vue. The composition API just clicks better with how I think. React hooks always felt awkward to me.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.preferences.programming",
+                    name: "Programming Preferences",
+                    content: "Nick prefers React for frontend development.",
+                },
+            ],
+            category: "history-inline",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.preferences\.programming/,
+            expectedAction: "update",
+            contentPatterns: [/Vue/i, /composition API|clicks|how.*think/i],
+            // Should NOT say "prefers React" anymore
+            excludedContent: [/prefers React/i],
+            updateTarget: "knowledge.preferences.programming",
+        },
+        tags: ["current-vs-historical", "history-inline", "preference", "programming"],
+    },
+
+    // Category 2: Relationship Transitions
+    // Complex relationship changes: ex becomes ex, new partner emerges.
+
+    {
+        input: {
+            id: "relationship-transition-breakup-new",
+            description:
+                "Breakup + new partner - update ex, create new person, preserve relationship context",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Sarah and I broke up two months ago. We had a good three years together but grew apart. I've started dating Emma - she's a designer at a startup.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.Sarah",
+                    name: "Sarah",
+                    content:
+                        "Sarah is Nick's girlfriend. They've been together for 3 years.",
+                },
+            ],
+            category: "relationship-transition",
+        },
+        expected: {
+            shouldSave: true,
+            // Could update Sarah OR create Emma - both are valid first actions
+            expectedPath: /knowledge\.people\.(Sarah|Emma)/i,
+            contentPatterns: [/ex|broke up|former|Emma|girlfriend|designer/i],
+        },
+        tags: [
+            "current-vs-historical",
+            "relationship-transition",
+            "breakup",
+            "new-partner",
+        ],
+    },
+    {
+        input: {
+            id: "relationship-update-ex-news",
+            description:
+                "Update about ex - should update existing person entry with new info",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Ran into Sarah today at a coffee shop. She's engaged now to someone she met at work. We're on good terms, which is nice.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.Sarah",
+                    name: "Sarah",
+                    content:
+                        "Sarah is Nick's ex-girlfriend. They dated for 3 years and broke up amicably.",
+                },
+            ],
+            category: "relationship-transition",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.people\.Sarah/i,
+            expectedAction: "update",
+            contentPatterns: [/engaged/i, /good terms/i],
+            updateTarget: "knowledge.people.Sarah",
+        },
+        tags: ["current-vs-historical", "relationship-transition", "ex-update"],
+    },
+
+    // Category 3: Rich Timeline → Dedicated History Document
+    // When there's a meaningful timeline worth preserving as its own entity.
+
+    {
+        input: {
+            id: "rich-timeline-locations",
+            description:
+                "Multiple location history mentioned - may warrant dedicated history doc",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Looking back, I've lived in so many places - started in SF after college, then Austin for a startup, Vegas for a few years, and now NYC. Each city shaped who I am.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content:
+                        "Nick lives in Las Vegas and works as a software engineer.",
+                },
+            ],
+            category: "rich-timeline",
+        },
+        expected: {
+            shouldSave: true,
+            // Primary: update identity to NYC
+            // Could also create knowledge.history.locations
+            expectedPath: /profile\.identity|knowledge\.history\.locations/,
+            contentPatterns: [/NYC|New York/i],
+        },
+        tags: ["current-vs-historical", "rich-timeline", "locations", "multiple"],
+    },
+    {
+        input: {
+            id: "rich-timeline-career",
+            description:
+                "Career narrative with multiple chapters - capture the journey",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "My career path has been wild: started as a junior dev at a bank, moved to Google where I became a senior engineer, then took the leap to startup land as CTO. Each chapter taught me something different.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is CTO at Acme.",
+                },
+            ],
+            category: "rich-timeline",
+        },
+        expected: {
+            shouldSave: true,
+            // Could update identity with career summary OR create knowledge.history.career
+            expectedPath: /profile\.identity|knowledge\.history\.career/,
+            contentPatterns: [/Google|bank|senior|CTO|journey|path/i],
+        },
+        tags: ["current-vs-historical", "rich-timeline", "career", "narrative"],
+    },
+
+    // Category 4: Current State Primary
+    // Ensure current facts are prominent, not buried in history.
+
+    {
+        input: {
+            id: "current-state-primary-simple",
+            description:
+                "Simple update should prioritize current state, not over-document history",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Oh by the way, we moved to Denver last week. Still getting settled.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a CTO at Acme and lives in Austin, Texas.",
+                },
+            ],
+            category: "current-primary",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [/Denver/i, /CTO/i, /Acme/i],
+            // Should NOT still say "lives in Austin" as current
+            excludedContent: [/lives in Austin/i],
+            updateTarget: "profile.identity",
+        },
+        tags: ["current-vs-historical", "current-primary", "location", "simple-update"],
+    },
+    {
+        input: {
+            id: "current-state-primary-person",
+            description:
+                "Person update should reflect current relationship status clearly",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Emma and I got engaged last weekend! She said yes at the restaurant where we had our first date.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.Emma",
+                    name: "Emma",
+                    content:
+                        "Emma is Nick's girlfriend. She's a designer at a startup.",
+                },
+            ],
+            category: "current-primary",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.people\.Emma/i,
+            expectedAction: "update",
+            contentPatterns: [/engaged|fiancée|fiancee/i],
+            // Should NOT just say "girlfriend" anymore - should be fiancée
+            excludedContent: [/Nick's girlfriend\b/i],
+            updateTarget: "knowledge.people.Emma",
+        },
+        tags: [
+            "current-vs-historical",
+            "current-primary",
+            "relationship",
+            "engagement",
+        ],
+    },
+
+    // Category 5: No History Pollution
+    // Don't add excessive history that clutters the current document.
+
+    {
+        input: {
+            id: "no-history-pollution-minor-change",
+            description: "Minor preference update shouldn't add unnecessary history",
+            conversation: [
+                {
+                    role: "user",
+                    content: "I've been using Neovim more lately. It's growing on me.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.preferences.tools",
+                    name: "Tools",
+                    content: "Nick uses Cursor as his primary editor.",
+                },
+            ],
+            category: "no-pollution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.preferences\.tools/,
+            expectedAction: "update",
+            // Both editors should be mentioned - Cursor as primary, Neovim as additional
+            // "using more lately" is additive, not a replacement
+            contentPatterns: [/Neovim/i, /Cursor/i],
+        },
+        tags: ["current-vs-historical", "no-pollution", "preference", "additive"],
     },
 ];

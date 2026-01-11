@@ -46,6 +46,9 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 // Determine which model(s) to test
 const specifiedModel = process.env.LIBRARIAN_MODEL;
 const compareAll = process.env.LIBRARIAN_COMPARE_ALL === "true";
+const filterTags = process.env.LIBRARIAN_TAGS?.split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
 let modelsToTest: LibrarianModelCandidate[];
 
@@ -99,10 +102,23 @@ async function runLocal() {
     const quickMode = process.env.LIBRARIAN_QUICK === "true";
     const concurrency = 10;
 
+    // Filter by tags if specified
+    const filteredCases = filterTags?.length
+        ? librarianTestData.filter((t) =>
+              t.tags?.some((tag) => filterTags.includes(tag))
+          )
+        : librarianTestData;
+
+    if (filterTags?.length) {
+        console.log(
+            `Tag filter: [${filterTags.join(", ")}] → ${filteredCases.length} cases`
+        );
+    }
+
     // In quick mode, sample 10 diverse test cases
     const testCases = quickMode
-        ? librarianTestData.filter((_, i) => i % 5 === 0).slice(0, 10)
-        : librarianTestData;
+        ? filteredCases.filter((_, i) => i % 5 === 0).slice(0, 10)
+        : filteredCases;
 
     if (quickMode) {
         console.log(`Quick mode: testing ${testCases.length} cases (10% sample)`);
