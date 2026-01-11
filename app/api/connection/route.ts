@@ -53,6 +53,7 @@ import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
 import { createImageArtistTool } from "@/lib/ai-team/agents/image-artist-tool";
 import { createLibrarianTool } from "@/lib/ai-team/agents/librarian-tool";
+import { createMcpConfigTool } from "@/lib/ai-team/agents/mcp-config-tool";
 import { createSmsUserTool } from "@/lib/ai-team/agents/sms-user-tool";
 import { createPushNotificationTool } from "@/lib/ai-team/agents/push-notification-tool";
 import { postResponseTools } from "@/lib/tools/post-response";
@@ -653,6 +654,13 @@ export async function POST(req: Request) {
             userEmail: userEmail!,
         });
 
+        // Create MCP Config tool for managing MCP server configurations
+        // Enables adding, listing, testing MCP servers directly in Carmenta
+        const mcpConfigTool = createMcpConfigTool({
+            userId: dbUser.id,
+            userEmail: userEmail!,
+        });
+
         // Discovery mode is disabled until we refine the experience
         // It was interrupting substantive responses and degrading quality
         // TODO: Re-enable when discovery is less intrusive
@@ -668,6 +676,7 @@ export async function POST(req: Request) {
             searchKnowledge: searchKnowledgeTool,
             imageArtist: imageArtistTool,
             librarian: librarianTool,
+            mcpConfig: mcpConfigTool,
             smsUser: smsUserTool,
             pushNotification: pushNotificationTool,
             ...discoveryTools,
