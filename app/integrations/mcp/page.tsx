@@ -244,19 +244,20 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [lastRequest, setLastRequest] = useState<string | null>(null);
     const [inputValue, setInputValue] = useState("");
+    const [showSuccess, setShowSuccess] = useState(false);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     // Detect if input looks like JSON (for styling)
     const looksLikeJson =
         inputValue.trim().startsWith("{") || inputValue.trim().startsWith("[");
 
-    // Auto-resize textarea as content grows
+    // Auto-resize textarea as content grows (runs on mount and value changes)
     useEffect(() => {
         const textarea = inputRef.current;
         if (!textarea) return;
         textarea.style.height = "auto";
         textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-    }, [inputValue]);
+    }, [inputValue, inputRef]);
 
     const transport = useMemo(
         () =>
@@ -289,6 +290,9 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
         transport,
         onFinish: () => {
             onConfigChange?.();
+            // Show success indicator briefly, then hide
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 2000);
         },
     });
 
@@ -334,6 +338,9 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
                 parts: [{ type: "text", text: inputValue }],
             });
             setInputValue("");
+
+            // Refocus textarea for immediate reuse
+            inputRef.current?.focus();
         },
         [inputValue, isLoading, sendMessage, setMessages]
     );
@@ -403,7 +410,7 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
                         {isLoading && (
                             <SpinnerIcon className="h-4 w-4 animate-spin text-emerald-500" />
                         )}
-                        {isComplete && !inputValue && (
+                        {showSuccess && (
                             <CheckIcon
                                 className="h-4 w-4 text-green-500"
                                 weight="bold"
