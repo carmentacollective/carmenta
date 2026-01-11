@@ -7,7 +7,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { eq, and, inArray, isNull, sql, desc } from "drizzle-orm";
+import { eq, and, inArray, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -295,8 +295,17 @@ export async function processExtractionJob(jobId: string): Promise<void> {
         const userName = user?.displayName || user?.firstName || undefined;
 
         // Fetch profile identity for additional context
-        const identityDoc = await kb.read(job.userId, PROFILE_PATHS.identity);
-        const profileContext = identityDoc?.content?.trim() || undefined;
+        let profileContext: string | undefined;
+        try {
+            const identityDoc = await kb.read(job.userId, PROFILE_PATHS.identity);
+            profileContext = identityDoc?.content?.trim() || undefined;
+        } catch (error) {
+            logger.warn(
+                { error, userId: job.userId },
+                "Failed to read profile identity for extraction context - continuing without"
+            );
+            // Continue without profile context rather than failing the job
+        }
 
         // Get connections to process
         let connectionIdsToProcess: number[];
@@ -316,7 +325,7 @@ export async function processExtractionJob(jobId: string): Promise<void> {
             const batch = connectionIdsToProcess.slice(i, i + BATCH_SIZE);
 
             // Get connection details - filter by userId to prevent processing other users' connections
-            const connectionDetails = await db
+            const connectionDetailsRaw = await db
                 .select({ id: connections.id, title: connections.title })
                 .from(connections)
                 .where(
@@ -326,7 +335,17 @@ export async function processExtractionJob(jobId: string): Promise<void> {
                     )
                 );
 
-            // Process batch in parallel
+            // Preserve oldest-first order from batch (DB doesn't guarantee inArray order)
+            const connectionDetailsMap = new Map(
+                connectionDetailsRaw.map((c) => [c.id, c])
+            );
+            const connectionDetails = batch
+                .map((id) => connectionDetailsMap.get(id))
+                .filter(
+                    (c): c is { id: number; title: string | null } => c !== undefined
+                );
+
+            // Process batch in order (oldest first for temporal resolution)
             const results = await Promise.all(
                 connectionDetails.map((c) =>
                     extractFromConversation(c.id, c.title, userName, profileContext)
@@ -510,7 +529,8 @@ export async function getPendingExtractions(
             .from(pendingExtractions)
             .leftJoin(connections, eq(pendingExtractions.connectionId, connections.id))
             .where(and(...conditions))
-            .orderBy(desc(pendingExtractions.createdAt))
+            // Keep ascending order for stable offset-based pagination (approve-all batching)
+            .orderBy(pendingExtractions.createdAt)
             .limit(options?.limit ?? 50)
             .offset(options?.offset ?? 0),
         db

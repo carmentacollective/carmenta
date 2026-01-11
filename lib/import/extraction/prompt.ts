@@ -136,7 +136,7 @@ ${formattedMessages}
 </user_messages>
 
 Extract any durable, personal facts about ${personReference} from these messages.
-Skip facts we already know (shown in known_about_person).
-If nothing new is worth extracting, set shouldExtract to false.
+${knownContext ? "Skip facts that duplicate the basic identity info shown above." : ""}
+If nothing is worth extracting, set shouldExtract to false.
 `;
 }
