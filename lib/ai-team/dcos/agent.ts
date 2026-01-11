@@ -29,6 +29,7 @@ import { createLibrarianTool } from "../agents/librarian-tool";
 import { createMcpConfigTool } from "../agents/mcp-config-tool";
 import { createDcosTool } from "../agents/dcos-tool";
 import { createSmsUserTool } from "../agents/sms-user-tool";
+import { createPushNotificationTool } from "../agents/push-notification-tool";
 
 /**
  * Default model for DCOS
@@ -104,6 +105,8 @@ function getSubagentStatusMessage(toolName: string, action?: string): string {
             return "Searching knowledge...";
         case "smsUser":
             return "Texting you...";
+        case "pushNotification":
+            return "Sending notification...";
         default:
             // Integration tools
             return `Using ${toolName}...`;
@@ -142,6 +145,7 @@ export async function executeDCOS(input: DCOSExecutionInput) {
     const mcpConfigTool = createMcpConfigTool(subagentContext);
     const dcosTool = createDcosTool(subagentContext);
     const smsUserTool = createSmsUserTool(subagentContext);
+    const pushNotificationTool = createPushNotificationTool(subagentContext);
 
     // Load integration tools for connected services
     const integrationTools = await getIntegrationTools(userEmail);
@@ -156,6 +160,7 @@ export async function executeDCOS(input: DCOSExecutionInput) {
         mcpConfig: mcpConfigTool,
         searchKnowledge: searchKnowledgeTool,
         smsUser: smsUserTool,
+        pushNotification: pushNotificationTool,
         ...integrationTools,
     };
 

@@ -2235,3 +2235,95 @@ export const smsOutboundMessagesRelations = relations(
         }),
     })
 );
+
+// ============================================================================
+// PUSH SUBSCRIPTIONS (PWA Web Push API)
+// ============================================================================
+
+/**
+ * Web Push subscription object from the Push API
+ * Matches the PushSubscription interface
+ */
+export interface WebPushSubscription {
+    endpoint: string;
+    expirationTime?: number | null;
+    keys: {
+        p256dh: string;
+        auth: string;
+    };
+}
+
+/**
+ * Push Subscriptions - PWA push notification subscriptions
+ *
+ * Each subscription represents a device/browser that can receive push notifications.
+ * Users can have multiple subscriptions (phone, tablet, desktop, multiple browsers).
+ *
+ * The browser's Push API generates subscriptions with:
+ * - endpoint: URL to the browser vendor's push service (FCM, APNs, Mozilla Push)
+ * - keys: Encryption keys for message security
+ *
+ * Design decisions:
+ * - userEmail FK (matches integrations pattern for consistency)
+ * - JSONB for subscription object (matches Push API format exactly)
+ * - endpoint indexed for duplicate detection
+ * - userAgent for device identification in UI
+ */
+export const pushSubscriptions = pgTable(
+    "push_subscriptions",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+
+        /** Owner's email - direct FK to users.email */
+        userEmail: varchar("user_email", { length: 255 })
+            .references(() => users.email, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Full subscription object from Push API */
+        subscription: jsonb("subscription").$type<WebPushSubscription>().notNull(),
+
+        /** Push endpoint URL (indexed for duplicate detection) */
+        endpoint: varchar("endpoint", { length: 2048 }).notNull(),
+
+        /** Whether this subscription is active */
+        isActive: boolean("is_active").notNull().default(true),
+
+        /** User agent string for device identification */
+        userAgent: varchar("user_agent", { length: 1024 }),
+
+        /** Device type hint (derived from userAgent) */
+        deviceType: varchar("device_type", { length: 50 }),
+
+        /** When the subscription was created */
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** When the subscription was last updated */
+        updatedAt: timestamp("updated_at", { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdate(() => new Date()),
+    },
+    (table) => [
+        /** Find all subscriptions for a user */
+        index("push_subscriptions_user_email_idx").on(table.userEmail),
+        /** Duplicate detection: same endpoint shouldn't exist twice */
+        uniqueIndex("push_subscriptions_endpoint_idx").on(table.endpoint),
+        /** Find active subscriptions for a user (for sending notifications) */
+        index("push_subscriptions_user_active_idx").on(table.userEmail, table.isActive),
+    ]
+);
+
+/**
+ * Relations for push subscriptions
+ */
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+    user: one(users, {
+        fields: [pushSubscriptions.userEmail],
+        references: [users.email],
+    }),
+}));
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;

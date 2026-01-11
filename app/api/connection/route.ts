@@ -54,6 +54,7 @@ import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
 import { createImageArtistTool } from "@/lib/ai-team/agents/image-artist-tool";
 import { createLibrarianTool } from "@/lib/ai-team/agents/librarian-tool";
 import { createSmsUserTool } from "@/lib/ai-team/agents/sms-user-tool";
+import { createPushNotificationTool } from "@/lib/ai-team/agents/push-notification-tool";
 import { postResponseTools } from "@/lib/tools/post-response";
 import {
     unauthorizedResponse,
@@ -637,6 +638,13 @@ export async function POST(req: Request) {
             userEmail: userEmail!,
         });
 
+        // Create push notification tool for PWA notifications to iOS
+        // Used by AI agents to alert users about important items (e.g., email steward)
+        const pushNotificationTool = createPushNotificationTool({
+            userId: dbUser.id,
+            userEmail: userEmail!,
+        });
+
         // Create Librarian tool for explicit KB updates
         // Enables "remember this", "save that", etc. - explicit user requests to update KB
         // Post-hoc extraction still runs for implicit knowledge capture
@@ -661,6 +669,7 @@ export async function POST(req: Request) {
             imageArtist: imageArtistTool,
             librarian: librarianTool,
             smsUser: smsUserTool,
+            pushNotification: pushNotificationTool,
             ...discoveryTools,
         };
 
