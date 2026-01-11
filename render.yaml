@@ -99,10 +99,10 @@ services:
     region: oregon
     plan: standard # 2GB RAM minimum - document processing is memory intensive
     image:
-      url: ghcr.io/doclingai/docling-serve:latest
+      url: quay.io/docling-project/docling-serve:latest
     envVars:
       - key: PORT
-        value: "8000"
+        value: "5001"
 
   # Temporal Worker - executes scheduled agent workflows
   # IMPORTANT: Uses carmenta-oauth-credentials env group for OAuth credentials and encryption keys.
