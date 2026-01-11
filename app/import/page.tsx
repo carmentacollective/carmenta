@@ -37,6 +37,7 @@ import {
     DiscoveryProgress,
     DiscoveryComplete,
 } from "@/components/discovery";
+import { ImportStepper, type ImportStep } from "@/components/import/import-stepper";
 import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
 import { commitImport, type ImportCommitResult } from "@/lib/actions/import";
@@ -156,6 +157,15 @@ export default function ImportPage() {
         null
     );
     const [isApprovingAll, setIsApprovingAll] = useState(false);
+
+    // Derive current step for the stepper
+    const currentStep: ImportStep = useMemo(() => {
+        if (state !== "success") return "upload";
+        if (discoveryState === "complete") return "review";
+        if (discoveryState === "processing") return "discover";
+        // invited/starting/idle all show discover step (about to start or skipped)
+        return "discover";
+    }, [state, discoveryState]);
 
     const currentProvider = PROVIDERS[selectedProvider];
 
@@ -1146,6 +1156,9 @@ export default function ImportPage() {
                 {/* Success State - Discovery Flow */}
                 {state === "success" && importResult && (
                     <>
+                        {/* Journey stepper - show where we are in the flow */}
+                        <ImportStepper currentStep={currentStep} className="mb-8" />
+
                         {/* Show errors during discovery flow */}
                         {error && (
                             <Card className="mb-6 border-red-500/30 bg-red-500/5">
