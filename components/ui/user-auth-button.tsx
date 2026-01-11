@@ -9,7 +9,6 @@ import {
     UserCircleIcon,
     MonitorIcon,
     PlugIcon,
-    PlugsConnectedIcon,
     BookOpenIcon,
     ChatTeardropIcon,
     ClockClockwiseIcon,
@@ -254,6 +253,19 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
                                   {/* Menu items */}
                                   <div className="py-1">
+                                      {/* Your Content */}
+                                      <Link
+                                          href="/connections"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <ClockClockwiseIcon className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">
+                                              Conversations
+                                          </span>
+                                      </Link>
+
                                       <Link
                                           href="/knowledge-base"
                                           onClick={() => setIsOpen(false)}
@@ -267,48 +279,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       </Link>
 
                                       <Link
-                                          href="/integrations"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <PlugIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">Integrations</span>
-                                      </Link>
-
-                                      <Link
-                                          href="/integrations/mcp"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <PlugsConnectedIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">MCP Servers</span>
-                                      </Link>
-
-                                      <Link
-                                          href="/communication"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <ChatTeardropIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">
-                                              Communication
-                                          </span>
-                                      </Link>
-
-                                      <Link
-                                          href="/connections"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <ClockClockwiseIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">Connections</span>
-                                      </Link>
-
-                                      <Link
                                           href="/import"
                                           onClick={() => setIsOpen(false)}
                                           className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
@@ -318,7 +288,20 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           <span className="relative">Import</span>
                                       </Link>
 
-                                      {/* Account & Appearance */}
+                                      {/* Extend */}
+                                      <div className="border-foreground/10 my-1 border-t" />
+
+                                      <Link
+                                          href="/integrations"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <PlugIcon className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">Integrations</span>
+                                      </Link>
+
+                                      {/* Settings */}
                                       <div className="border-foreground/10 my-1 border-t" />
 
                                       <button
@@ -332,6 +315,18 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           <UserIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Account</span>
                                       </button>
+
+                                      <Link
+                                          href="/communication"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <ChatTeardropIcon className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">
+                                              Communication
+                                          </span>
+                                      </Link>
 
                                       {/* Appearance section - compact redesign */}
                                       {isClient && (
