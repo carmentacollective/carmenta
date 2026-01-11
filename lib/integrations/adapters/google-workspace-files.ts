@@ -225,13 +225,12 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                     : "Integration not connected";
 
             // Return structured error for UI to render IntegrationRequired component
-            // Use createResponse to preserve isError: true while providing structured data
-            return this.createResponse(tokenResult.content, {
-                isError: true,
-                structuredContent: {
-                    error: "integration_not_connected",
-                    message: errorMessage,
-                },
+            // We use isError: false so lib/integrations/tools.ts parses the JSON response.
+            // When isError: true, tools.ts returns { error: true, message: "..." } which breaks
+            // the UI check for output.error === "integration_not_connected" (string value).
+            return this.createJSONResponse({
+                error: "integration_not_connected",
+                message: errorMessage,
             });
         }
         const { accessToken } = tokenResult;
