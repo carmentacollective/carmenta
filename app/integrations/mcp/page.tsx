@@ -31,12 +31,14 @@ import {
     PlugsIcon,
     KeyIcon,
     ArrowsClockwiseIcon,
+    ArrowRightIcon,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 
@@ -242,7 +244,19 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [lastRequest, setLastRequest] = useState<string | null>(null);
     const [inputValue, setInputValue] = useState("");
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    // Detect if input looks like JSON (for styling)
+    const looksLikeJson =
+        inputValue.trim().startsWith("{") || inputValue.trim().startsWith("[");
+
+    // Auto-resize textarea as content grows
+    useEffect(() => {
+        const textarea = inputRef.current;
+        if (!textarea) return;
+        textarea.style.height = "auto";
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }, [inputValue]);
 
     const transport = useMemo(
         () =>
@@ -325,7 +339,8 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
     );
 
     const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLInputElement>) => {
+        (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            // Enter submits (Shift+Enter for newline in JSON)
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSubmit();
@@ -356,56 +371,86 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
                 className
             )}
         >
-            <form onSubmit={handleSubmit} className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                    <PlugIcon className="h-5 w-5 text-emerald-500" weight="duotone" />
-                </div>
+            <form onSubmit={handleSubmit} className="p-4">
+                <div className="flex items-start gap-3">
+                    <div className="mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                        <PlugIcon
+                            className="h-5 w-5 text-emerald-500"
+                            weight="duotone"
+                        />
+                    </div>
 
-                <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Paste a server URL, JSON config, or describe what you want to connect..."
-                    disabled={isLoading}
-                    className={cn(
-                        "flex-1 bg-transparent text-sm outline-none",
-                        "text-foreground placeholder:text-foreground/40",
-                        isLoading && "cursor-not-allowed opacity-50"
-                    )}
-                />
+                    <div className="min-w-0 flex-1">
+                        <textarea
+                            ref={inputRef}
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Paste a URL, JSON config, or describe what to connect..."
+                            disabled={isLoading}
+                            rows={1}
+                            className={cn(
+                                "w-full resize-none bg-transparent text-sm outline-none",
+                                "max-h-[200px] min-h-[2.5rem] py-2",
+                                "text-foreground placeholder:text-foreground/40",
+                                looksLikeJson && "font-mono text-xs leading-relaxed",
+                                isLoading && "cursor-not-allowed opacity-50"
+                            )}
+                        />
+                    </div>
 
-                {isLoading && (
-                    <SpinnerIcon className="h-4 w-4 animate-spin text-emerald-500" />
-                )}
-                {isComplete && (
-                    <CheckIcon className="h-4 w-4 text-green-500" weight="bold" />
-                )}
-
-                {hasResponse && !isLoading && (
-                    <button
-                        type="button"
-                        onClick={toggleExpanded}
-                        className="text-foreground/40 hover:text-foreground/60 transition-colors"
-                    >
-                        {isExpanded ? (
-                            <CaretUpIcon className="h-4 w-4" />
-                        ) : (
-                            <CaretDownIcon className="h-4 w-4" />
+                    <div className="mt-1 flex shrink-0 items-center gap-1">
+                        {isLoading && (
+                            <SpinnerIcon className="h-4 w-4 animate-spin text-emerald-500" />
                         )}
-                    </button>
-                )}
+                        {isComplete && !inputValue && (
+                            <CheckIcon
+                                className="h-4 w-4 text-green-500"
+                                weight="bold"
+                            />
+                        )}
 
-                {hasResponse && !isLoading && (
-                    <button
-                        type="button"
-                        onClick={handleDismiss}
-                        className="text-foreground/40 hover:text-foreground/60 transition-colors"
-                    >
-                        <XIcon className="h-4 w-4" />
-                    </button>
-                )}
+                        {hasResponse && !isLoading && (
+                            <button
+                                type="button"
+                                onClick={toggleExpanded}
+                                className="text-foreground/40 hover:text-foreground/60 rounded p-1 transition-colors"
+                            >
+                                {isExpanded ? (
+                                    <CaretUpIcon className="h-4 w-4" />
+                                ) : (
+                                    <CaretDownIcon className="h-4 w-4" />
+                                )}
+                            </button>
+                        )}
+
+                        {hasResponse && !isLoading && (
+                            <button
+                                type="button"
+                                onClick={handleDismiss}
+                                className="text-foreground/40 hover:text-foreground/60 rounded p-1 transition-colors"
+                            >
+                                <XIcon className="h-4 w-4" />
+                            </button>
+                        )}
+
+                        {/* Submit button - visible when there's input */}
+                        {inputValue.trim() && !isLoading && (
+                            <button
+                                type="submit"
+                                className={cn(
+                                    "ml-1 flex h-8 w-8 items-center justify-center rounded-full",
+                                    "bg-emerald-500 text-white shadow-sm",
+                                    "hover:bg-emerald-600 active:bg-emerald-700",
+                                    "transition-colors"
+                                )}
+                                aria-label="Connect server"
+                            >
+                                <ArrowRightIcon className="h-4 w-4" weight="bold" />
+                            </button>
+                        )}
+                    </div>
+                </div>
             </form>
 
             <AnimatePresence>
@@ -433,9 +478,11 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
                             )}
 
                             {responseText && (
-                                <p className="text-foreground/80 text-sm">
-                                    {responseText}
-                                </p>
+                                <MarkdownRenderer
+                                    content={responseText}
+                                    className="text-foreground/80 text-sm"
+                                    isStreaming={isLoading}
+                                />
                             )}
 
                             {isLoading && !responseText && toolParts.length === 0 && (
@@ -536,10 +583,10 @@ function ServerList({
             >
                 <PlugsIcon className="text-foreground/20 mx-auto h-10 w-10" />
                 <h3 className="text-foreground/60 mt-3 text-sm font-medium">
-                    No servers connected
+                    No servers yet
                 </h3>
                 <p className="text-foreground/40 mt-1 text-xs">
-                    Paste a URL above to get started
+                    Add your first—paste a URL, JSON config, or describe the connection
                 </p>
             </div>
         );
