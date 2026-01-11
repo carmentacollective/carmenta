@@ -132,7 +132,7 @@ export function DiscoveryProgress({
                     <p className="mt-4 text-lg font-medium">
                         {isComplete
                             ? "Discovery complete"
-                            : "Rediscovering what we've built together..."}
+                            : "Reading through your history..."}
                     </p>
 
                     {/* Progress bar */}

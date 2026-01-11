@@ -7,7 +7,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { eq, and, inArray, isNull, sql } from "drizzle-orm";
+import { eq, and, inArray, isNull, sql, desc } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -17,9 +17,11 @@ import {
     connections,
     messages,
     messageParts,
+    users,
 } from "@/lib/db/schema";
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
+import { kb, PROFILE_PATHS } from "@/lib/kb";
 import { extractionSystemPrompt, buildExtractionPrompt } from "./prompt";
 import type {
     ExtractedFact,
@@ -86,6 +88,8 @@ export async function getUnprocessedImports(
                 isNull(extractionProcessedConnections.id)
             )
         )
+        // Process oldest conversations first for proper temporal resolution
+        .orderBy(connections.createdAt)
         .limit(limit);
 
     return result;
@@ -148,7 +152,9 @@ async function getConnectionUserMessages(
  */
 export async function extractFromConversation(
     connectionId: number,
-    title: string | null
+    title: string | null,
+    userName?: string,
+    profileContext?: string
 ): Promise<ConversationExtractionResult> {
     const userMessages = await getConnectionUserMessages(connectionId);
 
@@ -165,7 +171,9 @@ export async function extractFromConversation(
     // Build prompt
     const prompt = buildExtractionPrompt(
         title || "Untitled Conversation",
-        userMessages.map((m) => ({ content: m.content, createdAt: m.createdAt }))
+        userMessages.map((m) => ({ content: m.content, createdAt: m.createdAt })),
+        userName,
+        profileContext
     );
 
     try {
@@ -275,6 +283,21 @@ export async function processExtractionJob(jobId: string): Promise<void> {
         .where(eq(extractionJobs.id, jobId));
 
     try {
+        // Fetch user info for personalized extraction
+        const [user] = await db
+            .select({
+                firstName: users.firstName,
+                displayName: users.displayName,
+            })
+            .from(users)
+            .where(eq(users.id, job.userId));
+
+        const userName = user?.displayName || user?.firstName || undefined;
+
+        // Fetch profile identity for additional context
+        const identityDoc = await kb.read(job.userId, PROFILE_PATHS.identity);
+        const profileContext = identityDoc?.content?.trim() || undefined;
+
         // Get connections to process
         let connectionIdsToProcess: number[];
 
@@ -305,7 +328,9 @@ export async function processExtractionJob(jobId: string): Promise<void> {
 
             // Process batch in parallel
             const results = await Promise.all(
-                connectionDetails.map((c) => extractFromConversation(c.id, c.title))
+                connectionDetails.map((c) =>
+                    extractFromConversation(c.id, c.title, userName, profileContext)
+                )
             );
 
             // Save extractions and mark as processed atomically
@@ -485,7 +510,7 @@ export async function getPendingExtractions(
             .from(pendingExtractions)
             .leftJoin(connections, eq(pendingExtractions.connectionId, connections.id))
             .where(and(...conditions))
-            .orderBy(pendingExtractions.createdAt)
+            .orderBy(desc(pendingExtractions.createdAt))
             .limit(options?.limit ?? 50)
             .offset(options?.offset ?? 0),
         db
