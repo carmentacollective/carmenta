@@ -8,7 +8,7 @@
  * to open CarmentaSheet and paste configs or describe connections.
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
     PlugIcon,
@@ -347,6 +347,7 @@ function McpConfigContent({
     const [testResults, setTestResults] = useState<Map<number, "success" | "error">>(
         new Map()
     );
+    const testResultTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
     // Carmenta sheet state
     const [carmentaOpen, setCarmentaOpen] = useState(false);
@@ -386,6 +387,14 @@ function McpConfigContent({
     useEffect(() => {
         loadServers();
     }, [loadServers, refreshKey]);
+
+    // Cleanup timers on unmount
+    useEffect(() => {
+        return () => {
+            testResultTimersRef.current.forEach((timerId) => clearTimeout(timerId));
+            testResultTimersRef.current.clear();
+        };
+    }, []);
 
     const handleReconnect = useCallback(
         async (server: McpServerSummary) => {
@@ -430,7 +439,13 @@ function McpConfigContent({
     const handleTest = useCallback(
         async (server: McpServerSummary) => {
             setTestingServers((prev) => new Set(prev).add(server.id));
-            // Clear any previous result for this server
+
+            // Clear any previous result and timer for this server
+            const existingTimer = testResultTimersRef.current.get(server.id);
+            if (existingTimer) {
+                clearTimeout(existingTimer);
+                testResultTimersRef.current.delete(server.id);
+            }
             setTestResults((prev) => {
                 const next = new Map(prev);
                 next.delete(server.id);
@@ -465,14 +480,17 @@ function McpConfigContent({
                     next.delete(server.id);
                     return next;
                 });
+
                 // Clear result after 3 seconds
-                setTimeout(() => {
+                const timerId = setTimeout(() => {
                     setTestResults((prev) => {
                         const next = new Map(prev);
                         next.delete(server.id);
                         return next;
                     });
+                    testResultTimersRef.current.delete(server.id);
                 }, 3000);
+                testResultTimersRef.current.set(server.id, timerId);
             }
         },
         [loadServers]
