@@ -22,7 +22,6 @@ async function build() {
         bundle: true,
         platform: "node",
         target: "node20",
-        outdir,
         format: "cjs",
         sourcemap: true,
         define: {
