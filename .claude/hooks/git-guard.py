@@ -5,18 +5,22 @@ Claude Code Hook: Git Guard
 Protects against dangerous git operations by properly parsing git commands
 instead of fragile regex matching.
 
-Hard blocks (exit 2):
+Hard blocks (exit 2) - Never bypassable:
 - git commit -a (stage files explicitly first)
 - git push --no-verify (investigate failures, don't bypass them)
 - git commit --no-verify (investigate failures, don't bypass them)
 
-Requires confirmation (permissionDecision: "ask"):
+Needs confirmation (exit 2 unless GITGUARD_CONFIRMED=1):
 - Direct pushes to main branch
 - gh pr merge
 
+The GITGUARD_CONFIRMED=1 prefix signals that the user explicitly requested
+this operation. Claude should set this when the user directly asks for
+a push/merge, and omit it when acting autonomously.
+
 Exit codes:
-- 0: Command allowed (or JSON output for "ask" decision)
-- 2: Command blocked (hard violations)
+- 0: Command allowed
+- 2: Command blocked
 
 Allows:
 - git add -A / git add . / git add --all (AI should verify what's staged before committing)
@@ -34,14 +38,39 @@ from typing import NamedTuple
 
 
 class ViolationType(Enum):
-    HARD_BLOCK = "block"  # Exit 2, no way through
-    ASK_USER = "ask"      # Prompt for confirmation in UI
+    HARD_BLOCK = "block"           # Exit 2, never bypassable
+    NEEDS_CONFIRMATION = "confirm" # Exit 2 unless GITGUARD_CONFIRMED=1
 
 
 class Violation(NamedTuple):
     message: str
     suggestion: str
     violation_type: ViolationType = ViolationType.HARD_BLOCK
+
+
+def has_confirmation_flag(command: str) -> bool:
+    """
+    Check if command has GITGUARD_CONFIRMED=1 prefix.
+
+    This signals that the user explicitly requested this operation.
+    Claude should set this when the user directly asks for a push/merge.
+
+    Examples:
+        "GITGUARD_CONFIRMED=1 git push origin main" → True
+        "git push origin main" → False
+    """
+    try:
+        tokens = shlex.split(command)
+        # Check first few tokens for the env var pattern
+        for token in tokens[:3]:  # Only check beginning of command
+            if token == "GITGUARD_CONFIRMED=1":
+                return True
+            # Stop at first non-env-var token
+            if "=" not in token:
+                break
+        return False
+    except ValueError:
+        return False
 
 
 def validate_directory(path: str) -> bool:
@@ -253,9 +282,9 @@ def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> 
 
     if pushing_to_main:
         violations.append(Violation(
-            "Push to main branch requires explicit approval",
-            "Confirm in the UI dialog, or push to a feature branch instead",
-            ViolationType.ASK_USER
+            "Push to main branch requires explicit user request",
+            "If user asked for this, re-run with: GITGUARD_CONFIRMED=1 git push ...",
+            ViolationType.NEEDS_CONFIRMATION
         ))
 
     return violations
@@ -320,9 +349,9 @@ def check_gh_command(command: str) -> list[Violation]:
     # gh pr merge can work with or without explicit PR number (uses current branch's PR)
     if len(remaining) >= 2 and remaining[0] == "pr" and remaining[1] == "merge":
         violations.append(Violation(
-            "Merging PRs via CLI requires explicit approval",
-            "Confirm in the UI dialog, or use GitHub web interface for better review experience",
-            ViolationType.ASK_USER
+            "Merging PRs via CLI requires explicit user request",
+            "If user asked for this, re-run with: GITGUARD_CONFIRMED=1 gh pr merge ...",
+            ViolationType.NEEDS_CONFIRMATION
         ))
 
     return violations
@@ -379,11 +408,11 @@ def main():
     if not violations:
         sys.exit(0)
 
-    # Separate hard blocks from ask-user violations
+    # Separate violation types
     hard_blocks = [v for v in violations if v.violation_type == ViolationType.HARD_BLOCK]
-    ask_violations = [v for v in violations if v.violation_type == ViolationType.ASK_USER]
+    needs_confirmation = [v for v in violations if v.violation_type == ViolationType.NEEDS_CONFIRMATION]
 
-    # Hard blocks take priority - exit 2, no way through
+    # Hard blocks take priority - exit 2, never bypassable
     if hard_blocks:
         print("\n*** BLOCKED: Operation not allowed ***\n", file=sys.stderr)
         for v in hard_blocks:
@@ -392,22 +421,26 @@ def main():
         print("See .cursor/rules/git-interaction.mdc for git workflow rules", file=sys.stderr)
         sys.exit(2)
 
-    # Ask-user violations: output JSON to trigger UI confirmation
-    if ask_violations:
-        # Build reason from all ask violations
-        reasons = [v.message for v in ask_violations]
-        reason_text = "; ".join(reasons)
+    # Check for confirmation flag in command
+    confirmed = has_confirmation_flag(command)
 
-        output = {
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "ask",
-                "permissionDecisionReason": reason_text
-            }
-        }
-        print(json.dumps(output))
-        # Exit 0 with JSON output triggers UI confirmation dialog in Claude Code
-        sys.exit(0)
+    # NEEDS_CONFIRMATION violations: block unless confirmed
+    if needs_confirmation:
+        if confirmed:
+            # User explicitly requested this - allow it
+            sys.exit(0)
+        else:
+            # No confirmation - block and explain
+            print("\n*** BLOCKED: Explicit user request required ***\n", file=sys.stderr)
+            for v in needs_confirmation:
+                print(f"  {v.message}", file=sys.stderr)
+                print(f"    -> {v.suggestion}\n", file=sys.stderr)
+            print(
+                "If the user explicitly asked for this operation, re-run with GITGUARD_CONFIRMED=1 prefix.\n"
+                "If you decided to do this autonomously, ask the user first.",
+                file=sys.stderr
+            )
+            sys.exit(2)
 
     # No violations - command is allowed
     sys.exit(0)
