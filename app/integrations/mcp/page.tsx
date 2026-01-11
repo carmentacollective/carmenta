@@ -246,6 +246,7 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
     const [inputValue, setInputValue] = useState("");
     const [showSuccess, setShowSuccess] = useState(false);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Detect if input looks like JSON (for styling)
     const looksLikeJson =
@@ -291,8 +292,15 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
         onFinish: () => {
             onConfigChange?.();
             // Show success indicator briefly, then hide
+            // Clear any existing timeout first to prevent race conditions
+            if (successTimeoutRef.current) {
+                clearTimeout(successTimeoutRef.current);
+            }
             setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 2000);
+            successTimeoutRef.current = setTimeout(() => {
+                setShowSuccess(false);
+                successTimeoutRef.current = null;
+            }, 2000);
         },
     });
 
@@ -332,6 +340,7 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
             setLastRequest(inputValue);
             setIsExpanded(true);
             setMessages([]);
+            setShowSuccess(false); // Clear success indicator on new submission
 
             await sendMessage({
                 role: "user",
@@ -361,6 +370,11 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
         setMessages([]);
         setLastRequest(null);
         setShowSuccess(false);
+        // Clear pending timeout to prevent race condition
+        if (successTimeoutRef.current) {
+            clearTimeout(successTimeoutRef.current);
+            successTimeoutRef.current = null;
+        }
     }, [setMessages]);
 
     const toggleExpanded = useCallback(() => {
