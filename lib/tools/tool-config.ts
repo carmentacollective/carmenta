@@ -25,6 +25,7 @@ import {
     PlugIcon,
     ArchiveIcon,
     ImageSquareIcon,
+    BellIcon,
     type Icon,
 } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
@@ -590,6 +591,26 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
         delightMessages: {
             completed: ["On its way", "Headed your way", "Check your phone"],
             fast: ["Quick!", "Already there"],
+        },
+    },
+    pushNotification: {
+        displayName: "Push Notification",
+        icon: BellIcon,
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const title = args.title as string | undefined;
+            if (action === "send" && title) return truncate(title, 40);
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Notifying you...",
+            completed: "Notification sent",
+            error: "Couldn't send notification. Make sure notifications are enabled.",
+        },
+        delightMessages: {
+            completed: ["Delivered", "Notification sent", "Check your device"],
+            fast: ["Instant!", "Already there"],
         },
     },
     slack: {

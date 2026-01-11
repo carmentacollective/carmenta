@@ -127,6 +127,13 @@
       "when": 1768069431086,
       "tag": "0029_easy_morph",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1768155081595,
+      "tag": "0030_whole_timeslip",
+      "breakpoints": true
     }
   ]
 }

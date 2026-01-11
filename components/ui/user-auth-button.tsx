@@ -14,6 +14,8 @@ import {
     ChatTeardropIcon,
     ClockClockwiseIcon,
     DownloadSimpleIcon,
+    BellIcon,
+    BellSlashIcon,
 } from "@phosphor-icons/react";
 
 import { AnimatePresence, motion } from "framer-motion";
@@ -30,6 +32,7 @@ import {
     getCurrentHoliday,
     type ThemeVariant,
 } from "@/lib/theme/theme-context";
+import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 
 // Track whether we're on the client
 const subscribe = () => () => {};
@@ -60,6 +63,15 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     const { themeVariant, setThemeVariant } = useThemeVariant();
     // Track the "committed" theme (what user has actually selected, not just hovering)
     const [committedTheme, setCommittedTheme] = useState<ThemeVariant>(themeVariant);
+    // Push notifications
+    const {
+        isSubscribed,
+        canSubscribe,
+        unavailableReason,
+        isLoading: isPushLoading,
+        subscribe: subscribeToPush,
+        unsubscribe: unsubscribeFromPush,
+    } = usePushNotifications();
     // Ref for positioning the portal dropdown
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
@@ -422,6 +434,70 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                       {displayTheme?.description}
                                                   </div>
                                               </div>
+                                          </div>
+                                      )}
+
+                                      {/* Notifications toggle */}
+                                      {isClient && (
+                                          <div className="border-foreground/10 border-t px-4 py-3">
+                                              <div className="flex items-center justify-between">
+                                                  <div className="flex items-center gap-2">
+                                                      {isSubscribed ? (
+                                                          <BellIcon className="text-foreground/60 h-4 w-4" />
+                                                      ) : (
+                                                          <BellSlashIcon className="text-foreground/60 h-4 w-4" />
+                                                      )}
+                                                      <span className="text-foreground/80 text-sm">
+                                                          Notifications
+                                                      </span>
+                                                  </div>
+
+                                                  {canSubscribe ? (
+                                                      <button
+                                                          onClick={async () => {
+                                                              if (isSubscribed) {
+                                                                  await unsubscribeFromPush();
+                                                              } else {
+                                                                  await subscribeToPush();
+                                                              }
+                                                          }}
+                                                          disabled={isPushLoading}
+                                                          className={cn(
+                                                              "relative h-6 w-11 rounded-full transition-colors",
+                                                              isSubscribed
+                                                                  ? "bg-primary"
+                                                                  : "bg-foreground/20",
+                                                              isPushLoading &&
+                                                                  "cursor-wait opacity-50"
+                                                          )}
+                                                      >
+                                                          <span
+                                                              className={cn(
+                                                                  "bg-background absolute top-0.5 h-5 w-5 rounded-full shadow transition-transform",
+                                                                  isSubscribed
+                                                                      ? "translate-x-[22px]"
+                                                                      : "translate-x-0.5"
+                                                              )}
+                                                          />
+                                                      </button>
+                                                  ) : (
+                                                      <span
+                                                          className="text-foreground/40 cursor-help text-xs"
+                                                          data-tooltip-id="tip"
+                                                          data-tooltip-content={
+                                                              unavailableReason ?? ""
+                                                          }
+                                                      >
+                                                          Unavailable
+                                                      </span>
+                                                  )}
+                                              </div>
+
+                                              {!canSubscribe && unavailableReason && (
+                                                  <p className="text-foreground/50 mt-2 text-xs">
+                                                      {unavailableReason}
+                                                  </p>
+                                              )}
                                           </div>
                                       )}
 
