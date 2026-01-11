@@ -80,15 +80,12 @@ const COMMANDS = [
     { id: "explain", name: "Explain", description: "Break down concept" },
 ];
 
-// Easter eggs categorized by emotion
+// Easter eggs - ONLY rare/intentional phrases, not common words
+// Avoid: we, us, our, together, create, build, ship, flow (too common, will annoy)
 const EASTER_EGGS = {
-    love: ["love", "love you", "loving", "beloved"],
-    gratitude: ["thank you", "thanks", "grateful", "appreciate", "blessed"],
-    celebration: ["yay", "woohoo", "hell yeah", "let's go", "nailed it"],
-    magic: ["magic", "wizard", "abracadabra", "beautiful"],
-    warmth: ["hug", "hugs"],
-    partnership: ["we", "together", "us", "our"], // The heart of Carmenta
-    flow: ["flow", "create", "build", "ship"], // What builders do
+    love: ["love you", "love carmenta"], // Intentional affection
+    gratitude: ["thank you"], // Warmth when expressing thanks
+    celebration: ["hell yeah", "nailed it"], // Rare enough to delight
 } as const;
 
 const ALL_EASTER_WORDS = Object.values(EASTER_EGGS).flat();
@@ -105,10 +102,12 @@ const getEasterCategory = (word: string): keyof typeof EASTER_EGGS | null => {
 };
 
 // Highlighting patterns
+// - mention: Lookbehind ensures @ isn't part of email (e.g., test@notion.com)
+// - command: [\w-]+ allows hyphenated commands like /deep-research
 const PATTERNS = {
-    mention: /@\w+/g,
+    mention: /(?<![^\s])@\w+/g,
     modifier: /#\w+/g,
-    command: /\/\w+/g,
+    command: /\/[\w-]+/g,
     url: /https?:\/\/[^\s]+/g,
     easterEgg: EASTER_EGG_REGEX,
 };
@@ -434,22 +433,12 @@ export const SyntaxHighlightInput = forwardRef<
 
                 if (token.type === "easter") {
                     const category = getEasterCategory(token.text);
-                    // Variable reinforcement: animate ~30% of the time
-                    const shouldAnimate =
-                        (token.start * 7 + token.text.length) % 3 === 0;
-                    const animationClass = shouldAnimate ? "animate-pulse" : "";
-                    tokenClassName = cn(
+                    tokenClassName =
                         {
                             love: "text-pink-500 font-semibold",
-                            gratitude: "text-amber-600 font-semibold",
+                            gratitude: "text-amber-500 font-semibold",
                             celebration: "text-emerald-500 font-semibold",
-                            magic: "text-violet-500 font-semibold",
-                            warmth: "text-orange-400 font-semibold",
-                            partnership: "text-pink-500 font-semibold",
-                            flow: "text-cyan-500 font-semibold",
-                        }[category ?? "love"],
-                        animationClass
-                    );
+                        }[category ?? "love"] ?? "text-pink-500 font-semibold";
                 } else if (token.text.toLowerCase() === "#ultrathink") {
                     // Rainbow treatment for #ultrathink
                     tokenClassName =
