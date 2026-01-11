@@ -46,7 +46,9 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 // Determine which model(s) to test
 const specifiedModel = process.env.LIBRARIAN_MODEL;
 const compareAll = process.env.LIBRARIAN_COMPARE_ALL === "true";
-const filterTags = process.env.LIBRARIAN_TAGS?.split(",").map((t) => t.trim());
+const filterTags = process.env.LIBRARIAN_TAGS?.split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
 let modelsToTest: LibrarianModelCandidate[];
 
@@ -101,13 +103,13 @@ async function runLocal() {
     const concurrency = 10;
 
     // Filter by tags if specified
-    const filteredCases = filterTags
+    const filteredCases = filterTags?.length
         ? librarianTestData.filter((t) =>
               t.tags?.some((tag) => filterTags.includes(tag))
           )
         : librarianTestData;
 
-    if (filterTags) {
+    if (filterTags?.length) {
         console.log(
             `Tag filter: [${filterTags.join(", ")}] → ${filteredCases.length} cases`
         );
