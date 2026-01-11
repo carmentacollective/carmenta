@@ -360,6 +360,7 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
         setIsExpanded(false);
         setMessages([]);
         setLastRequest(null);
+        setShowSuccess(false);
     }, [setMessages]);
 
     const toggleExpanded = useCallback(() => {
