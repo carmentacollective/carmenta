@@ -18,6 +18,40 @@ import { DOCLING_CONFIG, extractDocument } from "@/lib/document-intelligence";
 /** Maximum file size for extraction (50MB) */
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
+/**
+ * Map internal errors to user-friendly messages
+ * Prevents leaking infrastructure details while keeping helpful error info
+ */
+function getUserFriendlyError(error: unknown): string {
+    if (!(error instanceof Error)) {
+        return "Document extraction failed. Please try again.";
+    }
+
+    const message = error.message.toLowerCase();
+
+    // Known user-actionable errors - pass through
+    if (
+        message.includes("empty") ||
+        message.includes("timeout") ||
+        message.includes("too large") ||
+        message.includes("invalid format")
+    ) {
+        return error.message;
+    }
+
+    // Network/infrastructure errors - generic message
+    if (
+        message.includes("fetch") ||
+        message.includes("network") ||
+        message.includes("econnrefused")
+    ) {
+        return "Document extraction service is temporarily unavailable. Please try again.";
+    }
+
+    // Generic fallback for unexpected errors
+    return "Document extraction failed. Please try again.";
+}
+
 export async function POST(request: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
@@ -64,7 +98,7 @@ export async function POST(request: NextRequest) {
                 {
                     error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
                 },
-                { status: 400 }
+                { status: 413 }
             );
         }
 
@@ -108,10 +142,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(
             {
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : "Document extraction failed. Please try again.",
+                error: getUserFriendlyError(error),
             },
             { status: 500 }
         );

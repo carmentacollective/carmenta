@@ -6,9 +6,4 @@
  */
 
 export { DOCLING_CONFIG, type SupportedDoclingType } from "./config";
-export {
-    extractDocument,
-    checkDoclingHealth,
-    type DoclingResult,
-    type DoclingError,
-} from "./client";
+export { extractDocument, checkDoclingHealth, type DoclingResult } from "./client";

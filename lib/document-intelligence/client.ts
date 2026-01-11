@@ -12,11 +12,6 @@ export interface DoclingResult {
     processingTimeMs: number;
 }
 
-export interface DoclingError {
-    message: string;
-    status?: number;
-}
-
 /** Sanitize filename by removing path components, null bytes, and normalizing unicode */
 function sanitizeFilename(filename: string): string {
     return filename
