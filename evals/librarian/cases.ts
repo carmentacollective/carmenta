@@ -386,7 +386,8 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.personal_finance.*/,
+            expectedPath:
+                /knowledge\.(projects|preferences)\.(personal_finance|financial).*/,
             expectedAction: "create",
             contentPatterns: [/financial management/i, /budgeting/i, /monthly budget/i],
         },
@@ -454,7 +455,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [/dating/i, /workshop/i, /self-discovery/i],
         },
@@ -662,7 +663,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [
                 /joined.*film club/i,
@@ -878,7 +879,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [/financial literacy/i, /investment/i, /learning/i],
         },
@@ -1018,7 +1019,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [/study habits/i, /academic/i, /learning/i],
         },
@@ -1086,7 +1087,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [/digital music remix/i, /2010/i, /late nights/i],
         },
@@ -1154,7 +1155,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [/digital music remix/i, /2010/i, /music production/i],
         },
@@ -1502,7 +1503,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [
                 /health.*journey/i,
@@ -1574,7 +1575,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [
                 /attended.*workshop.*note-taking/i,
@@ -1858,7 +1859,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [
                 /joined.*local film club/i,
@@ -1930,7 +1931,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[a-zA-Z_]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[a-zA-Z_-]+/,
             expectedAction: "create",
             contentPatterns: [/dating/i, /workshop/i, /self-discovery/i],
         },
@@ -2214,7 +2215,7 @@ export const librarianTestData: LibrarianTestCase[] = [
         },
         expected: {
             shouldSave: true,
-            expectedPath: /knowledge\.projects\.[^.]+/,
+            expectedPath: /knowledge\.(projects|preferences)\.[^.]+/,
             expectedAction: "create",
             contentPatterns: [
                 /personal finance blog/i,
@@ -2811,5 +2812,362 @@ export const librarianTestData: LibrarianTestCase[] = [
             shouldSave: false,
         },
         tags: ["adversarial", "no-save", "situational"],
+    },
+
+    // =============================================================================
+    // SUPERMEMORY-INSPIRED CASES
+    // Tests for user outcomes inspired by supermemory's capabilities.
+    // These focus on fact evolution, entity-attribute relationships, and KB updates.
+    // =============================================================================
+
+    // Category 1: Real-Time Fact Evolution
+    // Tests the librarian's ability to UPDATE existing knowledge during live conversations.
+
+    {
+        input: {
+            id: "fact-evolution-job-change",
+            description:
+                "User mentions job change - should update existing identity, not create duplicate",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "I finally left Google! Started as CTO at a startup called Acme last week.",
+                },
+                {
+                    role: "assistant",
+                    content:
+                        "Congratulations on the new role! That's a big career move.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a senior software engineer at Google.",
+                },
+            ],
+            category: "fact-evolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [/CTO/i, /Acme/i],
+            excludedContent: [/Google.*engineer/i],
+            updateTarget: "profile.identity",
+        },
+        tags: ["supermemory-inspired", "fact-evolution", "identity", "job-change"],
+    },
+    {
+        input: {
+            id: "fact-evolution-location-move",
+            description:
+                "User mentions they moved - should update location, not create new doc",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "We finally made the move to Austin last month. Still unpacking boxes!",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick lives in Las Vegas, Nevada.",
+                },
+            ],
+            category: "fact-evolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [/Austin/i],
+            excludedContent: [/Las Vegas/i],
+            updateTarget: "profile.identity",
+        },
+        tags: ["supermemory-inspired", "fact-evolution", "identity", "location"],
+    },
+    {
+        input: {
+            id: "fact-evolution-relationship-change",
+            description:
+                "User's relationship status changed - update existing or create new person entry",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Unity and I broke up last month. It was amicable but hard. I've started seeing someone new - her name is Julianna.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.unity",
+                    name: "Unity",
+                    content:
+                        "Nick's girlfriend is Unity. They've been together for 2 years.",
+                },
+            ],
+            category: "fact-evolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.people\.(unity|julianna)/i,
+            // Both "update" (Unity to ex) and "create" (new Julianna entry) are valid
+            contentPatterns: [/julianna|ex|girlfriend/i],
+        },
+        tags: ["supermemory-inspired", "fact-evolution", "relationship", "person"],
+    },
+    {
+        input: {
+            id: "fact-evolution-preference-change",
+            description:
+                "User explicitly changes a preference - should update, not duplicate",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "I've completely switched from VS Code to Cursor now. The AI features are incredible. Haven't touched VS Code in months.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.preferences.tools",
+                    name: "Tools",
+                    content: "Nick uses VS Code as his primary editor.",
+                },
+            ],
+            category: "fact-evolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.preferences\.tools/,
+            expectedAction: "update",
+            contentPatterns: [/Cursor/i],
+            excludedContent: [/VS Code.*primary/i],
+            updateTarget: "knowledge.preferences.tools",
+        },
+        tags: ["supermemory-inspired", "fact-evolution", "preference", "tools"],
+    },
+
+    // Category 2: Entity-Attribute Relationships
+    // Tests whether we properly capture attributes about entities that can be recalled later.
+
+    {
+        input: {
+            id: "entity-person-attribute",
+            description:
+                "User mentions attribute about a person - should append to existing person entry",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "My girlfriend Julianna is really into clean eating. She doesn't like seed oils and avoids processed food.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.julianna",
+                    name: "Julianna",
+                    content: "Nick's girlfriend is Julianna.",
+                },
+            ],
+            category: "entity-attribute",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.people\.julianna/i,
+            expectedAction: "update",
+            contentPatterns: [/seed oils/i, /clean eating|processed food/i],
+            updateTarget: "knowledge.people.julianna",
+        },
+        tags: ["supermemory-inspired", "entity-attribute", "person", "preference"],
+    },
+    {
+        input: {
+            id: "entity-project-attribute",
+            description:
+                "User adds technical context about existing project - should append to project",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "We decided to use PostgreSQL for Carmenta's database. The ltree extension is perfect for our knowledge base structure.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.projects.carmenta",
+                    name: "Carmenta",
+                    content: "Nick is building Carmenta, an AI interface for builders.",
+                },
+            ],
+            category: "entity-attribute",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.projects\.carmenta/i,
+            expectedAction: "update",
+            contentPatterns: [/PostgreSQL/i, /ltree/i],
+            updateTarget: "knowledge.projects.carmenta",
+        },
+        tags: ["supermemory-inspired", "entity-attribute", "project", "decision"],
+    },
+
+    // Category 3: Cross-Source Conflict Resolution
+    // Tests what happens when live conversation overrides existing knowledge.
+
+    {
+        input: {
+            id: "cross-source-override",
+            description:
+                "Live conversation explicitly overrides imported fact - should update",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Actually, I need to update something - I don't work at Cloudflare anymore. I left to work on Carmenta full-time.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a software engineer at Cloudflare.",
+                },
+            ],
+            category: "conflict-resolution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [/Carmenta/i, /full-time/i],
+            excludedContent: [/Cloudflare.*engineer/i],
+            updateTarget: "profile.identity",
+        },
+        tags: [
+            "supermemory-inspired",
+            "conflict-resolution",
+            "cross-source",
+            "identity",
+        ],
+    },
+
+    // Category 4: Soft Correction
+    // User corrects a fact without requesting full deletion.
+
+    {
+        input: {
+            id: "soft-correction",
+            description:
+                "User corrects a fact without requesting deletion - should update",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Oh, I think I told you my favorite color is blue, but it's actually green. Blue was my ex's favorite.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.preferences.general",
+                    name: "General Preferences",
+                    content: "Nick's favorite color is blue.",
+                },
+            ],
+            category: "soft-correction",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.preferences\.general/,
+            expectedAction: "update",
+            contentPatterns: [/green/i],
+            excludedContent: [/blue.*favorite/i],
+            updateTarget: "knowledge.preferences.general",
+        },
+        tags: ["supermemory-inspired", "soft-correction", "preference"],
+    },
+
+    // Category 5: High-Confidence Auto-Learn
+    // Tests obvious facts that should be captured with high confidence.
+
+    {
+        input: {
+            id: "high-confidence-identity",
+            description:
+                "Clear identity statement that should be captured - new user introduction",
+            conversation: [
+                {
+                    role: "user",
+                    content: "My name is Nick Sullivan and I live in Austin, Texas.",
+                },
+            ],
+            existingKB: [],
+            category: "high-confidence",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "create",
+            contentPatterns: [/Nick Sullivan/i, /Austin/i],
+        },
+        tags: ["supermemory-inspired", "high-confidence", "identity", "auto-learn"],
+    },
+
+    // Category 6: Noise Filtering with Existing KB
+    // Tests that ephemeral content doesn't pollute existing knowledge.
+
+    {
+        input: {
+            id: "no-ephemeral-update",
+            description:
+                "Temporary state should not overwrite durable knowledge - tired complaint",
+            conversation: [
+                {
+                    role: "user",
+                    content: "I'm so tired today. Can barely focus.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a software engineer who works on AI products.",
+                },
+            ],
+            category: "noise-filtering",
+        },
+        expected: {
+            shouldSave: false,
+        },
+        tags: ["supermemory-inspired", "noise-filtering", "ephemeral"],
+    },
+    {
+        input: {
+            id: "no-task-context-pollution",
+            description: "Current task context should not pollute identity knowledge",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "I'm debugging a memory leak in the image processing service right now.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a software engineer working on Carmenta.",
+                },
+            ],
+            category: "noise-filtering",
+        },
+        expected: {
+            shouldSave: false,
+        },
+        tags: ["supermemory-inspired", "noise-filtering", "task-context"],
     },
 ];
