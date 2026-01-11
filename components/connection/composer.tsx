@@ -497,22 +497,23 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Check for secret phrases (easter egg effects)
             checkMessage(userText);
 
-            try {
-                // Filter to files that can be sent as attachments
-                // (excludes text files and spreadsheets - their content is in the message)
-                const filesToSend = getFilesToSend(completedFiles);
+            // Capture files before clearing state
+            const filesToSend = getFilesToSend(completedFiles).map((f) => ({
+                url: f.url,
+                mediaType: f.mediaType,
+                name: f.name,
+            }));
 
+            // Files clear optimistically (industry standard - don't restore on failure)
+            clearFiles();
+
+            try {
                 await append({
                     role: "user",
                     content: message,
-                    files: filesToSend.map((f) => ({
-                        url: f.url,
-                        mediaType: f.mediaType,
-                        name: f.name,
-                    })),
+                    files: filesToSend,
                 });
-                // Clear files and draft after successful send
-                clearFiles();
+                // Draft clears on success only (preserves draft if send fails)
                 onMessageSent();
                 // Re-focus input for quick follow-up messages
                 // Use preventScroll on mobile to avoid keyboard-induced scroll jank
@@ -522,7 +523,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     { error: error instanceof Error ? error.message : String(error) },
                     "Failed to send message"
                 );
-                setInput(userText); // Restore original user text, not expanded message
+                setInput(userText); // Restore text for retry (files stay cleared)
             } finally {
                 isSubmittingRef.current = false;
             }

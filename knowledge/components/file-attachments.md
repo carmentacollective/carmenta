@@ -134,6 +134,68 @@ overflow context. First N chunks miss relevant content later in the document.
 **Insight**: Smart retrieval considers query relevance, recency, and token budget.
 Dynamic selection beats static rules.
 
+### Pattern: Clear-First Attachment State (Critical - Jan 2025)
+
+**Deep analysis of 4 competitors** (Vercel AI Chatbot, LobeChat, LibreChat,
+assistant-ui) revealed a universal pattern for composer attachment state management:
+
+**The Pattern: Clear BEFORE async, not after**
+
+All implementations clear attachment state IMMEDIATELY when send is clicked, BEFORE the
+async message send completes:
+
+| Competitor        | Implementation                                               |
+| ----------------- | ------------------------------------------------------------ |
+| Vercel AI Chatbot | `setAttachments([])` synchronously after `sendMessage()`     |
+| LobeChat          | Captures files first, clears immediately, then sends         |
+| LibreChat         | `setFiles(new Map())` after extracting files to message      |
+| assistant-ui      | `_emptyTextAndAttachments()` called before async in `send()` |
+
+**Why This Works:**
+
+1. **Optimistic UI**: User sees instant feedback - files disappear when they click send
+2. **No timing issues**: Clear happens synchronously, no React batching interference
+3. **Capture-then-clear**: Files are captured into message payload before clearing state
+4. **Clean state machine**: Files are either "in composer" or "in message", never limbo
+
+**Key Implementation (LobeChat pattern):**
+
+```typescript
+const handleSend = async () => {
+  // 1. Capture current state BEFORE clearing
+  const currentFiles = fileStore.getFiles();
+  const currentMessage = getMessage();
+
+  // 2. Clear immediately (optimistic UI)
+  clearFiles();
+  clearMessage();
+
+  // 3. Send with captured values (fire-and-forget)
+  await sendMessage({ files: currentFiles, message: currentMessage });
+};
+```
+
+**What About Send Failures?**
+
+None of the competitors automatically restore files on send failure. The pattern is:
+
+- Text: Often restored (users expect to retry)
+- Files: Stay cleared (re-upload if needed)
+
+Rationale: Files are large, often already processed server-side. Restoring them would
+require keeping the full file data around. Text is small, trivial to restore.
+
+**Insight**: Clear attachment state BEFORE crossing async boundaries. The message owns
+the attachments once captured. React timing issues disappear when you don't depend on
+state updates after async calls.
+
+**Sources:**
+
+- Vercel AI Chatbot: `multimodal-input.tsx:166`
+- LobeChat: `ChatInput/index.tsx:108-114`, `useSend.ts:73-78`
+- LibreChat: `useChatFunctions.ts:221-234`
+- assistant-ui: `BaseComposerRuntimeCore.tsx:123-149`
+
 ---
 
 ## Architecture Decisions
