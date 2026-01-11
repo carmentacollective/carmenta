@@ -32,9 +32,9 @@ Each extraction must be categorized:
 IMPORTANT: Facts change over time. When the same fact appears multiple times with different values, ONLY extract the MOST RECENT version.
 
 Examples:
-- "I live in Las Vegas" (January) → "I moved to Austin" (March) → Extract ONLY "User lives in Austin"
-- "My girlfriend is Juliana" → "Actually it's spelled Julianna" → Extract ONLY "Julianna" spelling
-- "I work at Company A" → "I started at Company B last month" → Extract ONLY Company B
+- "I live in Las Vegas" (January) → "I moved to Austin" (March) → Extract ONLY "Lives in Austin"
+- "My girlfriend is Juliana" → "Actually it's spelled Julianna" → Extract ONLY "Girlfriend: Julianna"
+- "I work at Company A" → "I started at Company B last month" → Extract ONLY "Works at Company B"
 
 Use timestamps to determine recency. The most recent authoritative statement wins.
 </temporal-resolution>
@@ -81,7 +81,7 @@ Return a JSON object with:
 - reasoning: brief explanation of your decision
 - facts: array of extracted facts, each with:
   - category: one of the categories above
-  - content: the fact itself, written as a statement about the user
+  - content: the fact itself, written concisely without "User" prefix (e.g., "Lives in Austin" not "User lives in Austin")
   - summary: one-line description for display
   - confidence: 0-1 score
   - suggestedPath: KB path following conventions
@@ -93,7 +93,9 @@ Return a JSON object with:
  */
 export function buildExtractionPrompt(
     conversationTitle: string,
-    userMessages: Array<{ content: string; createdAt: Date | null }>
+    userMessages: Array<{ content: string; createdAt: Date | null }>,
+    userName?: string,
+    profileContext?: string
 ): string {
     const formattedMessages = userMessages
         .map((m, i) => {
@@ -104,16 +106,37 @@ export function buildExtractionPrompt(
         })
         .join("\n\n---\n\n");
 
+    const personReference = userName || "this person";
+
+    // Build known context section if we have any
+    const contextParts: string[] = [];
+    if (userName) {
+        contextParts.push(`Name: ${userName}`);
+    }
+    if (profileContext) {
+        contextParts.push(profileContext);
+    }
+
+    const knownContext =
+        contextParts.length > 0
+            ? `
+<known_about_person>
+${contextParts.join("\n")}
+</known_about_person>
+`
+            : "";
+
     return `
-Analyze this imported conversation for extractable knowledge.
+Analyze this imported conversation for extractable knowledge about ${personReference}.
 
 <conversation_title>${conversationTitle}</conversation_title>
-
+${knownContext}
 <user_messages>
 ${formattedMessages}
 </user_messages>
 
-Extract any durable, personal facts about the user from these messages.
+Extract any durable, personal facts about ${personReference} from these messages.
+${knownContext ? "Skip facts that duplicate the basic identity info shown above." : ""}
 If nothing is worth extracting, set shouldExtract to false.
 `;
 }

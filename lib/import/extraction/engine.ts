@@ -17,9 +17,11 @@ import {
     connections,
     messages,
     messageParts,
+    users,
 } from "@/lib/db/schema";
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { logger } from "@/lib/logger";
+import { kb, PROFILE_PATHS } from "@/lib/kb";
 import { extractionSystemPrompt, buildExtractionPrompt } from "./prompt";
 import type {
     ExtractedFact,
@@ -86,6 +88,8 @@ export async function getUnprocessedImports(
                 isNull(extractionProcessedConnections.id)
             )
         )
+        // Process oldest conversations first for proper temporal resolution
+        .orderBy(connections.createdAt)
         .limit(limit);
 
     return result;
@@ -148,7 +152,9 @@ async function getConnectionUserMessages(
  */
 export async function extractFromConversation(
     connectionId: number,
-    title: string | null
+    title: string | null,
+    userName?: string,
+    profileContext?: string
 ): Promise<ConversationExtractionResult> {
     const userMessages = await getConnectionUserMessages(connectionId);
 
@@ -165,7 +171,9 @@ export async function extractFromConversation(
     // Build prompt
     const prompt = buildExtractionPrompt(
         title || "Untitled Conversation",
-        userMessages.map((m) => ({ content: m.content, createdAt: m.createdAt }))
+        userMessages.map((m) => ({ content: m.content, createdAt: m.createdAt })),
+        userName,
+        profileContext
     );
 
     try {
@@ -275,6 +283,30 @@ export async function processExtractionJob(jobId: string): Promise<void> {
         .where(eq(extractionJobs.id, jobId));
 
     try {
+        // Fetch user info for personalized extraction
+        const [user] = await db
+            .select({
+                firstName: users.firstName,
+                displayName: users.displayName,
+            })
+            .from(users)
+            .where(eq(users.id, job.userId));
+
+        const userName = user?.displayName || user?.firstName || undefined;
+
+        // Fetch profile identity for additional context
+        let profileContext: string | undefined;
+        try {
+            const identityDoc = await kb.read(job.userId, PROFILE_PATHS.identity);
+            profileContext = identityDoc?.content?.trim() || undefined;
+        } catch (error) {
+            logger.warn(
+                { error, userId: job.userId },
+                "Failed to read profile identity for extraction context - continuing without"
+            );
+            // Continue without profile context rather than failing the job
+        }
+
         // Get connections to process
         let connectionIdsToProcess: number[];
 
@@ -293,7 +325,7 @@ export async function processExtractionJob(jobId: string): Promise<void> {
             const batch = connectionIdsToProcess.slice(i, i + BATCH_SIZE);
 
             // Get connection details - filter by userId to prevent processing other users' connections
-            const connectionDetails = await db
+            const connectionDetailsRaw = await db
                 .select({ id: connections.id, title: connections.title })
                 .from(connections)
                 .where(
@@ -303,9 +335,21 @@ export async function processExtractionJob(jobId: string): Promise<void> {
                     )
                 );
 
-            // Process batch in parallel
+            // Preserve oldest-first order from batch (DB doesn't guarantee inArray order)
+            const connectionDetailsMap = new Map(
+                connectionDetailsRaw.map((c) => [c.id, c])
+            );
+            const connectionDetails = batch
+                .map((id) => connectionDetailsMap.get(id))
+                .filter(
+                    (c): c is { id: number; title: string | null } => c !== undefined
+                );
+
+            // Process batch in order (oldest first for temporal resolution)
             const results = await Promise.all(
-                connectionDetails.map((c) => extractFromConversation(c.id, c.title))
+                connectionDetails.map((c) =>
+                    extractFromConversation(c.id, c.title, userName, profileContext)
+                )
             );
 
             // Save extractions and mark as processed atomically
@@ -485,6 +529,7 @@ export async function getPendingExtractions(
             .from(pendingExtractions)
             .leftJoin(connections, eq(pendingExtractions.connectionId, connections.id))
             .where(and(...conditions))
+            // Keep ascending order for stable offset-based pagination (approve-all batching)
             .orderBy(pendingExtractions.createdAt)
             .limit(options?.limit ?? 50)
             .offset(options?.offset ?? 0),

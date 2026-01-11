@@ -132,8 +132,14 @@ export function DiscoveryProgress({
                     <p className="mt-4 text-lg font-medium">
                         {isComplete
                             ? "Discovery complete"
-                            : "Rediscovering what we've built together..."}
+                            : "Finding knowledge in your conversations..."}
                     </p>
+
+                    {!isComplete && (
+                        <p className="text-muted-foreground mt-1 text-sm">
+                            Surfacing projects, people, preferences, and decisions
+                        </p>
+                    )}
 
                     {/* Progress bar */}
                     <div className="mt-6 w-full max-w-md">
@@ -190,7 +196,7 @@ export function DiscoveryProgress({
                     {/* Continue button */}
                     <div className="mt-8 border-t pt-6">
                         <p className="text-muted-foreground mb-4 text-sm">
-                            Feel free to explore while this runs. We&apos;ll be here.
+                            This runs in the background. You can keep using Carmenta.
                         </p>
                         <Button
                             variant="outline"
