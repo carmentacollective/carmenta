@@ -22,7 +22,8 @@ export default defineConfig({
     // 1 retry on CI for infrastructure flakiness (browser crashes, network blips)
     // Local stays at 0 - flaky tests should fail loudly during development
     retries: process.env.CI ? 1 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    // Parallel execution - tests are stateless page loads, no shared DB writes
+    workers: process.env.CI ? 4 : undefined,
     reporter: "html",
 
     // Timeouts optimized for CI (cold start) and local (warm cache)
