@@ -357,6 +357,37 @@ export interface ConciergeResult {
      * Light-touch, helpful, not pushy.
      */
     suggestedIntegrations?: SuggestedIntegration[];
+
+    /**
+     * Explicit overrides that were honored from user #modifiers.
+     *
+     * When the user includes #modifiers like #opus or #ultrathink,
+     * these take highest priority. This field tracks what was overridden
+     * so the UI can show "Using Opus as requested" or similar feedback.
+     */
+    explicitOverrides?: ExplicitOverrides;
+}
+
+/**
+ * Tracks which explicit user overrides were honored.
+ * Used for UI feedback: "Using Opus as requested"
+ */
+export interface ExplicitOverrides {
+    /** Model override from #opus, #sonnet, #haiku, #grok, #gemini */
+    model?: {
+        requested: string;
+        honored: boolean;
+    };
+    /** Reasoning override from #ultrathink or #quick */
+    reasoning?: {
+        requested: "ultrathink" | "quick";
+        honored: boolean;
+    };
+    /** Temperature override from #creative or #precise */
+    temperature?: {
+        requested: "creative" | "precise";
+        honored: boolean;
+    };
 }
 
 /**

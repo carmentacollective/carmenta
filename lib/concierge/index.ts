@@ -29,6 +29,11 @@ import {
 } from "./prompt";
 import { buildConciergeInput, type BuildConciergeInputOptions } from "./input-builder";
 import {
+    parseModifiers,
+    buildExplicitOverrides,
+    getUserSignalsFromModifiers,
+} from "./modifiers";
+import {
     ALLOWED_MODELS,
     CONCIERGE_DEFAULTS,
     CONCIERGE_MODEL,
@@ -62,6 +67,14 @@ export {
     getAttachmentTypesFromInput,
     type BuildConciergeInputOptions,
 } from "./input-builder";
+
+// Export modifier parsing functions
+export {
+    parseModifiers,
+    buildExplicitOverrides,
+    getUserSignalsFromModifiers,
+    type ParsedModifiers,
+} from "./modifiers";
 
 // Re-export internal functions for testing
 export {
@@ -482,6 +495,25 @@ export async function runConcierge(
                     return CONCIERGE_DEFAULTS;
                 }
 
+                // Parse #modifiers from the user query (highest priority overrides)
+                const parsedModifiers = parseModifiers(userQuery);
+                const hasModifiers =
+                    parsedModifiers.model ||
+                    parsedModifiers.reasoning ||
+                    parsedModifiers.temperature;
+
+                if (hasModifiers) {
+                    logger.info(
+                        {
+                            modifiers: parsedModifiers.rawModifiers,
+                            model: parsedModifiers.modelModifier,
+                            reasoning: parsedModifiers.reasoning,
+                            temperature: parsedModifiers.temperature,
+                        },
+                        "User modifiers detected - will apply as overrides"
+                    );
+                }
+
                 // Format query signals and integration context for the prompt
                 const querySignalsBlock = formatQuerySignals(conciergeInput);
                 const integrationContextBlock =
@@ -605,7 +637,71 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
                 ).input;
 
                 // Process and validate the structured response
-                const conciergeResult = processConciergeResponse(validated);
+                let conciergeResult = processConciergeResponse(validated);
+
+                // Apply #modifier overrides (highest priority)
+                if (hasModifiers) {
+                    // Model override
+                    if (parsedModifiers.model) {
+                        conciergeResult = {
+                            ...conciergeResult,
+                            modelId: parsedModifiers.model,
+                        };
+                    }
+
+                    // Reasoning override
+                    if (parsedModifiers.reasoning) {
+                        if (parsedModifiers.reasoning === "ultrathink") {
+                            conciergeResult = {
+                                ...conciergeResult,
+                                reasoning: buildReasoningConfig(
+                                    conciergeResult.modelId,
+                                    { enabled: true, effort: "high" }
+                                ),
+                            };
+                        } else if (parsedModifiers.reasoning === "quick") {
+                            conciergeResult = {
+                                ...conciergeResult,
+                                reasoning: { enabled: false },
+                            };
+                        }
+                    }
+
+                    // Temperature override
+                    if (parsedModifiers.temperature) {
+                        conciergeResult = {
+                            ...conciergeResult,
+                            temperature:
+                                parsedModifiers.temperature === "creative"
+                                    ? 0.85
+                                    : 0.15,
+                        };
+                    }
+
+                    // Build explicit overrides for UI feedback
+                    const explicitOverrides = buildExplicitOverrides(parsedModifiers, {
+                        model: conciergeResult.modelId,
+                        reasoning: conciergeResult.reasoning.enabled,
+                        temperature: conciergeResult.temperature,
+                    });
+
+                    if (explicitOverrides) {
+                        conciergeResult = {
+                            ...conciergeResult,
+                            explicitOverrides,
+                        };
+                    }
+
+                    logger.info(
+                        {
+                            appliedOverrides: parsedModifiers.rawModifiers,
+                            finalModel: conciergeResult.modelId,
+                            finalReasoning: conciergeResult.reasoning,
+                            finalTemperature: conciergeResult.temperature,
+                        },
+                        "Applied modifier overrides"
+                    );
+                }
 
                 span.setAttribute("selected_model", conciergeResult.modelId);
                 span.setAttribute("temperature", conciergeResult.temperature);
