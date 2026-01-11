@@ -74,10 +74,13 @@ export interface SendPushResult {
 }
 
 /**
- * VAPID configuration state
+ * VAPID configuration state (cached for performance)
  * - null: not yet checked
  * - true: configured successfully
  * - false: missing required env vars, feature disabled
+ *
+ * Intentionally cached to avoid repeated env var checks on each notification.
+ * Assumes VAPID keys don't change at runtime (true for typical deployments).
  */
 let vapidConfigured: boolean | null = null;
 

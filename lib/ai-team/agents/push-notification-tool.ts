@@ -167,8 +167,17 @@ async function executeSend(
             extra: { userEmail: context.userEmail, title, bodyLength: body.length },
         });
 
+        // Distinguish network/timeout errors (temporary) from other errors (permanent)
+        const isNetworkError =
+            error instanceof Error &&
+            (error.message.includes("ECONNREFUSED") ||
+                error.message.includes("ETIMEDOUT") ||
+                error.message.includes("ENOTFOUND") ||
+                error.message.includes("network") ||
+                error.message.includes("timeout"));
+
         return errorResult(
-            "PERMANENT",
+            isNetworkError ? "TEMPORARY" : "PERMANENT",
             error instanceof Error
                 ? `Notification couldn't go through: ${error.message}`
                 : "Notification couldn't go through. The robots have been notified. 🤖"

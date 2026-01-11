@@ -104,6 +104,10 @@ export async function getSubscriptionByEndpoint(
  * Called when:
  * - User explicitly unsubscribes
  * - Push service returns 410 Gone (subscription expired)
+ *
+ * SECURITY NOTE: This function does not verify endpoint ownership.
+ * Callers MUST ensure the endpoint belongs to the intended user's subscription set.
+ * Current usage is safe - endpoints come from getActiveSubscriptions(userEmail).
  */
 export async function deactivateSubscription(
     endpoint: string
