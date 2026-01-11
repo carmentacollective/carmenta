@@ -8,7 +8,7 @@
  * to open CarmentaSheet and paste configs or describe connections.
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
     PlugIcon,
@@ -19,9 +19,9 @@ import {
     ArrowsClockwiseIcon,
     DotsThreeIcon,
     TrashIcon,
-    PencilSimpleIcon,
     CheckCircleIcon,
     PlusIcon,
+    XCircleIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -79,6 +79,7 @@ interface ServerListProps {
     onDelete?: (server: McpServerSummary) => void;
     reconnectingServers?: Set<number>;
     testingServers?: Set<number>;
+    testResults?: Map<number, "success" | "error">;
     className?: string;
 }
 
@@ -90,6 +91,7 @@ function ServerList({
     onDelete,
     reconnectingServers = new Set(),
     testingServers = new Set(),
+    testResults = new Map(),
     className,
 }: ServerListProps) {
     const getStatusColor = (status: string, enabled: boolean) => {
@@ -270,13 +272,33 @@ function ServerList({
                                             <DropdownMenuItem
                                                 onClick={() => onTest(server)}
                                                 disabled={testingServers.has(server.id)}
+                                                className={cn(
+                                                    testResults.get(server.id) ===
+                                                        "success" &&
+                                                        "text-green-600 dark:text-green-400",
+                                                    testResults.get(server.id) ===
+                                                        "error" &&
+                                                        "text-red-600 dark:text-red-400"
+                                                )}
                                             >
                                                 {testingServers.has(server.id) ? (
                                                     <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : testResults.get(server.id) ===
+                                                  "success" ? (
+                                                    <CheckCircleIcon className="mr-2 h-4 w-4 text-green-500" />
+                                                ) : testResults.get(server.id) ===
+                                                  "error" ? (
+                                                    <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 ) : (
                                                     <CheckCircleIcon className="mr-2 h-4 w-4" />
                                                 )}
-                                                Test Connection
+                                                {testResults.get(server.id) ===
+                                                "success"
+                                                    ? "Connected!"
+                                                    : testResults.get(server.id) ===
+                                                        "error"
+                                                      ? "Connection failed"
+                                                      : "Test Connection"}
                                             </DropdownMenuItem>
                                         )}
                                         {onDelete && (
@@ -322,6 +344,10 @@ function McpConfigContent({
         new Set()
     );
     const [testingServers, setTestingServers] = useState<Set<number>>(new Set());
+    const [testResults, setTestResults] = useState<Map<number, "success" | "error">>(
+        new Map()
+    );
+    const testResultTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
     // Carmenta sheet state
     const [carmentaOpen, setCarmentaOpen] = useState(false);
@@ -361,6 +387,14 @@ function McpConfigContent({
     useEffect(() => {
         loadServers();
     }, [loadServers, refreshKey]);
+
+    // Cleanup timers on unmount
+    useEffect(() => {
+        return () => {
+            testResultTimersRef.current.forEach((timerId) => clearTimeout(timerId));
+            testResultTimersRef.current.clear();
+        };
+    }, []);
 
     const handleReconnect = useCallback(
         async (server: McpServerSummary) => {
@@ -406,6 +440,18 @@ function McpConfigContent({
         async (server: McpServerSummary) => {
             setTestingServers((prev) => new Set(prev).add(server.id));
 
+            // Clear any previous result and timer for this server
+            const existingTimer = testResultTimersRef.current.get(server.id);
+            if (existingTimer) {
+                clearTimeout(existingTimer);
+                testResultTimersRef.current.delete(server.id);
+            }
+            setTestResults((prev) => {
+                const next = new Map(prev);
+                next.delete(server.id);
+                return next;
+            });
+
             try {
                 const response = await fetch(`/api/mcp/servers/${server.id}/test`, {
                     method: "POST",
@@ -413,13 +459,16 @@ function McpConfigContent({
 
                 if (response.ok) {
                     await loadServers();
+                    setTestResults((prev) => new Map(prev).set(server.id, "success"));
                 } else {
+                    setTestResults((prev) => new Map(prev).set(server.id, "error"));
                     logger.warn(
                         { serverId: server.id, status: response.status },
                         "Server test failed"
                     );
                 }
             } catch (error) {
+                setTestResults((prev) => new Map(prev).set(server.id, "error"));
                 logger.error({ error, serverId: server.id }, "Failed to test server");
                 Sentry.captureException(error, {
                     tags: { component: "mcp-config-page", action: "test_server" },
@@ -431,6 +480,17 @@ function McpConfigContent({
                     next.delete(server.id);
                     return next;
                 });
+
+                // Clear result after 3 seconds
+                const timerId = setTimeout(() => {
+                    setTestResults((prev) => {
+                        const next = new Map(prev);
+                        next.delete(server.id);
+                        return next;
+                    });
+                    testResultTimersRef.current.delete(server.id);
+                }, 3000);
+                testResultTimersRef.current.set(server.id, timerId);
             }
         },
         [loadServers]
@@ -614,6 +674,7 @@ function McpConfigContent({
                     onDelete={(server) => setDeleteTarget(server)}
                     reconnectingServers={reconnectingServers}
                     testingServers={testingServers}
+                    testResults={testResults}
                 />
             </section>
 
