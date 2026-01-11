@@ -73,9 +73,10 @@ function isTextFile(mimeType: string): boolean {
 function getFilesToSend<T extends { mediaType: string; parsedContent?: string }>(
     files: T[]
 ): T[] {
-    // Exclude:
-    // - Text files (pasted into message)
-    // - Files with parsed content (spreadsheets, PDFs, DOCX - content is in message)
+    // Files with parsed content (spreadsheets, PDFs, DOCX) don't need to be sent
+    // as attachments since their content is already extracted and injected into
+    // the message text via extractParsedContent(). Text files are also excluded
+    // since they're pasted directly into the message.
     return files.filter((f) => !isTextFile(f.mediaType) && !f.parsedContent);
 }
 

@@ -32,6 +32,17 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+        // Early check: reject oversized requests before reading body
+        const contentLength = request.headers.get("content-length");
+        if (contentLength && parseInt(contentLength) > MAX_FILE_SIZE) {
+            return NextResponse.json(
+                {
+                    error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+                },
+                { status: 413 }
+            );
+        }
+
         const formData = await request.formData();
         const fileField = formData.get("file");
 

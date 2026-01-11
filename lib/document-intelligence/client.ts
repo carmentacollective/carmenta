@@ -17,9 +17,12 @@ export interface DoclingError {
     status?: number;
 }
 
-/** Sanitize filename by removing path components */
+/** Sanitize filename by removing path components, null bytes, and normalizing unicode */
 function sanitizeFilename(filename: string): string {
-    return filename.replace(/^.*[\\/]/, "");
+    return filename
+        .replace(/^.*[\\/]/, "") // Remove path separators
+        .replace(/\0/g, "") // Remove null bytes
+        .normalize("NFC"); // Normalize unicode
 }
 
 /**

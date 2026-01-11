@@ -10,6 +10,9 @@ import { parseSpreadsheet, spreadsheetToMarkdown } from "./spreadsheet-parser";
 /**
  * MIME types that should be extracted via Docling API
  * These need server-side processing, unlike spreadsheets which parse client-side
+ *
+ * NOTE: This list is duplicated from DOCLING_CONFIG.supportedTypes to avoid importing
+ * server-only code into the client bundle. Keep in sync manually.
  */
 const DOCLING_TYPES = [
     "application/pdf",
