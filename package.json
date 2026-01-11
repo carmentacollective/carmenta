@@ -1,6 +1,7 @@
 {
   "name": "carmenta",
   "version": "0.1.0",
+  "type": "module",
   "description": "A heart-centered AI for creating at the speed of thought",
   "private": true,
   "repository": {
