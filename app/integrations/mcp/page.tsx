@@ -337,6 +337,7 @@ function McpConfigContent({
     // Delete confirmation state
     const [deleteTarget, setDeleteTarget] = useState<McpServerSummary | null>(null);
     const [deletingServer, setDeletingServer] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const loadServers = useCallback(async () => {
         try {
@@ -438,6 +439,7 @@ function McpConfigContent({
     const handleDelete = useCallback(
         async (server: McpServerSummary) => {
             setDeletingServer(true);
+            setDeleteError(null);
             try {
                 const response = await fetch(`/api/mcp/servers/${server.id}`, {
                     method: "DELETE",
@@ -446,13 +448,19 @@ function McpConfigContent({
                 if (response.ok) {
                     await loadServers();
                     setDeleteTarget(null);
+                    setDeleteError(null);
                 } else {
+                    const data = await response.json().catch(() => ({}));
+                    const errorMessage =
+                        data.error ?? "Couldn't remove server. Try again?";
+                    setDeleteError(errorMessage);
                     logger.warn(
                         { serverId: server.id, status: response.status },
                         "Server delete failed"
                     );
                 }
             } catch (error) {
+                setDeleteError("Something went wrong. Try again?");
                 logger.error({ error, serverId: server.id }, "Failed to delete server");
                 Sentry.captureException(error, {
                     tags: { component: "mcp-config-page", action: "delete_server" },
@@ -476,8 +484,8 @@ function McpConfigContent({
             return;
         }
 
-        // Validate identifier format
-        const identifierRegex = /^[a-z0-9][a-z0-9-_.]*$/i;
+        // Validate identifier format (matches server-side validation)
+        const identifierRegex = /^[a-zA-Z0-9][a-zA-Z0-9-_.]*$/;
         if (!identifierRegex.test(newServerIdentifier.trim())) {
             setAddError(
                 "Identifier must start with a letter or number and contain only letters, numbers, hyphens, underscores, and dots"
@@ -681,6 +689,9 @@ function McpConfigContent({
                                 placeholder="https://mcp.example.com"
                                 className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-base focus:outline-none"
                             />
+                            <p className="text-foreground/40 text-xs">
+                                Must use HTTPS for security
+                            </p>
                         </div>
 
                         <div className="space-y-2">
@@ -746,6 +757,7 @@ function McpConfigContent({
                 onOpenChange={(open) => {
                     if (!open && !deletingServer) {
                         setDeleteTarget(null);
+                        setDeleteError(null);
                     }
                 }}
             >
@@ -756,10 +768,18 @@ function McpConfigContent({
                         </DialogTitle>
                     </DialogHeader>
 
-                    <p className="text-foreground/70 py-4 text-sm">
-                        Remove <strong>{deleteTarget?.displayName}</strong>? We won't be
-                        able to use its tools until you add it again.
-                    </p>
+                    <div className="space-y-3 py-4">
+                        <p className="text-foreground/70 text-sm">
+                            Remove <strong>{deleteTarget?.displayName}</strong>? We
+                            won't be able to use its tools until you add it again.
+                        </p>
+
+                        {deleteError && (
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                                {deleteError}
+                            </p>
+                        )}
+                    </div>
 
                     <DialogFooter className="gap-2 sm:gap-0">
                         <button
