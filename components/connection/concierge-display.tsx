@@ -1,7 +1,11 @@
 "use client";
 
 import { memo, useState, useLayoutEffect, useRef } from "react";
-import { CaretDownIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
+import {
+    CaretDownIcon,
+    ArrowsLeftRightIcon,
+    CheckCircleIcon,
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { CarmentaReflection } from "@/components/ui/carmenta-reflection";
@@ -13,7 +17,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { getModel } from "@/lib/model-config";
-import type { ReasoningConfig } from "@/lib/concierge/types";
+import type { ReasoningConfig, ExplicitOverrides } from "@/lib/concierge/types";
 import { CarmentaAvatar } from "@/components/ui/carmenta-avatar";
 import { ProviderIcon } from "@/components/icons/provider-icons";
 
@@ -106,6 +110,8 @@ interface ConciergeDisplayProps {
     autoSwitched?: boolean;
     /** Reason for auto-switching (shown to user) */
     autoSwitchReason?: string;
+    /** Explicit user overrides that were honored (#modifiers) */
+    explicitOverrides?: ExplicitOverrides;
 }
 
 /**
@@ -134,6 +140,7 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
     className,
     autoSwitched,
     autoSwitchReason,
+    explicitOverrides,
 }: ConciergeDisplayProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isSettling, setIsSettling] = useState(false);
@@ -303,6 +310,17 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                         <span>Switched</span>
                                     </span>
                                 )}
+
+                                {/* User override indicator */}
+                                {explicitOverrides && (
+                                    <span className="flex items-center gap-1 text-xs text-purple-500/70">
+                                        <CheckCircleIcon
+                                            className="h-3 w-3"
+                                            weight="fill"
+                                        />
+                                        <span>As requested</span>
+                                    </span>
+                                )}
                             </motion.div>
                         </>
                     )}
@@ -356,6 +374,45 @@ export const ConciergeDisplay = memo(function ConciergeDisplay({
                                     <p className="text-xs leading-relaxed text-amber-600 dark:text-amber-400">
                                         {autoSwitchReason}
                                     </p>
+                                </div>
+                            )}
+
+                            {/* User override details */}
+                            {explicitOverrides && (
+                                <div className="mt-4 flex items-start gap-2 rounded-lg border border-purple-500/15 bg-purple-500/5 px-3 py-2.5">
+                                    <CheckCircleIcon
+                                        className="mt-0.5 h-4 w-4 shrink-0 text-purple-500"
+                                        weight="fill"
+                                    />
+                                    <div className="text-xs leading-relaxed text-purple-600 dark:text-purple-400">
+                                        <span className="font-medium">
+                                            Honoring your preferences:
+                                        </span>
+                                        <ul className="mt-1 list-inside list-disc">
+                                            {explicitOverrides.model?.honored && (
+                                                <li>
+                                                    Using{" "}
+                                                    {explicitOverrides.model.requested}
+                                                </li>
+                                            )}
+                                            {explicitOverrides.reasoning?.honored && (
+                                                <li>
+                                                    {explicitOverrides.reasoning
+                                                        .requested === "ultrathink"
+                                                        ? "Maximum reasoning depth enabled"
+                                                        : "Quick response mode"}
+                                                </li>
+                                            )}
+                                            {explicitOverrides.temperature?.honored && (
+                                                <li>
+                                                    {explicitOverrides.temperature
+                                                        .requested === "creative"
+                                                        ? "Creative mode (higher variability)"
+                                                        : "Precise mode (focused responses)"}
+                                                </li>
+                                            )}
+                                        </ul>
+                                    </div>
                                 </div>
                             )}
                         </motion.div>
