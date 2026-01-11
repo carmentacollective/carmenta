@@ -1346,6 +1346,9 @@ export async function POST(req: Request) {
                     result.toUIMessageStream({
                         originalMessages: messagesWithoutReasoning,
                         sendReasoning: concierge.reasoning.enabled,
+                        // Use pre-generated message ID so stream and DB agree on the ID
+                        // This prevents duplicate assistant messages after reload
+                        generateMessageId: () => assistantMessageId,
                     })
                 );
             },
