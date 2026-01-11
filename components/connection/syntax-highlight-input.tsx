@@ -27,14 +27,8 @@ import { RichTextarea, type RichTextareaProps } from "rich-textarea";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-// Warm, rotating placeholders that invite partnership
-const PLACEHOLDERS = [
-    "What are we creating together?",
-    "What's on your mind?",
-    "Tell us about your idea...",
-    "What would you like to explore?",
-    "How can we help today?",
-];
+// Simple placeholder
+const PLACEHOLDER = "Message Carmenta...";
 
 // Mock data for autocomplete (will be replaced with real data from context)
 const INTEGRATIONS = [
@@ -184,7 +178,6 @@ export const SyntaxHighlightInput = forwardRef<
             useState<AutocompleteType>(null);
         const [autocompleteQuery, setAutocompleteQuery] = useState("");
         const [selectedIndex, setSelectedIndex] = useState(0);
-        const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
         // Expose methods via ref
         useImperativeHandle(ref, () => ({
@@ -208,15 +201,6 @@ export const SyntaxHighlightInput = forwardRef<
                 return textareaRef.current?.style;
             },
         }));
-
-        // Rotate placeholder every 5 seconds when input is empty
-        useEffect(() => {
-            if (!rotatePlaceholders || value) return;
-            const interval = setInterval(() => {
-                setPlaceholderIndex((i) => (i + 1) % PLACEHOLDERS.length);
-            }, 5000);
-            return () => clearInterval(interval);
-        }, [value, rotatePlaceholders]);
 
         // Detect trigger characters and manage autocomplete state
         const handleChange = useCallback(
@@ -389,6 +373,26 @@ export const SyntaxHighlightInput = forwardRef<
             const tokens: { text: string; type: string; start: number; end: number }[] =
                 [];
 
+            // Check if a token is valid (recognized in our lists)
+            const isValidToken = (tokenText: string, tokenType: string): boolean => {
+                if (tokenType === "mention") {
+                    const id = tokenText.slice(1).toLowerCase();
+                    return (
+                        INTEGRATIONS.some((i) => i.id === id) ||
+                        AI_TEAM.some((i) => i.id === id) ||
+                        TOOLS.some((i) => i.id === id)
+                    );
+                } else if (tokenType === "modifier") {
+                    const id = tokenText.slice(1).toLowerCase();
+                    return MODIFIERS.some((m) => m.id === id);
+                } else if (tokenType === "command") {
+                    const id = tokenText.slice(1).toLowerCase();
+                    return COMMANDS.some((c) => c.id === id);
+                }
+                // URL and easter eggs don't need validation
+                return true;
+            };
+
             const addMatches = (regex: RegExp, type: string) => {
                 let match;
                 const re = new RegExp(
@@ -396,12 +400,15 @@ export const SyntaxHighlightInput = forwardRef<
                     regex.flags.includes("g") ? regex.flags : regex.flags + "g"
                 );
                 while ((match = re.exec(text)) !== null) {
-                    tokens.push({
-                        text: match[0],
-                        type,
-                        start: match.index,
-                        end: match.index + match[0].length,
-                    });
+                    // Only add token if it's valid (or doesn't need validation)
+                    if (isValidToken(match[0], type)) {
+                        tokens.push({
+                            text: match[0],
+                            type,
+                            start: match.index,
+                            end: match.index + match[0].length,
+                        });
+                    }
                 }
             };
 
@@ -477,7 +484,7 @@ export const SyntaxHighlightInput = forwardRef<
         }, []);
 
         const isAutocompleteOpen = !!autocompleteType && autocompleteItems.length > 0;
-        const placeholder = externalPlaceholder || PLACEHOLDERS[placeholderIndex];
+        const placeholder = externalPlaceholder || PLACEHOLDER;
 
         return (
             <Popover
@@ -498,6 +505,13 @@ export const SyntaxHighlightInput = forwardRef<
                             onPaste={onPaste}
                             placeholder={placeholder}
                             className={className}
+                            // RichTextarea requires explicit width and line-height via style prop
+                            // CSS classes alone don't apply to the inner textarea
+                            style={{
+                                width: "100%",
+                                lineHeight: "1.25rem", // Match leading-5 from className
+                                ...props.style,
+                            }}
                             {...props}
                         >
                             {renderHighlightedText}
