@@ -260,6 +260,15 @@ function McpConfigChat({ onConfigChange, className }: McpConfigChatProps) {
         textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }, [inputValue, inputRef]);
 
+    // Cleanup timeout on unmount to prevent setState on unmounted component
+    useEffect(() => {
+        return () => {
+            if (successTimeoutRef.current) {
+                clearTimeout(successTimeoutRef.current);
+            }
+        };
+    }, []);
+
     const transport = useMemo(
         () =>
             new DefaultChatTransport({
