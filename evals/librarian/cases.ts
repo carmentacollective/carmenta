@@ -2885,7 +2885,8 @@ export const librarianTestData: LibrarianTestCase[] = [
             expectedPath: /profile\.identity/,
             expectedAction: "update",
             contentPatterns: [/Austin/i],
-            excludedContent: [/Las Vegas/i],
+            // Should not say "lives in Las Vegas" as current, but CAN mention Vegas as previous
+            excludedContent: [/lives in Las Vegas/i],
             updateTarget: "profile.identity",
         },
         tags: ["supermemory-inspired", "fact-evolution", "identity", "location"],
@@ -3085,7 +3086,8 @@ export const librarianTestData: LibrarianTestCase[] = [
             expectedPath: /knowledge\.preferences\.general/,
             expectedAction: "update",
             contentPatterns: [/green/i],
-            excludedContent: [/blue.*favorite/i],
+            // Should not say Nick's favorite is blue, but CAN mention blue was ex's favorite
+            excludedContent: [/Nick's favorite.*blue/i],
             updateTarget: "knowledge.preferences.general",
         },
         tags: ["supermemory-inspired", "soft-correction", "preference"],
@@ -3169,5 +3171,357 @@ export const librarianTestData: LibrarianTestCase[] = [
             shouldSave: false,
         },
         tags: ["supermemory-inspired", "noise-filtering", "task-context"],
+    },
+
+    // =============================================================================
+    // CURRENT VS HISTORICAL PARADIGM
+    // Tests the paradigm: current facts by default, historical context preserved.
+    // Key principle: Primary documents reflect current state, history is either
+    // inline ("Previously at Google") or in dedicated knowledge.history.* docs.
+    // =============================================================================
+
+    // Category 1: History Preserved Inline
+    // When updating, preserve relevant history in prose form within the document.
+
+    {
+        input: {
+            id: "history-inline-job-tenure",
+            description:
+                "Job change with tenure mentioned - should update identity AND preserve history inline",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "After 5 years at Google, I finally made the jump. Started as CTO at Acme last week. Bittersweet leaving but excited for the challenge.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a senior software engineer at Google.",
+                },
+            ],
+            category: "history-inline",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [
+                /CTO/i,
+                /Acme/i,
+                // History preservation - should mention Google in some way
+                /Google|previous|former|5 years/i,
+            ],
+            updateTarget: "profile.identity",
+        },
+        tags: ["current-vs-historical", "history-inline", "job-change", "tenure"],
+    },
+    {
+        input: {
+            id: "history-inline-location-context",
+            description:
+                "Location move with emotional context - should capture Austin as current location",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "We sold the house in Vegas and moved to Austin last month. Gonna miss that pool, but Austin's tech scene is incredible.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick lives in Las Vegas, Nevada with his girlfriend.",
+                },
+            ],
+            category: "history-inline",
+        },
+        expected: {
+            shouldSave: true,
+            // Either update identity OR create history doc - both are valid approaches
+            expectedPath: /profile\.identity|knowledge\.history\.locations/,
+            contentPatterns: [
+                /Austin/i,
+                // History preservation - Vegas should be mentioned somewhere
+                /Vegas|previous|former|moved from/i,
+            ],
+        },
+        tags: ["current-vs-historical", "history-inline", "location", "move"],
+    },
+    {
+        input: {
+            id: "history-inline-preference-evolution",
+            description:
+                "Preference change with reasoning - preserve why they switched",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "I've completely switched from React to Vue. The composition API just clicks better with how I think. React hooks always felt awkward to me.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.preferences.programming",
+                    name: "Programming Preferences",
+                    content: "Nick prefers React for frontend development.",
+                },
+            ],
+            category: "history-inline",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.preferences\.programming/,
+            expectedAction: "update",
+            contentPatterns: [/Vue/i, /composition API|clicks|how.*think/i],
+            // Should NOT say "prefers React" anymore
+            excludedContent: [/prefers React/i],
+            updateTarget: "knowledge.preferences.programming",
+        },
+        tags: ["current-vs-historical", "history-inline", "preference", "programming"],
+    },
+
+    // Category 2: Relationship Transitions
+    // Complex relationship changes: ex becomes ex, new partner emerges.
+
+    {
+        input: {
+            id: "relationship-transition-breakup-new",
+            description:
+                "Breakup + new partner - update ex, create new person, preserve relationship context",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Sarah and I broke up two months ago. We had a good three years together but grew apart. I've started dating Emma - she's a designer at a startup.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.Sarah",
+                    name: "Sarah",
+                    content:
+                        "Sarah is Nick's girlfriend. They've been together for 3 years.",
+                },
+            ],
+            category: "relationship-transition",
+        },
+        expected: {
+            shouldSave: true,
+            // Could update Sarah OR create Emma - both are valid first actions
+            expectedPath: /knowledge\.people\.(Sarah|Emma)/i,
+            contentPatterns: [/ex|broke up|former|Emma|girlfriend|designer/i],
+        },
+        tags: [
+            "current-vs-historical",
+            "relationship-transition",
+            "breakup",
+            "new-partner",
+        ],
+    },
+    {
+        input: {
+            id: "relationship-update-ex-news",
+            description:
+                "Update about ex - should update existing person entry with new info",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Ran into Sarah today at a coffee shop. She's engaged now to someone she met at work. We're on good terms, which is nice.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.Sarah",
+                    name: "Sarah",
+                    content:
+                        "Sarah is Nick's ex-girlfriend. They dated for 3 years and broke up amicably.",
+                },
+            ],
+            category: "relationship-transition",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.people\.Sarah/i,
+            expectedAction: "update",
+            contentPatterns: [/engaged/i, /good terms/i],
+            updateTarget: "knowledge.people.Sarah",
+        },
+        tags: ["current-vs-historical", "relationship-transition", "ex-update"],
+    },
+
+    // Category 3: Rich Timeline → Dedicated History Document
+    // When there's a meaningful timeline worth preserving as its own entity.
+
+    {
+        input: {
+            id: "rich-timeline-locations",
+            description:
+                "Multiple location history mentioned - may warrant dedicated history doc",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Looking back, I've lived in so many places - started in SF after college, then Austin for a startup, Vegas for a few years, and now NYC. Each city shaped who I am.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content:
+                        "Nick lives in Las Vegas and works as a software engineer.",
+                },
+            ],
+            category: "rich-timeline",
+        },
+        expected: {
+            shouldSave: true,
+            // Primary: update identity to NYC
+            // Could also create knowledge.history.locations
+            expectedPath: /profile\.identity|knowledge\.history\.locations/,
+            contentPatterns: [/NYC|New York/i],
+        },
+        tags: ["current-vs-historical", "rich-timeline", "locations", "multiple"],
+    },
+    {
+        input: {
+            id: "rich-timeline-career",
+            description:
+                "Career narrative with multiple chapters - capture the journey",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "My career path has been wild: started as a junior dev at a bank, moved to Google where I became a senior engineer, then took the leap to startup land as CTO. Each chapter taught me something different.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is CTO at Acme.",
+                },
+            ],
+            category: "rich-timeline",
+        },
+        expected: {
+            shouldSave: true,
+            // Could update identity with career summary OR create knowledge.history.career
+            expectedPath: /profile\.identity|knowledge\.history\.career/,
+            contentPatterns: [/Google|bank|senior|CTO|journey|path/i],
+        },
+        tags: ["current-vs-historical", "rich-timeline", "career", "narrative"],
+    },
+
+    // Category 4: Current State Primary
+    // Ensure current facts are prominent, not buried in history.
+
+    {
+        input: {
+            id: "current-state-primary-simple",
+            description:
+                "Simple update should prioritize current state, not over-document history",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Oh by the way, we moved to Denver last week. Still getting settled.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "profile.identity",
+                    name: "Identity",
+                    content: "Nick is a CTO at Acme and lives in Austin, Texas.",
+                },
+            ],
+            category: "current-primary",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /profile\.identity/,
+            expectedAction: "update",
+            contentPatterns: [/Denver/i, /CTO/i, /Acme/i],
+            // Should NOT still say "lives in Austin" as current
+            excludedContent: [/lives in Austin/i],
+            updateTarget: "profile.identity",
+        },
+        tags: ["current-vs-historical", "current-primary", "location", "simple-update"],
+    },
+    {
+        input: {
+            id: "current-state-primary-person",
+            description:
+                "Person update should reflect current relationship status clearly",
+            conversation: [
+                {
+                    role: "user",
+                    content:
+                        "Emma and I got engaged last weekend! She said yes at the restaurant where we had our first date.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.people.Emma",
+                    name: "Emma",
+                    content:
+                        "Emma is Nick's girlfriend. She's a designer at a startup.",
+                },
+            ],
+            category: "current-primary",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.people\.Emma/i,
+            expectedAction: "update",
+            contentPatterns: [/engaged|fiancée|fiancee/i],
+            // Should NOT just say "girlfriend" anymore - should be fiancée
+            excludedContent: [/Nick's girlfriend\b/i],
+            updateTarget: "knowledge.people.Emma",
+        },
+        tags: [
+            "current-vs-historical",
+            "current-primary",
+            "relationship",
+            "engagement",
+        ],
+    },
+
+    // Category 5: No History Pollution
+    // Don't add excessive history that clutters the current document.
+
+    {
+        input: {
+            id: "no-history-pollution-minor-change",
+            description: "Minor preference update shouldn't add unnecessary history",
+            conversation: [
+                {
+                    role: "user",
+                    content: "I've been using Neovim more lately. It's growing on me.",
+                },
+            ],
+            existingKB: [
+                {
+                    path: "knowledge.preferences.tools",
+                    name: "Tools",
+                    content: "Nick uses Cursor as his primary editor.",
+                },
+            ],
+            category: "no-pollution",
+        },
+        expected: {
+            shouldSave: true,
+            expectedPath: /knowledge\.preferences\.tools/,
+            expectedAction: "update",
+            // Both editors should be mentioned - Cursor as primary, Neovim as additional
+            // "using more lately" is additive, not a replacement
+            contentPatterns: [/Neovim/i, /Cursor/i],
+        },
+        tags: ["current-vs-historical", "no-pollution", "preference", "additive"],
     },
 ];
