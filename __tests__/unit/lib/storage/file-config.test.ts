@@ -238,7 +238,10 @@ describe("getSupportedFormatsMessage", () => {
         expect(message).toContain("Images");
         expect(message).toContain("JPEG");
         expect(message).toContain("PNG");
-        expect(message).toContain("PDFs");
+        expect(message).toContain("documents");
+        expect(message).toContain("PDF");
+        expect(message).toContain("DOCX");
+        expect(message).toContain("PPTX");
         expect(message).toContain("spreadsheets");
         expect(message).toContain("audio");
         expect(message).toContain("video");
