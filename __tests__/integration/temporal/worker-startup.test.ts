@@ -164,7 +164,8 @@ function runWorkerWithTimeout(
 function killProcess(proc: ChildProcess): void {
     proc.kill("SIGTERM");
     setTimeout(() => {
-        if (!proc.killed) {
+        // Check if process is still running (exitCode null means alive)
+        if (proc.exitCode === null) {
             proc.kill("SIGKILL");
         }
     }, 1000);
