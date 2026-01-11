@@ -90,6 +90,20 @@ services:
       - key: TEMPORAL_CORS_ORIGINS
         value: "http://localhost:3000,https://carmenta.ai"
 
+  # Docling - document extraction service for PDFs, DOCX, PPTX
+  # Extracts structured content from documents for better LLM comprehension
+  # Optional: App gracefully degrades when unavailable (uses native model processing)
+  - type: pserv
+    name: carmenta-docling
+    runtime: image
+    region: oregon
+    plan: standard # 2GB RAM minimum - document processing is memory intensive
+    image:
+      url: ghcr.io/doclingai/docling-serve:latest
+    envVars:
+      - key: PORT
+        value: "8000"
+
   # Temporal Worker - executes scheduled agent workflows
   # IMPORTANT: Uses carmenta-oauth-credentials env group for OAuth credentials and encryption keys.
   # Without these, integration tools (Gmail, Notion, etc.) will silently fail to load.
