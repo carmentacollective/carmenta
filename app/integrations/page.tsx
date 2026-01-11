@@ -10,6 +10,8 @@ import {
     XCircleIcon,
     XIcon,
     ArrowCounterClockwiseIcon,
+    PlugsConnectedIcon,
+    ArrowRightIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -585,6 +587,32 @@ function IntegrationsContent() {
                     </div>
                 </section>
             )}
+
+            {/* Advanced Section - MCP Servers */}
+            <section className="border-foreground/10 space-y-3 border-t pt-8">
+                <h2 className="text-foreground/60 text-sm font-medium tracking-wide uppercase">
+                    Advanced
+                </h2>
+                <Link
+                    href="/integrations/mcp"
+                    className="group border-foreground/10 bg-foreground/[0.02] hover:border-foreground/20 hover:bg-foreground/[0.04] flex items-center justify-between rounded-2xl border-2 p-4 transition-colors"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-xl bg-emerald-500/20 p-3">
+                            <PlugsConnectedIcon className="h-5 w-5 text-emerald-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-foreground/90 font-medium">
+                                MCP Servers
+                            </h3>
+                            <p className="text-foreground/50 text-sm">
+                                Connect custom AI tools via Model Context Protocol
+                            </p>
+                        </div>
+                    </div>
+                    <ArrowRightIcon className="text-foreground/30 group-hover:text-foreground/50 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+            </section>
 
             {/* Security Note */}
             <section className="pt-4 text-center">

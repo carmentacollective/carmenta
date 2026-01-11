@@ -17,11 +17,30 @@ import {
     PlugsIcon,
     KeyIcon,
     ArrowsClockwiseIcon,
+    DotsThreeIcon,
+    TrashIcon,
+    PencilSimpleIcon,
+    CheckCircleIcon,
+    PlusIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 
@@ -56,7 +75,10 @@ interface ServerListProps {
     servers: McpServerSummary[];
     loading: boolean;
     onReconnect?: (server: McpServerSummary) => void;
+    onTest?: (server: McpServerSummary) => void;
+    onDelete?: (server: McpServerSummary) => void;
     reconnectingServers?: Set<number>;
+    testingServers?: Set<number>;
     className?: string;
 }
 
@@ -64,7 +86,10 @@ function ServerList({
     servers,
     loading,
     onReconnect,
+    onTest,
+    onDelete,
     reconnectingServers = new Set(),
+    testingServers = new Set(),
     className,
 }: ServerListProps) {
     const getStatusColor = (status: string, enabled: boolean) => {
@@ -132,10 +157,10 @@ function ServerList({
             >
                 <PlugsIcon className="text-foreground/20 mx-auto h-10 w-10" />
                 <h3 className="text-foreground/60 mt-3 text-sm font-medium">
-                    No servers yet
+                    No servers connected
                 </h3>
                 <p className="text-foreground/40 mt-1 text-xs">
-                    Click "Let Carmenta Help" to add your first server
+                    Add a server to expand what we can do together.
                 </p>
             </div>
         );
@@ -223,9 +248,51 @@ function ServerList({
                                 )}
                                 <div className="text-foreground/40 text-right text-xs">
                                     {server.toolCount > 0 && (
-                                        <span>{server.toolCount} tools</span>
+                                        <span>
+                                            {server.toolCount}{" "}
+                                            {server.toolCount === 1 ? "tool" : "tools"}
+                                        </span>
                                     )}
                                 </div>
+
+                                {/* Server actions menu */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button
+                                            className="hover:bg-foreground/10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-colors"
+                                            aria-label={`Actions for ${server.displayName}`}
+                                        >
+                                            <DotsThreeIcon className="text-foreground/50 h-5 w-5" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {onTest && (
+                                            <DropdownMenuItem
+                                                onClick={() => onTest(server)}
+                                                disabled={testingServers.has(server.id)}
+                                            >
+                                                {testingServers.has(server.id) ? (
+                                                    <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <CheckCircleIcon className="mr-2 h-4 w-4" />
+                                                )}
+                                                Test Connection
+                                            </DropdownMenuItem>
+                                        )}
+                                        {onDelete && (
+                                            <>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    onClick={() => onDelete(server)}
+                                                    className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                                                >
+                                                    <TrashIcon className="mr-2 h-4 w-4" />
+                                                    Remove Server
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
                     </div>
@@ -254,9 +321,23 @@ function McpConfigContent({
     const [reconnectingServers, setReconnectingServers] = useState<Set<number>>(
         new Set()
     );
+    const [testingServers, setTestingServers] = useState<Set<number>>(new Set());
 
     // Carmenta sheet state
     const [carmentaOpen, setCarmentaOpen] = useState(false);
+
+    // Add server dialog state
+    const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const [newServerUrl, setNewServerUrl] = useState("");
+    const [newServerIdentifier, setNewServerIdentifier] = useState("");
+    const [newServerName, setNewServerName] = useState("");
+    const [addingServer, setAddingServer] = useState(false);
+    const [addError, setAddError] = useState<string | null>(null);
+
+    // Delete confirmation state
+    const [deleteTarget, setDeleteTarget] = useState<McpServerSummary | null>(null);
+    const [deletingServer, setDeletingServer] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const loadServers = useCallback(async () => {
         try {
@@ -321,6 +402,134 @@ function McpConfigContent({
         [loadServers]
     );
 
+    const handleTest = useCallback(
+        async (server: McpServerSummary) => {
+            setTestingServers((prev) => new Set(prev).add(server.id));
+
+            try {
+                const response = await fetch(`/api/mcp/servers/${server.id}/test`, {
+                    method: "POST",
+                });
+
+                if (response.ok) {
+                    await loadServers();
+                } else {
+                    logger.warn(
+                        { serverId: server.id, status: response.status },
+                        "Server test failed"
+                    );
+                }
+            } catch (error) {
+                logger.error({ error, serverId: server.id }, "Failed to test server");
+                Sentry.captureException(error, {
+                    tags: { component: "mcp-config-page", action: "test_server" },
+                    extra: { serverId: server.id },
+                });
+            } finally {
+                setTestingServers((prev) => {
+                    const next = new Set(prev);
+                    next.delete(server.id);
+                    return next;
+                });
+            }
+        },
+        [loadServers]
+    );
+
+    const handleDelete = useCallback(
+        async (server: McpServerSummary) => {
+            setDeletingServer(true);
+            setDeleteError(null);
+            try {
+                const response = await fetch(`/api/mcp/servers/${server.id}`, {
+                    method: "DELETE",
+                });
+
+                if (response.ok) {
+                    await loadServers();
+                    setDeleteTarget(null);
+                    setDeleteError(null);
+                } else {
+                    const data = await response.json().catch(() => ({}));
+                    const errorMessage =
+                        data.error ?? "Couldn't remove server. Try again?";
+                    setDeleteError(errorMessage);
+                    logger.warn(
+                        { serverId: server.id, status: response.status },
+                        "Server delete failed"
+                    );
+                }
+            } catch (error) {
+                setDeleteError("Something went wrong. Try again?");
+                logger.error({ error, serverId: server.id }, "Failed to delete server");
+                Sentry.captureException(error, {
+                    tags: { component: "mcp-config-page", action: "delete_server" },
+                    extra: { serverId: server.id },
+                });
+            } finally {
+                setDeletingServer(false);
+            }
+        },
+        [loadServers]
+    );
+
+    const handleAddServer = useCallback(async () => {
+        // Validate required fields
+        if (!newServerIdentifier.trim()) {
+            setAddError("Identifier is required");
+            return;
+        }
+        if (!newServerUrl.trim()) {
+            setAddError("Server URL is required");
+            return;
+        }
+
+        // Validate identifier format (matches server-side validation)
+        const identifierRegex = /^[a-zA-Z0-9][a-zA-Z0-9-_.]*$/;
+        if (!identifierRegex.test(newServerIdentifier.trim())) {
+            setAddError(
+                "Identifier must start with a letter or number and contain only letters, numbers, hyphens, underscores, and dots"
+            );
+            return;
+        }
+
+        setAddingServer(true);
+        setAddError(null);
+
+        try {
+            const response = await fetch("/api/mcp/servers", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    identifier: newServerIdentifier.trim(),
+                    url: newServerUrl.trim(),
+                    displayName: newServerName.trim() || newServerIdentifier.trim(),
+                }),
+            });
+
+            if (response.ok) {
+                await loadServers();
+                setAddDialogOpen(false);
+                setNewServerUrl("");
+                setNewServerIdentifier("");
+                setNewServerName("");
+            } else {
+                const data = await response.json().catch(() => ({}));
+                setAddError(
+                    data.error ?? "Couldn't add server. Check the URL and try again."
+                );
+            }
+        } catch (error) {
+            logger.error({ error }, "Failed to add server");
+            setAddError("Something went wrong. Try again?");
+            Sentry.captureException(error, {
+                tags: { component: "mcp-config-page", action: "add_server" },
+            });
+        } finally {
+            setAddingServer(false);
+        }
+    }, [newServerUrl, newServerIdentifier, newServerName, loadServers]);
+
     // Count servers needing reconnection for badge
     const serversNeedingReconnect = servers.filter(
         (s) =>
@@ -343,9 +552,9 @@ function McpConfigContent({
                     Back to Integrations
                 </Link>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-emerald-500/20 p-3">
+                        <div className="shrink-0 rounded-xl bg-emerald-500/20 p-3">
                             <PlugIcon className="h-6 w-6 text-emerald-500" />
                         </div>
                         <div>
@@ -353,15 +562,25 @@ function McpConfigContent({
                                 MCP Servers
                             </h1>
                             <p className="text-foreground/70">
-                                Connect remote MCP servers to extend our capabilities.
+                                MCP (Model Context Protocol) connects us to custom AI
+                                tools. Add servers to expand what we can do together.
                             </p>
                         </div>
                     </div>
 
-                    <CarmentaToggle
-                        isOpen={carmentaOpen}
-                        onClick={() => setCarmentaOpen(!carmentaOpen)}
-                    />
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <button
+                            onClick={() => setAddDialogOpen(true)}
+                            className="text-foreground/70 hover:text-foreground hover:bg-foreground/10 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                        >
+                            <PlusIcon className="h-4 w-4" />
+                            Add Manually
+                        </button>
+                        <CarmentaToggle
+                            isOpen={carmentaOpen}
+                            onClick={() => setCarmentaOpen(!carmentaOpen)}
+                        />
+                    </div>
                 </div>
             </section>
 
@@ -385,21 +604,23 @@ function McpConfigContent({
             {/* Server list */}
             <section className="space-y-3">
                 <h2 className="text-foreground/80 text-sm font-medium">
-                    Connected Servers
+                    {servers.length === 1 ? "Connected Server" : "Connected Servers"}
                 </h2>
                 <ServerList
                     servers={servers}
                     loading={loading}
                     onReconnect={handleReconnect}
+                    onTest={handleTest}
+                    onDelete={(server) => setDeleteTarget(server)}
                     reconnectingServers={reconnectingServers}
+                    testingServers={testingServers}
                 />
             </section>
 
             {/* Help text */}
             <section className="text-center">
                 <p className="text-foreground/40 text-xs">
-                    Remote MCP servers connect via HTTPS. Credentials are encrypted with
-                    AES-256-GCM.
+                    Your credentials stay encrypted. We connect securely over HTTPS.
                 </p>
             </section>
 
@@ -410,6 +631,182 @@ function McpConfigContent({
                 pageContext={PAGE_CONTEXT}
                 onChangesComplete={onChangesComplete}
             />
+
+            {/* Add Server Dialog */}
+            <Dialog
+                open={addDialogOpen}
+                onOpenChange={(open) => {
+                    setAddDialogOpen(open);
+                    if (!open) {
+                        setNewServerUrl("");
+                        setNewServerIdentifier("");
+                        setNewServerName("");
+                        setAddError(null);
+                    }
+                }}
+            >
+                <DialogContent className="p-6">
+                    <DialogHeader>
+                        <DialogTitle className="text-foreground text-lg font-medium">
+                            Add MCP Server
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="server-identifier"
+                                className="text-foreground/80 text-sm font-medium"
+                            >
+                                Identifier
+                            </label>
+                            <input
+                                id="server-identifier"
+                                type="text"
+                                value={newServerIdentifier}
+                                onChange={(e) => setNewServerIdentifier(e.target.value)}
+                                placeholder="my-server"
+                                className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-base focus:outline-none"
+                            />
+                            <p className="text-foreground/40 text-xs">
+                                A unique name for this server (letters, numbers,
+                                hyphens)
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="server-url"
+                                className="text-foreground/80 text-sm font-medium"
+                            >
+                                Server URL
+                            </label>
+                            <input
+                                id="server-url"
+                                type="url"
+                                value={newServerUrl}
+                                onChange={(e) => setNewServerUrl(e.target.value)}
+                                placeholder="https://mcp.example.com"
+                                className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-base focus:outline-none"
+                            />
+                            <p className="text-foreground/40 text-xs">
+                                Must use HTTPS for security
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="server-name"
+                                className="text-foreground/80 text-sm font-medium"
+                            >
+                                Display Name{" "}
+                                <span className="text-foreground/40">(optional)</span>
+                            </label>
+                            <input
+                                id="server-name"
+                                type="text"
+                                value={newServerName}
+                                onChange={(e) => setNewServerName(e.target.value)}
+                                placeholder="My MCP Server"
+                                className="border-foreground/20 bg-foreground/5 placeholder:text-foreground/30 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-base focus:outline-none"
+                            />
+                        </div>
+
+                        {addError && (
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                                {addError}
+                            </p>
+                        )}
+                    </div>
+
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <button
+                            onClick={() => setAddDialogOpen(false)}
+                            className="text-foreground/70 hover:bg-foreground/10 min-h-[44px] rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleAddServer}
+                            disabled={
+                                addingServer ||
+                                !newServerUrl.trim() ||
+                                !newServerIdentifier.trim()
+                            }
+                            className={cn(
+                                "flex min-h-[44px] items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors",
+                                addingServer ||
+                                    !newServerUrl.trim() ||
+                                    !newServerIdentifier.trim()
+                                    ? "cursor-not-allowed opacity-50"
+                                    : "hover:bg-emerald-600"
+                            )}
+                        >
+                            {addingServer && (
+                                <CircleNotchIcon className="h-4 w-4 animate-spin" />
+                            )}
+                            Add Server
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => {
+                    if (!open && !deletingServer) {
+                        setDeleteTarget(null);
+                        setDeleteError(null);
+                    }
+                }}
+            >
+                <DialogContent className="p-6">
+                    <DialogHeader>
+                        <DialogTitle className="text-foreground text-lg font-medium">
+                            Remove Server
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-3 py-4">
+                        <p className="text-foreground/70 text-sm">
+                            Remove <strong>{deleteTarget?.displayName}</strong>? We
+                            won't be able to use its tools until you add it again.
+                        </p>
+
+                        {deleteError && (
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                                {deleteError}
+                            </p>
+                        )}
+                    </div>
+
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <button
+                            onClick={() => setDeleteTarget(null)}
+                            disabled={deletingServer}
+                            className="text-foreground/70 hover:bg-foreground/10 min-h-[44px] rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => deleteTarget && handleDelete(deleteTarget)}
+                            disabled={deletingServer}
+                            className={cn(
+                                "flex min-h-[44px] items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors",
+                                deletingServer
+                                    ? "cursor-not-allowed opacity-50"
+                                    : "hover:bg-red-600"
+                            )}
+                        >
+                            {deletingServer && (
+                                <CircleNotchIcon className="h-4 w-4 animate-spin" />
+                            )}
+                            Remove
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </StandardPageLayout>
     );
 }

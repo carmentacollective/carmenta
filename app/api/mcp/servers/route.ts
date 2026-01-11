@@ -38,7 +38,13 @@ const createServerSchema = z.object({
             "Identifier must start with alphanumeric and contain only letters, numbers, hyphens, underscores, and dots"
         ),
     displayName: z.string().min(1, "Display name is required").max(255),
-    url: z.string().url("Must be a valid URL"),
+    url: z
+        .string()
+        .url("Must be a valid URL")
+        .refine(
+            (url) => url.startsWith("https://"),
+            "Server URL must use HTTPS for security"
+        ),
     transport: z.enum(["sse", "http"]).optional().default("sse"),
     headers: z.record(z.string(), z.string()).optional(),
 });
