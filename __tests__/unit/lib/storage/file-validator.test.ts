@@ -80,7 +80,8 @@ describe("validateFile", () => {
             const file = createTestTextFile("test", "test.txt");
             const result = validateFile(file);
             expect(result.error).toContain("Images");
-            expect(result.error).toContain("PDFs");
+            expect(result.error).toContain("documents");
+            expect(result.error).toContain("PDF");
             expect(result.error).toContain("audio");
             expect(result.error).toContain("video");
         });

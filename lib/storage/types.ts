@@ -35,7 +35,7 @@ export type UploadStatus =
     | "validating"
     | "optimizing"
     | "uploading"
-    | "parsing"
+    | "extracting" // PDFs via Docling, spreadsheets, etc.
     | "complete"
     | "error";
 

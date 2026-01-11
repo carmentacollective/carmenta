@@ -8,6 +8,69 @@ import { isSpreadsheet } from "./file-config";
 import { parseSpreadsheet, spreadsheetToMarkdown } from "./spreadsheet-parser";
 
 /**
+ * MIME types that should be extracted via Docling API
+ * These need server-side processing, unlike spreadsheets which parse client-side
+ *
+ * NOTE: This list is duplicated from DOCLING_CONFIG.supportedTypes to avoid importing
+ * server-only code into the client bundle. Keep in sync manually.
+ */
+const DOCLING_TYPES = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
+] as const;
+
+function shouldExtractWithDocling(mimeType: string): boolean {
+    return DOCLING_TYPES.includes(mimeType as (typeof DOCLING_TYPES)[number]);
+}
+
+/**
+ * Extract document content via Docling API
+ * Returns undefined if extraction is not available or fails
+ */
+async function extractDocumentContent(file: File): Promise<string | undefined> {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/api/documents/extract", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            // 503 means Docling is not enabled - this is expected in some environments
+            if (response.status === 503) {
+                logger.info(
+                    { filename: file.name },
+                    "Docling not enabled, skipping extraction"
+                );
+                return undefined;
+            }
+            const error = await response.json();
+            throw new Error(error.error || "Extraction failed");
+        }
+
+        const result = await response.json();
+        logger.info(
+            {
+                filename: file.name,
+                processingTimeMs: result.processingTimeMs,
+                contentLength: result.markdown.length,
+            },
+            "Document extracted via Docling"
+        );
+        return result.markdown;
+    } catch (error) {
+        logger.error(
+            { error, filename: file.name },
+            "Document extraction failed - file will be uploaded without parsed content"
+        );
+        return undefined;
+    }
+}
+
+/**
  * File Upload Service
  *
  * Handles client-side file uploads to Supabase Storage with:
@@ -48,7 +111,7 @@ export function generateStoragePath(
  * @param file - File to upload
  * @param userId - User email for path organization
  * @param connectionId - Connection ID for path organization (null for new connections)
- * @param onStatusChange - Callback for status updates ("validating", "optimizing", "uploading", "parsing", "complete")
+ * @param onStatusChange - Callback for status updates ("validating", "optimizing", "uploading", "extracting", "complete")
  * @returns Uploaded file metadata with public URL
  */
 export async function uploadFile(
@@ -56,7 +119,7 @@ export async function uploadFile(
     userId: string,
     connectionId: string | null,
     onStatusChange?: (
-        status: "validating" | "optimizing" | "uploading" | "parsing" | "complete"
+        status: "validating" | "optimizing" | "uploading" | "extracting" | "complete"
     ) => void
 ): Promise<UploadedFile> {
     // Step 1: Validate file
@@ -106,10 +169,12 @@ export async function uploadFile(
             data: { publicUrl },
         } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(data.path);
 
-        // Step 4: Parse spreadsheets to Markdown for LLM consumption
+        // Step 4: Extract content for LLM consumption
+        // Spreadsheets: Parse client-side (fast, no external dependency)
+        // PDFs/DOCX: Extract via Docling API (server-side, optional)
         let parsedContent: string | undefined;
         if (isSpreadsheet(file.type)) {
-            onStatusChange?.("parsing");
+            onStatusChange?.("extracting");
             try {
                 const buffer = await file.arrayBuffer();
                 const parsed = parseSpreadsheet(buffer, file.name);
@@ -127,8 +192,10 @@ export async function uploadFile(
                     { error: parseError, filename: file.name },
                     "Failed to parse spreadsheet - file will be uploaded without parsed content"
                 );
-                // Continue without parsed content - file is still accessible via URL
             }
+        } else if (shouldExtractWithDocling(file.type)) {
+            onStatusChange?.("extracting");
+            parsedContent = await extractDocumentContent(file);
         }
 
         // Step 5: Complete
@@ -147,7 +214,7 @@ export async function uploadFile(
             {
                 filename: file.name,
                 url: publicUrl,
-                hasSpreadsheetContent: !!parsedContent,
+                hasParsedContent: !!parsedContent,
             },
             "File uploaded successfully"
         );
