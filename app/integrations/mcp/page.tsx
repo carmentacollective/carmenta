@@ -568,6 +568,35 @@ function McpConfigContent({
             });
 
             if (response.ok) {
+                const data = await response.json();
+                const serverId = data.server?.id;
+
+                // Fire-and-forget: test connection to fetch manifest in background
+                // This populates tool descriptions ("Top operations: list_tasks...") but
+                // doesn't block the UI. If the server is slow/down, user isn't affected.
+                // The tool still works without manifest - just has a generic description.
+                if (serverId) {
+                    void (async () => {
+                        try {
+                            await fetch(`/api/mcp/servers/${serverId}/test`, {
+                                method: "POST",
+                            });
+                        } catch (error) {
+                            logger.warn(
+                                { error, serverId },
+                                "Background manifest fetch failed"
+                            );
+                            Sentry.captureException(error, {
+                                level: "warning",
+                                tags: {
+                                    category: "background",
+                                    action: "mcp_manifest_fetch",
+                                },
+                            });
+                        }
+                    })();
+                }
+
                 await loadServers();
                 setAddDialogOpen(false);
                 setNewServerUrl("");
@@ -631,7 +660,7 @@ function McpConfigContent({
                     <div className="flex items-center gap-2 self-end sm:self-auto">
                         <button
                             onClick={() => setAddDialogOpen(true)}
-                            className="text-foreground/70 hover:text-foreground hover:bg-foreground/10 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                            className="border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors"
                         >
                             <PlusIcon className="h-4 w-4" />
                             Add Manually

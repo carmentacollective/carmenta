@@ -644,6 +644,182 @@ Phase 2 consideration. Start with per-user only.
 
 ---
 
+## MCP Tool Integration Architecture
+
+How MCP tools are wired into LLM calls. This section documents the industry patterns and
+our implementation approach.
+
+### Industry Patterns (from research)
+
+**All major implementations fetch tools at connection/install time, not per-request:**
+
+| Implementation     | When Tools Fetched                       | Where Cached    | Dynamic Updates   |
+| ------------------ | ---------------------------------------- | --------------- | ----------------- |
+| Claude Desktop     | App startup                              | Session cache   | Not supported     |
+| LobeChat           | Install step 5 (GETTING_SERVER_MANIFEST) | Plugin manifest | Not supported     |
+| LibreChat          | MCPServerInspector.inspect()             | Server config   | Not supported     |
+| Vercel AI SDK      | On-demand via `mcpClient.tools()`        | None built-in   | Via `listChanged` |
+| MCP TypeScript SDK | `client.listTools()`                     | Validator cache | Via `listChanged` |
+
+**Key insight**: Claude Desktop injects tool schemas directly into the system prompt. A
+five-server setup with 58 tools can consume ~55K tokens before conversation starts. This
+is why progressive disclosure matters.
+
+**Vercel's mcp-to-ai-sdk approach**: Generate static tool definitions at build time to
+avoid security issues and token waste. Tools don't change at runtime.
+
+### Our Implementation: Gateway Pattern
+
+We use progressive disclosure to reduce token usage by ~95%:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Tool: mcp_github                                                │
+│ Description: GitHub. Top operations: create_issue,             │
+│              search_repositories, get_file_contents +9 more.    │
+│              Use action='describe' for full list.               │
+│ Schema: { action: string, params?: object }                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Instead of 12 individual tools with full schemas (~3K tokens each), one gateway tool
+with a summary (~200 tokens). Full tool list fetched on-demand when LLM invokes
+`action='describe'`.
+
+### Critical Requirement: Manifest at Connection Time
+
+**The tool description must be useful to the LLM.** When the LLM sees:
+
+> "Machina. Use action='describe' to see available operations."
+
+It has no idea what Machina does or when to use it. But when it sees:
+
+> "Machina. Top operations: list_tasks, create_task, search_files +8 more"
+
+It can make routing decisions.
+
+**This means: we MUST fetch and cache the server manifest when the connection is first
+established**, not wait for the first tool call.
+
+### Implementation Pattern
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Connection Flow                                │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  1. User adds MCP server (URL + credentials)                         │
+│                 │                                                     │
+│                 ▼                                                     │
+│  2. Connection validation                                            │
+│     - initialize + initialized handshake                              │
+│     - tools/list → fetch available tools                             │
+│     - Store manifest: { name, toolCount, tools: [...] }              │
+│                 │                                                     │
+│                 ▼                                                     │
+│  3. Server saved with cached manifest                                │
+│                 │                                                     │
+│                 ▼                                                     │
+│  4. Tool description includes top operations                         │
+│     "GitHub. Top operations: create_issue, search_repos +10"         │
+│                                                                       │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Query Flow                                     │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  1. getMcpGatewayTools(userEmail)                                    │
+│     - Lists enabled servers from DB                                   │
+│     - Uses CACHED manifest for tool descriptions                      │
+│     - NO network calls (fast, token-efficient)                        │
+│                 │                                                     │
+│                 ▼                                                     │
+│  2. LLM sees tool with meaningful description                        │
+│     - Can route appropriately based on top operations                │
+│                 │                                                     │
+│                 ▼                                                     │
+│  3. If LLM needs full tool list: action='describe'                   │
+│     - THEN we fetch tools/list from server                           │
+│     - Update cached manifest (lazy refresh)                          │
+│                                                                       │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### What This Requires
+
+**On server creation:**
+
+1. Create server record in DB (fast, no network)
+2. Fire-and-forget: kick off background test to fetch manifest
+3. User sees success immediately, manifest populates async
+
+**On test (background or manual):**
+
+1. Connect to server, call `tools/list`
+2. Store result in `serverManifest`:
+   - `name`: Server's declared name or display name
+   - `toolCount`: Number of available tools
+   - `tools`: Array of tool names (for description)
+3. Update status to "connected" or "error"
+
+**On query (building LLM tools):**
+
+1. Read servers from DB (with cached manifest) - NO network calls
+2. Build tool description from cached manifest
+3. If manifest missing: generic description (still works, less optimal)
+
+**On describe action (LLM requests full tool list):**
+
+1. Fetch fresh `tools/list` from server
+2. Update cached manifest in DB (lazy refresh)
+3. Return full tool list to LLM
+
+### Non-Blocking Principle
+
+**Manifest is a performance optimization, not a correctness requirement.**
+
+- Tool works without manifest (generic description)
+- Slow/down MCP servers don't block user flows
+- Fire-and-forget background fetches
+- User never waits on external MCP server connectivity
+
+If an MCP server is slow or unreachable:
+
+- Server creation succeeds immediately
+- Query tool building uses cached/empty manifest
+- User only notices if they invoke the specific tool
+
+### Future: Dynamic Updates via listChanged
+
+MCP protocol supports `notifications/tools/list_changed` for servers whose tools can
+change at runtime. We don't implement this in Phase 1 because:
+
+1. Most MCP servers have static tool sets
+2. Claude Desktop doesn't support it either
+3. Connection pooling/keepalive complexity
+4. Our `describe` action provides on-demand refresh
+
+If we add support later, the pattern is:
+
+- Subscribe to `listChanged` notifications during initialization
+- On notification, invalidate cached manifest
+- Next tool invocation refetches and caches
+
+### Sources
+
+- [AI SDK MCP](https://github.com/vercel/ai/tree/main/packages/mcp) -
+  `packages/mcp/src/tool/mcp-client.ts`
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) -
+  `packages/client/src/client/client.ts`
+- [LobeChat MCP Integration](https://github.com/lobehub/lobe-chat) -
+  `src/store/tool/slices/mcpStore/action.ts:261-536`
+- [LibreChat MCP Support](https://github.com/danny-avila/LibreChat) -
+  `packages/api/src/mcp/registry/MCPServerInspector.ts`
+- [Vercel mcp-to-ai-sdk](https://sdk.vercel.ai/docs/guides/mcp-to-ai-sdk)
+
+---
+
 ## Implementation Sequence
 
 ### Milestone 1: Foundation
@@ -652,6 +828,7 @@ Phase 2 consideration. Start with per-user only.
 2. Database schema for user server configs
 3. Basic configuration API (CRUD)
 4. Connection validation logic
+5. **Manifest fetching at connection time** ← Critical for tool routing
 
 ### Milestone 2: Configuration Agent
 

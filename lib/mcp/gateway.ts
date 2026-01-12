@@ -109,6 +109,11 @@ function formatToolsForDescription(tools: McpTool[]): string {
 
 /**
  * Build tool description from server manifest
+ *
+ * Manifest shape (stored as JSON in DB, populated by test endpoint):
+ * - name: Server's declared name or displayName fallback
+ * - toolCount: Number of available tools
+ * - tools: Array of tool names (for "Top operations" summary)
  */
 function buildToolDescription(server: McpServer): string {
     const manifest = server.serverManifest as {
@@ -211,14 +216,14 @@ export async function describeMcpOperations(
         }
 
         // Log event without blocking (fire-and-forget for activity logging)
-        void logMcpEvent({
+        logMcpEvent({
             userEmail,
             serverIdentifier,
             accountId,
             eventType: "connection_error",
             eventSource: "system",
             errorMessage,
-        });
+        }).catch((err) => childLogger.warn({ err }, "Failed to log MCP event"));
 
         return {
             server: serverIdentifier,
@@ -346,14 +351,14 @@ export async function executeMcpAction(
         }
 
         // Log event without blocking (fire-and-forget for activity logging)
-        void logMcpEvent({
+        logMcpEvent({
             userEmail,
             serverIdentifier,
             accountId,
             eventType: "connection_error",
             eventSource: "system",
             errorMessage,
-        });
+        }).catch((err) => childLogger.warn({ err }, "Failed to log MCP event"));
 
         return {
             success: false,
@@ -437,6 +442,15 @@ export async function getMcpGatewayTools(
     try {
         // Get user's enabled MCP servers
         const servers = await listEnabledMcpServers(userEmail);
+
+        logger.debug(
+            {
+                userEmail,
+                serverCount: servers.length,
+                serverIdentifiers: servers.map((s) => s.identifier),
+            },
+            "MCP gateway: servers found"
+        );
 
         if (servers.length === 0) {
             return tools;
