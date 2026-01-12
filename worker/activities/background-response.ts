@@ -170,7 +170,9 @@ export async function generateBackgroundResponse(
             "Running LLM streaming generation"
         );
 
-        // Capture the final response parts for database persistence
+        // Track when onFinish completes (it's async)
+        let resolveOnFinish: () => void;
+        const onFinishComplete = new Promise<void>((r) => (resolveOnFinish = r));
         let finalResponseParts: UIMessageLike["parts"] = [];
 
         // Run streaming LLM call
@@ -201,53 +203,22 @@ export async function generateBackgroundResponse(
                     userId,
                 },
             },
-            onFinish: async ({
-                text,
-                toolCalls,
-                toolResults,
-                reasoningText,
-                providerMetadata,
-            }) => {
-                const parts: UIMessageLike["parts"] = [];
-
-                // Add reasoning part if present
-                if (reasoningText) {
-                    parts.push({
-                        type: "reasoning",
-                        text: reasoningText,
-                        ...(providerMetadata && { providerMetadata }),
-                    });
-                }
-
-                // Add text part if present
-                if (text) {
-                    parts.push({ type: "text", text });
-                }
-
-                // Add tool calls with their results
-                for (const tc of toolCalls) {
-                    const toolResult = toolResults.find(
-                        (tr) => tr.toolCallId === tc.toolCallId
-                    );
-                    parts.push({
-                        type: `tool-${tc.toolName}`,
-                        toolCallId: tc.toolCallId,
-                        state: toolResult ? "output-available" : "input-available",
-                        input: tc.input,
-                        ...(toolResult && { output: toolResult.output }),
-                    });
-                }
-
-                finalResponseParts = parts;
-            },
         });
 
         // Create UI message stream
+        // NOTE: onFinish must be on toUIMessageStream(), not streamText()
+        // The streamText onFinish has race condition issues with derived streams.
+        // See: https://github.com/vercel/ai/issues/7900
         const stream = createUIMessageStream({
             execute: ({ writer }) => {
                 writer.merge(
                     streamResult.toUIMessageStream({
                         sendReasoning: reasoning.enabled,
+                        onFinish: async ({ responseMessage }) => {
+                            // Extract parts from the UI message format
+                            finalResponseParts = responseMessage.parts;
+                            resolveOnFinish();
+                        },
                     })
                 );
             },
@@ -269,6 +240,9 @@ export async function generateBackgroundResponse(
             const { done } = await reader.read();
             if (done) break;
         }
+
+        // Wait for onFinish to complete before checking parts
+        await onFinishComplete;
 
         // Verify we captured the response parts
         if (finalResponseParts.length === 0) {
