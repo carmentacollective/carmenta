@@ -850,7 +850,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 ref={formRef}
                 onSubmit={handleSubmit}
                 className={cn(
-                    "relative flex w-full flex-col transition-all @md:flex-row @md:items-center",
+                    "relative flex w-full flex-col transition-all @xl:flex-row @xl:items-center",
                     shouldFlash && "ring-primary/40 ring-2"
                 )}
             >
@@ -894,9 +894,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 />
 
                 {/* Action bar: responsive layout via container width */}
-                <div className="flex items-center justify-between gap-2 px-4 py-3.5 @md:justify-end @md:gap-3 @md:py-0 @md:pr-4">
+                <div className="flex items-center justify-between gap-2 px-4 py-3.5 @xl:justify-end @xl:gap-3 @xl:py-0 @xl:pr-4">
                     {/* Left group (mobile) / inline (desktop): Model + Attach */}
-                    <div className="flex items-center gap-2 @md:order-last @md:gap-3">
+                    <div className="flex items-center gap-2 @xl:order-last @xl:gap-3">
                         <ModelSelectorTrigger
                             overrides={overrides}
                             onChange={setOverrides}
@@ -910,7 +910,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     </div>
 
                     {/* Right group: Send/Queue/Stop + Voice */}
-                    <div className="flex items-center gap-2 @md:order-first @md:gap-3">
+                    <div className="flex items-center gap-2 @xl:order-first @xl:gap-3">
                         {/* Button transforms based on state:
                             - Not streaming → Send (arrow)
                             - Streaming + empty input → Stop (square)

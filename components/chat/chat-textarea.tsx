@@ -37,19 +37,20 @@ import { cn } from "@/lib/utils";
  */
 export const CHAT_TEXTAREA_BASE_STYLES = {
     // Layout - container query responsive
-    layout: "w-full flex-none resize-none @md:flex-1",
+    layout: "w-full flex-none resize-none @xl:flex-1",
     // ┌─────────────────────────────────────────────────────────────────┐
     // │  HEIGHT: Must EXACTLY match padding + line-height for centering │
     // │                                                                 │
     // │  Mobile:  py-3 (12+12=24) + leading-5 (20) = 44px = min-h-11   │
     // │  Desktop: py-4 (16+16=32) + leading-5 (20) = 52px              │
     // │                                                                 │
-    // │  MUST use @md: (container query) NOT md: (media query)         │
-    // │  so CarmentaSheet (400px in wide viewport) gets mobile styles  │
+    // │  MUST use @xl: (container query) NOT xl: (media query)         │
+    // │  @xl = 576px container width - ensures stacked layout persists │
+    // │  until there's enough room for inline textarea + buttons       │
     // └─────────────────────────────────────────────────────────────────┘
-    height: "max-h-48 min-h-11 @md:max-h-60 @md:min-h-[52px]",
+    height: "max-h-48 min-h-11 @xl:max-h-60 @xl:min-h-[52px]",
     // Padding - symmetric with container queries for CarmentaSheet compatibility
-    padding: "px-4 py-3 @md:px-6 @md:py-4",
+    padding: "px-4 py-3 @xl:px-6 @xl:py-4",
     // Typography
     typography: "text-base leading-5 outline-none",
     colors: "text-foreground/95 placeholder:text-foreground/40",

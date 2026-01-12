@@ -482,8 +482,8 @@ export const SyntaxHighlightInput = forwardRef<
             >
                 <PopoverTrigger asChild>
                     {/* flex: eliminates inline-block baseline gap that adds 6px
-                        @md:self-center: prevents stretch in flex-row parent */}
-                    <div className="relative flex w-full @md:self-center">
+                        @xl:self-center: prevents stretch in flex-row parent */}
+                    <div className="relative flex w-full @xl:self-center">
                         <RichTextarea
                             ref={textareaRef}
                             value={value}
