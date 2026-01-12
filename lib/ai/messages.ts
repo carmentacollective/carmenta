@@ -179,6 +179,37 @@ export function filterLargeToolOutputs(messages: UIMessage[]): UIMessage[] {
                         };
                     }
                 }
+
+                // Check for direct images array: { images: [{ base64, ... }] }
+                // This is the structure returned by Image Artist agent
+                if (Array.isArray(output.images)) {
+                    const images = output.images as Array<Record<string, unknown>>;
+                    const hasLargeImages = images.some(
+                        (img) =>
+                            typeof img.base64 === "string" && img.base64.length > 1000
+                    );
+
+                    if (hasLargeImages) {
+                        return {
+                            ...part,
+                            output: {
+                                ...output,
+                                images: images.map((img) => ({
+                                    ...img,
+                                    base64:
+                                        typeof img.base64 === "string" &&
+                                        img.base64.length > 1000
+                                            ? "[IMAGE_DATA_OMITTED]"
+                                            : img.base64,
+                                    _originalSize:
+                                        typeof img.base64 === "string"
+                                            ? img.base64.length
+                                            : undefined,
+                                })),
+                            },
+                        };
+                    }
+                }
             }
 
             return part;

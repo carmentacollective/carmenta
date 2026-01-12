@@ -20,6 +20,7 @@ import { logger } from "@/lib/client-logger";
 import { ImageGenerationLoader } from "@/components/ui/image-generation-loader";
 import { CopyImageButton } from "@/components/ui/copy-image-button";
 import { DownloadImageButton } from "@/components/ui/download-image-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 /** Allowed MIME types for generated images */
 const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
@@ -401,13 +402,18 @@ function ImageCard({
                             ariaLabel="Download image"
                             size="sm"
                         />
-                        <button
-                            onClick={() => setLightboxOpen(true)}
-                            className="rounded-md bg-black/50 p-2 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
-                            title="View fullscreen"
-                        >
-                            <ArrowsOutIcon className="h-4 w-4" />
-                        </button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={() => setLightboxOpen(true)}
+                                    className="rounded-md bg-black/50 p-2 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
+                                    aria-label="View fullscreen"
+                                >
+                                    <ArrowsOutIcon className="h-4 w-4" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>View fullscreen</TooltipContent>
+                        </Tooltip>
                     </div>
 
                     {/* Bottom info - on hover (desktop) or always (mobile) */}

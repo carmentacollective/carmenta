@@ -41,32 +41,32 @@ const TASK_MODEL_INFO: Record<
     diagram: {
         model: "Gemini 3 Pro",
         shortModel: "Gemini",
-        reason: "Best for diagrams (98% in evals)",
+        reason: "AI-structured layouts",
     },
     text: {
         model: "Gemini 3 Pro",
         shortModel: "Gemini",
-        reason: "Best for text rendering (86% in evals)",
+        reason: "Clear, legible typography",
     },
     logo: {
         model: "FLUX 2 Flex",
         shortModel: "FLUX",
-        reason: "Best for logos (70% in evals)",
+        reason: "Clean lines & crisp shapes",
     },
     photo: {
         model: "Imagen 4.0 Ultra",
         shortModel: "Imagen Ultra",
-        reason: "Best for photos (70% in evals)",
+        reason: "Realistic detail & lighting",
     },
     illustration: {
         model: "Gemini 3 Pro",
         shortModel: "Gemini",
-        reason: "Best for illustrations (75% in evals)",
+        reason: "Rich artistic detail",
     },
     default: {
         model: "Imagen 4.0",
         shortModel: "Imagen",
-        reason: "Versatile general-purpose model",
+        reason: "Versatile all-rounder",
     },
 };
 
