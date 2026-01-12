@@ -25,6 +25,7 @@ import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     Sheet,
     SheetContent,
@@ -373,14 +374,18 @@ function SidecarInner({
 
                 <div className="flex items-center gap-1">
                     {messages.length > 0 && (
-                        <button
-                            onClick={handleClear}
-                            className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/60 flex min-h-9 min-w-9 items-center justify-center rounded-lg transition-colors"
-                            aria-label="Clear conversation"
-                            title="Clear conversation"
-                        >
-                            <Trash className="h-4 w-4" />
-                        </button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={handleClear}
+                                    className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/60 flex min-h-9 min-w-9 items-center justify-center rounded-lg transition-colors"
+                                    aria-label="Clear conversation"
+                                >
+                                    <Trash className="h-4 w-4" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Clear conversation</TooltipContent>
+                        </Tooltip>
                     )}
                     <button
                         onClick={onClose}

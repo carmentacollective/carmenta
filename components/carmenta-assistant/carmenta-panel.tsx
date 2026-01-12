@@ -16,6 +16,7 @@ import { SparkleIcon, CaretLeftIcon, TrashIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useChatScroll } from "@/lib/hooks/use-chat-scroll";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     SimpleComposer,
     UserBubble,
@@ -144,14 +145,20 @@ export function CarmentaPanel({
                             <div className="flex items-center gap-2">
                                 {/* Clear conversation */}
                                 {messages.length > 0 && (
-                                    <button
-                                        onClick={clear}
-                                        className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/60 flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors"
-                                        aria-label="Clear conversation"
-                                        title="Clear conversation"
-                                    >
-                                        <TrashIcon className="h-4 w-4" />
-                                    </button>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                onClick={clear}
+                                                className="text-foreground/40 hover:bg-foreground/5 hover:text-foreground/60 flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors"
+                                                aria-label="Clear conversation"
+                                            >
+                                                <TrashIcon className="h-4 w-4" />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Clear conversation
+                                        </TooltipContent>
+                                    </Tooltip>
                                 )}
 
                                 {/* Collapse button */}

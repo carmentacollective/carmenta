@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { transitions } from "@/lib/motion/presets";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 import { logger } from "@/lib/client-logger";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 /** Duration to show success feedback before resetting */
 const FEEDBACK_DURATION_MS = 2000;
@@ -140,32 +141,40 @@ export function DownloadImageButton({
     );
 
     return (
-        <motion.button
-            onClick={handleDownload}
-            aria-label={downloaded ? "Downloaded!" : ariaLabel}
-            layout
-            className={buttonClasses}
-            title={ariaLabel}
-        >
-            {downloaded ? (
-                <>
-                    <CheckIcon className={cn(iconSize, "flex-shrink-0")} />
-                    {size === "md" && (
-                        <motion.span
-                            initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-                            animate={{ opacity: 1, width: "auto", marginLeft: 6 }}
-                            exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-                            transition={transitions.quick}
-                            className="text-xs font-medium whitespace-nowrap"
-                            aria-live="polite"
-                        >
-                            Saved!
-                        </motion.span>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <motion.button
+                    onClick={handleDownload}
+                    aria-label={downloaded ? "Downloaded!" : ariaLabel}
+                    layout
+                    className={buttonClasses}
+                >
+                    {downloaded ? (
+                        <>
+                            <CheckIcon className={cn(iconSize, "flex-shrink-0")} />
+                            {size === "md" && (
+                                <motion.span
+                                    initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+                                    animate={{
+                                        opacity: 1,
+                                        width: "auto",
+                                        marginLeft: 6,
+                                    }}
+                                    exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+                                    transition={transitions.quick}
+                                    className="text-xs font-medium whitespace-nowrap"
+                                    aria-live="polite"
+                                >
+                                    Saved!
+                                </motion.span>
+                            )}
+                        </>
+                    ) : (
+                        <DownloadIcon className={iconSize} />
                     )}
-                </>
-            ) : (
-                <DownloadIcon className={iconSize} />
-            )}
-        </motion.button>
+                </motion.button>
+            </TooltipTrigger>
+            <TooltipContent>{ariaLabel}</TooltipContent>
+        </Tooltip>
     );
 }
