@@ -97,7 +97,7 @@ const ERROR_PATTERNS: Array<{
         action: "You've hit a usage limit",
     },
     {
-        pattern: /not.*found|does.*not.*exist/i,
+        pattern: /\b(not found|does not exist)\b/i,
         message: "Not found",
     },
     {

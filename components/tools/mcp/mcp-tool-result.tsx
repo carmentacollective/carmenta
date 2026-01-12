@@ -334,17 +334,18 @@ function McpResultContent({
 /**
  * Extract stable ID from an item for React keys.
  * Returns stable ID if available, falls back to index only for items without identifiers.
+ * Includes key name to handle malformed data with duplicate IDs across fields.
  */
 function extractItemId(item: unknown, fallbackIdx: number): string {
     if (typeof item !== "object" || item === null) {
         return `item-${fallbackIdx}`;
     }
     const obj = item as Record<string, unknown>;
-    // Try common ID fields - return stable ID without index to maintain key stability
+    // Try common ID fields - include key name to handle duplicate values
     for (const key of ["id", "url", "path", "filename"]) {
         const value = obj[key];
         if (typeof value === "string" || typeof value === "number") {
-            return String(value);
+            return `${key}-${value}`;
         }
     }
     // Only use index as last resort when no stable ID exists
