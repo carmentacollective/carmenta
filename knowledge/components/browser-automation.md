@@ -109,3 +109,15 @@ Handle the complexity of browser state:
 - Research session security best practices
 - Analyze anti-bot detection landscape and ethical considerations
 - Review legal considerations for automated browsing
+
+### Competitive Reference: ChatLLM Operator
+
+Abacus AI's ChatLLM Operator offers computer task automation with:
+
+- Browser automation for scheduled workflows
+- Job application processing at scale
+- Social media posting and outreach campaigns
+- Multi-system integration (Salesforce, Jira, Gmail, GitHub)
+
+This is bundled into their $10/user/month offering. See
+[ChatLLM competitor analysis](../competitors/chatllm-abacus-ai.md) for details.

@@ -157,3 +157,19 @@ interface VoiceProvider {
 - Wake word detection ("Hey Carmenta")
 - Speaker diarization for multi-person input
 - Voice-based commands (tone/prosody for intent)
+
+### Desktop Listening Mode (Competitive Intel)
+
+Abacus AI Deep Agent offers a desktop app with "listening mode" - an always-on assistant
+that can listen to meetings and calls, providing context-aware assistance without
+explicit activation. This is interesting for knowledge workers who need hands-free
+capture.
+
+Considerations for Carmenta:
+
+- Privacy implications (always-on audio capture)
+- Integration with calendar for meeting awareness
+- Automatic summarization and knowledge extraction from conversations
+- "Meeting companion" mode vs general listening
+
+See [ChatLLM competitor analysis](../competitors/chatllm-abacus-ai.md) for details.

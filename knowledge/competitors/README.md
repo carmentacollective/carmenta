@@ -1,6 +1,7 @@
 # AI Chat Interface Landscape
 
-**Analyzed**: 10 competitors/references
+A living analysis of AI chat interfaces and tools. See individual competitor files for
+detailed breakdowns.
 
 ## Executive Summary
 
@@ -18,6 +19,7 @@ ranging from simple chat templates to production-grade platforms. Key patterns e
 
 | Project               | Type              | Stars   | AI-First SDLC | MCP | Voice | Unique Angle                  |
 | --------------------- | ----------------- | ------- | ------------- | --- | ----- | ----------------------------- |
+| ChatLLM (Abacus.AI)   | SaaS Platform     | -       | None          | No  | Yes   | $10/mo all-models bundle      |
 | LibreChat             | Full Platform     | 20k+    | Minimal       | Yes | Yes   | Most feature-complete OSS     |
 | Open WebUI            | Full Platform     | 70k+    | Minimal       | Yes | Yes   | Enterprise/self-hosted leader |
 | LobeChat              | Full Platform     | 50k+    | **Excellent** | Yes | Yes   | Best AI-assisted development  |
@@ -41,6 +43,7 @@ research.
 
 | Folder                | Name                  | Aliases             | GitHub                                             | Good For                                                         |
 | --------------------- | --------------------- | ------------------- | -------------------------------------------------- | ---------------------------------------------------------------- |
+| abacusai              | ChatLLM/Abacus.AI     | abacus, chatllm     | https://github.com/abacusai                        | multi-model, desktop-agent, long-context, pricing-strategy       |
 | ai-chatbot            | Vercel AI Chatbot     | vercel, vercel-chat | https://github.com/vercel/ai-chatbot               | streaming, artifacts, ai-first-sdlc, ultracite-rules             |
 | assistant-ui          | assistant-ui          | assistant, aui      | https://github.com/assistant-ui/assistant-ui       | composable-primitives, state-management, transport-protocol, TAP |
 | better-chatbot        | Better Chatbot        | better              | https://github.com/cgoinglove/better-chatbot       | visual-workflows, voice, realtime-api, xyflow                    |
