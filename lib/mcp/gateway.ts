@@ -173,8 +173,13 @@ async function listTools(server: McpServer): Promise<McpTool[]> {
             description: (t as Tool).description,
         }));
     } catch (error) {
-        // Clear any stale cache on connection failure
-        clearCachedClient(server.id);
+        const cacheKey = getCacheKey(server.id);
+        const wasCached = clientCache.has(cacheKey);
+        clearCachedClient(server.id); // Closes if cached
+        // If client was newly created (not cached), close it to prevent leak
+        if (!wasCached) {
+            client.close().catch(() => {});
+        }
         throw error;
     }
 }
@@ -191,8 +196,13 @@ async function callTool(
         // Cache after successful connection
         cacheClient(server, client);
     } catch (error) {
-        // Clear cache on connection failure
-        clearCachedClient(server.id);
+        const cacheKey = getCacheKey(server.id);
+        const wasCached = clientCache.has(cacheKey);
+        clearCachedClient(server.id); // Closes if cached
+        // If client was newly created (not cached), close it to prevent leak
+        if (!wasCached) {
+            client.close().catch(() => {});
+        }
         throw error;
     }
 
