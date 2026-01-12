@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { glass, border, spacing } from "@/lib/design-tokens";
@@ -12,6 +13,7 @@ import {
     getToolConfig,
     getToolDescription,
 } from "@/lib/tools/tool-config";
+import { formatMcpError, getMcpServerName } from "@/lib/tools/mcp-error-messages";
 
 interface ToolRendererProps {
     /** Tool name from the registry */
@@ -141,6 +143,11 @@ export function ToolRenderer({
                 onToggle={() => setExpanded(!expanded)}
             />
 
+            {/* Error message - visible to ALL users when there's an error */}
+            {status === "error" && error && (
+                <ToolErrorDisplay toolName={toolName} error={error} />
+            )}
+
             {/* Expanded content with animation */}
             {expanded && hasExpandedContent && (
                 <div
@@ -168,6 +175,39 @@ export function ToolRenderer({
                     )}
                 </div>
             )}
+        </div>
+    );
+}
+
+/**
+ * Error display for tool failures.
+ * Shows human-readable message with optional action hint.
+ * Visible to ALL users, not just admins.
+ */
+function ToolErrorDisplay({ toolName, error }: { toolName: string; error: string }) {
+    // Get server name for MCP tools
+    const isMcpTool = toolName.startsWith("mcp_") || toolName.startsWith("mcp-");
+    const serverName = isMcpTool ? getMcpServerName(toolName) : undefined;
+
+    // Format the error for human consumption
+    const formatted = formatMcpError(error, serverName);
+
+    return (
+        <div
+            className={cn(
+                "flex items-start gap-2 border-t border-red-500/20 px-3 py-2",
+                "bg-red-500/5 text-sm"
+            )}
+        >
+            <WarningCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+            <div className="min-w-0 flex-1">
+                <p className="text-red-600 dark:text-red-400">{formatted.message}</p>
+                {formatted.action && (
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                        {formatted.action}
+                    </p>
+                )}
+            </div>
         </div>
     );
 }
