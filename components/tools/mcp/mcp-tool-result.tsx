@@ -334,14 +334,19 @@ function McpResultContent({
 /**
  * Extract stable ID from an item for React keys.
  * Returns stable ID if available, falls back to index only for items without identifiers.
- * Includes key name to handle malformed data with duplicate IDs across fields.
+ *
+ * Key format: `${field}-${value}` ensures uniqueness even with duplicate values across fields.
+ * Example: Item A with id="123" and Item B with url="123" generate "id-123" and "url-123".
+ *
+ * This provides both stability (same item = same key across renders) and uniqueness
+ * (different items never collide, even with malformed data sharing ID values).
  */
 function extractItemId(item: unknown, fallbackIdx: number): string {
     if (typeof item !== "object" || item === null) {
         return `item-${fallbackIdx}`;
     }
     const obj = item as Record<string, unknown>;
-    // Try common ID fields - include key name to handle duplicate values
+    // Try common ID fields - prefix with field name to guarantee uniqueness
     for (const key of ["id", "url", "path", "filename"]) {
         const value = obj[key];
         if (typeof value === "string" || typeof value === "number") {

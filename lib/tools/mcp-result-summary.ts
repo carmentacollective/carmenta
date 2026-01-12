@@ -45,7 +45,18 @@ export function getResultSummary(
         const obj = output as Record<string, unknown>;
 
         // Check for nested arrays (e.g., { results: [...], items: [...] })
-        for (const key of ["results", "items", "data", "files", "issues", "messages"]) {
+        // Must match extractArray() key list in mcp-tool-result.tsx
+        for (const key of [
+            "results",
+            "items",
+            "data",
+            "files",
+            "issues",
+            "messages",
+            "events",
+            "channels",
+            "contacts",
+        ]) {
             if (Array.isArray(obj[key])) {
                 const arr = obj[key] as unknown[];
                 const count = arr.length;
@@ -180,7 +191,17 @@ function pluralize(word: string, count: number): string {
     if (count === 1) {
         // Return singular
         if (word.endsWith("ies")) return word.slice(0, -3) + "y";
-        if (word.endsWith("es")) return word.slice(0, -2);
+        // Only strip "es" for words ending in consonant + "es" (boxes→box)
+        // NOT for words naturally ending in "e" + "s" (files→file, issues→issue)
+        if (word.endsWith("es") && !word.endsWith("ies")) {
+            const withoutEs = word.slice(0, -2);
+            // If word ends in "e" before the "s", just remove "s" (files→file)
+            if (withoutEs.endsWith("e")) {
+                return word.slice(0, -1);
+            }
+            // Otherwise remove "es" (boxes→box)
+            return withoutEs;
+        }
         if (word.endsWith("s")) return word.slice(0, -1);
         return word;
     }
