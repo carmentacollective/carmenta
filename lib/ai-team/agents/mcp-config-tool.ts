@@ -10,6 +10,8 @@
  * - test: Test a specific integration's connectivity
  * - guide: Get guidance on setting up a new integration
  * - create: Add a new MCP server configuration
+ * - update: Update an existing MCP server configuration
+ * - delete: Remove an MCP server configuration
  */
 
 import { tool } from "ai";
@@ -115,6 +117,53 @@ function describeOperations(): SubagentDescription {
                         description:
                             "HTTP headers for authentication (e.g., {'Authorization': 'Bearer <token>'} or {'X-API-Key': '<key>'})",
                         required: false,
+                    },
+                ],
+            },
+            {
+                name: "update",
+                description:
+                    "Update an existing MCP server configuration. Use this when the user wants to change URL, headers, or display name of an existing server.",
+                params: [
+                    {
+                        name: "identifier",
+                        type: "string",
+                        description:
+                            "Identifier of the server to update (e.g., 'machina')",
+                        required: true,
+                    },
+                    {
+                        name: "displayName",
+                        type: "string",
+                        description: "New human-readable name for display",
+                        required: false,
+                    },
+                    {
+                        name: "url",
+                        type: "string",
+                        description: "New MCP server endpoint URL",
+                        required: false,
+                    },
+                    {
+                        name: "headers",
+                        type: "object",
+                        description:
+                            "New HTTP headers for authentication (replaces existing headers)",
+                        required: false,
+                    },
+                ],
+            },
+            {
+                name: "delete",
+                description:
+                    "Remove an MCP server configuration. Use this when the user wants to disconnect or remove an MCP server.",
+                params: [
+                    {
+                        name: "identifier",
+                        type: "string",
+                        description:
+                            "Identifier of the server to delete (e.g., 'machina')",
+                        required: true,
                     },
                 ],
             },
@@ -444,6 +493,181 @@ async function executeCreate(
 }
 
 /**
+ * Update MCP server result
+ */
+interface UpdateData {
+    success: boolean;
+    server: {
+        id: number;
+        identifier: string;
+        displayName: string;
+        url: string;
+        status: string;
+    };
+}
+
+/**
+ * Execute update action - updates an existing MCP server configuration
+ */
+async function executeUpdate(
+    params: {
+        identifier: string;
+        displayName?: string;
+        url?: string;
+        headers?: Record<string, string>;
+    },
+    context: SubagentContext
+): Promise<SubagentResult<UpdateData>> {
+    const { identifier, displayName, url, headers } = params;
+
+    try {
+        // Import the db functions
+        const { getMcpServerByIdentifier, updateMcpServer } =
+            await import("@/lib/db/mcp-servers");
+
+        // Find the existing server
+        const existing = await getMcpServerByIdentifier(context.userEmail, identifier);
+        if (!existing) {
+            return errorResult(
+                "VALIDATION",
+                `MCP server '${identifier}' not found. Use action='list' to see available servers, or action='create' to add a new one.`
+            );
+        }
+
+        // Build update data
+        const updateData: {
+            displayName?: string;
+            url?: string;
+            authType?: "none" | "bearer" | "header";
+            credentials?: { token: string };
+            authHeaderName?: string;
+        } = {};
+
+        if (displayName) updateData.displayName = displayName;
+        if (url) updateData.url = url;
+
+        // Parse auth configuration from headers if provided
+        if (headers) {
+            const { authType, token, authHeaderName } = parseAuthHeaders(headers);
+            updateData.authType = authType;
+            if (token) updateData.credentials = { token };
+            if (authHeaderName) updateData.authHeaderName = authHeaderName;
+        }
+
+        // Update the server
+        const server = await updateMcpServer(existing.id, updateData);
+
+        if (!server) {
+            return errorResult("PERMANENT", "Failed to update MCP server");
+        }
+
+        logger.info(
+            {
+                userEmail: context.userEmail,
+                serverId: server.id,
+                identifier,
+                url: url || server.url,
+            },
+            "🔧 Updated MCP server configuration"
+        );
+
+        return successResult<UpdateData>({
+            success: true,
+            server: {
+                id: server.id,
+                identifier: server.identifier,
+                displayName: server.displayName,
+                url: server.url,
+                status: server.status,
+            },
+        });
+    } catch (error) {
+        logger.error(
+            { error, userEmail: context.userEmail, identifier, url },
+            "🔧 Failed to update MCP server"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "mcp-config", action: "update" },
+            extra: { userEmail: context.userEmail, identifier, url },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Failed to update MCP server"
+        );
+    }
+}
+
+/**
+ * Delete MCP server result
+ */
+interface DeleteData {
+    success: boolean;
+    identifier: string;
+}
+
+/**
+ * Execute delete action - removes an MCP server configuration
+ */
+async function executeDelete(
+    params: { identifier: string },
+    context: SubagentContext
+): Promise<SubagentResult<DeleteData>> {
+    const { identifier } = params;
+
+    try {
+        // Import the db functions
+        const { getMcpServerByIdentifier, deleteMcpServer } =
+            await import("@/lib/db/mcp-servers");
+
+        // Find the existing server
+        const existing = await getMcpServerByIdentifier(context.userEmail, identifier);
+        if (!existing) {
+            return errorResult(
+                "VALIDATION",
+                `MCP server '${identifier}' not found. Use action='list' to see available servers.`
+            );
+        }
+
+        // Delete the server
+        const deleted = await deleteMcpServer(existing.id);
+
+        if (!deleted) {
+            return errorResult("PERMANENT", "Failed to delete MCP server");
+        }
+
+        logger.info(
+            {
+                userEmail: context.userEmail,
+                identifier,
+            },
+            "🔧 Deleted MCP server configuration"
+        );
+
+        return successResult<DeleteData>({
+            success: true,
+            identifier,
+        });
+    } catch (error) {
+        logger.error(
+            { error, userEmail: context.userEmail, identifier },
+            "🔧 Failed to delete MCP server"
+        );
+
+        Sentry.captureException(error, {
+            tags: { component: "mcp-config", action: "delete" },
+            extra: { userEmail: context.userEmail, identifier },
+        });
+
+        return errorResult(
+            "PERMANENT",
+            error instanceof Error ? error.message : "Failed to delete MCP server"
+        );
+    }
+}
+
+/**
  * MCP Config action parameter schema
  *
  * Flat object schema because discriminatedUnion produces oneOf which
@@ -451,22 +675,28 @@ async function executeCreate(
  */
 const mcpConfigActionSchema = z.object({
     action: z
-        .enum(["describe", "list", "test", "guide", "create"])
+        .enum(["describe", "list", "test", "guide", "create", "update", "delete"])
         .describe(
             "Operation to perform. Use 'describe' to see all available operations."
         ),
     serviceId: z.string().optional().describe("Service ID (for 'test' and 'guide')"),
     accountId: z.string().optional().describe("Specific account ID (for 'test')"),
-    identifier: z.string().optional().describe("Server identifier (for 'create')"),
+    identifier: z
+        .string()
+        .optional()
+        .describe("Server identifier (for 'create', 'update', 'delete')"),
     displayName: z
         .string()
         .optional()
-        .describe("Human-readable display name (for 'create')"),
-    url: z.string().optional().describe("MCP server endpoint URL (for 'create')"),
+        .describe("Human-readable display name (for 'create', 'update')"),
+    url: z
+        .string()
+        .optional()
+        .describe("MCP server endpoint URL (for 'create', 'update')"),
     headers: z
         .record(z.string(), z.string())
         .optional()
-        .describe("HTTP headers for auth (for 'create')"),
+        .describe("HTTP headers for auth (for 'create', 'update')"),
 });
 
 type McpConfigAction = z.infer<typeof mcpConfigActionSchema>;
@@ -513,6 +743,38 @@ function validateMcpParams(
             } catch {
                 return { valid: false, error: "url must be a valid URL" };
             }
+            return { valid: true };
+        case "update":
+            if (!params.identifier)
+                return { valid: false, error: "identifier is required" };
+            // At least one field to update must be provided
+            if (!params.displayName && !params.url && !params.headers) {
+                return {
+                    valid: false,
+                    error: "At least one of displayName, url, or headers is required for update",
+                };
+            }
+            // Validate URL format if provided
+            if (params.url) {
+                try {
+                    const parsedUrl = new URL(params.url);
+                    if (
+                        parsedUrl.protocol !== "https:" &&
+                        process.env.NODE_ENV === "production"
+                    ) {
+                        return {
+                            valid: false,
+                            error: "MCP servers must use HTTPS in production",
+                        };
+                    }
+                } catch {
+                    return { valid: false, error: "url must be a valid URL" };
+                }
+            }
+            return { valid: true };
+        case "delete":
+            if (!params.identifier)
+                return { valid: false, error: "identifier is required" };
             return { valid: true };
         default:
             return { valid: false, error: `Unknown action: ${params.action}` };
@@ -567,6 +829,21 @@ export function createMcpConfigTool(context: SubagentContext) {
                                     url: params.url!,
                                     headers: params.headers,
                                 },
+                                ctx
+                            );
+                        case "update":
+                            return executeUpdate(
+                                {
+                                    identifier: params.identifier!,
+                                    displayName: params.displayName,
+                                    url: params.url,
+                                    headers: params.headers,
+                                },
+                                ctx
+                            );
+                        case "delete":
+                            return executeDelete(
+                                { identifier: params.identifier! },
                                 ctx
                             );
                         default:
