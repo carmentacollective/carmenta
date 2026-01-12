@@ -61,6 +61,7 @@
   "dependencies": {
     "@47ng/simple-e2ee": "^1.1.0",
     "@ai-sdk/gateway": "^3.0.11",
+    "@ai-sdk/mcp": "^1.0.5",
     "@ai-sdk/react": "^3.0.29",
     "@anthropic-ai/claude-agent-sdk": "^0.2.3",
     "@clerk/nextjs": "^6.36.3",

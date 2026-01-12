@@ -101,8 +101,7 @@ export async function POST(_request: Request, context: RouteContext) {
                 status: "connected",
                 errorMessage: null,
                 serverManifest: {
-                    name: result.serverInfo?.name ?? server.displayName,
-                    version: result.serverInfo?.version,
+                    name: server.displayName,
                     toolCount: toolNames.length,
                     tools: toolNames,
                 },
@@ -121,7 +120,6 @@ export async function POST(_request: Request, context: RouteContext) {
                 success: true,
                 status: "connected",
                 toolCount: result.tools?.length ?? 0,
-                serverInfo: result.serverInfo,
             });
         } else {
             await updateMcpServer(serverId, {

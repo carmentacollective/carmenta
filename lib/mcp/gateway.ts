@@ -6,12 +6,12 @@
  *   - action='describe' returns available operations from the server
  *   - Other actions are forwarded as tool calls to the MCP server
  *
- * This pattern reduces token usage by ~95% vs exposing all tools individually.
- * Based on patterns from mcp-hubby.
+ * Uses @ai-sdk/mcp directly for MCP protocol handling.
  */
 
+import { createMCPClient } from "@ai-sdk/mcp";
 import * as Sentry from "@sentry/nextjs";
-import { tool } from "ai";
+import { tool, type Tool } from "ai";
 import { z } from "zod";
 
 import {
@@ -22,21 +22,17 @@ import {
     logMcpEvent,
 } from "@/lib/db/mcp-servers";
 import type { McpServer } from "@/lib/db/schema";
-import {
-    listMcpTools,
-    callMcpTool,
-    initializeMcpConnection,
-    sendInitializedNotification,
-    type McpClientConfig,
-    type McpTool,
-} from "./client";
 import { logger } from "@/lib/logger";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-/** Tool input schema for MCP gateway tools */
+interface McpTool {
+    name: string;
+    description?: string;
+}
+
 const mcpGatewaySchema = z.object({
     action: z
         .string()
@@ -50,71 +46,101 @@ const mcpGatewaySchema = z.object({
 });
 
 // ============================================================================
-// HELPER FUNCTIONS
+// MCP CLIENT
 // ============================================================================
 
-/**
- * Build MCP client config from server record
- * Throws if auth is required but credentials are missing/corrupted
- */
-async function buildClientConfig(server: McpServer): Promise<McpClientConfig> {
-    const config: McpClientConfig = {
+async function createClient(server: McpServer) {
+    const transport: {
+        type: "http" | "sse";
+        url: string;
+        headers?: Record<string, string>;
+    } = {
+        type: server.transport as "http" | "sse",
         url: server.url,
-        transport: server.transport as "sse" | "http",
-        authType: server.authType as "none" | "bearer" | "header",
     };
 
-    // Get decrypted credentials if auth is required
     if (server.authType !== "none") {
         const credentials = await getMcpServerCredentials(server.id);
         if (!credentials?.token) {
             throw new Error(
-                `Authentication required for '${server.identifier}' but credentials are missing or corrupted. ` +
-                    `Re-configure credentials at /integrations/mcp.`
+                `Authentication required for '${server.identifier}' but credentials are missing. ` +
+                    `Re-configure at /integrations/mcp.`
             );
         }
-        config.token = credentials.token;
-        if (server.authType === "header" && server.authHeaderName) {
-            config.headerName = server.authHeaderName;
+
+        if (server.authType === "bearer") {
+            transport.headers = { Authorization: `Bearer ${credentials.token}` };
+        } else if (server.authType === "header" && server.authHeaderName) {
+            transport.headers = { [server.authHeaderName]: credentials.token };
         }
     }
 
-    return config;
+    return createMCPClient({ transport, name: "Carmenta" });
 }
 
-/**
- * Initialize MCP connection (required before tool operations)
- * MCP protocol requires initialize + initialized handshake before requests
- */
-async function ensureInitialized(config: McpClientConfig): Promise<void> {
-    await initializeMcpConnection(config);
-    await sendInitializedNotification(config);
-}
+// ============================================================================
+// OPERATIONS
+// ============================================================================
 
-/**
- * Format MCP tools list for display
- */
-function formatToolsForDescription(tools: McpTool[]): string {
-    if (tools.length === 0) {
-        return "No tools available from this server.";
+async function listTools(server: McpServer): Promise<McpTool[]> {
+    const client = await createClient(server);
+    try {
+        const tools = await client.tools();
+        return Object.entries(tools).map(([name, t]) => ({
+            name,
+            description: (t as Tool).description,
+        }));
+    } finally {
+        await client.close();
     }
-
-    const toolDescriptions = tools.map((t) => {
-        const desc = t.description ? `: ${t.description}` : "";
-        return `- ${t.name}${desc}`;
-    });
-
-    return `Available operations (${tools.length}):\n${toolDescriptions.join("\n")}`;
 }
 
-/**
- * Build tool description from server manifest
- *
- * Manifest shape (stored as JSON in DB, populated by test endpoint):
- * - name: Server's declared name or displayName fallback
- * - toolCount: Number of available tools
- * - tools: Array of tool names (for "Top operations" summary)
- */
+async function callTool(
+    server: McpServer,
+    toolName: string,
+    args: Record<string, unknown>
+): Promise<{ success: boolean; result?: unknown; error?: string }> {
+    const client = await createClient(server);
+    try {
+        const tools = await client.tools();
+        const t = tools[toolName] as Tool<Record<string, unknown>, unknown>;
+
+        if (!t?.execute) {
+            return { success: false, error: `Tool '${toolName}' not found` };
+        }
+
+        const result = await t.execute(args, {
+            toolCallId: crypto.randomUUID(),
+            messages: [],
+        });
+
+        // Parse JSON if possible
+        if (typeof result === "string") {
+            try {
+                return { success: true, result: JSON.parse(result) };
+            } catch {
+                return { success: true, result };
+            }
+        }
+
+        return { success: true, result: result ?? "Success" };
+    } finally {
+        await client.close();
+    }
+}
+
+// ============================================================================
+// GATEWAY FUNCTIONS
+// ============================================================================
+
+function formatToolsForDescription(tools: McpTool[]): string {
+    if (tools.length === 0) return "No tools available from this server.";
+
+    return `Available operations (${tools.length}):\n${tools
+        .map((t) => `- ${t.name}${t.description ? `: ${t.description}` : ""}`)
+        .join("\n")}`;
+}
+
 function buildToolDescription(server: McpServer): string {
     const manifest = server.serverManifest as {
         toolCount?: number;
@@ -136,15 +162,6 @@ function buildToolDescription(server: McpServer): string {
     return `${serverName}${toolText}. Use action='describe' to see available operations.`;
 }
 
-// ============================================================================
-// CORE GATEWAY FUNCTIONS
-// ============================================================================
-
-/**
- * Describe available operations from an MCP server
- *
- * Fetches the tools list from the server and returns formatted documentation.
- */
 export async function describeMcpOperations(
     serverIdentifier: string,
     userEmail: string,
@@ -152,7 +169,6 @@ export async function describeMcpOperations(
 ): Promise<{ server: string; description: string; tools: McpTool[] }> {
     const childLogger = logger.child({ serverIdentifier, userEmail });
 
-    // Find the server
     const server = await getMcpServerByIdentifier(
         userEmail,
         serverIdentifier,
@@ -162,7 +178,7 @@ export async function describeMcpOperations(
     if (!server) {
         return {
             server: serverIdentifier,
-            description: `MCP server '${serverIdentifier}' not found. Check your connected servers at /integrations/mcp.`,
+            description: `MCP server '${serverIdentifier}' not found. Check /integrations/mcp.`,
             tools: [],
         };
     }
@@ -170,31 +186,24 @@ export async function describeMcpOperations(
     if (!server.enabled) {
         return {
             server: serverIdentifier,
-            description: `MCP server '${serverIdentifier}' is disabled. Enable it at /integrations/mcp.`,
+            description: `MCP server '${serverIdentifier}' is disabled. Enable at /integrations/mcp.`,
             tools: [],
         };
     }
 
     try {
-        const config = await buildClientConfig(server);
-        await ensureInitialized(config);
-        const tools = await listMcpTools(config);
+        const tools = await listTools(server);
+        childLogger.info({ toolCount: tools.length }, "Fetched MCP tools");
 
-        childLogger.info({ toolCount: tools.length }, "Fetched MCP server tools");
-
-        // Update cached manifest (don't let DB errors mask successful operations)
-        try {
-            await updateMcpServer(server.id, {
-                serverManifest: {
-                    name: server.displayName,
-                    toolCount: tools.length,
-                    tools: tools.map((t) => t.name),
-                },
-                status: "connected",
-            });
-        } catch (dbError) {
-            childLogger.error({ dbError }, "Failed to update server manifest");
-        }
+        // Update cached manifest
+        updateMcpServer(server.id, {
+            serverManifest: {
+                name: server.displayName,
+                toolCount: tools.length,
+                tools: tools.map((t) => t.name),
+            },
+            status: "connected",
+        }).catch((err) => childLogger.error({ err }, "Failed to update manifest"));
 
         return {
             server: server.displayName,
@@ -205,17 +214,8 @@ export async function describeMcpOperations(
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         childLogger.error({ error }, "Failed to describe MCP operations");
 
-        // Update server status (don't let this shadow the original error)
-        try {
-            await updateMcpServer(server.id, {
-                status: "error",
-                errorMessage,
-            });
-        } catch (dbError) {
-            childLogger.error({ dbError }, "Failed to update server error status");
-        }
+        updateMcpServer(server.id, { status: "error", errorMessage }).catch(() => {});
 
-        // Log event without blocking (fire-and-forget for activity logging)
         logMcpEvent({
             userEmail,
             serverIdentifier,
@@ -223,21 +223,16 @@ export async function describeMcpOperations(
             eventType: "connection_error",
             eventSource: "system",
             errorMessage,
-        }).catch((err) => childLogger.warn({ err }, "Failed to log MCP event"));
+        }).catch(() => {});
 
         return {
             server: serverIdentifier,
-            description: `Failed to connect to '${serverIdentifier}': ${errorMessage}. Check the server is running and credentials are valid.`,
+            description: `Failed to connect to '${serverIdentifier}': ${errorMessage}`,
             tools: [],
         };
     }
 }
 
-/**
- * Execute an action on an MCP server
- *
- * Routes the call to the appropriate server and returns the result.
- */
 export async function executeMcpAction(
     serverIdentifier: string,
     action: string,
@@ -247,7 +242,6 @@ export async function executeMcpAction(
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
     const childLogger = logger.child({ serverIdentifier, action, userEmail });
 
-    // Handle describe action
     if (action === "describe") {
         const description = await describeMcpOperations(
             serverIdentifier,
@@ -257,7 +251,6 @@ export async function executeMcpAction(
         return { success: true, result: description };
     }
 
-    // Find the server
     const server = await getMcpServerByIdentifier(
         userEmail,
         serverIdentifier,
@@ -267,14 +260,14 @@ export async function executeMcpAction(
     if (!server) {
         return {
             success: false,
-            error: `MCP server '${serverIdentifier}' not found. Use action='describe' to see available servers, or configure new ones at /integrations/mcp.`,
+            error: `MCP server '${serverIdentifier}' not found.`,
         };
     }
 
     if (!server.enabled) {
         return {
             success: false,
-            error: `MCP server '${serverIdentifier}' is disabled. Enable it at /integrations/mcp to use its tools.`,
+            error: `MCP server '${serverIdentifier}' is disabled.`,
         };
     }
 
@@ -284,73 +277,24 @@ export async function executeMcpAction(
             "Executing MCP action"
         );
 
-        const config = await buildClientConfig(server);
-        await ensureInitialized(config);
-        const result = await callMcpTool(config, action, params ?? {});
+        const result = await callTool(server, action, params ?? {});
 
-        // Update last connected timestamp (don't let DB errors mask successful operations)
-        try {
-            await updateMcpServer(server.id, { status: "connected" });
-        } catch (dbError) {
-            childLogger.error({ dbError }, "Failed to update server status");
+        if (result.success) {
+            updateMcpServer(server.id, { status: "connected" }).catch(() => {});
         }
 
-        // Check for error response from server
-        if (result.isError) {
-            const errorText = result.content
-                .filter((c) => c.type === "text")
-                .map((c) => c.text)
-                .join("\n");
-
-            childLogger.warn({ errorText }, "MCP tool returned error");
-
-            return {
-                success: false,
-                error: errorText || "Tool execution failed",
-            };
-        }
-
-        // Extract result content
-        const textContent = result.content.find((c) => c.type === "text");
-        if (textContent && "text" in textContent) {
-            try {
-                // Try to parse as JSON for structured responses
-                return {
-                    success: true,
-                    result: JSON.parse(textContent.text as string),
-                };
-            } catch {
-                return { success: true, result: textContent.text };
-            }
-        }
-
-        // Handle image/resource content
-        const otherContent = result.content.find((c) => c.type !== "text");
-        if (otherContent) {
-            return { success: true, result: otherContent };
-        }
-
-        return { success: true, result: "Operation completed successfully" };
+        return result;
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        childLogger.error({ error }, "MCP action execution failed");
+        childLogger.error({ error }, "MCP action failed");
 
         Sentry.captureException(error, {
             tags: { component: "mcp-gateway", action, server: serverIdentifier },
             extra: { userEmail },
         });
 
-        // Update server status on connection errors (don't let this shadow the original error)
-        try {
-            await updateMcpServer(server.id, {
-                status: "error",
-                errorMessage,
-            });
-        } catch (dbError) {
-            childLogger.error({ dbError }, "Failed to update server error status");
-        }
+        updateMcpServer(server.id, { status: "error", errorMessage }).catch(() => {});
 
-        // Log event without blocking (fire-and-forget for activity logging)
         logMcpEvent({
             userEmail,
             serverIdentifier,
@@ -358,7 +302,7 @@ export async function executeMcpAction(
             eventType: "connection_error",
             eventSource: "system",
             errorMessage,
-        }).catch((err) => childLogger.warn({ err }, "Failed to log MCP event"));
+        }).catch(() => {});
 
         return {
             success: false,
@@ -367,9 +311,10 @@ export async function executeMcpAction(
     }
 }
 
-/**
- * Create a tool for an MCP server
- */
+// ============================================================================
+// PUBLIC API
+// ============================================================================
+
 function createMcpServerTool(server: McpServer, userEmail: string) {
     return tool({
         description: buildToolDescription(server),
@@ -392,19 +337,8 @@ function createMcpServerTool(server: McpServer, userEmail: string) {
     });
 }
 
-/** Type for MCP gateway tools */
 type McpGatewayTool = ReturnType<typeof createMcpServerTool>;
 
-// ============================================================================
-// PUBLIC API
-// ============================================================================
-
-/**
- * Generate a unique tool name for an MCP server
- *
- * Uses "mcp_" prefix to avoid collisions with built-in tools.
- * Appends accountId for multi-account scenarios (e.g., multiple GitHub accounts).
- */
 function getToolName(server: McpServer): string {
     const base = `mcp_${server.identifier}`;
     if (server.accountId && server.accountId !== "default") {
@@ -413,34 +347,12 @@ function getToolName(server: McpServer): string {
     return base;
 }
 
-/**
- * Get all MCP gateway tools for a user
- *
- * Returns a Record of tool name → tool that can be spread into streamText's tools option.
- * Each enabled MCP server becomes a single tool using the gateway pattern.
- *
- * Tool names are prefixed with "mcp_" to avoid collisions with built-in tools.
- * For multi-account servers, the accountId is appended (e.g., "mcp_github_work").
- *
- * @param userEmail - User's email address
- *
- * @example
- * ```ts
- * const mcpTools = await getMcpGatewayTools(userEmail);
- * const result = await streamText({
- *     model: openrouter.chat(modelId),
- *     tools: { ...builtInTools, ...mcpTools },
- *     // ...
- * });
- * ```
- */
 export async function getMcpGatewayTools(
     userEmail: string
 ): Promise<Record<string, McpGatewayTool>> {
     const tools: Record<string, McpGatewayTool> = {};
 
     try {
-        // Get user's enabled MCP servers
         const servers = await listEnabledMcpServers(userEmail);
 
         logger.debug(
@@ -452,20 +364,16 @@ export async function getMcpGatewayTools(
             "MCP gateway: servers found"
         );
 
-        if (servers.length === 0) {
-            return tools;
-        }
+        if (servers.length === 0) return tools;
 
-        // Create a tool for each server
         for (const server of servers) {
             try {
                 const toolName = getToolName(server);
 
-                // Check for duplicate tool names (shouldn't happen but log if it does)
                 if (tools[toolName]) {
                     logger.warn(
-                        { toolName, serverIdentifier: server.identifier, userEmail },
-                        "Duplicate MCP tool name - skipping server"
+                        { toolName, serverIdentifier: server.identifier },
+                        "Duplicate MCP tool name - skipping"
                     );
                     continue;
                 }
@@ -473,15 +381,15 @@ export async function getMcpGatewayTools(
                 tools[toolName] = createMcpServerTool(server, userEmail);
             } catch (error) {
                 logger.error(
-                    { error, serverIdentifier: server.identifier, userEmail },
-                    "Failed to create MCP gateway tool"
+                    { error, serverIdentifier: server.identifier },
+                    "Failed to create MCP tool"
                 );
             }
         }
 
         logger.info(
             { userEmail, servers: Object.keys(tools) },
-            `MCP gateway tools loaded (${Object.keys(tools).length})`
+            `MCP gateway: ${Object.keys(tools).length} tools loaded`
         );
     } catch (error) {
         logger.error({ error, userEmail }, "Failed to load MCP gateway tools");
