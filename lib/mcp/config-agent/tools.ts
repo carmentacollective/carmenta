@@ -60,7 +60,8 @@ export function createMcpConfigTools(userEmail: string) {
                         }
 
                         // Normalize Claude Desktop's "streamable-http" to "http"
-                        // Cast needed because parseMcpConfig returns typed union but raw input may have streamable-http
+                        // parseMcpConfig's return type is "sse" | "http" | undefined, but raw JSON
+                        // input may contain "streamable-http" which we normalize here
                         const normalizedTransport =
                             (config.transport as string) === "streamable-http"
                                 ? "http"
