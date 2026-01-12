@@ -92,16 +92,20 @@ export async function POST(_request: Request, context: RouteContext) {
 
         // Update server status based on test result
         if (result.success) {
+            // Store manifest with tool names for meaningful LLM tool descriptions
+            // Without tool names, the LLM sees "Machina. Use action='describe'"
+            // With tool names, it sees "Machina. Top operations: list_tasks, create_task +8 more"
+            const toolNames = result.tools?.map((t) => t.name) ?? [];
+
             await updateMcpServer(serverId, {
                 status: "connected",
                 errorMessage: null,
-                serverManifest: result.serverInfo
-                    ? {
-                          name: result.serverInfo.name,
-                          version: result.serverInfo.version,
-                          toolCount: result.tools?.length ?? 0,
-                      }
-                    : undefined,
+                serverManifest: {
+                    name: result.serverInfo?.name ?? server.displayName,
+                    version: result.serverInfo?.version,
+                    toolCount: toolNames.length,
+                    tools: toolNames,
+                },
             });
 
             logger.info(

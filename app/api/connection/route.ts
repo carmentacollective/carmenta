@@ -619,7 +619,21 @@ export async function POST(req: Request) {
 
         // Load MCP gateway tools for user-configured MCP servers
         // Each enabled server becomes a single tool with progressive disclosure
-        const mcpTools = modelSupportsTools ? await getMcpGatewayTools(userEmail!) : {};
+        // CRITICAL: Use dbUser.email (from database) not userEmail (from Clerk)
+        // MCP servers are stored with dbUser.email, so queries must match
+        const mcpTools = modelSupportsTools
+            ? await getMcpGatewayTools(dbUser.email)
+            : {};
+
+        logger.debug(
+            {
+                connectionId,
+                modelSupportsTools,
+                mcpToolCount: Object.keys(mcpTools).length,
+                mcpToolNames: Object.keys(mcpTools),
+            },
+            "MCP gateway tools loaded"
+        );
 
         // Create searchKnowledge tool with user context
         // This allows the AI to explicitly query the knowledge base mid-conversation

@@ -111,7 +111,7 @@ export function CarmentaToggle({
                     isOpen ? "opacity-100" : "opacity-70"
                 )}
             />
-            <span className="text-sm font-medium">{label}</span>
+            <span className="text-sm font-medium whitespace-nowrap">{label}</span>
         </button>
     );
 }
