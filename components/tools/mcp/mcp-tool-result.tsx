@@ -39,7 +39,7 @@ interface McpToolResultProps {
  * Tool result renderer optimized for MCP tools.
  */
 export function McpToolResult({
-    toolCallId: _toolCallId,
+    toolCallId,
     toolName,
     status,
     input,
@@ -333,20 +333,21 @@ function McpResultContent({
 
 /**
  * Extract stable ID from an item for React keys.
- * Always includes index to guarantee uniqueness even if items share field values.
+ * Returns stable ID if available, falls back to index only for items without identifiers.
  */
 function extractItemId(item: unknown, fallbackIdx: number): string {
     if (typeof item !== "object" || item === null) {
         return `item-${fallbackIdx}`;
     }
     const obj = item as Record<string, unknown>;
-    // Try common ID fields and combine with index for uniqueness
-    for (const key of ["id", "url", "path", "filename", "name"]) {
+    // Try common ID fields - return stable ID without index to maintain key stability
+    for (const key of ["id", "url", "path", "filename"]) {
         const value = obj[key];
         if (typeof value === "string" || typeof value === "number") {
-            return `${value}-${fallbackIdx}`;
+            return String(value);
         }
     }
+    // Only use index as last resort when no stable ID exists
     return `item-${fallbackIdx}`;
 }
 
