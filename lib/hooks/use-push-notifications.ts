@@ -283,14 +283,17 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
                 if (!response.ok) {
                     // Log but don't fail - local unsubscribe already succeeded
-                    console.warn(
-                        "Server unsubscribe failed:",
-                        await response.text().catch(() => "unknown error")
+                    logger.warn(
+                        {
+                            status: response.status,
+                            error: await response.text().catch(() => "unknown error"),
+                        },
+                        "Server unsubscribe failed"
                     );
                 }
             } catch (serverErr) {
                 // Log but don't fail - local unsubscribe already succeeded
-                console.warn("Server unsubscribe failed:", serverErr);
+                logger.warn({ error: serverErr }, "Server unsubscribe failed");
             }
 
             setIsSubscribed(false);
