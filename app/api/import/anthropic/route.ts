@@ -10,7 +10,11 @@ import { currentUser } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
 
 import { logger } from "@/lib/logger";
-import { parseExportZip, type ParsedConversation } from "@/lib/import/anthropic-parser";
+import {
+    parseExportZip,
+    type ParsedConversation,
+    type UserSettings,
+} from "@/lib/import/anthropic-parser";
 import {
     unauthorizedResponse,
     validationErrorResponse,
@@ -70,6 +74,8 @@ export interface ImportParseResponse {
             latest: string;
         };
     };
+    /** User's Memory from Claude */
+    userSettings: UserSettings | null;
 }
 
 export interface ImportErrorResponse {
@@ -202,6 +208,7 @@ export async function POST(request: NextRequest): Promise<Response> {
                     latest: result.dateRange.latest.toISOString(),
                 },
             },
+            userSettings: result.userSettings,
         };
 
         return new Response(JSON.stringify(response), {

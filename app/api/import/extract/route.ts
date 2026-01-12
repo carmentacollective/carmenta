@@ -15,6 +15,7 @@ import {
     getUnprocessedImports,
     getPendingExtractions,
     getExtractionStats,
+    getJobStatus,
 } from "@/lib/import/extraction";
 import { logger } from "@/lib/logger";
 import {
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
 
     // Validate query parameters
     const querySchema = z.object({
+        jobId: z.string().uuid().optional(),
         status: z.enum(["pending", "approved", "rejected", "edited"]).optional(),
         category: z
             .enum([
@@ -76,6 +78,7 @@ export async function GET(request: NextRequest) {
     });
 
     const parsed = querySchema.safeParse({
+        jobId: searchParams.get("jobId") ?? undefined,
         status: searchParams.get("status") ?? undefined,
         category: searchParams.get("category") ?? undefined,
         limit: searchParams.get("limit") ?? undefined,
@@ -89,25 +92,53 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const { status, category, limit, offset } = parsed.data;
+    const { jobId, status, category, limit, offset } = parsed.data;
 
     try {
-        const [extractions, stats, unprocessed] = await Promise.all([
-            getPendingExtractions(dbUser.id, {
-                status,
-                category,
-                limit,
-                offset,
-            }),
-            getExtractionStats(dbUser.id),
-            getUnprocessedImports(dbUser.id, 1),
-        ]);
+        const [extractions, latestResult, stats, unprocessed, jobStatus] =
+            await Promise.all([
+                getPendingExtractions(dbUser.id, {
+                    status,
+                    category,
+                    limit,
+                    offset,
+                }),
+                // Fetch newest extraction for "Just found" display
+                getPendingExtractions(dbUser.id, {
+                    limit: 1,
+                    sort: "desc",
+                }),
+                getExtractionStats(dbUser.id),
+                getUnprocessedImports(dbUser.id, 1),
+                // Fetch job status if jobId provided (for progress polling)
+                jobId ? getJobStatus(jobId, dbUser.id) : Promise.resolve(null),
+            ]);
+
+        // Use job status for completion when polling a specific job
+        // Failed jobs should NOT be treated as complete - let UI handle error state
+        const isJobComplete = jobId
+            ? jobStatus?.status === "completed"
+            : unprocessed.length === 0;
+
+        const isFailed = jobId && jobStatus?.status === "failed";
 
         return NextResponse.json({
             extractions: extractions.extractions,
             total: extractions.total,
             stats,
-            hasUnprocessedImports: unprocessed.length > 0,
+            hasUnprocessedImports: !isJobComplete,
+            // Latest extraction for progress display "Just found"
+            latestExtraction: latestResult.extractions[0] ?? null,
+            // Job-specific progress info when polling a job
+            ...(jobStatus && {
+                jobStatus: jobStatus.status,
+                processedConversations: jobStatus.processedConversations,
+                totalConversations: jobStatus.totalConversations,
+                ...(isFailed &&
+                    jobStatus.errorMessage && {
+                        errorMessage: jobStatus.errorMessage,
+                    }),
+            }),
         });
     } catch (error) {
         logger.error({ error }, "Failed to get extractions");

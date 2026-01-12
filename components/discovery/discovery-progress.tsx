@@ -64,14 +64,24 @@ export function DiscoveryProgress({
 
             const data = await response.json();
 
+            // Handle failed extraction jobs
+            if (data.jobStatus === "failed") {
+                hasCalledComplete.current = true;
+                setPollingError(
+                    data.errorMessage ||
+                        "Discovery failed. Some conversations may not have been processed."
+                );
+                return;
+            }
+
             if (data.stats) {
                 setStats(data.stats);
 
-                // Total extractions count is at root level, not in stats
-                const totalExtracted = data.total || 0;
-                setProcessedCount(Math.min(totalConversations, totalExtracted));
+                // Use job-specific progress when available, otherwise estimate from extraction count
+                const processed = data.processedConversations ?? data.total ?? 0;
+                setProcessedCount(Math.min(totalConversations, processed));
 
-                // Check if job is complete (no more unprocessed imports)
+                // Check if job is complete
                 // Guard against calling onComplete multiple times
                 if (!hasCalledComplete.current && !data.hasUnprocessedImports) {
                     hasCalledComplete.current = true;
@@ -81,9 +91,8 @@ export function DiscoveryProgress({
             }
 
             // Show latest finding if available
-            if (data.extractions?.length > 0) {
-                const latest = data.extractions[0];
-                setLatestFinding(latest.content);
+            if (data.latestExtraction) {
+                setLatestFinding(data.latestExtraction.content);
             }
         } catch (err) {
             consecutiveErrorsRef.current++;

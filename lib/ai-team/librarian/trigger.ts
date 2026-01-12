@@ -39,6 +39,141 @@ const DEFAULT_CONFIG: LibrarianTriggerConfig = {
  * @param assistantMessages - Assistant's messages from the conversation
  * @param config - Optional configuration overrides
  */
+/**
+ * Configuration for imported memory processing
+ */
+export interface ImportedMemoryConfig {
+    source: "chatgpt" | "anthropic";
+    /** ChatGPT: user's "About me" text */
+    userProfile?: string | null;
+    /** ChatGPT: custom instructions for how to respond */
+    userInstructions?: string | null;
+    /** Anthropic: general conversation memory */
+    conversationsMemory?: string | null;
+    /** Anthropic: project-specific memories */
+    projectMemories?: Record<string, string>;
+}
+
+/**
+ * Trigger the Knowledge Librarian to process imported memory
+ *
+ * When users import their ChatGPT or Claude data, we capture their
+ * memory/custom instructions and let the librarian decide how to
+ * organize it in the knowledge base.
+ *
+ * @param userId - User ID
+ * @param config - Imported memory configuration
+ */
+export async function triggerLibrarianForImportedMemory(
+    userId: string,
+    config: ImportedMemoryConfig
+): Promise<void> {
+    return Sentry.startSpan(
+        { op: "ai-team.librarian.import-memory", name: "Librarian import memory" },
+        async (span) => {
+            span.setAttribute("source", config.source);
+
+            // Build content sections based on what we have
+            const sections: string[] = [];
+
+            if (config.userProfile) {
+                sections.push(`<user-profile source="chatgpt">
+${config.userProfile}
+</user-profile>`);
+            }
+
+            if (config.userInstructions) {
+                sections.push(`<custom-instructions source="chatgpt">
+${config.userInstructions}
+</custom-instructions>`);
+            }
+
+            if (config.conversationsMemory) {
+                sections.push(`<conversations-memory source="anthropic">
+${config.conversationsMemory}
+</conversations-memory>`);
+            }
+
+            if (
+                config.projectMemories &&
+                Object.keys(config.projectMemories).length > 0
+            ) {
+                for (const [project, memory] of Object.entries(
+                    config.projectMemories
+                )) {
+                    sections.push(`<project-memory project="${project}" source="anthropic">
+${memory}
+</project-memory>`);
+                }
+            }
+
+            // Skip if no content
+            if (sections.length === 0) {
+                logger.debug(
+                    { userId, source: config.source },
+                    "No memory content to import"
+                );
+                return;
+            }
+
+            logger.info(
+                {
+                    userId,
+                    source: config.source,
+                    sectionCount: sections.length,
+                },
+                "📚 Triggering Knowledge Librarian for imported memory"
+            );
+
+            try {
+                const agent = createLibrarianAgent();
+                const result = await agent.generate({
+                    prompt: `<user-id>${userId}</user-id>
+
+<import-context>
+The user has imported their data from ${config.source === "chatgpt" ? "ChatGPT" : "Claude"}. Their memory and preferences from that platform are included below. Analyze this imported data and incorporate it into the knowledge base.
+
+Guidelines:
+- Custom instructions/preferences about AI responses → knowledge.preferences.ai-interaction
+- Facts about the user's identity (name, role, location) → profile.identity
+- Project-specific context → knowledge.projects.{project-name}
+- Preferences (coding style, tools, etc.) → knowledge.preferences.{category}
+- People mentioned → knowledge.people.{name}
+
+Check existing KB first - merge with existing content rather than duplicating.
+</import-context>
+
+${sections.join("\n\n")}
+
+Incorporate this imported memory into the knowledge base, organizing it according to established conventions.`,
+                });
+
+                logger.info(
+                    {
+                        userId,
+                        source: config.source,
+                        steps: result.steps.length,
+                    },
+                    "✅ Knowledge Librarian completed import memory processing"
+                );
+            } catch (error) {
+                logger.error(
+                    { error, userId, source: config.source },
+                    "Knowledge Librarian failed to process imported memory"
+                );
+                Sentry.captureException(error, {
+                    tags: {
+                        component: "ai-team",
+                        agent: "librarian",
+                        operation: "import-memory",
+                    },
+                    extra: { userId, source: config.source },
+                });
+            }
+        }
+    );
+}
+
 export async function triggerLibrarian(
     userId: string,
     conversationId: string,
