@@ -21,8 +21,8 @@ const STATIC_THEMES: ThemeConfig[] = [
     {
         value: "carmenta",
         label: "Carmenta",
-        description: "Royal purple elegance",
-        colors: ["hsl(270 40% 56%)", "hsl(280 20% 95%)", "hsl(280 30% 88%)"],
+        description: "Sky lavender glow",
+        colors: ["hsl(245 45% 58%)", "hsl(280 20% 95%)", "hsl(280 30% 88%)"],
     },
     {
         value: "warm-earth",

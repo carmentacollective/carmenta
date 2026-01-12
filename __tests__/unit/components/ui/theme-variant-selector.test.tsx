@@ -82,7 +82,7 @@ describe("ThemeVariantSelector", () => {
 
             fireEvent.click(getByRole("button"));
 
-            expect(getByText("Royal purple elegance")).toBeInTheDocument();
+            expect(getByText("Sky lavender glow")).toBeInTheDocument();
             expect(getByText("Terracotta, sage & gold")).toBeInTheDocument();
             expect(getByText("Ice blue precision")).toBeInTheDocument();
         });

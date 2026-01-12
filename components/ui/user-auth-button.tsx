@@ -153,8 +153,8 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
         {
             value: "carmenta",
             label: "Carmenta",
-            description: "Royal purple elegance",
-            color: "hsl(270 40% 56%)",
+            description: "Sky lavender glow",
+            color: "hsl(245 45% 58%)",
         },
         {
             value: "warm-earth",
