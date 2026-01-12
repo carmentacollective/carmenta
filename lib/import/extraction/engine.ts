@@ -487,6 +487,7 @@ export async function getPendingExtractions(
         category?: ExtractionCategory;
         limit?: number;
         offset?: number;
+        sort?: "asc" | "desc";
     }
 ): Promise<{
     extractions: Array<{
@@ -529,8 +530,13 @@ export async function getPendingExtractions(
             .from(pendingExtractions)
             .leftJoin(connections, eq(pendingExtractions.connectionId, connections.id))
             .where(and(...conditions))
-            // Keep ascending order for stable offset-based pagination (approve-all batching)
-            .orderBy(pendingExtractions.createdAt)
+            // Default ascending for stable offset-based pagination (approve-all batching)
+            // Use desc for "Just found" in progress display
+            .orderBy(
+                options?.sort === "desc"
+                    ? sql`${pendingExtractions.createdAt} DESC`
+                    : pendingExtractions.createdAt
+            )
             .limit(options?.limit ?? 50)
             .offset(options?.offset ?? 0),
         db

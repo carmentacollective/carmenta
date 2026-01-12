@@ -10,7 +10,11 @@ import { currentUser } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
 
 import { logger } from "@/lib/logger";
-import { parseExportZip, type ParsedConversation } from "@/lib/import/chatgpt-parser";
+import {
+    parseExportZip,
+    type ParsedConversation,
+    type UserSettings,
+} from "@/lib/import/chatgpt-parser";
 import {
     unauthorizedResponse,
     validationErrorResponse,
@@ -72,6 +76,8 @@ export interface ImportParseResponse {
             latest: string;
         };
     };
+    /** User's Memory and Custom Instructions from ChatGPT */
+    userSettings: UserSettings | null;
 }
 
 export interface ImportErrorResponse {
@@ -210,6 +216,7 @@ export async function POST(request: NextRequest): Promise<Response> {
                     latest: result.dateRange.latest.toISOString(),
                 },
             },
+            userSettings: result.userSettings,
         };
 
         return new Response(JSON.stringify(response), {

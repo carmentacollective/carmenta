@@ -19,7 +19,24 @@ import {
 import { getOrCreateUser } from "@/lib/db";
 import type { UIMessageLike, UIMessagePartLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/logger";
+import { triggerLibrarianForImportedMemory } from "@/lib/ai-team/librarian/trigger";
 import type { ConversationForImport } from "@/app/api/import/chatgpt/route";
+
+/**
+ * Imported user settings from either platform
+ * ChatGPT: userProfile + userInstructions
+ * Anthropic: conversationsMemory + projectMemories
+ */
+export interface ImportedUserSettings {
+    /** ChatGPT: user's "About me" text */
+    userProfile?: string | null;
+    /** ChatGPT: custom instructions */
+    userInstructions?: string | null;
+    /** Anthropic: general conversation memory */
+    conversationsMemory?: string | null;
+    /** Anthropic: project-specific memories */
+    projectMemories?: Record<string, string>;
+}
 
 /**
  * Result from committing an import
@@ -104,14 +121,17 @@ function importMessageToUIMessage(msg: ImportMessage): UIMessageLike {
  * Creates a connection for each conversation and saves all messages.
  * Each conversation becomes a separate connection in Carmenta.
  * Skips conversations that have already been imported (duplicate detection).
+ * If userSettings are provided, triggers the librarian to process imported memory.
  *
  * @param conversations - Full conversation data from the parse API
  * @param source - Source platform identifier (e.g., "chatgpt", "anthropic")
+ * @param userSettings - Optional user memory/instructions from the import
  * @returns Import result with stats and any errors
  */
 export async function commitImport(
     conversations: ConversationForImport[],
-    source: "chatgpt" | "anthropic" | "carmenta"
+    source: "chatgpt" | "anthropic" | "carmenta",
+    userSettings?: ImportedUserSettings | null
 ): Promise<ImportCommitResult> {
     const dbUser = await getDbUser();
 
@@ -173,6 +193,9 @@ export async function commitImport(
                 source: dbSource,
                 externalId: conv.id,
                 customGptId: conv.customGptId ?? null,
+                // Preserve original timestamps from the export (convert ISO strings to Dates)
+                createdAt: conv.createdAt ? new Date(conv.createdAt) : undefined,
+                updatedAt: conv.updatedAt ? new Date(conv.updatedAt) : undefined,
             };
 
             // Create a new connection for this conversation
@@ -243,6 +266,27 @@ export async function commitImport(
         },
         "Import commit complete"
     );
+
+    // Process imported memory/instructions with the librarian
+    // This runs async (fire and forget) to not block the import response
+    if (userSettings && source !== "carmenta") {
+        const hasContent =
+            userSettings.userProfile ||
+            userSettings.userInstructions ||
+            userSettings.conversationsMemory ||
+            (userSettings.projectMemories &&
+                Object.keys(userSettings.projectMemories).length > 0);
+
+        if (hasContent) {
+            void triggerLibrarianForImportedMemory(dbUser.id, {
+                source,
+                userProfile: userSettings.userProfile,
+                userInstructions: userSettings.userInstructions,
+                conversationsMemory: userSettings.conversationsMemory,
+                projectMemories: userSettings.projectMemories,
+            });
+        }
+    }
 
     return {
         success: errors.length === 0 || connectionsCreated > 0,

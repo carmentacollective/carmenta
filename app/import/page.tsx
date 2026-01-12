@@ -40,7 +40,11 @@ import {
 import { ImportStepper, type ImportStep } from "@/components/import/import-stepper";
 import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
-import { commitImport, type ImportCommitResult } from "@/lib/actions/import";
+import {
+    commitImport,
+    type ImportCommitResult,
+    type ImportedUserSettings,
+} from "@/lib/actions/import";
 import type { ConversationForImport } from "@/app/api/import/chatgpt/route";
 import type { ExtractionStats } from "@/lib/import/extraction/types";
 
@@ -144,6 +148,7 @@ export default function ImportPage() {
     const [fullConversations, setFullConversations] = useState<ConversationForImport[]>(
         []
     );
+    const [userSettings, setUserSettings] = useState<ImportedUserSettings | null>(null);
     const [importResult, setImportResult] = useState<ImportCommitResult | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [filters, setFilters] = useState<ImportFilters>(DEFAULT_FILTERS);
@@ -321,6 +326,7 @@ export default function ImportPage() {
                     stats: data.stats,
                 });
                 setFullConversations(data.fullConversations || []);
+                setUserSettings(data.userSettings || null);
                 setState("preview");
 
                 logger.info(
@@ -414,7 +420,11 @@ export default function ImportPage() {
         setError(null);
 
         try {
-            const result = await commitImport(filteredConversations, selectedProvider);
+            const result = await commitImport(
+                filteredConversations,
+                selectedProvider,
+                userSettings
+            );
 
             if (result.success) {
                 setImportResult(result);
@@ -448,7 +458,7 @@ export default function ImportPage() {
                 tags: { component: "import-commit", platform: selectedProvider },
             });
         }
-    }, [filteredConversations, selectedProvider]);
+    }, [filteredConversations, selectedProvider, userSettings]);
 
     const handleSelectProvider = useCallback((provider: Provider) => {
         setSelectedProvider(provider);
@@ -456,6 +466,7 @@ export default function ImportPage() {
         setError(null);
         setParsedData(null);
         setFullConversations([]);
+        setUserSettings(null);
         setFilters(DEFAULT_FILTERS);
         // Reset discovery state when switching providers
         setDiscoveryState("idle");

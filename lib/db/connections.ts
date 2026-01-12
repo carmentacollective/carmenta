@@ -57,6 +57,10 @@ export interface ImportData {
     source: "openai" | "anthropic";
     externalId: string;
     customGptId?: string | null;
+    /** Original creation timestamp from the export */
+    createdAt?: Date;
+    /** Original update timestamp from the export */
+    updatedAt?: Date;
 }
 
 export async function createConnection(
@@ -87,6 +91,9 @@ export async function createConnection(
             externalId: importData?.externalId ?? null,
             importedAt: importData ? new Date() : null,
             customGptId: importData?.customGptId ?? null,
+            // Preserve original timestamps from imports (otherwise defaultNow)
+            ...(importData?.createdAt && { createdAt: importData.createdAt }),
+            ...(importData?.updatedAt && { updatedAt: importData.updatedAt }),
         })
         .returning();
 
