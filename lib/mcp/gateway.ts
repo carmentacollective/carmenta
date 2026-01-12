@@ -113,7 +113,14 @@ function clearCachedClient(serverId: number) {
     const cacheKey = getCacheKey(serverId);
     const cached = clientCache.get(cacheKey);
     if (cached) {
-        cached.client.close().catch(() => {});
+        cached.client
+            .close()
+            .catch((err) =>
+                logger.warn(
+                    { err, serverId },
+                    "Failed to close MCP client during cache clear"
+                )
+            );
         clientCache.delete(cacheKey);
     }
 }
@@ -252,7 +259,11 @@ function processToolResult(result: unknown): {
     if (typeof result === "string") {
         try {
             return { success: true, result: JSON.parse(result) };
-        } catch {
+        } catch (parseErr) {
+            logger.debug(
+                { parseErr, resultPreview: result.slice(0, 100) },
+                "MCP result is not JSON, returning as string"
+            );
             return { success: true, result };
         }
     }
