@@ -33,6 +33,10 @@ export interface McpConnectionResult {
 // CONNECTION TEST
 // ============================================================================
 
+// Connection timeout for MCP server tests (15 seconds)
+// Tailscale/remote servers may take time to wake up, but shouldn't exceed this
+const CONNECTION_TIMEOUT_MS = 15_000;
+
 export async function testMcpConnection(
     config: McpClientConfig
 ): Promise<McpConnectionResult> {
@@ -59,22 +63,16 @@ export async function testMcpConnection(
             transport.headers = { [config.headerName]: config.token };
         }
 
-        const client = await createMCPClient({ transport, name: "Carmenta" });
+        // Race the connection against a timeout
+        const result = await Promise.race([
+            connectAndGetTools(transport, childLogger),
+            timeoutPromise(CONNECTION_TIMEOUT_MS, config.url),
+        ]);
 
-        try {
-            const aiTools = await client.tools();
-            const tools = Object.entries(aiTools).map(([name, t]) => ({
-                name,
-                description: (t as Tool).description,
-            }));
-
-            childLogger.info({ toolCount: tools.length }, "MCP connected");
-            return { success: true, tools };
-        } finally {
-            await client.close();
-        }
+        return result;
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        // Humanize timeout/abort errors for better UX
+        const errorMessage = humanizeMcpConnectionError(error, config.url);
         childLogger.error({ error }, "MCP connection failed");
 
         Sentry.captureException(error, {
@@ -84,6 +82,94 @@ export async function testMcpConnection(
 
         return { success: false, error: errorMessage };
     }
+}
+
+/**
+ * Perform the actual MCP connection and tool retrieval.
+ */
+async function connectAndGetTools(
+    transport: { type: "http" | "sse"; url: string; headers?: Record<string, string> },
+    childLogger: typeof logger
+): Promise<McpConnectionResult> {
+    const client = await createMCPClient({ transport, name: "Carmenta" });
+
+    try {
+        const aiTools = await client.tools();
+        const tools = Object.entries(aiTools).map(([name, t]) => ({
+            name,
+            description: (t as Tool).description,
+        }));
+
+        childLogger.info({ toolCount: tools.length }, "MCP connected");
+        return { success: true, tools };
+    } finally {
+        await client.close();
+    }
+}
+
+/**
+ * Promise that rejects after a timeout with a user-friendly error.
+ */
+function timeoutPromise(ms: number, url: string): Promise<never> {
+    return new Promise((_, reject) => {
+        setTimeout(() => {
+            const hostname = new URL(url).hostname;
+            reject(
+                new Error(
+                    `Connection timed out after ${ms / 1000}s. Check that ${hostname} is accessible.`
+                )
+            );
+        }, ms);
+    });
+}
+
+/**
+ * Convert technical MCP connection errors into user-friendly messages.
+ */
+function humanizeMcpConnectionError(error: unknown, url: string): string {
+    const message = error instanceof Error ? error.message : String(error);
+    const lowerMessage = message.toLowerCase();
+
+    // Timeout/abort errors
+    if (
+        lowerMessage.includes("terminated") ||
+        lowerMessage.includes("timeout") ||
+        lowerMessage.includes("aborted") ||
+        lowerMessage.includes("body timeout")
+    ) {
+        return `Server took too long to respond. Check that ${new URL(url).hostname} is accessible.`;
+    }
+
+    // Connection refused
+    if (lowerMessage.includes("econnrefused") || lowerMessage.includes("connect")) {
+        return `Cannot connect to server. Check that ${new URL(url).hostname} is running.`;
+    }
+
+    // DNS/network errors
+    if (lowerMessage.includes("enotfound") || lowerMessage.includes("getaddrinfo")) {
+        return `Server not found. Check that the URL is correct.`;
+    }
+
+    // SSL/TLS errors
+    if (
+        lowerMessage.includes("cert") ||
+        lowerMessage.includes("ssl") ||
+        lowerMessage.includes("tls")
+    ) {
+        return `SSL certificate error. The server's certificate may be invalid.`;
+    }
+
+    // Authentication errors
+    if (lowerMessage.includes("401") || lowerMessage.includes("unauthorized")) {
+        return `Authentication failed. Check your credentials.`;
+    }
+
+    // Permission errors
+    if (lowerMessage.includes("403") || lowerMessage.includes("forbidden")) {
+        return `Access denied. You may not have permission to access this server.`;
+    }
+
+    return message;
 }
 
 // ============================================================================
