@@ -24,6 +24,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { env } from "@/lib/env";
+import { logger } from "@/lib/client-logger";
 
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
 
