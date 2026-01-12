@@ -47,6 +47,33 @@ export function createMcpConfigTools(userEmail: string) {
                 toolLogger.info({ inputLength: input.length }, "Parsing MCP config");
 
                 try {
+                    // Detect local/stdio servers early with helpful message
+                    const localServerPatterns = [
+                        {
+                            pattern: /"transport"\s*:\s*"stdio"/i,
+                            type: "stdio transport",
+                        },
+                        { pattern: /"command"\s*:/i, type: "command-based server" },
+                        { pattern: /file:\/\//i, type: "file:// URL" },
+                        { pattern: /npx\s+/i, type: "npx command" },
+                        { pattern: /node\s+.*\.js/i, type: "Node.js command" },
+                        { pattern: /python\s+/i, type: "Python command" },
+                    ];
+
+                    for (const { pattern, type } of localServerPatterns) {
+                        if (pattern.test(input)) {
+                            return {
+                                success: false,
+                                error: `This looks like a local MCP server (${type})`,
+                                suggestion:
+                                    "Carmenta only supports remote MCP servers over HTTPS. " +
+                                    "Local servers using stdio transport run on your machine and can't be accessed from our cloud. " +
+                                    "If your server has an HTTP endpoint, please provide that URL instead.",
+                                isLocalServer: true,
+                            };
+                        }
+                    }
+
                     const config = parseMcpConfig(input);
 
                     if (config && config.url) {

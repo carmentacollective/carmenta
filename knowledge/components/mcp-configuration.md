@@ -92,6 +92,17 @@ Remote-first simplifies everything:
 **Decision**: Phase 1 is remote-only. Local server support is a future consideration,
 not MVP.
 
+**Local Server Detection**: The config agent detects and elegantly rejects local/stdio
+servers:
+
+- `"transport": "stdio"` in JSON
+- `"command":` field in JSON (indicates stdio server)
+- `file://` URLs
+- `npx`, `node`, `python` commands
+
+Users receive a helpful message explaining why remote-only and suggesting they provide
+an HTTP endpoint if their server has one.
+
 ### Agent-Assisted Over Form-Driven
 
 Traditional approach: Present a form with fields for URL, headers, auth type, etc.
@@ -385,10 +396,27 @@ Carmenta acts as an MCP client connecting to remote servers:
 └─────────────────┘
 ```
 
-**Transport**: SSE (Server-Sent Events) or Streamable HTTP per MCP 2025-03-26 spec. SSE
-for long-lived connections; Streamable HTTP for serverless-friendly request/response.
+**Transport**: Streamable HTTP per MCP 2025-03-26 spec. SSE is deprecated.
 
-**Connection pooling**: Per-user connections cached with idle timeout (15 minutes).
+**Transport Types** (as of January 2026):
+
+- `http` = Streamable HTTP (current standard, our default)
+- `sse` = Server-Sent Events (deprecated, supported for legacy servers)
+- `streamable-http` = Claude Desktop's name for the same thing as `http` (we normalize)
+
+**Streamable HTTP Modes**:
+
+- **Stateful**: Server assigns `Mcp-Session-Id` header; client includes it on subsequent
+  requests
+- **Stateless**: Server sets `sessionIdGenerator: undefined`; no session tracking
+  (simpler, Machina uses this)
+
+**Our @ai-sdk/mcp mapping**:
+
+- `type: "http"` → Streamable HTTP transport
+- `type: "sse"` → Legacy SSE transport (if URL contains `/sse`)
+
+**Connection pooling**: Per-user connections cached with idle timeout (1 hour).
 Reconnect on demand.
 
 ### Security Model

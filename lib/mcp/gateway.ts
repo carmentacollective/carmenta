@@ -139,22 +139,54 @@ async function listTools(server: McpServer): Promise<McpTool[]> {
 
 async function callTool(
     server: McpServer,
-    toolName: string,
-    args: Record<string, unknown>
+    action: string,
+    params: Record<string, unknown>
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
     const client = await getCachedClient(server);
     const tools = await client.tools();
-    const t = tools[toolName] as Tool<Record<string, unknown>, unknown>;
+    const toolNames = Object.keys(tools);
 
-    if (!t?.execute) {
-        return { success: false, error: `Tool '${toolName}' not found` };
+    // Gateway pattern: If server has single tool, always call it with action/params
+    // This handles MCP servers that use progressive disclosure (one gateway tool)
+    if (toolNames.length === 1) {
+        const gatewayToolName = toolNames[0];
+        const t = tools[gatewayToolName] as Tool<Record<string, unknown>, unknown>;
+        if (!t?.execute) {
+            return {
+                success: false,
+                error: `Gateway tool '${gatewayToolName}' not executable`,
+            };
+        }
+        // Pass action and params to the gateway tool
+        const result = await t.execute(
+            { action, params },
+            {
+                toolCallId: crypto.randomUUID(),
+                messages: [],
+            }
+        );
+        return processToolResult(result);
     }
 
-    const result = await t.execute(args, {
+    // Multi-tool server: action IS the tool name
+    const t = tools[action] as Tool<Record<string, unknown>, unknown>;
+    if (!t?.execute) {
+        return { success: false, error: `Tool '${action}' not found` };
+    }
+
+    const result = await t.execute(params, {
         toolCallId: crypto.randomUUID(),
         messages: [],
     });
 
+    return processToolResult(result);
+}
+
+function processToolResult(result: unknown): {
+    success: boolean;
+    result?: unknown;
+    error?: string;
+} {
     // Check for MCP tool-level errors
     if (result && typeof result === "object" && "isError" in result && result.isError) {
         const content = "content" in result ? result.content : undefined;
@@ -200,7 +232,14 @@ function buildToolDescription(server: McpServer): string {
         toolCount?: number;
         tools?: string[];
         name?: string;
+        description?: string;
     } | null;
+
+    // Single-tool servers (gateway pattern) - use the tool's own description
+    // This provides much better semantic matching for the LLM
+    if (manifest?.description) {
+        return manifest.description;
+    }
 
     const toolCount = manifest?.toolCount ?? 0;
     const topTools = manifest?.tools?.slice(0, 4) ?? [];
@@ -250,11 +289,18 @@ export async function describeMcpOperations(
         childLogger.info({ toolCount: tools.length }, "Fetched MCP tools");
 
         // Update cached manifest
+        // For single-tool servers (gateway pattern), store the tool description for better LLM matching
+        const singleToolDescription =
+            tools.length === 1 && tools[0].description
+                ? tools[0].description
+                : undefined;
         updateMcpServer(server.id, {
             serverManifest: {
                 name: server.displayName,
                 toolCount: tools.length,
                 tools: tools.map((t) => t.name),
+                // Single-tool servers use their tool description directly
+                description: singleToolDescription,
             },
             status: "connected",
         }).catch((err) => childLogger.error({ err }, "Failed to update manifest"));
@@ -335,10 +381,23 @@ export async function executeMcpAction(
 
         const result = await callTool(server, action, params ?? {});
 
+        // Log the result - this is critical for debugging MCP tool failures
         if (result.success) {
+            childLogger.info(
+                {
+                    resultPreview:
+                        typeof result.result === "string"
+                            ? result.result.slice(0, 200)
+                            : JSON.stringify(result.result).slice(0, 200),
+                },
+                "MCP action succeeded"
+            );
             updateMcpServer(server.id, { status: "connected" }).catch((err) =>
                 childLogger.error({ err }, "Failed to update server status")
             );
+        } else {
+            // Tool returned an error (not an exception) - log as warning
+            childLogger.warn({ error: result.error }, "MCP action returned error");
         }
 
         return result;

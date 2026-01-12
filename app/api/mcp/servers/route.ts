@@ -46,7 +46,10 @@ const createServerSchema = z
                 (url) => url.startsWith("https://"),
                 "Server URL must use HTTPS for security"
             ),
-        transport: z.enum(["sse", "http", "streamable-http"]).optional().default("sse"),
+        transport: z
+            .enum(["sse", "http", "streamable-http"])
+            .optional()
+            .default("http"),
         headers: z.record(z.string(), z.string()).optional(),
     })
     .transform((data) => ({

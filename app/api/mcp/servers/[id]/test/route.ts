@@ -120,6 +120,16 @@ export async function POST(_request: Request, context: RouteContext) {
                 success: true,
                 status: "connected",
                 toolCount: result.tools?.length ?? 0,
+                tools: result.tools?.map((t) => ({
+                    name: t.name,
+                    description: t.description,
+                })),
+                debug: {
+                    url: server.url,
+                    transport: server.transport,
+                    authType: server.authType,
+                    testedAt: new Date().toISOString(),
+                },
             });
         } else {
             await updateMcpServer(serverId, {
@@ -137,6 +147,13 @@ export async function POST(_request: Request, context: RouteContext) {
                     success: false,
                     status: "error",
                     error: result.error ?? "Connection test failed",
+                    debug: {
+                        url: server.url,
+                        transport: server.transport,
+                        authType: server.authType,
+                        hasCredentials: !!credentials?.token,
+                        testedAt: new Date().toISOString(),
+                    },
                 },
                 { status: 400 }
             );

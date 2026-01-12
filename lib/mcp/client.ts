@@ -107,7 +107,13 @@ export function validateMcpUrl(url: string): { valid: boolean; error?: string } 
 }
 
 export function detectTransportType(url: string): "sse" | "http" {
-    return url.toLowerCase().includes("sse") ? "sse" : "http";
+    // Default to HTTP (streamable-http) - SSE is deprecated
+    // Only use SSE if URL explicitly contains "sse" (legacy servers)
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes("/sse") || lowerUrl.endsWith("/sse")) {
+        return "sse";
+    }
+    return "http";
 }
 
 export function parseMcpConfig(input: string): Partial<McpClientConfig> | null {

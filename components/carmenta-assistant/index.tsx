@@ -89,13 +89,14 @@ export function CarmentaToggle({
         <button
             onClick={onClick}
             className={cn(
-                "flex min-h-11 items-center gap-2 rounded-xl px-4 py-2",
-                "bg-foreground/[0.03] backdrop-blur-sm",
-                "border-foreground/[0.08] border",
-                "text-foreground/70 hover:text-foreground",
-                "hover:bg-foreground/[0.06]",
-                "transition-colors duration-200",
-                isOpen && "bg-primary/10 border-primary/20 text-primary",
+                "flex min-h-11 items-center gap-2.5 rounded-xl px-5 py-2.5",
+                "from-primary/10 bg-gradient-to-br to-cyan-500/10 backdrop-blur-sm",
+                "border-primary/20 border",
+                "text-primary hover:text-primary",
+                "hover:from-primary/15 hover:to-cyan-500/15",
+                "shadow-sm hover:shadow-md",
+                "transition-all duration-200",
+                isOpen && "from-primary/20 border-primary/30 to-cyan-500/20 shadow-md",
                 className
             )}
             aria-label={isOpen ? "Close Carmenta" : "Let Carmenta Help"}
@@ -104,14 +105,11 @@ export function CarmentaToggle({
             <Image
                 src="/logos/icon-transparent.png"
                 alt=""
-                width={20}
-                height={20}
-                className={cn(
-                    "h-5 w-5 transition-opacity",
-                    isOpen ? "opacity-100" : "opacity-70"
-                )}
+                width={22}
+                height={22}
+                className="h-5.5 w-5.5"
             />
-            <span className="text-sm font-medium whitespace-nowrap">{label}</span>
+            <span className="text-sm font-semibold whitespace-nowrap">{label}</span>
         </button>
     );
 }

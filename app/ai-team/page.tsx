@@ -24,7 +24,6 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import {
     CarmentaSidecar,
     CarmentaToggle,
-    useDesktopSidecarMargin,
     type SidecarWelcomeConfig,
 } from "@/components/carmenta-assistant";
 import { RobotIcon, PlayIcon, WrenchIcon } from "@phosphor-icons/react";
@@ -372,18 +371,8 @@ function AITeamContent({
 
     const unreadNotificationCount = notifications.length;
 
-    // Get margin to apply when sidecar is open on desktop
-    const sidecarMargin = useDesktopSidecarMargin(carmentaOpen);
-
     return (
-        <StandardPageLayout
-            maxWidth="standard"
-            contentClassName="space-y-8 py-12"
-            style={{
-                marginLeft: sidecarMargin,
-                transition: "margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
-        >
+        <StandardPageLayout maxWidth="standard" contentClassName="space-y-8 py-12">
             {/* Header */}
             <section className="space-y-4">
                 <div className="flex items-center justify-between">
