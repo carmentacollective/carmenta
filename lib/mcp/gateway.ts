@@ -214,7 +214,9 @@ export async function describeMcpOperations(
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         childLogger.error({ error }, "Failed to describe MCP operations");
 
-        updateMcpServer(server.id, { status: "error", errorMessage }).catch(() => {});
+        updateMcpServer(server.id, { status: "error", errorMessage }).catch((err) =>
+            childLogger.error({ err }, "Failed to update server status")
+        );
 
         logMcpEvent({
             userEmail,
@@ -223,7 +225,7 @@ export async function describeMcpOperations(
             eventType: "connection_error",
             eventSource: "system",
             errorMessage,
-        }).catch(() => {});
+        }).catch((err) => childLogger.error({ err }, "Failed to log MCP event"));
 
         return {
             server: serverIdentifier,
@@ -260,14 +262,14 @@ export async function executeMcpAction(
     if (!server) {
         return {
             success: false,
-            error: `MCP server '${serverIdentifier}' not found.`,
+            error: `MCP server '${serverIdentifier}' not found. Check /integrations/mcp.`,
         };
     }
 
     if (!server.enabled) {
         return {
             success: false,
-            error: `MCP server '${serverIdentifier}' is disabled.`,
+            error: `MCP server '${serverIdentifier}' is disabled. Enable at /integrations/mcp.`,
         };
     }
 
@@ -280,7 +282,9 @@ export async function executeMcpAction(
         const result = await callTool(server, action, params ?? {});
 
         if (result.success) {
-            updateMcpServer(server.id, { status: "connected" }).catch(() => {});
+            updateMcpServer(server.id, { status: "connected" }).catch((err) =>
+                childLogger.error({ err }, "Failed to update server status")
+            );
         }
 
         return result;
@@ -293,7 +297,9 @@ export async function executeMcpAction(
             extra: { userEmail },
         });
 
-        updateMcpServer(server.id, { status: "error", errorMessage }).catch(() => {});
+        updateMcpServer(server.id, { status: "error", errorMessage }).catch((err) =>
+            childLogger.error({ err }, "Failed to update server status")
+        );
 
         logMcpEvent({
             userEmail,
@@ -302,7 +308,7 @@ export async function executeMcpAction(
             eventType: "connection_error",
             eventSource: "system",
             errorMessage,
-        }).catch(() => {});
+        }).catch((err) => childLogger.error({ err }, "Failed to log MCP event"));
 
         return {
             success: false,
