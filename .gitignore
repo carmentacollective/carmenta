@@ -62,3 +62,4 @@ app/design-lab/
 .env*.local
 evals/librarian/.claude/
 .site-keeper/
+dist/
