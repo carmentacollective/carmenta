@@ -54,13 +54,20 @@ interface CachedClient {
     expiresAt: number;
 }
 
-const clientCache = new Map<number, CachedClient>();
+// Cache version - increment to bust all existing caches
+const CACHE_VERSION = 2;
+const clientCache = new Map<string, CachedClient>();
 const CLIENT_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+function getCacheKey(serverId: number): string {
+    return `v${CACHE_VERSION}:${serverId}`;
+}
 
 async function getCachedClient(
     server: McpServer
 ): Promise<Awaited<ReturnType<typeof createMCPClient>>> {
-    const cached = clientCache.get(server.id);
+    const cacheKey = getCacheKey(server.id);
+    const cached = clientCache.get(cacheKey);
     const now = Date.now();
 
     // Return cached client if still valid
@@ -78,17 +85,44 @@ async function getCachedClient(
                     "Failed to close expired MCP client"
                 )
             );
-        clientCache.delete(server.id);
+        clientCache.delete(cacheKey);
     }
 
-    // Create new client
-    const client = await createClient(server);
-    clientCache.set(server.id, {
+    // Create new client (don't cache yet - wait for successful verification)
+    return createClient(server);
+}
+
+/**
+ * Cache a client after successful verification (tools() call worked)
+ */
+function cacheClient(
+    server: McpServer,
+    client: Awaited<ReturnType<typeof createMCPClient>>
+) {
+    const cacheKey = getCacheKey(server.id);
+    clientCache.set(cacheKey, {
         client,
         expiresAt: Date.now() + CLIENT_TTL_MS,
     });
+}
 
-    return client;
+/**
+ * Clear cached client on connection errors
+ */
+function clearCachedClient(serverId: number) {
+    const cacheKey = getCacheKey(serverId);
+    const cached = clientCache.get(cacheKey);
+    if (cached) {
+        cached.client
+            .close()
+            .catch((err) =>
+                logger.warn(
+                    { err, serverId },
+                    "Failed to close MCP client during cache clear"
+                )
+            );
+        clientCache.delete(cacheKey);
+    }
 }
 
 // ============================================================================
@@ -130,11 +164,23 @@ async function createClient(server: McpServer) {
 
 async function listTools(server: McpServer): Promise<McpTool[]> {
     const client = await getCachedClient(server);
-    const tools = await client.tools();
-    return Object.entries(tools).map(([name, t]) => ({
-        name,
-        description: (t as Tool).description,
-    }));
+    const clientWasNew = !clientCache.has(getCacheKey(server.id));
+    try {
+        const tools = await client.tools();
+        // Only cache after successful connection
+        cacheClient(server, client);
+        return Object.entries(tools).map(([name, t]) => ({
+            name,
+            description: (t as Tool).description,
+        }));
+    } catch (error) {
+        clearCachedClient(server.id); // Closes if cached
+        // If client was newly created (not cached), close it to prevent leak
+        if (clientWasNew) {
+            client.close().catch(() => {});
+        }
+        throw error;
+    }
 }
 
 async function callTool(
@@ -143,7 +189,21 @@ async function callTool(
     params: Record<string, unknown>
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
     const client = await getCachedClient(server);
-    const tools = await client.tools();
+    const clientWasNew = !clientCache.has(getCacheKey(server.id));
+    let tools;
+    try {
+        tools = await client.tools();
+        // Cache after successful connection
+        cacheClient(server, client);
+    } catch (error) {
+        clearCachedClient(server.id); // Closes if cached
+        // If client was newly created (not cached), close it to prevent leak
+        if (clientWasNew) {
+            client.close().catch(() => {});
+        }
+        throw error;
+    }
+
     const toolNames = Object.keys(tools);
 
     // Gateway pattern: If server has single tool, always call it with action/params
@@ -207,7 +267,11 @@ function processToolResult(result: unknown): {
     if (typeof result === "string") {
         try {
             return { success: true, result: JSON.parse(result) };
-        } catch {
+        } catch (parseErr) {
+            logger.debug(
+                { parseErr, resultPreview: result.slice(0, 100) },
+                "MCP result is not JSON, returning as string"
+            );
             return { success: true, result };
         }
     }

@@ -23,6 +23,7 @@ import {
     CaretRightIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
+import { toast } from "sonner";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import {
@@ -420,11 +421,6 @@ function McpConfigContent({
     const [addingServer, setAddingServer] = useState(false);
     const [addError, setAddError] = useState<string | null>(null);
 
-    // Delete confirmation state
-    const [deleteTarget, setDeleteTarget] = useState<McpServerSummary | null>(null);
-    const [deletingServer, setDeletingServer] = useState(false);
-    const [deleteError, setDeleteError] = useState<string | null>(null);
-
     // Detail panel state (shows tools and debug info after test)
     const [detailServer, setDetailServer] = useState<McpServerSummary | null>(null);
     const [detailResult, setDetailResult] = useState<McpTestResult | null>(null);
@@ -590,8 +586,6 @@ function McpConfigContent({
 
     const handleDelete = useCallback(
         async (server: McpServerSummary) => {
-            setDeletingServer(true);
-            setDeleteError(null);
             try {
                 const response = await fetch(`/api/mcp/servers/${server.id}`, {
                     method: "DELETE",
@@ -599,27 +593,23 @@ function McpConfigContent({
 
                 if (response.ok) {
                     await loadServers();
-                    setDeleteTarget(null);
-                    setDeleteError(null);
                 } else {
                     const data = await response.json().catch(() => ({}));
                     const errorMessage =
                         data.error ?? "Couldn't remove server. Try again?";
-                    setDeleteError(errorMessage);
+                    toast.error(errorMessage);
                     logger.warn(
                         { serverId: server.id, status: response.status },
                         "Server delete failed"
                     );
                 }
             } catch (error) {
-                setDeleteError("Something went wrong. Try again?");
+                toast.error("Something went wrong. Try again?");
                 logger.error({ error, serverId: server.id }, "Failed to delete server");
                 Sentry.captureException(error, {
                     tags: { component: "mcp-config-page", action: "delete_server" },
                     extra: { serverId: server.id },
                 });
-            } finally {
-                setDeletingServer(false);
             }
         },
         [loadServers]
@@ -817,7 +807,7 @@ function McpConfigContent({
                     loading={loading}
                     onReconnect={handleReconnect}
                     onTest={handleTest}
-                    onDelete={(server) => setDeleteTarget(server)}
+                    onDelete={handleDelete}
                     reconnectingServers={reconnectingServers}
                     testingServers={testingServers}
                     testResults={testResults}
@@ -1055,59 +1045,6 @@ function McpConfigContent({
                                 <CircleNotchIcon className="h-4 w-4 animate-spin" />
                             )}
                             Connect
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Delete Confirmation Dialog */}
-            <Dialog
-                open={!!deleteTarget}
-                onOpenChange={(open) => {
-                    if (!open && !deletingServer) {
-                        setDeleteTarget(null);
-                        setDeleteError(null);
-                    }
-                }}
-            >
-                <DialogContent className="p-6">
-                    <DialogHeader>
-                        <DialogTitle className="text-foreground text-lg font-medium">
-                            Remove Server
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-3 py-4">
-                        <p className="text-foreground/70 text-sm">
-                            Remove <strong>{deleteTarget?.displayName}</strong>? We
-                            won't be able to use its tools until you add it again.
-                        </p>
-
-                        {deleteError && (
-                            <p className="text-sm text-red-600 dark:text-red-400">
-                                {deleteError}
-                            </p>
-                        )}
-                    </div>
-
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button
-                            variant="ghost"
-                            onClick={() => setDeleteTarget(null)}
-                            disabled={deletingServer}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={() => deleteTarget && handleDelete(deleteTarget)}
-                            disabled={deletingServer}
-                            className="gap-2"
-                        >
-                            {deletingServer && (
-                                <CircleNotchIcon className="h-4 w-4 animate-spin" />
-                            )}
-                            Remove
                         </Button>
                     </DialogFooter>
                 </DialogContent>

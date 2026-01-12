@@ -646,6 +646,8 @@
         );
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+        /* Break long tokens at container edge - keeps everything visible in narrow sidecar */
+        overflow-wrap: anywhere;
     }
 
     .dark .user-message-bubble {

@@ -419,10 +419,24 @@ interface CreateData {
         url: string;
         status: string;
     };
+    // Connection test results
+    connectionTest?: {
+        success: boolean;
+        toolCount?: number;
+        tools?: Array<{ name: string; description?: string }>;
+        error?: string;
+    };
+    // User-facing message with delight
+    message: string;
 }
 
 /**
  * Execute create action - adds a new MCP server configuration
+ *
+ * After creating the server, we automatically test the connection to:
+ * 1. Verify it works
+ * 2. Discover available tools
+ * 3. Give the user immediate feedback and excitement about what they can do
  */
 async function executeCreate(
     params: {
@@ -436,8 +450,10 @@ async function executeCreate(
     const { identifier, displayName, url, headers } = params;
 
     try {
-        // Import the db function
-        const { createMcpServer } = await import("@/lib/db/mcp-servers");
+        // Import the db function and test utility
+        const { createMcpServer, updateMcpServer } =
+            await import("@/lib/db/mcp-servers");
+        const { testMcpConnection } = await import("@/lib/mcp/client");
 
         // Parse auth configuration from headers
         const { authType, token, authHeaderName } = parseAuthHeaders(headers);
@@ -448,7 +464,7 @@ async function executeCreate(
             identifier,
             displayName: displayName || identifier,
             url,
-            transport: "sse",
+            transport: "http",
             authType,
             credentials: token ? { token } : undefined,
             authHeaderName,
@@ -464,6 +480,78 @@ async function executeCreate(
             "🔧 Created MCP server configuration"
         );
 
+        // Test the connection to verify it works and discover tools
+        const testResult = await testMcpConnection({
+            url,
+            transport: "http",
+            authType,
+            token,
+            headerName: authHeaderName,
+        });
+
+        // Update server status based on test
+        // Wrapped in try/catch - server creation succeeded, don't fail if status update fails
+        try {
+            if (testResult.success) {
+                await updateMcpServer(server.id, {
+                    status: "connected",
+                    serverManifest: {
+                        name: displayName || identifier,
+                        toolCount: testResult.tools?.length ?? 0,
+                        tools: testResult.tools?.map((t) => t.name) ?? [],
+                    },
+                });
+            } else {
+                await updateMcpServer(server.id, {
+                    status: "error",
+                    errorMessage: testResult.error,
+                });
+            }
+        } catch (updateErr) {
+            logger.error(
+                { updateErr, serverId: server.id, identifier },
+                "Failed to update server status after connection test"
+            );
+        }
+
+        // Generate a delightful message based on the result
+        const name = displayName || identifier;
+        let message: string;
+
+        if (testResult.success && testResult.tools?.length) {
+            const toolCount = testResult.tools.length;
+            const topTools = testResult.tools.slice(0, 3).map((t) => t.name);
+            const moreText = toolCount > 3 ? ` and ${toolCount - 3} more` : "";
+
+            message =
+                `${name} is connected and ready to help! ` +
+                `We found ${toolCount} tool${toolCount === 1 ? "" : "s"}: ${topTools.join(", ")}${moreText}. ` +
+                `Try asking me to use ${topTools[0]} to see it in action.`;
+        } else if (testResult.success) {
+            message =
+                `${name} is connected! ` +
+                `The server responded but didn't expose any tools yet. ` +
+                `Check the server configuration if you expected tools.`;
+        } else {
+            message =
+                `${name} has been added, but we couldn't connect to verify it. ` +
+                `Error: ${testResult.error || "Connection failed"}. ` +
+                `Check the URL and authentication settings, then try the Verify button on the MCP page.`;
+        }
+
+        logger.info(
+            {
+                userEmail: context.userEmail,
+                serverId: server.id,
+                identifier,
+                connectionSuccess: testResult.success,
+                toolCount: testResult.tools?.length,
+            },
+            testResult.success
+                ? "✅ MCP server connected and verified"
+                : "⚠️ MCP server added but connection failed"
+        );
+
         return successResult<CreateData>({
             success: true,
             server: {
@@ -471,8 +559,15 @@ async function executeCreate(
                 identifier: server.identifier,
                 displayName: server.displayName,
                 url: server.url,
-                status: server.status,
+                status: testResult.success ? "connected" : "error",
             },
+            connectionTest: {
+                success: testResult.success,
+                toolCount: testResult.tools?.length,
+                tools: testResult.tools,
+                error: testResult.error,
+            },
+            message,
         });
     } catch (error) {
         logger.error(
