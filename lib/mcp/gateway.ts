@@ -109,6 +109,11 @@ function formatToolsForDescription(tools: McpTool[]): string {
 
 /**
  * Build tool description from server manifest
+ *
+ * Manifest shape (stored as JSON in DB, populated by test endpoint):
+ * - name: Server's declared name or displayName fallback
+ * - toolCount: Number of available tools
+ * - tools: Array of tool names (for "Top operations" summary)
  */
 function buildToolDescription(server: McpServer): string {
     const manifest = server.serverManifest as {
