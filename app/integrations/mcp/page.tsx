@@ -9,10 +9,8 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import Link from "next/link";
 import {
     PlugIcon,
-    ArrowLeftIcon,
     CircleNotchIcon,
     PlugsIcon,
     KeyIcon,
@@ -142,21 +140,6 @@ function ServerList({
 }: ServerListProps) {
     // Inline delete confirmation state (matches integrations page pattern)
     const [confirmingDelete, setConfirmingDelete] = useState<number | null>(null);
-
-    const getStatusColor = (status: string, enabled: boolean) => {
-        if (!enabled) return "text-foreground/30";
-        switch (status) {
-            case "connected":
-                return "text-green-500";
-            case "auth_required":
-                return "text-amber-500";
-            case "error":
-            case "expired":
-                return "text-red-500";
-            default:
-                return "text-foreground/40";
-        }
-    };
 
     const getStatusLabel = (status: string, enabled: boolean) => {
         if (!enabled) return "Disabled";
@@ -748,7 +731,7 @@ function McpConfigContent({
         } finally {
             setAddingServer(false);
         }
-    }, [newServerUrl, newServerName, loadServers]);
+    }, [newServerUrl, newServerName, authType, authToken, authHeaderName, loadServers]);
 
     // Count servers needing reconnection for badge
     const serversNeedingReconnect = servers.filter(
