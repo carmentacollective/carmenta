@@ -24,6 +24,7 @@ import {
     type ResultSummary,
 } from "@/lib/tools/mcp-result-summary";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { logger } from "@/lib/client-logger";
 
 interface McpToolResultProps {
     toolCallId: string;
@@ -332,17 +333,18 @@ function McpResultContent({
 
 /**
  * Extract stable ID from an item for React keys.
+ * Always includes index to guarantee uniqueness even if items share field values.
  */
 function extractItemId(item: unknown, fallbackIdx: number): string {
     if (typeof item !== "object" || item === null) {
         return `item-${fallbackIdx}`;
     }
     const obj = item as Record<string, unknown>;
-    // Try common ID fields
+    // Try common ID fields and combine with index for uniqueness
     for (const key of ["id", "url", "path", "filename", "name"]) {
         const value = obj[key];
         if (typeof value === "string" || typeof value === "number") {
-            return String(value);
+            return `${value}-${fallbackIdx}`;
         }
     }
     return `item-${fallbackIdx}`;
@@ -503,6 +505,7 @@ function ListItem({ item }: { item: unknown }) {
  */
 function SmartJsonView({ data }: { data: unknown }) {
     const [copied, setCopied] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
     const jsonString = JSON.stringify(data, null, 2);
     const truncated = jsonString.length > 2000;
@@ -511,13 +514,18 @@ function SmartJsonView({ data }: { data: unknown }) {
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(jsonString);
+            clearTimeout(timeoutRef.current);
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            timeoutRef.current = setTimeout(() => setCopied(false), 2000);
         } catch (error) {
-            // Clipboard API can fail due to permissions or insecure context
-            console.error("Failed to copy to clipboard:", error);
+            logger.error({ error }, "Failed to copy to clipboard");
         }
     };
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => clearTimeout(timeoutRef.current);
+    }, []);
 
     return (
         <div className="relative">
