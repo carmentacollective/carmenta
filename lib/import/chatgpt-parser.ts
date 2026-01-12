@@ -623,21 +623,3 @@ export function conversationToText(conv: ParsedConversation): string {
 
     return lines.join("\n");
 }
-
-/**
- * Generate a unique hash for deduplication
- */
-export function hashConversation(conv: ParsedConversation): string {
-    // Simple hash based on conversation ID and content
-    const content = conv.messages.map((m) => `${m.role}:${m.content}`).join("|");
-    const str = `${conv.id}|${conv.title}|${content}`;
-
-    // Basic hash function
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16);
-}
