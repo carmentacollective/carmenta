@@ -45,27 +45,23 @@ function isReasoningPart(type: string): boolean {
 export function filterReasoningFromMessages(messages: UIMessage[]): UIMessage[] {
     return messages.map((msg) => {
         const extendedMsg = msg as ExtendedUIMessage;
-        const filtered: Partial<ExtendedUIMessage> = { ...extendedMsg };
+        const filtered: ExtendedUIMessage = { ...extendedMsg };
 
         // Filter parts array if it exists
         if (extendedMsg.parts) {
-            const filteredParts = extendedMsg.parts.filter(
+            filtered.parts = extendedMsg.parts.filter(
                 (part) => !isReasoningPart(part.type as string)
             );
-            // Only set if non-empty to avoid empty array issues
-            filtered.parts = filteredParts.length > 0 ? filteredParts : undefined;
         }
 
         // Filter content array if it exists and is an array
         if (Array.isArray(extendedMsg.content)) {
-            const filteredContent = extendedMsg.content.filter(
+            filtered.content = extendedMsg.content.filter(
                 (part) => !isReasoningPart(part.type)
             );
-            // Only set if non-empty to avoid empty array issues
-            filtered.content = filteredContent.length > 0 ? filteredContent : undefined;
         }
 
-        return filtered as UIMessage;
+        return filtered;
     });
 }
 
