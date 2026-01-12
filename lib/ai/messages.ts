@@ -7,6 +7,14 @@
 import type { UIMessage } from "ai";
 
 /**
+ * Extended message type to handle both parts and content arrays.
+ * Some messages have parts[], others have content[] - both need filtering.
+ */
+type ExtendedUIMessage = UIMessage & {
+    content?: Array<{ type: string; [key: string]: unknown }>;
+};
+
+/**
  * Part types that should be filtered from multi-turn conversations.
  *
  * Anthropic's API rejects requests that include thinking/reasoning blocks
@@ -29,21 +37,26 @@ const REASONING_PART_TYPES = ["reasoning", "thinking", "redacted_thinking"] as c
  */
 export function filterReasoningFromMessages(messages: UIMessage[]): UIMessage[] {
     return messages.map((msg) => {
-        const filtered: any = { ...msg };
+        const extendedMsg = msg as ExtendedUIMessage;
+        const filtered: ExtendedUIMessage = { ...extendedMsg };
 
         // Filter parts array if it exists
-        if (msg.parts) {
-            filtered.parts = msg.parts.filter((part) => {
+        if (extendedMsg.parts) {
+            filtered.parts = extendedMsg.parts.filter((part) => {
                 const partType = part.type as string;
-                return !REASONING_PART_TYPES.includes(partType as any);
+                return !REASONING_PART_TYPES.includes(
+                    partType as (typeof REASONING_PART_TYPES)[number]
+                );
             });
         }
 
         // Filter content array if it exists and is an array
-        if (Array.isArray((msg as any).content)) {
-            filtered.content = (msg as any).content.filter((part: any) => {
+        if (Array.isArray(extendedMsg.content)) {
+            filtered.content = extendedMsg.content.filter((part) => {
                 const partType = part.type as string;
-                return !REASONING_PART_TYPES.includes(partType as any);
+                return !REASONING_PART_TYPES.includes(
+                    partType as (typeof REASONING_PART_TYPES)[number]
+                );
             });
         }
 
