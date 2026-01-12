@@ -808,14 +808,15 @@ If we add support later, the pattern is:
 
 ### Sources
 
-- AI SDK MCP: `/Users/nick/src/reference/ai/packages/mcp/src/tool/mcp-client.ts`
-- MCP TypeScript SDK:
-  `/Users/nick/src/reference/typescript-sdk/packages/client/src/client/client.ts`
-- LobeChat:
-  `/Users/nick/src/reference/lobe-chat/src/store/tool/slices/mcpStore/action.ts:261-536`
-- LibreChat:
-  `/Users/nick/src/reference/librechat/packages/api/src/mcp/registry/MCPServerInspector.ts`
-- Vercel mcp-to-ai-sdk: https://sdk.vercel.ai/docs/guides/mcp-to-ai-sdk
+- [AI SDK MCP](https://github.com/vercel/ai/tree/main/packages/mcp) -
+  `packages/mcp/src/tool/mcp-client.ts`
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) -
+  `packages/client/src/client/client.ts`
+- [LobeChat MCP Integration](https://github.com/lobehub/lobe-chat) -
+  `src/store/tool/slices/mcpStore/action.ts:261-536`
+- [LibreChat MCP Support](https://github.com/danny-avila/LibreChat) -
+  `packages/api/src/mcp/registry/MCPServerInspector.ts`
+- [Vercel mcp-to-ai-sdk](https://sdk.vercel.ai/docs/guides/mcp-to-ai-sdk)
 
 ---
 
