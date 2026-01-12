@@ -17,11 +17,11 @@ import {
     PlugsIcon,
     KeyIcon,
     ArrowsClockwiseIcon,
-    DotsThreeIcon,
     TrashIcon,
     CheckCircleIcon,
     PlusIcon,
     XCircleIcon,
+    ShieldCheckIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -34,13 +34,6 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 
@@ -94,6 +87,9 @@ function ServerList({
     testResults = new Map(),
     className,
 }: ServerListProps) {
+    // Inline delete confirmation state (matches integrations page pattern)
+    const [confirmingDelete, setConfirmingDelete] = useState<number | null>(null);
+
     const getStatusColor = (status: string, enabled: boolean) => {
         if (!enabled) return "text-foreground/30";
         switch (status) {
@@ -225,7 +221,37 @@ function ServerList({
                                     </p>
                                 )}
                             </div>
-                            <div className="flex shrink-0 items-center gap-2">
+                            <div className="flex shrink-0 items-center gap-1">
+                                {/* Tool count */}
+                                {server.toolCount > 0 && (
+                                    <span className="text-foreground/40 mr-2 text-xs">
+                                        {server.toolCount}{" "}
+                                        {server.toolCount === 1 ? "tool" : "tools"}
+                                    </span>
+                                )}
+
+                                {/* Test result inline (shows temporarily after test) */}
+                                {testResults.get(server.id) && (
+                                    <span
+                                        className={cn(
+                                            "mr-2 flex items-center gap-1 text-xs font-medium",
+                                            testResults.get(server.id) === "success"
+                                                ? "text-green-600 dark:text-green-400"
+                                                : "text-red-600 dark:text-red-400"
+                                        )}
+                                    >
+                                        {testResults.get(server.id) === "success" ? (
+                                            <CheckCircleIcon className="h-3.5 w-3.5" />
+                                        ) : (
+                                            <XCircleIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        {testResults.get(server.id) === "success"
+                                            ? "Verified"
+                                            : "Failed"}
+                                    </span>
+                                )}
+
+                                {/* Reconnect button (when needed) */}
                                 {showReconnect && onReconnect && (
                                     <button
                                         onClick={() => onReconnect(server)}
@@ -233,88 +259,75 @@ function ServerList({
                                         aria-label={`Reconnect ${server.displayName}`}
                                         aria-busy={isReconnecting}
                                         className={cn(
-                                            "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                                            "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                                             "bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 dark:text-amber-300",
-                                            "focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 focus:outline-none",
                                             isReconnecting &&
                                                 "cursor-not-allowed opacity-50"
                                         )}
                                     >
                                         {isReconnecting ? (
-                                            <CircleNotchIcon className="h-3 w-3 animate-spin" />
+                                            <CircleNotchIcon className="h-3.5 w-3.5 animate-spin" />
                                         ) : (
-                                            <ArrowsClockwiseIcon className="h-3 w-3" />
+                                            <ArrowsClockwiseIcon className="h-3.5 w-3.5" />
                                         )}
-                                        Reconnect
+                                        <span className="hidden sm:inline">
+                                            Reconnect
+                                        </span>
                                     </button>
                                 )}
-                                <div className="text-foreground/40 text-right text-xs">
-                                    {server.toolCount > 0 && (
-                                        <span>
-                                            {server.toolCount}{" "}
-                                            {server.toolCount === 1 ? "tool" : "tools"}
-                                        </span>
-                                    )}
-                                </div>
 
-                                {/* Server actions menu */}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button
-                                            className="hover:bg-foreground/10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-colors"
-                                            aria-label={`Actions for ${server.displayName}`}
-                                        >
-                                            <DotsThreeIcon className="text-foreground/50 h-5 w-5" />
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {onTest && (
-                                            <DropdownMenuItem
-                                                onClick={() => onTest(server)}
-                                                disabled={testingServers.has(server.id)}
-                                                className={cn(
-                                                    testResults.get(server.id) ===
-                                                        "success" &&
-                                                        "text-green-600 dark:text-green-400",
-                                                    testResults.get(server.id) ===
-                                                        "error" &&
-                                                        "text-red-600 dark:text-red-400"
-                                                )}
+                                {/* Verify button (inline, matches integrations page) */}
+                                {onTest && !showReconnect && (
+                                    <button
+                                        onClick={() => onTest(server)}
+                                        disabled={testingServers.has(server.id)}
+                                        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs transition-colors disabled:opacity-50"
+                                    >
+                                        {testingServers.has(server.id) ? (
+                                            <CircleNotchIcon className="h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                            <ShieldCheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        <span className="hidden sm:inline">Verify</span>
+                                    </button>
+                                )}
+
+                                {/* Remove button with inline confirmation */}
+                                {onDelete &&
+                                    (confirmingDelete === server.id ? (
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={() =>
+                                                    setConfirmingDelete(null)
+                                                }
+                                                className="text-muted-foreground hover:text-foreground rounded-lg px-2 py-1.5 text-xs transition-colors"
                                             >
-                                                {testingServers.has(server.id) ? (
-                                                    <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
-                                                ) : testResults.get(server.id) ===
-                                                  "success" ? (
-                                                    <CheckCircleIcon className="mr-2 h-4 w-4 text-green-500" />
-                                                ) : testResults.get(server.id) ===
-                                                  "error" ? (
-                                                    <XCircleIcon className="mr-2 h-4 w-4 text-red-500" />
-                                                ) : (
-                                                    <CheckCircleIcon className="mr-2 h-4 w-4" />
-                                                )}
-                                                {testResults.get(server.id) ===
-                                                "success"
-                                                    ? "Connected!"
-                                                    : testResults.get(server.id) ===
-                                                        "error"
-                                                      ? "Connection failed"
-                                                      : "Test Connection"}
-                                            </DropdownMenuItem>
-                                        )}
-                                        {onDelete && (
-                                            <>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    onClick={() => onDelete(server)}
-                                                    className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
-                                                >
-                                                    <TrashIcon className="mr-2 h-4 w-4" />
-                                                    Remove Server
-                                                </DropdownMenuItem>
-                                            </>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    onDelete(server);
+                                                    setConfirmingDelete(null);
+                                                }}
+                                                className="flex items-center gap-1 rounded-lg bg-red-500/15 px-2 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/25 dark:text-red-400"
+                                            >
+                                                <TrashIcon className="h-3.5 w-3.5" />
+                                                Confirm
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() =>
+                                                setConfirmingDelete(server.id)
+                                            }
+                                            className="text-muted-foreground flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-red-500/10 hover:text-red-600 disabled:opacity-50"
+                                        >
+                                            <TrashIcon className="h-3.5 w-3.5" />
+                                            <span className="hidden sm:inline">
+                                                Remove
+                                            </span>
+                                        </button>
+                                    ))}
                             </div>
                         </div>
                     </div>
@@ -657,17 +670,18 @@ function McpConfigContent({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <div className="flex shrink-0 items-center gap-2">
                         <button
                             onClick={() => setAddDialogOpen(true)}
-                            className="border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors"
+                            className="border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground flex min-h-11 items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors"
                         >
                             <PlusIcon className="h-4 w-4" />
-                            Add Manually
+                            Add Server
                         </button>
                         <CarmentaToggle
                             isOpen={carmentaOpen}
                             onClick={() => setCarmentaOpen(!carmentaOpen)}
+                            label="Help"
                         />
                     </div>
                 </div>
