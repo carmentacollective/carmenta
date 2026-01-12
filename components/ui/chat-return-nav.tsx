@@ -68,20 +68,29 @@ export function ChatReturnNav({ className, compact = false }: ChatReturnNavProps
                         />
                         <span className="flex items-center gap-1.5">
                             {lastConnection?.title ? (
-                                <span
-                                    className={cn(
-                                        "max-w-[120px] truncate font-medium",
-                                        compact && "max-w-[80px]"
-                                    )}
-                                >
-                                    {lastConnection.title}
-                                </span>
+                                <>
+                                    {/* Mobile: show "Continue" for clarity */}
+                                    <span className="font-medium sm:hidden">
+                                        Continue
+                                    </span>
+                                    {/* Tablet+: show truncated title with responsive width */}
+                                    <span
+                                        className={cn(
+                                            "hidden truncate font-medium sm:inline",
+                                            "sm:max-w-[200px] md:max-w-[300px] lg:max-w-[400px]",
+                                            compact &&
+                                                "sm:max-w-[100px] md:max-w-[150px]"
+                                        )}
+                                    >
+                                        {lastConnection.title}
+                                    </span>
+                                </>
                             ) : (
                                 <>
                                     <ChatCircleIcon
                                         className={compact ? "h-3 w-3" : "h-3.5 w-3.5"}
                                     />
-                                    <span className="font-medium">Back to chat</span>
+                                    <span className="font-medium">Continue</span>
                                 </>
                             )}
                         </span>
