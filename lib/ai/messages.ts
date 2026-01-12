@@ -23,6 +23,13 @@ type ExtendedUIMessage = UIMessage & {
 const REASONING_PART_TYPES = ["reasoning", "thinking", "redacted_thinking"] as const;
 
 /**
+ * Check if a part type is a reasoning/thinking block
+ */
+function isReasoningPart(type: string): boolean {
+    return (REASONING_PART_TYPES as readonly string[]).includes(type);
+}
+
+/**
  * Filters reasoning/thinking blocks from messages for multi-turn API calls.
  *
  * When sending a conversation history to the API, thinking blocks from previous
@@ -38,29 +45,27 @@ const REASONING_PART_TYPES = ["reasoning", "thinking", "redacted_thinking"] as c
 export function filterReasoningFromMessages(messages: UIMessage[]): UIMessage[] {
     return messages.map((msg) => {
         const extendedMsg = msg as ExtendedUIMessage;
-        const filtered: ExtendedUIMessage = { ...extendedMsg };
+        const filtered: Partial<ExtendedUIMessage> = { ...extendedMsg };
 
         // Filter parts array if it exists
         if (extendedMsg.parts) {
-            filtered.parts = extendedMsg.parts.filter((part) => {
-                const partType = part.type as string;
-                return !REASONING_PART_TYPES.includes(
-                    partType as (typeof REASONING_PART_TYPES)[number]
-                );
-            });
+            const filteredParts = extendedMsg.parts.filter(
+                (part) => !isReasoningPart(part.type as string)
+            );
+            // Only set if non-empty to avoid empty array issues
+            filtered.parts = filteredParts.length > 0 ? filteredParts : undefined;
         }
 
         // Filter content array if it exists and is an array
         if (Array.isArray(extendedMsg.content)) {
-            filtered.content = extendedMsg.content.filter((part) => {
-                const partType = part.type as string;
-                return !REASONING_PART_TYPES.includes(
-                    partType as (typeof REASONING_PART_TYPES)[number]
-                );
-            });
+            const filteredContent = extendedMsg.content.filter(
+                (part) => !isReasoningPart(part.type)
+            );
+            // Only set if non-empty to avoid empty array issues
+            filtered.content = filteredContent.length > 0 ? filteredContent : undefined;
         }
 
-        return filtered;
+        return filtered as UIMessage;
     });
 }
 
