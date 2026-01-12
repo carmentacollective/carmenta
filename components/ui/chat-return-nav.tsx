@@ -79,7 +79,7 @@ export function ChatReturnNav({ className, compact = false }: ChatReturnNavProps
                                             "hidden truncate font-medium sm:inline",
                                             "sm:max-w-[200px] md:max-w-[300px] lg:max-w-[400px]",
                                             compact &&
-                                                "sm:max-w-[100px] md:max-w-[150px]"
+                                                "sm:max-w-[100px] md:max-w-[150px] lg:max-w-[200px]"
                                         )}
                                     >
                                         {lastConnection.title}

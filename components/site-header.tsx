@@ -47,15 +47,15 @@ export function SiteHeader({
 }: SiteHeaderProps) {
     const isWcoActive = useWindowControlsOverlay();
     const { isSignedIn } = useAuth();
-    const { shouldShowReturn } = useLastConnection({});
+    const { shouldShowReturn, isOnConnectionPage } = useLastConnection({});
 
     // Hide when WCO titlebar is shown to avoid duplicate controls
     if (isWcoActive) {
         return null;
     }
 
-    // Show "New connection" when user is signed in but has no active session to return to
-    const showNewConnection = isSignedIn && !shouldShowReturn;
+    // Show "New connection" when user is signed in, not on a connection page, and has no active session
+    const showNewConnection = isSignedIn && !isOnConnectionPage && !shouldShowReturn;
 
     return (
         <header className="flex items-center justify-between px-6 py-4">
@@ -67,7 +67,7 @@ export function SiteHeader({
                 <ChatReturnNav />
             ) : showNewConnection ? (
                 <Link
-                    href="/"
+                    href="/connection?new"
                     className="bg-foreground/5 hover:bg-foreground/10 text-foreground/70 hover:text-foreground flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     <PlusIcon className="h-3.5 w-3.5" />
