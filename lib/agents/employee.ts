@@ -277,8 +277,6 @@ function extractTokenUsage(
  * });
  * ```
  */
-// TODO: This non-streaming path doesn't capture execution trace, token usage, or Sentry trace ID.
-// Consider migrating callers to use runEmployeeStreaming for full observability.
 export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult> {
     const { jobId, userEmail, prompt, memory, messages = [] } = input;
 
@@ -288,121 +286,139 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
         "🤖 Starting employee execution"
     );
 
-    try {
-        // Load tools available to this user
-        const integrationTools = await getIntegrationTools(userEmail);
-        const completeTool = createCompleteTool();
+    // Wrap in Sentry span for trace linking and observability
+    return Sentry.startSpan(
+        {
+            op: "job.execute",
+            name: `Job: ${jobId}`,
+            attributes: { jobId, userEmail },
+        },
+        async () => {
+            try {
+                // Load tools available to this user
+                const integrationTools = await getIntegrationTools(userEmail);
+                const completeTool = createCompleteTool();
 
-        const allTools = {
-            ...builtInTools,
-            ...integrationTools,
-            complete: completeTool,
-        };
+                const allTools = {
+                    ...builtInTools,
+                    ...integrationTools,
+                    complete: completeTool,
+                };
 
-        employeeLogger.debug(
-            { tools: Object.keys(allTools) },
-            "Loaded tools for employee"
-        );
+                employeeLogger.debug(
+                    { tools: Object.keys(allTools) },
+                    "Loaded tools for employee"
+                );
 
-        // Build system prompt
-        const systemPrompt = buildEmployeePrompt(prompt, memory);
+                // Build system prompt
+                const systemPrompt = buildEmployeePrompt(prompt, memory);
 
-        // Prune messages for employee context
-        const prunedMessages = pruneModelMessages(messages, { mode: "employee" });
+                // Prune messages for employee context
+                const prunedMessages = pruneModelMessages(messages, {
+                    mode: "employee",
+                });
 
-        // Prepare messages with system prompt
-        const allMessages: ModelMessage[] = [
-            { role: "system", content: systemPrompt },
-            ...prunedMessages,
-            // Add a user message to trigger execution if no messages provided
-            ...(prunedMessages.length === 0
-                ? [{ role: "user" as const, content: "Please execute the task." }]
-                : []),
-        ];
+                // Prepare messages with system prompt
+                const allMessages: ModelMessage[] = [
+                    { role: "system", content: systemPrompt },
+                    ...prunedMessages,
+                    // Add a user message to trigger execution if no messages provided
+                    ...(prunedMessages.length === 0
+                        ? [
+                              {
+                                  role: "user" as const,
+                                  content: "Please execute the task.",
+                              },
+                          ]
+                        : []),
+                ];
 
-        // Get gateway client
-        const gateway = getGatewayClient();
-        const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
+                // Get gateway client
+                const gateway = getGatewayClient();
+                const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
 
-        // Execute with tool loop
-        const result = await generateText({
-            model: gateway(translateModelId(primaryModel)),
-            messages: allMessages,
-            tools: allTools,
-            stopWhen: [hasToolCall("complete"), stepCountIs(MAX_STEPS)],
-            providerOptions: {
-                gateway: {
-                    models: EMPLOYEE_FALLBACK_CHAIN.map(translateModelId),
-                },
-            },
-        });
+                // Execute with tool loop
+                const result = await generateText({
+                    model: gateway(translateModelId(primaryModel)),
+                    messages: allMessages,
+                    tools: allTools,
+                    stopWhen: [hasToolCall("complete"), stepCountIs(MAX_STEPS)],
+                    providerOptions: {
+                        gateway: {
+                            models: EMPLOYEE_FALLBACK_CHAIN.map(translateModelId),
+                        },
+                    },
+                });
 
-        // Count tool calls
-        const toolCallsExecuted = result.steps.reduce(
-            (count, step) => count + (step.toolCalls?.length ?? 0),
-            0
-        );
+                // Count tool calls
+                const toolCallsExecuted = result.steps.reduce(
+                    (count, step) => count + (step.toolCalls?.length ?? 0),
+                    0
+                );
 
-        // Extract completion data from tool call
-        const completeCall = result.steps
-            .flatMap((step) => step.toolCalls ?? [])
-            .find((call) => call.toolName === "complete");
+                // Extract completion data from tool call
+                const completeCall = result.steps
+                    .flatMap((step) => step.toolCalls ?? [])
+                    .find((call) => call.toolName === "complete");
 
-        // Extract completion args (may be undefined if tool call exists but args missing)
-        const completion = completeCall
-            ? (completeCall as unknown as { args: CompleteToolParams }).args
-            : undefined;
+                // Extract completion args (may be undefined if tool call exists but args missing)
+                const completion = completeCall
+                    ? (completeCall as unknown as { args: CompleteToolParams }).args
+                    : undefined;
 
-        // Require summary to be present - empty args object should fall back to text
-        if (completion?.summary) {
-            employeeLogger.info(
-                {
-                    summary: completion.summary,
-                    notificationCount: completion.notifications?.length ?? 0,
+                // Require summary to be present - empty args object should fall back to text
+                if (completion?.summary) {
+                    employeeLogger.info(
+                        {
+                            summary: completion.summary,
+                            notificationCount: completion.notifications?.length ?? 0,
+                            toolCallsExecuted,
+                        },
+                        "✅ Employee completed task"
+                    );
+
+                    return {
+                        success: true,
+                        summary: completion.summary,
+                        notifications: completion.notifications ?? [],
+                        updatedMemory: { ...memory, ...completion.memoryUpdates },
+                        toolCallsExecuted,
+                    };
+                }
+
+                // No explicit completion - use last text response (|| catches empty strings too)
+                const lastText =
+                    result.text || "Task completed without explicit summary.";
+
+                employeeLogger.warn(
+                    { text: lastText.slice(0, 200), steps: result.steps.length },
+                    "⚠️ Employee finished without calling complete tool"
+                );
+
+                return {
+                    success: true,
+                    summary: lastText,
+                    notifications: [],
+                    updatedMemory: memory,
                     toolCallsExecuted,
-                },
-                "✅ Employee completed task"
-            );
+                };
+            } catch (error) {
+                employeeLogger.error({ error }, "❌ Employee execution failed");
+                Sentry.captureException(error, {
+                    tags: { component: "ai-team", agent: "employee" },
+                    extra: { jobId, userEmail },
+                });
 
-            return {
-                success: true,
-                summary: completion.summary,
-                notifications: completion.notifications ?? [],
-                updatedMemory: { ...memory, ...completion.memoryUpdates },
-                toolCallsExecuted,
-            };
+                return {
+                    success: false,
+                    summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+                    notifications: [],
+                    updatedMemory: memory,
+                    toolCallsExecuted: 0,
+                };
+            }
         }
-
-        // No explicit completion - use last text response (|| catches empty strings too)
-        const lastText = result.text || "Task completed without explicit summary.";
-
-        employeeLogger.warn(
-            { text: lastText.slice(0, 200), steps: result.steps.length },
-            "⚠️ Employee finished without calling complete tool"
-        );
-
-        return {
-            success: true,
-            summary: lastText,
-            notifications: [],
-            updatedMemory: memory,
-            toolCallsExecuted,
-        };
-    } catch (error) {
-        employeeLogger.error({ error }, "❌ Employee execution failed");
-        Sentry.captureException(error, {
-            tags: { component: "ai-team", agent: "employee" },
-            extra: { jobId, userEmail },
-        });
-
-        return {
-            success: false,
-            summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-            notifications: [],
-            updatedMemory: memory,
-            toolCallsExecuted: 0,
-        };
-    }
+    );
 }
 
 /**
