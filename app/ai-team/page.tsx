@@ -8,7 +8,6 @@ import {
     SparkleIcon,
     BellIcon,
     LightningIcon,
-    GearIcon,
     PlusIcon,
     ClockIcon,
     WarningCircleIcon,
@@ -649,7 +648,7 @@ function AITeamContent({
                                     className="glass-panel group p-4 transition-all hover:scale-[1.01] hover:shadow-md"
                                 >
                                     <div className="flex items-center justify-between">
-                                        <a
+                                        <Link
                                             href={`/ai-team/${automation.slug}/${automation.encodedId}`}
                                             className="min-w-0 flex-1"
                                         >
@@ -661,7 +660,7 @@ function AITeamContent({
                                                     ? `Next: ${formatNextRun(automation.nextRunAt)}`
                                                     : "Paused"}
                                             </p>
-                                        </a>
+                                        </Link>
                                         <LabelToggle
                                             checked={automation.isActive}
                                             onChange={() =>
