@@ -651,7 +651,9 @@ function McpConfigContent({
         // Auto-generate identifier from name
         const identifier = slugify(newServerName.trim());
         if (!identifier) {
-            setAddError("Please use a name with at least one letter or number");
+            setAddError(
+                "Server names must contain at least one English letter or number (A-Z, 0-9)"
+            );
             return;
         }
 
