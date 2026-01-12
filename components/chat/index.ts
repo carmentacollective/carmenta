@@ -8,6 +8,13 @@ export { UserBubble, AssistantBubble, ThinkingBubble } from "./message-bubbles";
 export { SimpleComposer, type SimpleComposerProps } from "./simple-composer";
 export { ComposerUI, type ComposerUIProps } from "./composer-ui";
 export {
+    ChatTextarea,
+    CHAT_TEXTAREA_CLASSES,
+    CHAT_TEXTAREA_BASE_STYLES,
+    type ChatTextareaProps,
+    type ChatTextareaRef,
+} from "./chat-textarea";
+export {
     ComposerButton,
     type ComposerButtonProps,
     type PipelineState,

@@ -481,7 +481,9 @@ export const SyntaxHighlightInput = forwardRef<
                 onOpenChange={() => setAutocompleteType(null)}
             >
                 <PopoverTrigger asChild>
-                    <div className="relative w-full">
+                    {/* flex: eliminates inline-block baseline gap that adds 6px
+                        @xl:self-center: prevents stretch in flex-row parent */}
+                    <div className="relative flex w-full @xl:self-center">
                         <RichTextarea
                             ref={textareaRef}
                             value={value}

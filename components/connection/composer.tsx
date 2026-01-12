@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SquareIcon, ArrowElbowDownLeftIcon, PlusIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
+import { CHAT_TEXTAREA_CLASSES } from "@/components/chat";
 import { useMessageQueue, type QueuedMessage } from "@/lib/hooks/use-message-queue";
 import { logger } from "@/lib/client-logger";
 import { useConcierge } from "@/lib/concierge/context";
@@ -406,16 +407,31 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         }
     }, [showShiftEnterHint, isFocused]);
 
-    // Auto-resize textarea as content grows
-    // Pattern: reset to auto → measure scrollHeight → set explicit height
+    // ┌─────────────────────────────────────────────────────────────────┐
+    // │  AUTO-RESIZE: Only for multi-line content!                       │
+    // │                                                                   │
+    // │  Single-line content MUST NOT have explicit height set.          │
+    // │  CSS min-height + symmetric padding handles vertical centering.  │
+    // │  Setting scrollHeight for single-line makes textarea too tall    │
+    // │  and causes text to render at TOP, not vertically centered.      │
+    // │                                                                   │
+    // │  If vertical alignment breaks, check:                            │
+    // │  1. This effect is NOT setting height for single-line            │
+    // │  2. CHAT_TEXTAREA_CLASSES has symmetric padding (py-3 / py-4)    │
+    // │  3. No other code is setting explicit height on the textarea     │
+    // └─────────────────────────────────────────────────────────────────┘
     useEffect(() => {
         const textarea = inputRef.current;
         if (!textarea?.style) return;
 
-        // Reset height to auto so scrollHeight reflects actual content
-        textarea.style.height = "auto";
-        // Set to scrollHeight (clamped by max-height in CSS)
-        textarea.style.height = `${textarea.scrollHeight}px`;
+        // Only auto-resize for multi-line content (has newlines)
+        if (input.includes("\n")) {
+            textarea.style.height = "auto";
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        } else {
+            // Single-line: remove explicit height, let CSS handle centering
+            textarea.style.height = "";
+        }
     }, [input]);
 
     const handleSubmit = useCallback(
@@ -834,7 +850,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 ref={formRef}
                 onSubmit={handleSubmit}
                 className={cn(
-                    "relative flex w-full flex-col transition-all @md:flex-row @md:items-center",
+                    "relative flex w-full flex-col transition-all @xl:flex-row @xl:items-center",
                     shouldFlash && "ring-primary/40 ring-2"
                 )}
             >
@@ -863,22 +879,13 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     // Mobile keyboard hint: "Return" on mobile, "Send" on desktop
                     enterKeyHint={isMobile ? "enter" : "send"}
                     rotatePlaceholders={true}
+                    // CRITICAL: rows=1 for single-line height. RichTextarea defaults to 2!
+                    // Without this, textarea is too tall and text appears at top, not centered.
+                    rows={1}
                     className={cn(
-                        // Layout - use container queries for width responsiveness
-                        "w-full flex-none resize-none @md:flex-1",
-                        // Height - 44px mobile, 56px desktop (viewport-based is fine here)
-                        "max-h-48 min-h-11 md:max-h-60 md:min-h-14",
-                        // Spacing - symmetric for centered placeholder
-                        "px-4 py-2.5 @md:px-6 @md:py-4",
-                        // Typography
-                        "text-base leading-5 outline-none",
-                        "text-foreground/95 placeholder:text-foreground/40",
-                        // Shape + transition
-                        "rounded-2xl transition-all",
-                        // Sunken glass effect
-                        "bg-foreground/[0.03] shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]",
-                        // Border - darker on focus
-                        "border",
+                        // Shared textarea styles from ChatTextarea
+                        CHAT_TEXTAREA_CLASSES,
+                        // Focus-dependent border color
                         isFocused ? "border-foreground/35" : "border-foreground/8",
                         // Multi-line gets slightly darker bg
                         /\n/.test(input) && "bg-background/30"
@@ -887,9 +894,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 />
 
                 {/* Action bar: responsive layout via container width */}
-                <div className="flex items-center justify-between gap-2 px-4 py-3.5 @md:justify-end @md:gap-3 @md:py-0 @md:pr-4">
+                <div className="flex items-center justify-between gap-2 px-4 py-3.5 @xl:justify-end @xl:gap-3 @xl:py-0 @xl:pr-4">
                     {/* Left group (mobile) / inline (desktop): Model + Attach */}
-                    <div className="flex items-center gap-2 @md:order-last @md:gap-3">
+                    <div className="flex items-center gap-2 @xl:order-last @xl:gap-3">
                         <ModelSelectorTrigger
                             overrides={overrides}
                             onChange={setOverrides}
@@ -903,7 +910,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     </div>
 
                     {/* Right group: Send/Queue/Stop + Voice */}
-                    <div className="flex items-center gap-2 @md:order-first @md:gap-3">
+                    <div className="flex items-center gap-2 @xl:order-first @xl:gap-3">
                         {/* Button transforms based on state:
                             - Not streaming → Send (arrow)
                             - Streaming + empty input → Stop (square)

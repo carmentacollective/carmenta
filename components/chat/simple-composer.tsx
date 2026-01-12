@@ -10,13 +10,14 @@
  * - Draft persistence
  * - Pipeline state animations
  *
- * Uses the same styling (btn-cta gradient, CornerDownLeft icon) as the main composer.
+ * Uses ChatTextarea for consistent styling with the main composer.
  */
 
 import { useRef, useEffect, useCallback } from "react";
 import { ArrowElbowDownLeftIcon, SquareIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
+import { ChatTextarea, type ChatTextareaRef } from "./chat-textarea";
 
 export interface SimpleComposerProps {
     value: string;
@@ -42,7 +43,7 @@ export function SimpleComposer({
     autoFocus = true,
     className,
 }: SimpleComposerProps) {
-    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const inputRef = useRef<ChatTextareaRef>(null);
 
     // Auto-focus on mount
     useEffect(() => {
@@ -50,14 +51,6 @@ export function SimpleComposer({
             inputRef.current?.focus();
         }
     }, [autoFocus]);
-
-    // Auto-resize textarea as content grows
-    useEffect(() => {
-        const textarea = inputRef.current;
-        if (!textarea) return;
-        textarea.style.height = "auto";
-        textarea.style.height = `${textarea.scrollHeight}px`;
-    }, [value]);
 
     const handleSubmit = useCallback(() => {
         if (value.trim() && !isLoading && !disabled) {
@@ -80,32 +73,13 @@ export function SimpleComposer({
 
     return (
         <div className={cn("flex items-end gap-2", className)}>
-            <textarea
+            <ChatTextarea
                 ref={inputRef}
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={onChange}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 disabled={isDisabled}
-                rows={1}
-                className={cn(
-                    // Layout
-                    "w-full flex-1 resize-none",
-                    "max-h-48 min-h-11",
-                    // Spacing
-                    "px-4 py-2.5",
-                    // Typography
-                    "text-base leading-5 outline-none",
-                    "text-foreground/95 placeholder:text-foreground/40",
-                    // Shape + transition (matching main Composer)
-                    "rounded-xl transition-all",
-                    // Sunken glass effect
-                    "bg-foreground/[0.03] shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]",
-                    // Border
-                    "border-foreground/8 focus:border-foreground/35 border",
-                    // Disabled state
-                    isDisabled && "cursor-not-allowed opacity-50"
-                )}
             />
             {/* Send/Stop button - matches main Composer styling */}
             <button
