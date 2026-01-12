@@ -254,7 +254,8 @@ describe("Tool Renderer Coverage", () => {
 
     describe("Tool config and renderer alignment", () => {
         it("every tool with a config should have a renderer", () => {
-            const toolsWithMissingRenderers: string[] = [];
+            const toolsWithMissingRenderers: Array<{ tool: string; error: string }> =
+                [];
 
             for (const toolName of Object.keys(TOOL_CONFIG)) {
                 sentryCapture.mockClear();
@@ -269,13 +270,18 @@ describe("Tool Renderer Coverage", () => {
                 }
 
                 if (sentryCapture.mock.calls.length > 0) {
-                    toolsWithMissingRenderers.push(toolName);
+                    const errorMessage =
+                        sentryCapture.mock.calls[0]?.[0]?.message || "Unknown error";
+                    toolsWithMissingRenderers.push({
+                        tool: toolName,
+                        error: errorMessage,
+                    });
                 }
 
                 cleanup();
             }
 
-            // This assertion gives a helpful message listing ALL missing renderers
+            // This assertion gives a helpful message listing ALL missing renderers with error context
             expect(toolsWithMissingRenderers).toEqual([]);
         });
     });
