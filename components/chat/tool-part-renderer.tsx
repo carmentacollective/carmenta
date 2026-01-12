@@ -55,6 +55,7 @@ import type {
     AcknowledgeOutput,
 } from "@/lib/tools/post-response";
 import { type ToolPart, getToolStatus, getToolError } from "./message-parts";
+import { McpToolResult } from "@/components/tools/mcp";
 
 interface ToolPartRendererProps {
     part: ToolPart;
@@ -787,33 +788,17 @@ export function ToolPartRenderer({ part }: ToolPartRendererProps) {
 
         default: {
             // MCP tools from Claude Code use mcp_<server> or mcp-<server> naming
-            // Handle them before falling through to the error case
+            // Handle them with the specialized McpToolResult component
             if (toolName.startsWith("mcp_") || toolName.startsWith("mcp-")) {
-                const serverName = toolName.replace(/^mcp[_-]/, "");
                 return (
-                    <ToolRenderer
-                        toolName={toolName}
+                    <McpToolResult
                         toolCallId={part.toolCallId}
+                        toolName={toolName}
                         status={status}
                         input={input}
                         output={output}
-                        error={getToolError(
-                            part,
-                            output,
-                            `MCP ${serverName} operation failed`
-                        )}
-                    >
-                        {status === "completed" && output && (
-                            <div className="space-y-2">
-                                <div className="text-xs font-medium text-cyan-400">
-                                    {serverName}
-                                </div>
-                                <pre className="max-h-48 overflow-auto rounded bg-black/20 p-2 font-mono text-xs">
-                                    {JSON.stringify(output, null, 2).slice(0, 2000)}
-                                </pre>
-                            </div>
-                        )}
-                    </ToolRenderer>
+                        error={getToolError(part, output, "Operation failed")}
+                    />
                 );
             }
 
