@@ -193,10 +193,7 @@ function DesktopSidecar({
 
         return () => {
             document.body.style.marginLeft = "0px";
-            // Clean up transition after animation completes
-            setTimeout(() => {
-                document.body.style.transition = "";
-            }, 300);
+            document.body.style.transition = "";
         };
     }, [open]);
 
