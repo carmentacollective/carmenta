@@ -1,11 +1,16 @@
 /**
- * Last Connection Tracking
+ * Last Connection Tracking (Session-Scoped)
  *
- * Remembers the user's last active chat so they can return to it
- * from other pages (integrations, knowledge-base, etc.).
+ * Remembers the user's active chat within a browser session so they can
+ * return to it from other pages (integrations, knowledge-base, etc.).
  *
- * This is especially important in PWA mode where the URL bar is hidden
- * and the browser back button isn't available.
+ * Uses sessionStorage for session-scoped persistence:
+ * - Survives page refreshes and navigation within the tab
+ * - Clears when the tab/window closes
+ * - Each tab has its own independent session
+ *
+ * This matches user expectations: opening Carmenta fresh = clean slate.
+ * Users who want yesterday's chats can find them in the connection list.
  */
 
 "use client";
@@ -17,8 +22,9 @@ import * as Sentry from "@sentry/nextjs";
 const STORAGE_KEY = "carmenta:last-connection";
 
 /**
- * Subscribe to localStorage changes for the connection key.
- * Returns unsubscribe function.
+ * Subscribe to storage changes for the connection key.
+ * sessionStorage is tab-isolated, so StorageEvent from other tabs won't fire.
+ * We use manual dispatch for in-tab updates to trigger useSyncExternalStore.
  */
 function subscribeToStorage(callback: () => void): () => void {
     const handleStorage = (e: StorageEvent) => {
@@ -53,14 +59,17 @@ let cachedConnection: LastConnection | null = null;
 let cachedRawValue: string | null = null;
 
 /**
- * Get the last connection from localStorage.
+ * Get the last connection from sessionStorage.
  * Returns a cached object if the underlying value hasn't changed.
+ *
+ * No expiration logic needed - sessionStorage clears when the tab closes,
+ * which is the desired session-scoped behavior.
  */
 function getStoredConnection(): LastConnection | null {
     if (typeof window === "undefined") return null;
 
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = sessionStorage.getItem(STORAGE_KEY);
 
         // Return cached value if raw storage hasn't changed
         if (stored === cachedRawValue) {
@@ -85,33 +94,14 @@ function getStoredConnection(): LastConnection | null {
             typeof parsed.timestamp !== "number" ||
             (parsed.title !== null && typeof parsed.title !== "string")
         ) {
-            localStorage.removeItem(STORAGE_KEY);
+            sessionStorage.removeItem(STORAGE_KEY);
             cachedConnection = null;
             cachedRawValue = null;
             return null;
         }
 
-        const validated = parsed as LastConnection;
-
-        // Expire after 7 days of inactivity
-        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
-        if (Date.now() - validated.timestamp > SEVEN_DAYS) {
-            localStorage.removeItem(STORAGE_KEY);
-            cachedConnection = null;
-            cachedRawValue = null;
-            // Notify other tabs about expiration
-            try {
-                window.dispatchEvent(
-                    new StorageEvent("storage", { key: STORAGE_KEY, newValue: null })
-                );
-            } catch {
-                // Non-critical - other tabs will sync on next read
-            }
-            return null;
-        }
-
-        cachedConnection = validated;
-        return validated;
+        cachedConnection = parsed as LastConnection;
+        return cachedConnection;
     } catch {
         cachedConnection = null;
         cachedRawValue = null;
@@ -131,7 +121,7 @@ function storeConnection(connection: Omit<LastConnection, "timestamp">): void {
             timestamp: Date.now(),
         };
         const value = JSON.stringify(data);
-        localStorage.setItem(STORAGE_KEY, value);
+        sessionStorage.setItem(STORAGE_KEY, value);
         // Update cache immediately to prevent stale reads
         cachedRawValue = value;
         cachedConnection = data;
@@ -149,7 +139,7 @@ function storeConnection(connection: Omit<LastConnection, "timestamp">): void {
             });
         }
     } catch {
-        // localStorage might be unavailable
+        // sessionStorage might be unavailable
     }
 }
 
@@ -160,12 +150,12 @@ function clearStoredConnection(): void {
     if (typeof window === "undefined") return;
 
     try {
-        localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
         // Reset cache to prevent stale reads
         cachedConnection = null;
         cachedRawValue = null;
     } catch {
-        // localStorage might be unavailable
+        // sessionStorage might be unavailable
     }
 }
 
@@ -245,20 +235,15 @@ export function useLastConnection({
     // Check if we're on a connection page
     const isOnConnectionPage = pathname?.startsWith("/connection") ?? false;
 
-    // Sync current connection to localStorage when it changes
-    // This effect syncs to an external system (localStorage) without calling setState
+    // Sync current connection to sessionStorage when it changes
     useEffect(() => {
         if (currentConnection?.id) {
             const stored = getStoredConnection();
-            // Always update to refresh timestamp (tracks "last activity" not "last change")
-            // Even if ID/title/slug unchanged, we want to extend the 7-day expiration
+            // Update when connection data changes (ID, title, or slug)
             const needsUpdate =
                 stored?.id !== currentConnection.id ||
                 stored?.title !== currentConnection.title ||
-                stored?.slug !== currentConnection.slug ||
-                // Refresh if same connection but timestamp is getting stale (> 1 day old)
-                (stored?.id === currentConnection.id &&
-                    Date.now() - stored.timestamp > 24 * 60 * 60 * 1000);
+                stored?.slug !== currentConnection.slug;
 
             if (needsUpdate) {
                 storeConnection({

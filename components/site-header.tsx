@@ -1,5 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
+import { PlusIcon } from "@phosphor-icons/react";
+
 import {
     ThemeSwitcher,
     UserAuthButton,
@@ -7,6 +11,7 @@ import {
     ChatReturnNav,
 } from "@/components/ui";
 import { useWindowControlsOverlay } from "@/lib/hooks/use-window-controls-overlay";
+import { useLastConnection } from "@/lib/hooks/use-last-connection";
 
 interface SiteHeaderProps {
     /**
@@ -41,19 +46,34 @@ export function SiteHeader({
     showThemeSwitcher = false,
 }: SiteHeaderProps) {
     const isWcoActive = useWindowControlsOverlay();
+    const { isSignedIn } = useAuth();
+    const { shouldShowReturn, isOnConnectionPage } = useLastConnection({});
 
     // Hide when WCO titlebar is shown to avoid duplicate controls
     if (isWcoActive) {
         return null;
     }
 
+    // Show "New connection" when user is signed in, not on a connection page, and has no active session
+    const showNewConnection = isSignedIn && !isOnConnectionPage && !shouldShowReturn;
+
     return (
         <header className="flex items-center justify-between px-6 py-4">
             {/* Left: Oracle menu with Carmenta label */}
             <OracleMenu showLabel />
 
-            {/* Center: Return to chat breadcrumb (when navigating away from an active chat) */}
-            <ChatReturnNav />
+            {/* Center: Return to chat OR new connection button */}
+            {shouldShowReturn ? (
+                <ChatReturnNav />
+            ) : showNewConnection ? (
+                <Link
+                    href="/connection?new"
+                    className="bg-foreground/5 hover:bg-foreground/10 text-foreground/70 hover:text-foreground flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all"
+                >
+                    <PlusIcon className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">New connection</span>
+                </Link>
+            ) : null}
 
             {/* Right: User controls */}
             <div className="flex items-center gap-4">
