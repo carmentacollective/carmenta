@@ -464,7 +464,7 @@ async function executeCreate(
             identifier,
             displayName: displayName || identifier,
             url,
-            transport: "http",
+            transport: "sse",
             authType,
             credentials: token ? { token } : undefined,
             authHeaderName,
@@ -483,7 +483,7 @@ async function executeCreate(
         // Test the connection to verify it works and discover tools
         const testResult = await testMcpConnection({
             url,
-            transport: "http",
+            transport: "sse",
             authType,
             token,
             headerName: authHeaderName,

@@ -164,6 +164,7 @@ async function createClient(server: McpServer) {
 
 async function listTools(server: McpServer): Promise<McpTool[]> {
     const client = await getCachedClient(server);
+    const clientWasNew = !clientCache.has(getCacheKey(server.id));
     try {
         const tools = await client.tools();
         // Only cache after successful connection
@@ -173,11 +174,9 @@ async function listTools(server: McpServer): Promise<McpTool[]> {
             description: (t as Tool).description,
         }));
     } catch (error) {
-        const cacheKey = getCacheKey(server.id);
-        const wasCached = clientCache.has(cacheKey);
         clearCachedClient(server.id); // Closes if cached
         // If client was newly created (not cached), close it to prevent leak
-        if (!wasCached) {
+        if (clientWasNew) {
             client.close().catch(() => {});
         }
         throw error;
@@ -190,17 +189,16 @@ async function callTool(
     params: Record<string, unknown>
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
     const client = await getCachedClient(server);
+    const clientWasNew = !clientCache.has(getCacheKey(server.id));
     let tools;
     try {
         tools = await client.tools();
         // Cache after successful connection
         cacheClient(server, client);
     } catch (error) {
-        const cacheKey = getCacheKey(server.id);
-        const wasCached = clientCache.has(cacheKey);
         clearCachedClient(server.id); // Closes if cached
         // If client was newly created (not cached), close it to prevent leak
-        if (!wasCached) {
+        if (clientWasNew) {
             client.close().catch(() => {});
         }
         throw error;
