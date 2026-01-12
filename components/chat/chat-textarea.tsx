@@ -22,7 +22,6 @@
 import {
     forwardRef,
     useRef,
-    useEffect,
     useImperativeHandle,
     useState,
     type TextareaHTMLAttributes,
@@ -89,6 +88,7 @@ export interface ChatTextareaRef {
 
 /**
  * Shared chat textarea with consistent styling and behavior.
+ * Uses CSS field-sizing: content for native auto-resize (Chrome 123+, Safari 17+).
  */
 export const ChatTextarea = forwardRef<ChatTextareaRef, ChatTextareaProps>(
     function ChatTextarea(
@@ -114,22 +114,6 @@ export const ChatTextarea = forwardRef<ChatTextareaRef, ChatTextareaProps>(
             element: textareaRef.current,
         }));
 
-        // Auto-resize ONLY for multi-line content
-        // Single-line: let CSS min-height control size for proper vertical centering
-        useEffect(() => {
-            const textarea = textareaRef.current;
-            if (!textarea) return;
-
-            // Only auto-resize if content has newlines (multi-line)
-            if (value.includes("\n")) {
-                textarea.style.height = "auto";
-                textarea.style.height = `${textarea.scrollHeight}px`;
-            } else {
-                // Single-line: remove explicit height, let CSS handle it
-                textarea.style.height = "";
-            }
-        }, [value]);
-
         const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
             setIsFocused(true);
             onFocusChange?.(true);
@@ -153,6 +137,8 @@ export const ChatTextarea = forwardRef<ChatTextareaRef, ChatTextareaProps>(
                 rows={1}
                 className={cn(
                     CHAT_TEXTAREA_CLASSES,
+                    // CSS native auto-resize (Chrome 123+, Safari 17+)
+                    "[field-sizing:content]",
                     // Focus-dependent border color
                     isFocused ? "border-foreground/35" : "border-foreground/8",
                     // Multi-line gets slightly darker bg
