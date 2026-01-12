@@ -46,6 +46,45 @@ const mcpGatewaySchema = z.object({
 });
 
 // ============================================================================
+// MCP CLIENT CACHING
+// ============================================================================
+
+interface CachedClient {
+    client: Awaited<ReturnType<typeof createMCPClient>>;
+    expiresAt: number;
+}
+
+const clientCache = new Map<number, CachedClient>();
+const CLIENT_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+async function getCachedClient(
+    server: McpServer
+): Promise<Awaited<ReturnType<typeof createMCPClient>>> {
+    const cached = clientCache.get(server.id);
+    const now = Date.now();
+
+    // Return cached client if still valid
+    if (cached && cached.expiresAt > now) {
+        return cached.client;
+    }
+
+    // Clean up expired client
+    if (cached) {
+        await cached.client.close().catch(() => {});
+        clientCache.delete(server.id);
+    }
+
+    // Create new client
+    const client = await createClient(server);
+    clientCache.set(server.id, {
+        client,
+        expiresAt: now + CLIENT_TTL_MS,
+    });
+
+    return client;
+}
+
+// ============================================================================
 // MCP CLIENT
 // ============================================================================
 
@@ -83,16 +122,12 @@ async function createClient(server: McpServer) {
 // ============================================================================
 
 async function listTools(server: McpServer): Promise<McpTool[]> {
-    const client = await createClient(server);
-    try {
-        const tools = await client.tools();
-        return Object.entries(tools).map(([name, t]) => ({
-            name,
-            description: (t as Tool).description,
-        }));
-    } finally {
-        await client.close();
-    }
+    const client = await getCachedClient(server);
+    const tools = await client.tools();
+    return Object.entries(tools).map(([name, t]) => ({
+        name,
+        description: (t as Tool).description,
+    }));
 }
 
 async function callTool(
@@ -100,33 +135,29 @@ async function callTool(
     toolName: string,
     args: Record<string, unknown>
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
-    const client = await createClient(server);
-    try {
-        const tools = await client.tools();
-        const t = tools[toolName] as Tool<Record<string, unknown>, unknown>;
+    const client = await getCachedClient(server);
+    const tools = await client.tools();
+    const t = tools[toolName] as Tool<Record<string, unknown>, unknown>;
 
-        if (!t?.execute) {
-            return { success: false, error: `Tool '${toolName}' not found` };
-        }
-
-        const result = await t.execute(args, {
-            toolCallId: crypto.randomUUID(),
-            messages: [],
-        });
-
-        // Parse JSON if possible
-        if (typeof result === "string") {
-            try {
-                return { success: true, result: JSON.parse(result) };
-            } catch {
-                return { success: true, result };
-            }
-        }
-
-        return { success: true, result: result ?? "Success" };
-    } finally {
-        await client.close();
+    if (!t?.execute) {
+        return { success: false, error: `Tool '${toolName}' not found` };
     }
+
+    const result = await t.execute(args, {
+        toolCallId: crypto.randomUUID(),
+        messages: [],
+    });
+
+    // Parse JSON if possible
+    if (typeof result === "string") {
+        try {
+            return { success: true, result: JSON.parse(result) };
+        } catch {
+            return { success: true, result };
+        }
+    }
+
+    return { success: true, result: result ?? "Success" };
 }
 
 // ============================================================================
