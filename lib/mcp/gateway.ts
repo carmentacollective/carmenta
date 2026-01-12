@@ -155,6 +155,22 @@ async function callTool(
         messages: [],
     });
 
+    // Check for MCP tool-level errors
+    if (result && typeof result === "object" && "isError" in result && result.isError) {
+        const content = "content" in result ? result.content : undefined;
+        const errorText = Array.isArray(content)
+            ? content
+                  .filter((c: any) => c.type === "text")
+                  .map((c: any) => c.text)
+                  .join("\n")
+            : String(result);
+
+        return {
+            success: false,
+            error: errorText || "Tool execution failed",
+        };
+    }
+
     // Parse JSON if possible
     if (typeof result === "string") {
         try {
