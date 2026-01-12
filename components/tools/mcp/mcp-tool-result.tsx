@@ -82,7 +82,7 @@ export function McpToolResult({
 
     // Extract server and action info
     const serverName = getMcpServerName(toolName);
-    const action = (input.action as string) || "operation";
+    const action = typeof input.action === "string" ? input.action : "operation";
 
     // Build description: "action · result summary"
     const resultSummary =
@@ -331,6 +331,24 @@ function McpResultContent({
 }
 
 /**
+ * Extract stable ID from an item for React keys.
+ */
+function extractItemId(item: unknown, fallbackIdx: number): string {
+    if (typeof item !== "object" || item === null) {
+        return `item-${fallbackIdx}`;
+    }
+    const obj = item as Record<string, unknown>;
+    // Try common ID fields
+    for (const key of ["id", "url", "path", "filename", "name"]) {
+        const value = obj[key];
+        if (typeof value === "string" || typeof value === "number") {
+            return String(value);
+        }
+    }
+    return `item-${fallbackIdx}`;
+}
+
+/**
  * Search results view with expandable items.
  */
 function SearchResultsView({
@@ -358,7 +376,7 @@ function SearchResultsView({
             )}
             <div className="space-y-1">
                 {displayResults.map((item, idx) => (
-                    <SearchResultItem key={idx} item={item} />
+                    <SearchResultItem key={extractItemId(item, idx)} item={item} />
                 ))}
             </div>
             {results.length > 5 && !showAll && (
@@ -437,7 +455,7 @@ function ListResultsView({
             )}
             <div className="space-y-1">
                 {displayItems.map((item, idx) => (
-                    <ListItem key={idx} item={item} />
+                    <ListItem key={extractItemId(item, idx)} item={item} />
                 ))}
             </div>
             {items.length > 5 && !showAll && (
@@ -491,9 +509,14 @@ function SmartJsonView({ data }: { data: unknown }) {
     const displayJson = truncated ? jsonString.slice(0, 2000) + "\n..." : jsonString;
 
     const handleCopy = async () => {
-        await navigator.clipboard.writeText(jsonString);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        try {
+            await navigator.clipboard.writeText(jsonString);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (error) {
+            // Clipboard API can fail due to permissions or insecure context
+            console.error("Failed to copy to clipboard:", error);
+        }
     };
 
     return (
