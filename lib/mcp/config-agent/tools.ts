@@ -119,25 +119,32 @@ export function createMcpConfigTools(userEmail: string) {
         testConnection: tool({
             description:
                 "Test connection to an MCP server. Returns server info and available tools if successful, or error details if not.",
-            inputSchema: z.object({
-                url: z.string().describe("The MCP server URL to test"),
-                transport: z
-                    .enum(["sse", "http"])
-                    .optional()
-                    .describe("Transport type (auto-detected if not provided)"),
-                authType: z
-                    .enum(["none", "bearer", "header"])
-                    .optional()
-                    .describe("Authentication type"),
-                token: z
-                    .string()
-                    .optional()
-                    .describe("Authentication token if required"),
-                headerName: z
-                    .string()
-                    .optional()
-                    .describe("Custom header name for header auth"),
-            }),
+            inputSchema: z
+                .object({
+                    url: z.string().describe("The MCP server URL to test"),
+                    transport: z
+                        .enum(["sse", "http", "streamable-http"])
+                        .optional()
+                        .describe("Transport type (auto-detected if not provided)"),
+                    authType: z
+                        .enum(["none", "bearer", "header"])
+                        .optional()
+                        .describe("Authentication type"),
+                    token: z
+                        .string()
+                        .optional()
+                        .describe("Authentication token if required"),
+                    headerName: z
+                        .string()
+                        .optional()
+                        .describe("Custom header name for header auth"),
+                })
+                .transform((data) => ({
+                    ...data,
+                    // Map Claude Desktop's "streamable-http" to our "http"
+                    transport:
+                        data.transport === "streamable-http" ? "http" : data.transport,
+                })),
             execute: async ({ url, transport, authType, token, headerName }) => {
                 toolLogger.info({ url }, "Testing MCP connection");
 
@@ -208,24 +215,39 @@ export function createMcpConfigTools(userEmail: string) {
         saveServer: tool({
             description:
                 "Save a validated MCP server configuration. Only call this after testConnection succeeds.",
-            inputSchema: z.object({
-                url: z.string().describe("The MCP server URL"),
-                displayName: z.string().describe("User-friendly name for the server"),
-                identifier: z
-                    .string()
-                    .describe(
-                        "Unique identifier (lowercase, no spaces, e.g., 'github-mcp')"
-                    ),
-                transport: z.enum(["sse", "http"]).optional(),
-                authType: z.enum(["none", "bearer", "header"]).optional(),
-                token: z
-                    .string()
-                    .optional()
-                    .describe("Authentication token (will be encrypted)"),
-                headerName: z.string().optional(),
-                serverName: z.string().optional().describe("Server name from manifest"),
-                toolCount: z.number().optional().describe("Number of tools discovered"),
-            }),
+            inputSchema: z
+                .object({
+                    url: z.string().describe("The MCP server URL"),
+                    displayName: z
+                        .string()
+                        .describe("User-friendly name for the server"),
+                    identifier: z
+                        .string()
+                        .describe(
+                            "Unique identifier (lowercase, no spaces, e.g., 'github-mcp')"
+                        ),
+                    transport: z.enum(["sse", "http", "streamable-http"]).optional(),
+                    authType: z.enum(["none", "bearer", "header"]).optional(),
+                    token: z
+                        .string()
+                        .optional()
+                        .describe("Authentication token (will be encrypted)"),
+                    headerName: z.string().optional(),
+                    serverName: z
+                        .string()
+                        .optional()
+                        .describe("Server name from manifest"),
+                    toolCount: z
+                        .number()
+                        .optional()
+                        .describe("Number of tools discovered"),
+                })
+                .transform((data) => ({
+                    ...data,
+                    // Map Claude Desktop's "streamable-http" to our "http"
+                    transport:
+                        data.transport === "streamable-http" ? "http" : data.transport,
+                })),
             execute: async ({
                 url,
                 displayName,

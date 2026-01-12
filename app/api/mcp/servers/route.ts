@@ -28,26 +28,32 @@ import { parseAuthHeaders } from "@/lib/mcp/auth-helpers";
  * - {"X-API-Key": "<key>"}
  * - {"Authorization": "Bearer <token>", "X-Custom": "value"}
  */
-const createServerSchema = z.object({
-    identifier: z
-        .string()
-        .min(1, "Server identifier is required")
-        .max(255)
-        .regex(
-            /^[a-z0-9][a-z0-9-_.]*$/i,
-            "Identifier must start with alphanumeric and contain only letters, numbers, hyphens, underscores, and dots"
-        ),
-    displayName: z.string().min(1, "Display name is required").max(255),
-    url: z
-        .string()
-        .url("Must be a valid URL")
-        .refine(
-            (url) => url.startsWith("https://"),
-            "Server URL must use HTTPS for security"
-        ),
-    transport: z.enum(["sse", "http"]).optional().default("sse"),
-    headers: z.record(z.string(), z.string()).optional(),
-});
+const createServerSchema = z
+    .object({
+        identifier: z
+            .string()
+            .min(1, "Server identifier is required")
+            .max(255)
+            .regex(
+                /^[a-z0-9][a-z0-9-_.]*$/i,
+                "Identifier must start with alphanumeric and contain only letters, numbers, hyphens, underscores, and dots"
+            ),
+        displayName: z.string().min(1, "Display name is required").max(255),
+        url: z
+            .string()
+            .url("Must be a valid URL")
+            .refine(
+                (url) => url.startsWith("https://"),
+                "Server URL must use HTTPS for security"
+            ),
+        transport: z.enum(["sse", "http", "streamable-http"]).optional().default("sse"),
+        headers: z.record(z.string(), z.string()).optional(),
+    })
+    .transform((data) => ({
+        ...data,
+        // Map Claude Desktop's "streamable-http" to our "http"
+        transport: data.transport === "streamable-http" ? "http" : data.transport,
+    }));
 
 export async function GET() {
     try {
