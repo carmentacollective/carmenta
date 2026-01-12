@@ -177,7 +177,6 @@ export function createMcpConfigTools(userEmail: string) {
                     if (result.success) {
                         return {
                             success: true,
-                            serverInfo: result.serverInfo,
                             toolCount: result.tools?.length ?? 0,
                             tools: result.tools?.slice(0, 10).map((t) => t.name) ?? [],
                             hasMoreTools: (result.tools?.length ?? 0) > 10,
