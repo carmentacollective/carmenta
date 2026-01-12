@@ -130,6 +130,15 @@ function humanizeMcpConnectionError(error: unknown, url: string): string {
     const message = error instanceof Error ? error.message : String(error);
     const lowerMessage = message.toLowerCase();
 
+    // Safe hostname extraction - URL parsing can fail if url is malformed
+    const getHostname = (): string => {
+        try {
+            return new URL(url).hostname;
+        } catch {
+            return "the server";
+        }
+    };
+
     // Timeout/abort errors
     if (
         lowerMessage.includes("terminated") ||
@@ -137,12 +146,12 @@ function humanizeMcpConnectionError(error: unknown, url: string): string {
         lowerMessage.includes("aborted") ||
         lowerMessage.includes("body timeout")
     ) {
-        return `Server took too long to respond. Check that ${new URL(url).hostname} is accessible.`;
+        return `Server took too long to respond. Check that ${getHostname()} is accessible.`;
     }
 
-    // Connection refused
-    if (lowerMessage.includes("econnrefused") || lowerMessage.includes("connect")) {
-        return `Cannot connect to server. Check that ${new URL(url).hostname} is running.`;
+    // Connection refused - use "connection" not "connect" to avoid false matches
+    if (lowerMessage.includes("econnrefused") || lowerMessage.includes("connection")) {
+        return `Cannot connect to server. Check that ${getHostname()} is running.`;
     }
 
     // DNS/network errors
