@@ -7,21 +7,10 @@ import { optimizeImage, shouldOptimizeImage } from "./image-processor";
 import { isSpreadsheet } from "./file-config";
 import { parseSpreadsheet, spreadsheetToMarkdown } from "./spreadsheet-parser";
 
-/**
- * MIME types that should be extracted via Docling API
- * These need server-side processing, unlike spreadsheets which parse client-side
- *
- * NOTE: This list is duplicated from DOCLING_CONFIG.supportedTypes to avoid importing
- * server-only code into the client bundle. Keep in sync manually.
- */
-const DOCLING_TYPES = [
-    "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
-] as const;
+import { DOCLING_MIME_TYPES } from "@/lib/document-intelligence/types";
 
 function shouldExtractWithDocling(mimeType: string): boolean {
-    return DOCLING_TYPES.includes(mimeType as (typeof DOCLING_TYPES)[number]);
+    return DOCLING_MIME_TYPES.includes(mimeType as (typeof DOCLING_MIME_TYPES)[number]);
 }
 
 /**

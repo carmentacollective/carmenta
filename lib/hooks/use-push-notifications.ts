@@ -24,6 +24,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { env } from "@/lib/env";
+import { logger } from "@/lib/client-logger";
 
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
 
@@ -181,8 +182,9 @@ export function usePushNotifications(): UsePushNotificationsResult {
                 const registration = await navigator.serviceWorker.ready;
                 const subscription = await registration.pushManager.getSubscription();
                 setIsSubscribed(!!subscription);
-            } catch {
-                // Subscription check failed - not critical
+            } catch (error) {
+                // Subscription check failed - not critical, but log for debugging
+                logger.warn({ error }, "Failed to check existing push subscription");
             }
         }
 
@@ -281,14 +283,17 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
                 if (!response.ok) {
                     // Log but don't fail - local unsubscribe already succeeded
-                    console.warn(
-                        "Server unsubscribe failed:",
-                        await response.text().catch(() => "unknown error")
+                    logger.warn(
+                        {
+                            status: response.status,
+                            error: await response.text().catch(() => "unknown error"),
+                        },
+                        "Server unsubscribe failed"
                     );
                 }
             } catch (serverErr) {
                 // Log but don't fail - local unsubscribe already succeeded
-                console.warn("Server unsubscribe failed:", serverErr);
+                logger.warn({ error: serverErr }, "Server unsubscribe failed");
             }
 
             setIsSubscribed(false);

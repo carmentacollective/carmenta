@@ -17,13 +17,23 @@ vi.mock("ai", () => ({
 }));
 
 vi.mock("@sentry/nextjs", () => ({
-    startSpan: vi.fn((_, fn) => fn({ setAttribute: vi.fn() })),
+    startSpan: vi.fn((_, fn) =>
+        fn({
+            setAttribute: vi.fn(),
+            setAttributes: vi.fn(),
+            spanContext: () => ({ traceId: "test-trace-id" }),
+        })
+    ),
     getActiveSpan: vi.fn(() => ({ spanContext: () => ({ traceId: "test-trace-id" }) })),
     captureException: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
     logger: {
+        info: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
         child: vi.fn(() => ({
             info: vi.fn(),
             error: vi.fn(),

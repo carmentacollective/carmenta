@@ -5,6 +5,8 @@
  * Without this variable, documents fall back to native model processing.
  */
 
+import { DOCLING_MIME_TYPES } from "./types";
+
 export const DOCLING_CONFIG = {
     /**
      * Docling API URL - if not set, Docling extraction is disabled
@@ -29,11 +31,7 @@ export const DOCLING_CONFIG = {
     /**
      * File types that benefit from Docling extraction
      */
-    supportedTypes: [
-        "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
-    ] as const,
+    supportedTypes: DOCLING_MIME_TYPES,
 
     /**
      * Check if a MIME type should be processed by Docling
@@ -46,4 +44,4 @@ export const DOCLING_CONFIG = {
     },
 } as const;
 
-export type SupportedDoclingType = (typeof DOCLING_CONFIG.supportedTypes)[number];
+export type { SupportedDoclingType } from "./types";

@@ -293,9 +293,8 @@ describe("usePushNotifications", () => {
             });
 
             // Mock fetch to fail
-            const consoleWarnSpy = vi
-                .spyOn(console, "warn")
-                .mockImplementation(() => {});
+            const { logger } = await import("@/lib/client-logger");
+            const loggerWarnSpy = vi.spyOn(logger, "warn").mockImplementation(() => {});
             global.fetch = vi.fn().mockResolvedValue({
                 ok: false,
                 text: () => Promise.resolve("Server error"),
@@ -315,9 +314,9 @@ describe("usePushNotifications", () => {
             expect(success!).toBe(true);
             expect(result.current.isSubscribed).toBe(false);
             // Should have logged warning
-            expect(consoleWarnSpy).toHaveBeenCalled();
+            expect(loggerWarnSpy).toHaveBeenCalled();
 
-            consoleWarnSpy.mockRestore();
+            loggerWarnSpy.mockRestore();
         });
     });
 
