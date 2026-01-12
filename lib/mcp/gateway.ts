@@ -70,7 +70,14 @@ async function getCachedClient(
 
     // Clean up expired client
     if (cached) {
-        await cached.client.close().catch(() => {});
+        await cached.client
+            .close()
+            .catch((err) =>
+                logger.warn(
+                    { err, serverId: server.id },
+                    "Failed to close expired MCP client"
+                )
+            );
         clientCache.delete(server.id);
     }
 
