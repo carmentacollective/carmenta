@@ -95,7 +95,7 @@ export default async function CommunicationPage() {
             {/* Communication Viewer */}
             <section className="min-h-[400px] flex-1">
                 {allFolders.length === 0 || allFolders[0]?.documents.length === 0 ? (
-                    <div className="border-foreground/5 bg-foreground/[0.02] flex h-full flex-col items-center justify-center rounded-2xl border py-16 text-center">
+                    <div className="glass-panel flex h-full flex-col items-center justify-center py-16 text-center">
                         <Chat className="text-foreground/30 mb-4 h-12 w-12" />
                         <h3 className="text-foreground/80 text-lg font-medium">
                             Communication preferences

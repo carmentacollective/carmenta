@@ -8,7 +8,6 @@ import {
     SparkleIcon,
     BellIcon,
     LightningIcon,
-    GearIcon,
     PlusIcon,
     ClockIcon,
     WarningCircleIcon,
@@ -420,6 +419,28 @@ function AITeamContent({
                         <p className="text-foreground/60">Loading your AI team...</p>
                     </div>
                 </div>
+            ) : automations.length === 0 ? (
+                /* Welcome state - consolidated CTA for first-time users */
+                <div className="glass-panel mx-auto max-w-2xl px-8 py-16 text-center">
+                    <div className="bg-primary/10 mx-auto mb-6 w-fit rounded-2xl p-4">
+                        <UsersIcon className="text-primary h-12 w-12" />
+                    </div>
+                    <h2 className="text-foreground mb-3 text-2xl font-medium">
+                        Build your AI team
+                    </h2>
+                    <p className="text-foreground/60 mx-auto mb-8 max-w-md text-lg">
+                        Hire team members who work on schedules—monitoring, research,
+                        updates, anything that runs automatically while we focus
+                        elsewhere.
+                    </p>
+                    <Link
+                        href="/ai-team/hire"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-xl px-6 py-3 font-medium transition-colors"
+                    >
+                        <PlusIcon className="h-5 w-5" />
+                        Hire Your First Team Member
+                    </Link>
+                </div>
             ) : (
                 <div className="grid gap-8 lg:grid-cols-3">
                     {/* Main column - Activity Feed */}
@@ -477,14 +498,15 @@ function AITeamContent({
                             </div>
 
                             {activities.length === 0 ? (
-                                <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-12 text-center">
+                                <div className="glass-panel flex flex-col items-center justify-center py-12 text-center">
                                     <ClockIcon className="text-foreground/30 mb-4 h-10 w-10" />
                                     <p className="text-foreground/60">
-                                        No activity yet. We'll show runs as they happen.
+                                        Your team hasn't run yet. Activity will appear
+                                        here as they work.
                                     </p>
                                 </div>
                             ) : filteredActivities.length === 0 ? (
-                                <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-8 text-center">
+                                <div className="glass-panel flex flex-col items-center justify-center py-8 text-center">
                                     <p className="text-foreground/60">
                                         No activity found for this filter.
                                     </p>
@@ -583,14 +605,14 @@ function AITeamContent({
                                             <Link
                                                 key={activity.id}
                                                 href={`/ai-team/${activity.jobSlug}/${activity.jobEncodedId}/runs/${activity.id}`}
-                                                className="border-foreground/5 bg-foreground/[0.02] hover:bg-foreground/[0.04] block rounded-xl border p-4 transition-colors"
+                                                className="glass-panel block p-4 transition-all hover:scale-[1.01] hover:shadow-md"
                                             >
                                                 {content}
                                             </Link>
                                         ) : (
                                             <div
                                                 key={activity.id}
-                                                className="border-foreground/5 bg-foreground/[0.02] rounded-xl border p-4"
+                                                className="glass-panel p-4"
                                             >
                                                 {content}
                                             </div>
@@ -601,66 +623,45 @@ function AITeamContent({
                         </div>
                     </div>
 
-                    {/* Sidebar - Automations */}
+                    {/* Sidebar - Team Members */}
                     <div className="space-y-4">
                         <h2 className="text-foreground flex items-center gap-2 text-xl font-medium">
-                            <GearIcon className="text-primary h-5 w-5" />
-                            Your Automations
+                            <UsersIcon className="text-primary h-5 w-5" />
+                            Your Team
                         </h2>
 
-                        {automations.length === 0 ? (
-                            <div className="border-foreground/5 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-2xl border py-8 text-center">
-                                <UsersIcon className="text-foreground/30 mb-4 h-10 w-10" />
-                                <p className="text-foreground/80 font-medium">
-                                    No automations yet
-                                </p>
-                                <p className="text-foreground/60 mt-1 text-sm">
-                                    Hire your first team member to get started.
-                                </p>
-                                <Link
-                                    href="/ai-team/hire"
-                                    className="text-primary mt-4 flex items-center gap-1 text-sm font-medium hover:underline"
+                        <div className="space-y-3">
+                            {automations.map((automation) => (
+                                <div
+                                    key={automation.id}
+                                    className="glass-panel group p-4 transition-all hover:scale-[1.01] hover:shadow-md"
                                 >
-                                    <PlusIcon className="h-4 w-4" />
-                                    Hire Now
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {automations.map((automation) => (
-                                    <div
-                                        key={automation.id}
-                                        className="group border-foreground/5 bg-foreground/[0.02] hover:bg-foreground/[0.04] rounded-xl border p-4 transition-colors"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <a
-                                                href={`/ai-team/${automation.slug}/${automation.encodedId}`}
-                                                className="min-w-0 flex-1"
-                                            >
-                                                <p className="text-foreground group-hover:text-primary truncate font-medium transition-colors">
-                                                    {automation.name}
-                                                </p>
-                                                <p className="text-foreground/50 text-xs">
-                                                    {automation.isActive
-                                                        ? `Next: ${formatNextRun(automation.nextRunAt)}`
-                                                        : "Paused"}
-                                                </p>
-                                            </a>
-                                            <LabelToggle
-                                                checked={automation.isActive}
-                                                onChange={() =>
-                                                    handleToggleAutomation(automation)
-                                                }
-                                                disabled={togglingJobs.has(
-                                                    automation.id
-                                                )}
-                                                size="sm"
-                                            />
-                                        </div>
+                                    <div className="flex items-center justify-between">
+                                        <Link
+                                            href={`/ai-team/${automation.slug}/${automation.encodedId}`}
+                                            className="min-w-0 flex-1"
+                                        >
+                                            <p className="text-foreground group-hover:text-primary truncate font-medium transition-colors">
+                                                {automation.name}
+                                            </p>
+                                            <p className="text-foreground/50 text-xs">
+                                                {automation.isActive
+                                                    ? `Next: ${formatNextRun(automation.nextRunAt)}`
+                                                    : "Paused"}
+                                            </p>
+                                        </Link>
+                                        <LabelToggle
+                                            checked={automation.isActive}
+                                            onChange={() =>
+                                                handleToggleAutomation(automation)
+                                            }
+                                            disabled={togglingJobs.has(automation.id)}
+                                            size="sm"
+                                        />
                                     </div>
-                                ))}
-                            </div>
-                        )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
