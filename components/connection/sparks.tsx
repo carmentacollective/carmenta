@@ -112,7 +112,7 @@ function SparkPill({ spark, onClick, index }: SparkPillProps) {
                 ease: [0.16, 1, 0.3, 1],
             }}
             className={cn(
-                "group flex min-h-[44px] items-center gap-2.5 rounded-full px-4 py-2.5",
+                "group min-h-[44px] items-center gap-2.5 rounded-full px-4 py-2.5",
                 "bg-foreground/5 backdrop-blur-sm",
                 "border-foreground/10 border",
                 "text-foreground/70 text-sm",
@@ -121,7 +121,9 @@ function SparkPill({ spark, onClick, index }: SparkPillProps) {
                 "hover:shadow-primary/5 hover:shadow-lg",
                 // Setup sparks get slightly different styling
                 spark.category === "setup" &&
-                    "border-primary/20 bg-primary/5 hover:border-primary/30 hover:bg-primary/10"
+                    "border-primary/20 bg-primary/5 hover:border-primary/30 hover:bg-primary/10",
+                // Mobile: show only first 3 sparks
+                index >= 3 ? "hidden sm:flex" : "flex"
             )}
         >
             <Icon
