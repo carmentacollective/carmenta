@@ -64,6 +64,16 @@ export function DiscoveryProgress({
 
             const data = await response.json();
 
+            // Handle failed extraction jobs
+            if (data.jobStatus === "failed") {
+                hasCalledComplete.current = true;
+                setPollingError(
+                    data.errorMessage ||
+                        "Discovery failed. Some conversations may not have been processed."
+                );
+                return;
+            }
+
             if (data.stats) {
                 setStats(data.stats);
 

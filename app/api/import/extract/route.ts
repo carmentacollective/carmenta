@@ -115,10 +115,12 @@ export async function GET(request: NextRequest) {
             ]);
 
         // Use job status for completion when polling a specific job
-        // Otherwise fall back to global unprocessed imports check
+        // Failed jobs should NOT be treated as complete - let UI handle error state
         const isJobComplete = jobId
-            ? jobStatus?.status === "completed" || jobStatus?.status === "failed"
+            ? jobStatus?.status === "completed"
             : unprocessed.length === 0;
+
+        const isFailed = jobId && jobStatus?.status === "failed";
 
         return NextResponse.json({
             extractions: extractions.extractions,
@@ -132,6 +134,10 @@ export async function GET(request: NextRequest) {
                 jobStatus: jobStatus.status,
                 processedConversations: jobStatus.processedConversations,
                 totalConversations: jobStatus.totalConversations,
+                ...(isFailed &&
+                    jobStatus.errorMessage && {
+                        errorMessage: jobStatus.errorMessage,
+                    }),
             }),
         });
     } catch (error) {

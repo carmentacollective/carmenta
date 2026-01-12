@@ -461,6 +461,7 @@ export async function getJobStatus(
     totalConversations: number;
     processedConversations: number;
     extractedCount: number;
+    errorMessage?: string | null;
 } | null> {
     const [job] = await db
         .select()
@@ -474,6 +475,7 @@ export async function getJobStatus(
         totalConversations: job.totalConversations,
         processedConversations: job.processedConversations,
         extractedCount: job.extractedCount,
+        errorMessage: job.errorMessage,
     };
 }
 
