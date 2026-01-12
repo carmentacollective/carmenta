@@ -85,7 +85,7 @@ async function getCachedClient(
     const client = await createClient(server);
     clientCache.set(server.id, {
         client,
-        expiresAt: now + CLIENT_TTL_MS,
+        expiresAt: Date.now() + CLIENT_TTL_MS,
     });
 
     return client;
