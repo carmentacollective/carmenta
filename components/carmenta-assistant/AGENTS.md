@@ -7,10 +7,12 @@ interact with Carmenta on pages like AI Team, Knowledge Base, and MCP Config.
 
 ```
 carmenta-assistant/
-├── carmenta-layout.tsx   Push-content layout (desktop sidebar)
-├── carmenta-panel.tsx    Fixed-position drawer (legacy, prefer layout)
-├── use-carmenta.ts       Chat state hook with DCOS transport
-├── empty-state.tsx       Contextual hints when no messages
+├── carmenta-sidecar.tsx  Context-aware sidecar (recommended)
+├── carmenta-layout.tsx   Push-content layout (legacy)
+├── carmenta-sheet.tsx    Mobile sheet component
+├── sidecar-thread.tsx    Thread UI for sidecar
+├── sidecar-composer.tsx  Input composer for sidecar
+├── empty-state.tsx       Contextual welcome screens
 ├── utils.ts              Shared utilities (getMessageText)
 ├── types.ts              TypeScript interfaces
 └── index.ts              Exports
@@ -21,43 +23,69 @@ carmenta-assistant/
 - `SimpleComposer` - Text input and send/stop button
 - `UserBubble`, `AssistantBubble`, `ThinkingBubble` - Message rendering
 
+## Components
+
+### CarmentaSidecar (Recommended)
+
+Context-aware sidecar with custom welcome screens for different pages. Automatically
+pushes body content when open on desktop.
+
+```tsx
+import { CarmentaSidecar, CarmentaToggle } from "@/components/carmenta-assistant";
+
+const WELCOME_CONFIG = {
+  heading: "MCP Configuration",
+  subtitle: "Let's connect your tools together",
+  placeholder: "How can we help with MCP?",
+  suggestions: [
+    {
+      id: "add-server",
+      label: "Add a server",
+      prompt: "I want to connect a new MCP server...",
+      icon: PlusIcon,
+      autoSubmit: false,
+    },
+  ],
+};
+
+function Page() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <CarmentaToggle onClick={() => setOpen(true)} />
+      <CarmentaSidecar
+        open={open}
+        onOpenChange={setOpen}
+        pageContext="mcp-config"
+        onChangesComplete={() => refetch()}
+        welcomeConfig={WELCOME_CONFIG}
+      />
+    </>
+  );
+}
+```
+
+### CarmentaLayout (Legacy)
+
+Simpler layout wrapper without context-aware welcome screens:
+
+```tsx
+<CarmentaLayout pageContext="ai-team" onChangesComplete={() => refreshData()}>
+  <PageContent />
+</CarmentaLayout>
+```
+
 ## Responsive Behavior
 
-| Screen        | Interface        | Behavior                                                        |
-| ------------- | ---------------- | --------------------------------------------------------------- |
-| Desktop (md+) | `CarmentaLayout` | Push-content sidebar - panel appears left, content shifts right |
-| Mobile        | `CarmentaModal`  | Global modal via `useCarmentaModal()` - focused overlay         |
+| Screen        | Interface      | Behavior                                                        |
+| ------------- | -------------- | --------------------------------------------------------------- |
+| Desktop (lg+) | Sidecar/Layout | Push-content sidebar - panel appears left, content shifts right |
+| Mobile        | Sheet/Modal    | Full-screen sheet with overlay for focused interaction          |
 
 This follows the pattern: desktop has space for side-by-side work, mobile needs focused
 full-attention interactions.
 
-## Usage
-
-Wrap workbench pages with `CarmentaLayout`:
-
-```tsx
-import { CarmentaLayout, useCarmentaLayout } from "@/components/carmenta-assistant";
-
-function WorkbenchPage() {
-  return (
-    <CarmentaLayout
-      pageContext="ai-team"
-      onChangesComplete={() => refreshData()}
-      placeholder="What should we work on?"
-    >
-      <PageContent />
-    </CarmentaLayout>
-  );
-}
-
-// Inside PageContent:
-function ToggleButton() {
-  const { toggle, isOpen } = useCarmentaLayout();
-  return <Button onClick={toggle}>{isOpen ? "Close" : "Ask Carmenta"}</Button>;
-}
-```
-
-## useCarmenta Hook
+## useCarmenta Hook (Legacy)
 
 Manages chat state connected to DCOS endpoint:
 

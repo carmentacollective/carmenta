@@ -9,6 +9,7 @@ import {
     UserCircleIcon,
     MonitorIcon,
     PlugIcon,
+    PlugsIcon,
     BookOpenIcon,
     ChatTeardropIcon,
     ClockClockwiseIcon,
@@ -299,6 +300,16 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <PlugIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">Integrations</span>
+                                      </Link>
+
+                                      <Link
+                                          href="/integrations/mcp"
+                                          onClick={() => setIsOpen(false)}
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                      >
+                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                          <PlugsIcon className="text-foreground/60 relative h-4 w-4" />
+                                          <span className="relative">MCP Servers</span>
                                       </Link>
 
                                       {/* Settings */}

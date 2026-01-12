@@ -19,8 +19,9 @@
 
 import { createContext, useContext, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SparkleIcon, Trash, X } from "@phosphor-icons/react";
+import { Trash, X } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -159,7 +160,7 @@ export function CarmentaSidecar({
 
 /**
  * Desktop sidecar - fixed position panel, NO overlay
- * Pushes main content via useDesktopSidecarMargin hook
+ * Automatically pushes body content by applying margin-left
  */
 function DesktopSidecar({
     open,
@@ -178,6 +179,27 @@ function DesktopSidecar({
     title: string;
     description: string;
 }) {
+    // Automatically push body content when sidecar opens
+    useEffect(() => {
+        if (!open) {
+            document.body.style.marginLeft = "0px";
+            return;
+        }
+
+        // Apply margin with smooth transition
+        document.body.style.transition =
+            "margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
+        document.body.style.marginLeft = `${PANEL_WIDTH}px`;
+
+        return () => {
+            document.body.style.marginLeft = "0px";
+            // Clean up transition after animation completes
+            setTimeout(() => {
+                document.body.style.transition = "";
+            }, 300);
+        };
+    }, [open]);
+
     // Handle escape key
     useEffect(() => {
         if (!open) return;
@@ -321,10 +343,12 @@ function SidecarInner({
             {/* Header */}
             <header className="border-foreground/[0.08] flex shrink-0 items-center justify-between border-b px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                    <div className="bg-primary/20 flex h-8 w-8 items-center justify-center rounded-full">
-                        <SparkleIcon
-                            className="text-primary h-4 w-4"
-                            weight="duotone"
+                    <div className="from-primary/20 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br to-cyan-500/20">
+                        <Image
+                            src="/logos/icon-transparent.png"
+                            alt="Carmenta"
+                            width={22}
+                            height={22}
                         />
                     </div>
                     <div>
@@ -333,7 +357,7 @@ function SidecarInner({
                                 <SheetTitle className="text-foreground text-sm font-medium">
                                     {title}
                                 </SheetTitle>
-                                <SheetDescription className="text-foreground/50 text-[10px]">
+                                <SheetDescription className="text-muted-foreground text-xs">
                                     {description}
                                 </SheetDescription>
                             </>
@@ -342,7 +366,7 @@ function SidecarInner({
                                 <h2 className="text-foreground text-sm font-medium">
                                     {title}
                                 </h2>
-                                <p className="text-foreground/50 text-[10px]">
+                                <p className="text-muted-foreground text-xs">
                                     {description}
                                 </p>
                             </>
@@ -381,7 +405,10 @@ function SidecarInner({
 
 /**
  * Hook to get the margin to apply when sidecar is open
- * Use this to push your main content when the desktop sidecar is open
+ *
+ * NOTE: As of the latest version, CarmentaSidecar automatically applies
+ * body margin, so this hook is no longer needed for normal usage.
+ * It's kept for backwards compatibility or advanced use cases.
  *
  * @example
  * ```tsx

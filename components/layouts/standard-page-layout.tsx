@@ -80,18 +80,21 @@ export function StandardPageLayout({
     style,
 }: StandardPageLayoutProps) {
     return (
-        <div className="bg-background relative min-h-screen" style={style}>
+        <div
+            className="bg-background relative flex min-h-screen flex-col"
+            style={style}
+        >
             <HolographicBackground hideWatermark={hideWatermark} />
-            <div className="z-content relative">
+            <div className="z-content relative flex flex-1 flex-col">
                 {/* Header with safe-area padding for iPhone PWA */}
                 <div className="pt-safe-top">
                     <SiteHeader bordered showThemeSwitcher={showThemeSwitcher} />
                 </div>
 
-                {/* Content area */}
+                {/* Content area - flex-1 to push footer down */}
                 <main
                     className={cn(
-                        "mx-auto w-full px-6 sm:px-8 lg:px-10",
+                        "mx-auto w-full flex-1 px-6 sm:px-8 lg:px-10",
                         maxWidthClasses[maxWidth],
                         verticalPadding && verticalPaddingClasses[verticalPadding],
                         contentClassName
@@ -100,7 +103,7 @@ export function StandardPageLayout({
                     {children}
                 </main>
 
-                {/* Footer with safe-area padding for iPhone PWA */}
+                {/* Footer with safe-area padding for iPhone PWA - stays at bottom */}
                 {showFooter && (
                     <div className="pb-safe-bottom">
                         <Footer />
