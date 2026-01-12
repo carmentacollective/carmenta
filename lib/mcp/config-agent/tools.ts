@@ -59,12 +59,18 @@ export function createMcpConfigTools(userEmail: string) {
                             };
                         }
 
+                        // Normalize Claude Desktop's "streamable-http" to "http"
+                        // Cast needed because parseMcpConfig returns typed union but raw input may have streamable-http
+                        const normalizedTransport =
+                            (config.transport as string) === "streamable-http"
+                                ? "http"
+                                : config.transport || detectTransportType(config.url);
+
                         return {
                             success: true,
                             config: {
                                 url: config.url,
-                                transport:
-                                    config.transport || detectTransportType(config.url),
+                                transport: normalizedTransport,
                                 authType: config.authType || "none",
                                 hasCredentials: !!config.token,
                                 token: config.token, // Include token for testConnection/saveServer
