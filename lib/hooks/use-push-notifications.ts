@@ -181,8 +181,9 @@ export function usePushNotifications(): UsePushNotificationsResult {
                 const registration = await navigator.serviceWorker.ready;
                 const subscription = await registration.pushManager.getSubscription();
                 setIsSubscribed(!!subscription);
-            } catch {
-                // Subscription check failed - not critical
+            } catch (error) {
+                // Subscription check failed - not critical, but log for debugging
+                logger.warn({ error }, "Failed to check existing push subscription");
             }
         }
 
