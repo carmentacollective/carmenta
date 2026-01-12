@@ -286,14 +286,23 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
         "🤖 Starting employee execution"
     );
 
+    const startTime = Date.now();
+
     // Wrap in Sentry span for trace linking and observability
     return Sentry.startSpan(
         {
             op: "job.execute",
             name: `Job: ${jobId}`,
-            attributes: { jobId, userEmail },
+            attributes: {
+                jobId,
+                userEmail,
+                promptLength: prompt.length,
+                memoryKeys: Object.keys(memory).length,
+            },
         },
-        async () => {
+        async (span) => {
+            const sentryTraceId = span?.spanContext()?.traceId;
+
             try {
                 // Load tools available to this user
                 const integrationTools = await getIntegrationTools(userEmail);
@@ -350,6 +359,8 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                     },
                 });
 
+                const durationMs = Date.now() - startTime;
+
                 // Count tool calls
                 const toolCallsExecuted = result.steps.reduce(
                     (count, step) => count + (step.toolCalls?.length ?? 0),
@@ -366,6 +377,17 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                     ? (completeCall as unknown as { args: CompleteToolParams }).args
                     : undefined;
 
+                // Extract observability data
+                const executionTrace = extractExecutionTrace(result.steps, result.text);
+                const tokenUsage = extractTokenUsage(result.usage);
+
+                // Add span attributes for observability
+                span?.setAttributes({
+                    "job.toolCallsExecuted": toolCallsExecuted,
+                    "job.durationMs": durationMs,
+                    "job.completedExplicitly": !!completion?.summary,
+                });
+
                 // Require summary to be present - empty args object should fall back to text
                 if (completion?.summary) {
                     employeeLogger.info(
@@ -373,6 +395,7 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                             summary: completion.summary,
                             notificationCount: completion.notifications?.length ?? 0,
                             toolCallsExecuted,
+                            durationMs,
                         },
                         "✅ Employee completed task"
                     );
@@ -383,6 +406,11 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                         notifications: completion.notifications ?? [],
                         updatedMemory: { ...memory, ...completion.memoryUpdates },
                         toolCallsExecuted,
+                        executionTrace,
+                        tokenUsage,
+                        modelId: primaryModel,
+                        durationMs,
+                        sentryTraceId,
                     };
                 }
 
@@ -401,12 +429,32 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                     notifications: [],
                     updatedMemory: memory,
                     toolCallsExecuted,
+                    executionTrace,
+                    tokenUsage,
+                    modelId: primaryModel,
+                    durationMs,
+                    sentryTraceId,
                 };
             } catch (error) {
+                const durationMs = Date.now() - startTime;
+
                 employeeLogger.error({ error }, "❌ Employee execution failed");
                 Sentry.captureException(error, {
                     tags: { component: "ai-team", agent: "employee" },
                     extra: { jobId, userEmail },
+                });
+
+                // Build structured error details
+                const errorDetails: JobErrorDetails = {
+                    message: error instanceof Error ? error.message : "Unknown error",
+                    code: (error as { code?: string })?.code,
+                    stack: error instanceof Error ? error.stack : undefined,
+                    context: { jobId, userEmail },
+                };
+
+                span?.setAttributes({
+                    "job.success": false,
+                    "job.error": errorDetails.message,
                 });
 
                 return {
@@ -415,6 +463,10 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                     notifications: [],
                     updatedMemory: memory,
                     toolCallsExecuted: 0,
+                    errorDetails,
+                    modelId: EMPLOYEE_FALLBACK_CHAIN[0],
+                    durationMs,
+                    sentryTraceId,
                 };
             }
         }
