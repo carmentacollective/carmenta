@@ -8,9 +8,16 @@
  * 2. Memories section below (folder-based knowledge browser)
  */
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { SparkleIcon, User, Brain, Check, CircleNotch } from "@phosphor-icons/react";
+import {
+    SparkleIcon,
+    User,
+    Brain,
+    Check,
+    CircleNotch,
+    Warning,
+} from "@phosphor-icons/react";
 
 import { KnowledgeViewer } from "./index";
 import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
@@ -35,11 +42,24 @@ export function KBPageContent({
 
     // About You editing state
     const [aboutContent, setAboutContent] = useState(identityDocument?.content ?? "");
-    const [aboutSaveState, setAboutSaveState] = useState<"idle" | "saving" | "saved">(
-        "idle"
-    );
-    const [isPending, startTransition] = useTransition();
+    const [aboutSaveState, setAboutSaveState] = useState<
+        "idle" | "saving" | "saved" | "error"
+    >("idle");
+    const [_isPending, startTransition] = useTransition();
     const hasAboutChanges = aboutContent !== (identityDocument?.content ?? "");
+    const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+    // Sync local state when identity document changes (e.g., after Carmenta updates)
+    // This prevents stale state after router.refresh() from Carmenta sheet updates
+    useEffect(() => {
+        // Only sync if we're not currently editing or saving
+        if (aboutSaveState === "idle" && !hasAboutChanges) {
+            // Use queueMicrotask to avoid cascading renders
+            queueMicrotask(() => {
+                setAboutContent(identityDocument?.content ?? "");
+            });
+        }
+    }, [identityDocument?.content, aboutSaveState, hasAboutChanges]);
 
     // Refresh the page when Carmenta makes changes
     const handleChangesComplete = useCallback(() => {
@@ -62,10 +82,17 @@ export function KBPageContent({
                     contentLength: aboutContent.length,
                     durationMs: 0,
                 });
-                setTimeout(() => setAboutSaveState("idle"), 2000);
+
+                // Clear any existing timeout to prevent stale closure issues
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                timeoutRef.current = setTimeout(() => setAboutSaveState("idle"), 2000);
             } catch (err) {
                 logger.error({ error: err }, "Failed to save About You");
-                setAboutSaveState("idle");
+                setAboutSaveState("error");
+
+                // Clear error state after 3 seconds
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                timeoutRef.current = setTimeout(() => setAboutSaveState("idle"), 3000);
             }
         });
     }, [identityDocument, aboutContent, hasAboutChanges]);
@@ -114,7 +141,6 @@ export function KBPageContent({
                                 {hasAboutChanges && aboutSaveState === "idle" && (
                                     <button
                                         onClick={handleAboutSave}
-                                        disabled={isPending}
                                         className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
                                     >
                                         Save
@@ -130,6 +156,12 @@ export function KBPageContent({
                                     <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
                                         <Check className="h-4 w-4" />
                                         Saved
+                                    </span>
+                                )}
+                                {aboutSaveState === "error" && (
+                                    <span className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+                                        <Warning className="h-4 w-4" />
+                                        Failed to save
                                     </span>
                                 )}
                             </div>
