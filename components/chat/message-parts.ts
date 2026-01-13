@@ -27,12 +27,13 @@ export interface ToolPart {
 
 /**
  * File attachment part from message
+ * Matches AI SDK's FilePart structure
  */
 export interface FilePart {
     type: "file";
-    mimeType: string;
-    data: string;
-    filename?: string;
+    url: string;
+    mediaType: string;
+    name?: string;
 }
 
 /**
@@ -68,22 +69,23 @@ export function isFilePart(part: unknown): part is FilePart {
         part !== null &&
         "type" in part &&
         (part as FilePart).type === "file" &&
-        "mimeType" in part &&
-        "data" in part
+        "url" in part &&
+        "mediaType" in part
     );
 }
 
 /**
  * Type guard for data parts
+ * Handles both "data" type and "data-*" prefixed types
  */
 export function isDataPart(part: unknown): part is DataPartInfo {
-    return (
-        typeof part === "object" &&
-        part !== null &&
-        "type" in part &&
-        (part as DataPartInfo).type === "data" &&
-        "data" in part
-    );
+    if (typeof part !== "object" || part === null || !("type" in part)) {
+        return false;
+    }
+    const type = (part as DataPartInfo).type;
+    const isDataType =
+        type === "data" || (typeof type === "string" && type.startsWith("data-"));
+    return isDataType && "data" in part;
 }
 
 /**

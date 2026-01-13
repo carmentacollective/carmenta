@@ -253,18 +253,18 @@ describe("isFilePart", () => {
     it("identifies valid file part", () => {
         const part: FilePart = {
             type: "file",
-            mimeType: "image/png",
-            data: "base64encodeddata",
-            filename: "image.png",
+            url: "https://example.com/image.png",
+            mediaType: "image/png",
+            name: "image.png",
         };
         expect(isFilePart(part)).toBe(true);
     });
 
-    it("accepts file part without optional filename", () => {
+    it("accepts file part without optional name", () => {
         const part: FilePart = {
             type: "file",
-            mimeType: "image/png",
-            data: "base64encodeddata",
+            url: "https://example.com/image.png",
+            mediaType: "image/png",
         };
         expect(isFilePart(part)).toBe(true);
     });
@@ -278,17 +278,17 @@ describe("isFilePart", () => {
     });
 
     it("rejects file part missing required fields", () => {
-        const missingData = {
+        const missingUrl = {
             type: "file",
-            mimeType: "image/png",
+            mediaType: "image/png",
         };
-        expect(isFilePart(missingData)).toBe(false);
+        expect(isFilePart(missingUrl)).toBe(false);
 
-        const missingMimeType = {
+        const missingMediaType = {
             type: "file",
-            data: "base64encodeddata",
+            url: "https://example.com/image.png",
         };
-        expect(isFilePart(missingMimeType)).toBe(false);
+        expect(isFilePart(missingMediaType)).toBe(false);
     });
 
     it("rejects null and undefined", () => {
@@ -305,15 +305,15 @@ describe("getFileParts", () => {
             parts: [
                 {
                     type: "file",
-                    mimeType: "image/png",
-                    data: "base64encodeddata",
+                    url: "https://example.com/image.png",
+                    mediaType: "image/png",
                 },
                 { type: "text", text: "Check this out" },
             ] as any,
         };
         const files = getFileParts(message);
         expect(files).toHaveLength(1);
-        expect(files[0].mimeType).toBe("image/png");
+        expect(files[0].url).toBe("https://example.com/image.png");
     });
 
     it("returns empty array when no file parts", () => {
