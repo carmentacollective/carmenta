@@ -1,19 +1,19 @@
 /**
  * Message Part Utilities
  *
- * Shared utilities for extracting and working with UIMessage parts.
- * Used by both HoloThread and SidecarThread for consistent message parsing.
+ * Shared helpers for extracting content from UIMessage objects.
+ * Used by both regular chat (HoloThread) and Carmenta assistant interfaces.
  */
 
-import type { UIMessage } from "@ai-sdk/react";
-import type { ToolStatus } from "@/lib/tools/tool-config";
+import type { UIMessage, DataUIPart } from "ai";
+
+// Re-export DataUIPart as DataPart for backwards compatibility
+export type DataPart = DataUIPart<Record<string, unknown>>;
 
 /**
- * Shape of a tool part stored in messages.
- * The API stores these with type: "tool-{toolName}" pattern.
+ * Tool state from AI SDK
  *
- * States (per Vercel AI SDK):
- * - input-streaming: Tool is receiving input
+ * - input-streaming: Arguments being streamed (in progress)
  * - input-available: Tool has input, waiting to execute
  * - output-available: Tool completed successfully
  * - output-error: Tool failed with error
@@ -29,7 +29,8 @@ export interface ToolPart {
 }
 
 /**
- * File part type from AI SDK
+ * File attachment part from message
+ * Matches AI SDK's FilePart structure
  */
 export interface FilePart {
     type: "file";
@@ -39,54 +40,15 @@ export interface FilePart {
 }
 
 /**
- * Data part type for generative UI data (e.g., data-askUserInput)
- * These are streamed by the server using createUIMessageStream's data format.
- */
-export interface DataPart {
-    type: `data-${string}`;
-    id?: string;
-    data: Record<string, unknown>;
-}
-
-/**
- * Extract text content from UIMessage parts
- * Defensive checks handle malformed messages gracefully
- */
-export function getMessageContent(message: UIMessage): string {
-    if (!message?.parts) return "";
-    return message.parts
-        .filter((part) => part?.type === "text")
-        .map((part) => {
-            const textPart = part as { type: "text"; text?: string };
-            return textPart?.text ?? "";
-        })
-        .join("");
-}
-
-/**
- * Extract reasoning content from UIMessage parts
- * Defensive checks handle malformed messages gracefully
- */
-export function getReasoningContent(message: UIMessage): string | null {
-    if (!message?.parts) return null;
-    const reasoningPart = message.parts.find((part) => part?.type === "reasoning");
-    if (reasoningPart && reasoningPart.type === "reasoning") {
-        const typedPart = reasoningPart as { type: "reasoning"; text?: string };
-        return typedPart?.text ?? null;
-    }
-    return null;
-}
-
-/**
  * Type guard for tool parts
  */
 export function isToolPart(part: unknown): part is ToolPart {
     return (
-        part !== null &&
         typeof part === "object" &&
+        part !== null &&
         "type" in part &&
-        typeof (part as { type: unknown }).type === "string" &&
-        (part as { type: string }).type.startsWith("tool-") &&
+        typeof (part as ToolPart).type === "string" &&
+        (part as ToolPart).type.startsWith("tool-") &&
         "toolCallId" in part &&
         "state" in part &&
         "input" in part
@@ -94,66 +56,113 @@ export function isToolPart(part: unknown): part is ToolPart {
 }
 
 /**
- * Extract tool parts from UIMessage
- * Tool parts have type starting with "tool-" (e.g., "tool-getWeather")
- */
-export function getToolParts(message: UIMessage): ToolPart[] {
-    if (!message?.parts) return [];
-    // Cast needed because UIMessage.parts has a complex union type
-    // that TypeScript can't narrow through the filter type guard
-    return (message.parts as unknown[]).filter(isToolPart);
-}
-
-/**
  * Type guard for file parts
  */
 export function isFilePart(part: unknown): part is FilePart {
     return (
-        part !== null &&
         typeof part === "object" &&
+        part !== null &&
         "type" in part &&
-        (part as { type: unknown }).type === "file" &&
+        (part as FilePart).type === "file" &&
         "url" in part &&
         "mediaType" in part
     );
 }
 
 /**
- * Extract file parts from UIMessage
+ * Type guard for data parts
+ * AI SDK uses `data-${string}` pattern for data parts
  */
-export function getFileParts(message: UIMessage): FilePart[] {
-    if (!message?.parts) return [];
-    return (message.parts as unknown[]).filter(isFilePart);
+export function isDataPart(part: unknown): part is DataPart {
+    if (typeof part !== "object" || part === null || !("type" in part)) {
+        return false;
+    }
+    const type = (part as { type: string }).type;
+    return typeof type === "string" && type.startsWith("data-") && "data" in part;
 }
 
 /**
- * Type guard for data parts
+ * Extract plain text content from a message
  */
-export function isDataPart(part: unknown): part is DataPart {
-    return (
-        part !== null &&
-        typeof part === "object" &&
-        "type" in part &&
-        typeof (part as { type: unknown }).type === "string" &&
-        (part as { type: string }).type.startsWith("data-") &&
-        "data" in part
+export function getMessageContent(message: UIMessage): string {
+    if (!message.parts) return "";
+    const textParts = message.parts
+        .filter(
+            (part): part is { type: "text"; text: string } =>
+                part.type === "text" && typeof part.text === "string"
+        )
+        .map((part) => part.text);
+
+    return textParts.join("");
+}
+
+/**
+ * Extract reasoning/thinking content from a message
+ */
+export function getReasoningContent(message: UIMessage): string | null {
+    if (!message.parts) return null;
+    const reasoningParts = message.parts
+        .filter(
+            (part): part is { type: "reasoning"; text: string } =>
+                part.type === "reasoning" && typeof part.text === "string"
+        )
+        .map((part) => part.text);
+
+    return reasoningParts.length > 0 ? reasoningParts.join("\n") : null;
+}
+
+/**
+ * Extract tool parts from a message
+ */
+export function getToolParts(message: UIMessage): ToolPart[] {
+    if (!message.parts) return [];
+    // Cast is safe because isToolPart validates the structure at runtime
+    return message.parts.filter((part) => isToolPart(part)) as ToolPart[];
+}
+
+/**
+ * Extract file parts from a message
+ */
+export function getFileParts(message: UIMessage): FilePart[] {
+    if (!message.parts) return [];
+    // Cast is safe because isFilePart validates the structure at runtime
+    return message.parts.filter((part) => isFilePart(part)) as FilePart[];
+}
+
+/**
+ * Extract data parts from a message (for generative UI)
+ *
+ * AI SDK uses `data-${string}` pattern for data parts
+ * (e.g., data-askUserInput, data-showReferences)
+ */
+export function getDataParts(message: UIMessage): DataPart[] {
+    if (!message.parts) return [];
+    return message.parts.filter((part): part is DataPart =>
+        part.type.startsWith("data-")
     );
 }
 
 /**
- * Extract data parts from UIMessage
- * Data parts have type starting with "data-" (e.g., "data-askUserInput")
+ * Get display name from tool type
+ * tool-webSearch -> webSearch
  */
-export function getDataParts(message: UIMessage): DataPart[] {
-    if (!message?.parts) return [];
-    return (message.parts as unknown[]).filter(isDataPart);
+export function getToolName(type: string): string {
+    return type.replace(/^tool-/, "");
 }
 
 /**
- * Map tool part state to ToolStatus
+ * Simplified tool status for UI rendering
+ */
+export type ToolStatus = "pending" | "running" | "completed" | "error";
+
+/**
+ * Map tool state to simplified status
  */
 export function getToolStatus(state: ToolPart["state"]): ToolStatus {
     switch (state) {
+        case "input-streaming":
+        case "input-available":
+            return "running";
         case "output-available":
             return "completed";
         case "output-error":
@@ -165,7 +174,11 @@ export function getToolStatus(state: ToolPart["state"]): ToolStatus {
 
 /**
  * Extract error message from tool part.
- * Checks AI SDK pattern, SubagentResult pattern, and legacy API pattern.
+ *
+ * Checks error patterns:
+ * 1. AI SDK pattern: errorText field on the part itself
+ * 2. SubagentResult pattern: success=false with error.message
+ * 3. Simple error pattern: error as string (ai-chatbot pattern)
  */
 export function getToolError(
     part: ToolPart,
@@ -175,15 +188,17 @@ export function getToolError(
     // AI SDK pattern: errorText field on the part itself
     if (part.errorText) return part.errorText;
 
+    if (!output) return undefined;
+
     // SubagentResult pattern: { success: false, error: { message: "..." } }
-    if (output?.success === false && output.error) {
-        const error = output.error as { message?: string };
-        return error.message ?? fallbackMessage;
+    if ("success" in output && output.success === false) {
+        const error = output.error as { message?: string } | undefined;
+        return error?.message ?? fallbackMessage;
     }
 
-    // Legacy API pattern: error flag (boolean true) in output with message
-    if (output?.error === true) {
-        return String(output.message ?? fallbackMessage);
+    // Simple error pattern: { error: "message string" } (ai-chatbot pattern)
+    if ("error" in output && typeof output.error === "string") {
+        return output.error;
     }
 
     return undefined;

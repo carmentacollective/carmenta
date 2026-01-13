@@ -443,19 +443,28 @@ describe("getToolError", () => {
         expect(getToolError(part, undefined)).toBe("Something went wrong");
     });
 
-    it("extracts error from API output pattern", () => {
+    it("extracts error from SubagentResult pattern", () => {
         const part = createPart("output-error");
         const output = {
-            error: true,
-            message: "API call failed",
+            success: false,
+            error: { message: "Subagent failed" },
         };
-        expect(getToolError(part, output)).toBe("API call failed");
+        expect(getToolError(part, output)).toBe("Subagent failed");
     });
 
-    it("uses fallback message when no error details", () => {
+    it("extracts error from simple error string pattern", () => {
         const part = createPart("output-error");
         const output = {
-            error: true,
+            error: "Simple error message",
+        };
+        expect(getToolError(part, output)).toBe("Simple error message");
+    });
+
+    it("uses fallback message when SubagentResult has no message", () => {
+        const part = createPart("output-error");
+        const output = {
+            success: false,
+            error: {},
         };
         expect(getToolError(part, output, "Custom fallback")).toBe("Custom fallback");
     });
@@ -465,11 +474,11 @@ describe("getToolError", () => {
         expect(getToolError(part, { result: "success" })).toBeUndefined();
     });
 
-    it("prefers errorText over output.message", () => {
+    it("prefers errorText over output patterns", () => {
         const part = createPart("output-error", "AI SDK error");
         const output = {
-            error: true,
-            message: "API error",
+            success: false,
+            error: { message: "Subagent error" },
         };
         expect(getToolError(part, output)).toBe("AI SDK error");
     });

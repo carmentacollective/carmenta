@@ -289,6 +289,159 @@ writer.write({
 
 ---
 
+## Tool Error Detection & Display
+
+### The Problem (January 2026)
+
+Tool errors are invisible in regular chat. Every tool result is marked
+`output-available` regardless of actual success. This creates:
+
+1. **False success indicators**: Red dot never appears even when tools fail
+2. **Silent failures**: SubagentResult `success: false` goes undetected
+3. **Poor debugging**: Admins can't see what went wrong
+
+### What Leaders Do (Vercel AI SDK 5.0)
+
+**Source:** [AI SDK Error Handling](https://ai-sdk.dev/docs/ai-sdk-core/error-handling)
+
+Tool errors are first-class citizens in AI SDK 5.0:
+
+```typescript
+// Tool errors appear as stream parts
+const toolErrors = steps.flatMap(step =>
+  step.content.filter(part => part.type === 'tool-error'),
+);
+
+// UI message stream converts to tool-output-error
+case 'tool-error': {
+  controller.enqueue({
+    type: 'tool-output-error',
+    toolCallId: part.toolCallId,
+    errorText: onError(part.error),  // String for UI display
+  });
+}
+```
+
+**Source:** [ai-chatbot reference](../reference/ai-chatbot)
+
+Tools return error objects for soft errors (not throwing):
+
+```typescript
+// Tool returns error object instead of throwing
+if (!document) {
+  return { error: "Document not found" };
+}
+
+// UI checks for error in output
+if (part.output && "error" in part.output) {
+  return <ErrorDisplay>{String(part.output.error)}</ErrorDisplay>;
+}
+```
+
+**Key pattern**: `addToolOutput` with `state: 'output-error'` and `errorText`:
+
+```typescript
+addToolOutput({
+  tool: "getWeatherInformation",
+  toolCallId: toolCall.toolCallId,
+  state: "output-error",
+  errorText: "Unable to get the weather information",
+});
+```
+
+### Carmenta Implementation
+
+**Error Detection (3 patterns):**
+
+```typescript
+// In onFinish and onStepFinish
+function detectToolError(output: unknown): { isError: boolean; errorText?: string } {
+  if (typeof output !== "object" || output === null) {
+    return { isError: false };
+  }
+
+  const obj = output as Record<string, unknown>;
+
+  // Pattern 1: SubagentResult with success: false
+  if ("success" in obj && obj.success === false) {
+    const error = obj.error as { message?: string } | undefined;
+    return {
+      isError: true,
+      errorText: error?.message ?? "Operation failed",
+    };
+  }
+
+  // Pattern 2: Legacy error flag
+  if (obj.error === true) {
+    return {
+      isError: true,
+      errorText: String(obj.message ?? "Operation failed"),
+    };
+  }
+
+  // Pattern 3: Tool returned { error: "message" } object
+  if ("error" in obj && typeof obj.error === "string") {
+    return {
+      isError: true,
+      errorText: obj.error,
+    };
+  }
+
+  return { isError: false };
+}
+```
+
+**Database Schema Update:**
+
+```typescript
+// upsertToolPart accepts error state
+await upsertToolPart(connectionId, messageId, {
+  toolCallId,
+  toolName,
+  input,
+  output,
+  state: isError ? "output_error" : "output_available",
+  errorText: isError ? errorText : undefined,
+});
+```
+
+**UI Display (Two-tier):**
+
+1. **All users**: Friendly error message in collapsed view
+2. **Admins only**: Debug panel with full details (already exists via
+   `usePermissions().isAdmin`)
+
+### Architecture Decision: Detect Errors in Connection Route
+
+**Context:** Code mode detects SubagentResult errors; regular chat doesn't.
+
+**Decision:** Add error detection to regular chat matching code mode pattern.
+
+**Rationale:**
+
+- Consistency across chat modes
+- SubagentResult is our standard tool result format
+- AI SDK 5.0 expects errors as first-class stream parts
+- Existing admin debug panel can show full error details
+
+### Success Criteria
+
+- SubagentResult `success: false` shows red dot in UI
+- Error message visible to users in collapsed tool state
+- Admin debug panel shows full error object
+- Errors persist correctly to database
+- Reload shows correct error state
+
+### Sources
+
+- [AI SDK Error Handling](https://ai-sdk.dev/docs/ai-sdk-core/error-handling)
+- [AI SDK Tool Calling](https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-with-tool-calling)
+- [AI SDK Migration Guide 5.0](https://ai-sdk.dev/docs/migration-guides/migration-guide-5-0)
+- ai-chatbot reference: `../reference/ai-chatbot/components/ai-elements/tool.tsx:39-48`
+- ai-sdk reference: `../reference/ai-sdk/packages/ai/src/generate-text/tool-error.ts`
+
+---
+
 ## Open Questions
 
 ### Technical
@@ -299,6 +452,6 @@ writer.write({
 
 ### Product
 
-- Should failed tool states show error UI or just disappear?
+- ✅ Should failed tool states show error UI or just disappear? → **Show error UI**
 - How long to retry failed tool executions before marking as error?
 - Should users be able to manually retry stuck tools?

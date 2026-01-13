@@ -457,6 +457,11 @@ export async function upsertMessage(
 }
 
 /**
+ * Tool state values matching UI expectations
+ */
+export type ToolState = "output_available" | "output_error";
+
+/**
  * Tool result data for progressive persistence during streaming
  */
 export interface ToolResultData {
@@ -464,6 +469,10 @@ export interface ToolResultData {
     toolName: string;
     input: Record<string, unknown>;
     output: Record<string, unknown>;
+    /** Error state - defaults to output_available if not provided */
+    state?: ToolState;
+    /** Error message for output_error state */
+    errorText?: string;
 }
 
 /**
@@ -512,7 +521,8 @@ export async function upsertToolPart(
                     )
                 );
 
-            // Insert the new tool part with output-available state
+            // Insert the new tool part with appropriate state
+            const isError = toolResult.state === "output_error";
             await tx.insert(messageParts).values({
                 messageId,
                 order,
@@ -520,9 +530,13 @@ export async function upsertToolPart(
                 toolCall: {
                     toolName: toolResult.toolName,
                     toolCallId: toolResult.toolCallId,
-                    state: "output_available",
+                    state: toolResult.state ?? "output_available",
                     input: toolResult.input,
                     output: toolResult.output,
+                    // Only include error field when state is output_error
+                    ...(isError && toolResult.errorText
+                        ? { error: toolResult.errorText }
+                        : {}),
                 },
             });
 

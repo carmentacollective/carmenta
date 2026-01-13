@@ -95,8 +95,7 @@ export const builtInTools = {
                 );
                 return {
                     expression,
-                    error: true,
-                    message:
+                    error:
                         error instanceof Error
                             ? error.message
                             : "Could not evaluate expression",
@@ -123,9 +122,7 @@ export const builtInTools = {
 
             if (!result) {
                 return {
-                    error: true,
-                    message:
-                        "That page isn't loading. It might be down or blocking access.",
+                    error: "That page isn't loading. It might be down or blocking access.",
                     title: "",
                     content: "",
                     url,
@@ -185,9 +182,7 @@ export const builtInTools = {
                     extra: { objective, depth, focusAreas },
                 });
                 return {
-                    error: true,
-                    message:
-                        "Research didn't find much. The robots are investigating. 🤖",
+                    error: "Research didn't find much. The robots are investigating. 🤖",
                     summary: "",
                     findings: [],
                     sources: [],
@@ -223,8 +218,7 @@ export const builtInTools = {
 
             if (!result) {
                 return {
-                    error: true,
-                    message: "Search came up empty. The robots are on it. 🤖",
+                    error: "Search came up empty. The robots are on it. 🤖",
                     results: [],
                 };
             }
@@ -266,10 +260,7 @@ export const builtInTools = {
                     { tool: "giphy" },
                     "GIPHY_API_KEY environment variable not configured"
                 );
-                return {
-                    error: true,
-                    message: "Giphy is not configured. Missing API key.",
-                };
+                return { error: "Giphy is not configured. Missing API key." };
             }
 
             const DEFAULT_RATING = "pg";
@@ -279,8 +270,7 @@ export const builtInTools = {
                     case "search": {
                         if (!query) {
                             return {
-                                error: true,
-                                message: "Search action requires a query parameter.",
+                                error: "Search action requires a query parameter.",
                             };
                         }
 
@@ -359,8 +349,7 @@ export const builtInTools = {
                     tags: { component: "tool", tool: "giphy", action },
                 });
                 return {
-                    error: true,
-                    message:
+                    error:
                         error instanceof Error
                             ? error.message
                             : "Failed to fetch GIFs from Giphy",
@@ -404,10 +393,7 @@ export const builtInTools = {
                             .json<ImgflipGetMemesResponse>();
 
                         if (!response.success) {
-                            return {
-                                error: true,
-                                message: "Failed to fetch meme templates",
-                            };
+                            return { error: "Failed to fetch meme templates" };
                         }
 
                         // Return top 50 most popular templates
@@ -432,17 +418,13 @@ export const builtInTools = {
                                 "IMGFLIP_USERNAME or IMGFLIP_PASSWORD not configured"
                             );
                             return {
-                                error: true,
-                                message:
-                                    "Imgflip meme creation is not configured. Missing credentials.",
+                                error: "Imgflip meme creation is not configured. Missing credentials.",
                             };
                         }
 
                         if (!templateId) {
                             return {
-                                error: true,
-                                message:
-                                    "templateId is required for create_meme. Use list_templates to find template IDs.",
+                                error: "templateId is required for create_meme. Use list_templates to find template IDs.",
                             };
                         }
 
@@ -469,8 +451,7 @@ export const builtInTools = {
 
                         if (!response.success) {
                             return {
-                                error: true,
-                                message:
+                                error:
                                     response.error_message || "Failed to create meme",
                             };
                         }
@@ -488,8 +469,7 @@ export const builtInTools = {
                     tags: { component: "tool", tool: "imgflip", action },
                 });
                 return {
-                    error: true,
-                    message:
+                    error:
                         error instanceof Error
                             ? error.message
                             : "Failed to communicate with Imgflip",
