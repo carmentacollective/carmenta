@@ -20,7 +20,9 @@ import {
     CoinMarketCapAdapter,
     DropboxAdapter,
     FirefliesAdapter,
+    GmailAdapter,
     GoogleCalendarContactsAdapter,
+    GoogleDriveAdapter,
     GoogleWorkspaceFilesAdapter,
     LimitlessAdapter,
     NotionAdapter,
@@ -44,7 +46,9 @@ const adapterMap: Record<string, ServiceAdapter> = {
     coinmarketcap: new CoinMarketCapAdapter(),
     dropbox: new DropboxAdapter(),
     fireflies: new FirefliesAdapter(),
+    gmail: new GmailAdapter(),
     "google-calendar-contacts": new GoogleCalendarContactsAdapter(),
+    googleDrive: new GoogleDriveAdapter(),
     "google-workspace-files": new GoogleWorkspaceFilesAdapter(),
     limitless: new LimitlessAdapter(),
     notion: new NotionAdapter(),
@@ -52,6 +56,20 @@ const adapterMap: Record<string, ServiceAdapter> = {
     slack: new SlackAdapter(),
     spotify: new SpotifyAdapter(),
     twitter: new TwitterAdapter(),
+};
+
+/**
+ * Virtual Services Configuration
+ *
+ * Maps OAuth services to virtual tool adapter IDs.
+ * When a user connects the parent service, all virtual tools become available.
+ * Tool descriptions come from the adapter's getHelp() - no duplication needed.
+ *
+ * Pattern: Parent OAuth → Multiple focused LLM tools
+ * Example: google-internal → ["gmail", "googleDrive"]
+ */
+const VIRTUAL_SERVICES: Record<string, string[]> = {
+    "google-internal": ["gmail", "googleDrive"],
 };
 
 /**
@@ -170,6 +188,86 @@ function createServiceTool(service: ServiceDefinition, userEmail: string) {
 }
 
 /**
+ * Create a tool directly from an adapter (for virtual services)
+ */
+function createAdapterTool(adapterId: string, userEmail: string) {
+    const adapter = getAdapter(adapterId);
+    if (!adapter) {
+        throw new Error(`No adapter found: ${adapterId}`);
+    }
+
+    const help = adapter.getHelp();
+    const actions =
+        help.commonOperations?.slice(0, 4).join(", ") ||
+        help.operations
+            .slice(0, 4)
+            .map((o) => o.name)
+            .join(", ");
+    const description = `${help.description || help.service}. Actions: ${actions}. Call with action='describe' for full documentation.`;
+
+    return tool({
+        description,
+        inputSchema: integrationToolSchema,
+        execute: async ({ action, params }) => {
+            logger.info({ service: adapterId, action, userEmail }, "Executing tool");
+
+            if (action === "describe") {
+                return {
+                    service: help.service,
+                    description: help.description,
+                    commonOperations: help.commonOperations,
+                    operations: help.operations,
+                    docsUrl: help.docsUrl,
+                };
+            }
+
+            try {
+                const { accountId, ...operationParams } =
+                    (params as { accountId?: string }) ?? {};
+                const response = await adapter.execute(
+                    action,
+                    operationParams,
+                    userEmail,
+                    accountId
+                );
+
+                if (response.isError) {
+                    return {
+                        error: response.content
+                            .filter((c) => c.type === "text")
+                            .map((c) => c.text)
+                            .join("\n"),
+                    };
+                }
+
+                const textContent = response.content.find((c) => c.type === "text");
+                if (textContent && "text" in textContent) {
+                    try {
+                        return JSON.parse(textContent.text as string);
+                    } catch {
+                        return { result: textContent.text };
+                    }
+                }
+
+                return { result: "Operation completed successfully" };
+            } catch (error) {
+                logger.error(
+                    { error, service: adapterId, action, userEmail },
+                    "Tool execution failed"
+                );
+                Sentry.captureException(error, {
+                    tags: { component: "integrations", service: adapterId, action },
+                    extra: { userEmail },
+                });
+                return {
+                    error: error instanceof Error ? error.message : "Unknown error",
+                };
+            }
+        },
+    });
+}
+
+/**
  * Type for the return value of createServiceTool
  */
 type IntegrationTool = ReturnType<typeof createServiceTool>;
@@ -260,8 +358,24 @@ export async function getIntegrationTools(
                 continue;
             }
 
-            // Create the tool
-            tools[serviceId] = createServiceTool(service, userEmail);
+            // Check if this service exposes virtual tools
+            const virtualAdapterIds = VIRTUAL_SERVICES[serviceId];
+            if (virtualAdapterIds) {
+                // Parent service that exposes virtual tools - don't create tool for parent itself
+                for (const adapterId of virtualAdapterIds) {
+                    if (!getAdapter(adapterId)) {
+                        logger.warn(
+                            { adapterId, parentService: serviceId },
+                            "No adapter for virtual service"
+                        );
+                        continue;
+                    }
+                    tools[adapterId] = createAdapterTool(adapterId, userEmail);
+                }
+            } else {
+                // Regular service - create tool directly
+                tools[serviceId] = createServiceTool(service, userEmail);
+            }
         }
 
         // Log success with both attempted and loaded counts for debugging

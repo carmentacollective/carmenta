@@ -24,6 +24,8 @@ export { ClickUpAdapter } from "./clickup";
 export { CoinMarketCapAdapter } from "./coinmarketcap";
 export { DropboxAdapter } from "./dropbox";
 export { FirefliesAdapter } from "./fireflies";
+export { GmailAdapter } from "./gmail";
+export { GoogleDriveAdapter } from "./google-drive";
 export { GoogleCalendarContactsAdapter } from "./google-calendar-contacts";
 export { GoogleWorkspaceFilesAdapter } from "./google-workspace-files";
 export { LimitlessAdapter } from "./limitless";
