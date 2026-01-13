@@ -11,17 +11,16 @@ carmenta-assistant/
 ├── carmenta-layout.tsx   Push-content layout (legacy)
 ├── carmenta-sheet.tsx    Mobile sheet component
 ├── sidecar-thread.tsx    Thread UI for sidecar
-├── sidecar-composer.tsx  Input composer for sidecar
 ├── empty-state.tsx       Contextual welcome screens
 ├── utils.ts              Shared utilities (getMessageText)
 ├── types.ts              TypeScript interfaces
 └── index.ts              Exports
 ```
 
-**Shared dependencies** from `components/chat/`:
+**Shared dependencies** from `components/connection/`:
 
-- `SimpleComposer` - Text input and send/stop button
-- `UserBubble`, `AssistantBubble`, `ThinkingBubble` - Message rendering
+- `Composer` - Full-featured composer with model selection, file attachments, drafts
+- Message rendering primitives from `components/chat/`
 
 ## Components
 
@@ -36,7 +35,6 @@ import { CarmentaSidecar, CarmentaToggle } from "@/components/carmenta-assistant
 const WELCOME_CONFIG = {
   heading: "MCP Configuration",
   subtitle: "Let's connect your tools together",
-  placeholder: "How can we help with MCP?",
   suggestions: [
     {
       id: "add-server",
@@ -115,15 +113,17 @@ The hook:
 
 ## Difference from /connection Chat
 
-| Aspect   | /connection                          | Carmenta Assistant      |
-| -------- | ------------------------------------ | ----------------------- |
-| Purpose  | Long-form creative work              | Quick DCOS interactions |
-| Composer | Rich (model selection, files, voice) | Simple (text only)      |
-| Endpoint | `/api/connection`                    | `/api/dcos`             |
-| Context  | Connection-based with history        | Page-based, ephemeral   |
-| Layout   | Full-page                            | Sidebar/modal           |
+| Aspect   | /connection                      | Carmenta Assistant                               |
+| -------- | -------------------------------- | ------------------------------------------------ |
+| Purpose  | Long-form creative work          | Quick DCOS interactions                          |
+| Composer | Full `Composer` (same component) | Same `Composer` (stacked layout via @container)  |
+| Endpoint | `/api/connection`                | `/api/dcos`                                      |
+| Context  | Connection-based with history    | Page-based, ephemeral                            |
+| Layout   | Full-page                        | Sidebar/modal (420px triggers mobile breakpoint) |
 
-Both share primitives from `components/chat/` for DRY message rendering.
+Both use the same `Composer` component from `components/connection/`. The sidecar's
+420px width triggers container queries (`@xl: 576px`) that automatically use the stacked
+mobile layout.
 
 ## Relevant Rules
 

@@ -59,7 +59,6 @@ const PAGE_CONTEXT =
 const MCP_WELCOME: SidecarWelcomeConfig = {
     heading: "MCP Configuration",
     subtitle: "Let's connect your tools together",
-    placeholder: "How can we help with MCP?",
     suggestions: [
         {
             id: "add-server",

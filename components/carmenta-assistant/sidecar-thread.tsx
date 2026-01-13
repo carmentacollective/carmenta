@@ -54,9 +54,9 @@ import {
     getDataParts,
 } from "@/components/chat";
 import { FilePreview } from "@/components/connection/file-preview";
+import { Composer } from "@/components/connection/composer";
 import { AskUserInputResult } from "@/components/tools/post-response";
 import type { AskUserInputOutput } from "@/lib/tools/post-response";
-import { SidecarComposer } from "./sidecar-composer";
 import type { SidecarWelcomeConfig, SidecarSuggestion } from "./carmenta-sidecar";
 
 interface SidecarThreadProps {
@@ -78,6 +78,12 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
     const { addFiles, addPreUploadedFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
     const { isCodeMode } = useCodeMode();
+
+    // Composer requires onMarkMessageStopped callback - no-op for now
+    // Will add visual stopped indicator to MessageBubble if needed
+    const handleMarkMessageStopped = useCallback((_messageId: string) => {
+        // no-op
+    }, []);
 
     // PWA Share Target: Handle content shared from other apps
     const { sharedText, sharedFiles, hasSharedContent, clearSharedContent } =
@@ -160,9 +166,6 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
     const needsPendingAssistant = isLoading && lastMessage?.role === "user";
     const needsPendingRegular = !isCodeMode && needsPendingAssistant;
 
-    // Get placeholder text from config or use default
-    const placeholder = welcomeConfig?.placeholder ?? "Message Carmenta...";
-
     return (
         <div className="flex h-full flex-col bg-transparent" role="log">
             {/* Pull-to-refresh indicator */}
@@ -218,15 +221,15 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
                 </div>
             </div>
 
-            {/* Input container */}
-            <div className="border-foreground/5 dark:bg-card/60 flex flex-none items-center justify-center border-t bg-white/60 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl">
+            {/* Input container - uses @container for responsive Composer layout */}
+            <div className="border-foreground/5 dark:bg-card/60 @container flex flex-none items-center justify-center border-t bg-white/60 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl">
                 <div className="relative flex w-full flex-col items-center">
                     <ScrollToBottomButton
                         isAtBottom={isAtBottom}
                         onScrollToBottom={() => scrollToBottom("smooth")}
                         className="absolute -top-12"
                     />
-                    <SidecarComposer placeholder={placeholder} />
+                    <Composer onMarkMessageStopped={handleMarkMessageStopped} />
                 </div>
             </div>
         </div>

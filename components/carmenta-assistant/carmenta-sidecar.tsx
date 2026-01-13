@@ -66,8 +66,6 @@ export interface SidecarWelcomeConfig {
     subtitle?: string;
     /** Context-specific suggestions */
     suggestions: SidecarSuggestion[];
-    /** Placeholder for the input */
-    placeholder?: string;
 }
 
 /**
