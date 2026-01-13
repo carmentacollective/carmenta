@@ -146,7 +146,7 @@ export function InstallPrompt() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 20, scale: 0.95 }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className="z-modal fixed right-4 bottom-[max(5rem,calc(env(safe-area-inset-bottom)+1rem))] left-4 mx-auto max-w-sm"
+                    className="z-dropdown fixed right-4 bottom-[max(5rem,calc(env(safe-area-inset-bottom)+1rem))] left-4 mx-auto max-w-sm"
                 >
                     <div className="glass-card bg-background/95 overflow-hidden rounded-2xl border border-white/10 p-5 shadow-2xl backdrop-blur-xl">
                         {/* Dismiss button - 44px touch target (Apple HIG minimum) */}
