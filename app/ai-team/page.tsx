@@ -83,7 +83,6 @@ const PAGE_CONTEXT = `User is on the AI Team page. They manage automated agents 
 const AI_TEAM_WELCOME: SidecarWelcomeConfig = {
     heading: "Digital Chief of Staff",
     subtitle: "Let's manage your agents together",
-    placeholder: "What should we work on?",
     suggestions: [
         {
             id: "run-agent",
