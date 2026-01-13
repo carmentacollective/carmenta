@@ -775,9 +775,15 @@ export async function POST(req: Request) {
         // Filter messages for LLM consumption:
         // 1. Strip reasoning parts (Anthropic rejects modified thinking blocks in history)
         // 2. Strip large base64 image data (causes context_length_exceeded errors)
-        const messagesWithoutReasoning = filterLargeToolOutputs(
-            filterReasoningFromMessages(messages)
-        );
+        //
+        // IMPORTANT: We create two filtered versions:
+        // - messagesForLLM: Filtered for LLM context (no reasoning, no large images)
+        // - messagesForUI: Filtered for UI stream (no reasoning, but KEEP images)
+        //
+        // The UI stream needs the original image data so the frontend can display them.
+        // Only the LLM context needs images stripped to avoid context overflow.
+        const messagesWithReasoningFiltered = filterReasoningFromMessages(messages);
+        const messagesForLLM = filterLargeToolOutputs(messagesWithReasoningFiltered);
 
         // Build system messages with Anthropic prompt caching on static content.
         // These are prepended to messages array (not via `system` param) so we can
@@ -862,7 +868,7 @@ export async function POST(req: Request) {
         }
 
         // Build final messages, including pre-executed research as system context
-        const modelMessages = await convertToModelMessages(messagesWithoutReasoning);
+        const modelMessages = await convertToModelMessages(messagesForLLM);
         const finalSystemMessages = researchSystemContext
             ? [
                   ...systemMessages,
@@ -1464,7 +1470,8 @@ export async function POST(req: Request) {
                 // sendReasoning: true streams reasoning tokens to client when available
                 writer.merge(
                     result.toUIMessageStream({
-                        originalMessages: messagesWithoutReasoning,
+                        // Use messagesWithReasoningFiltered (NOT messagesForLLM) so images display
+                        originalMessages: messagesWithReasoningFiltered,
                         sendReasoning: concierge.reasoning.enabled,
                         // Use pre-generated message ID so stream and DB agree on the ID
                         // This prevents duplicate assistant messages after reload
