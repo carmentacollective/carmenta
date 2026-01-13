@@ -25,13 +25,6 @@ import { ValidationError } from "@/lib/errors";
  */
 const CREDENTIALS_SERVICE = "google-internal";
 
-/**
- * Escape single quotes in Drive API query strings to prevent injection
- */
-function escapeQueryValue(value: string): string {
-    return value.replace(/'/g, "\\'");
-}
-
 export class GoogleDriveAdapter extends ServiceAdapter {
     serviceName = "googleDrive";
     serviceDisplayName = "Google Drive";
@@ -552,13 +545,13 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         const auth = this.createAuthClient(accessToken);
         const drive = google.drive({ version: "v3", auth });
 
-        // Escape single quotes in user query to prevent injection
-        const escapedQuery = escapeQueryValue(query);
-
-        // Add trashed = false to user query if not already specified
-        const fullQuery = escapedQuery.includes("trashed")
-            ? escapedQuery
-            : `(${escapedQuery}) and trashed = false`;
+        // Add trashed = false to query if not already specified
+        // Note: We trust the LLM to provide valid Drive query syntax.
+        // Drive API query language uses single quotes for string literals,
+        // so we don't escape them to preserve structured queries.
+        const fullQuery = query.includes("trashed")
+            ? query
+            : `(${query}) and trashed = false`;
 
         const response = await drive.files.list({
             q: fullQuery,
