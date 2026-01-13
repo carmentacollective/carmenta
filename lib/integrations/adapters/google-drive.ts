@@ -673,12 +673,18 @@ export class GoogleDriveAdapter extends ServiceAdapter {
             outputMimeType = mimeType;
         }
 
+        // Determine encoding based on whether content was converted to UTF-8 or base64
+        const isTextEncoded =
+            outputMimeType.startsWith("text/") ||
+            outputMimeType === "application/json" ||
+            outputMimeType === "application/xml";
+
         return this.createJSONResponse({
             file_id,
             name: metadata.data.name,
             mimeType: outputMimeType,
             content,
-            encoding: outputMimeType.startsWith("text/") ? "utf-8" : "base64",
+            encoding: isTextEncoded ? "utf-8" : "base64",
         });
     }
 
