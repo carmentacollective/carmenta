@@ -5,10 +5,10 @@
  * Used by both regular chat (HoloThread) and Carmenta assistant interfaces.
  */
 
-import type { UIMessage, DataPart } from "ai";
+import type { UIMessage, DataUIPart } from "ai";
 
-// Re-export DataPart from AI SDK for consumers
-export type { DataPart };
+// Re-export DataUIPart as DataPart for backwards compatibility
+export type DataPart = DataUIPart<Record<string, unknown>>;
 
 /**
  * Tool state from AI SDK
@@ -37,14 +37,6 @@ export interface FilePart {
     url: string;
     mediaType: string;
     name?: string;
-}
-
-/**
- * Data part for generative UI and transient status
- */
-export interface DataPartInfo {
-    type: "data";
-    data: unknown;
 }
 
 /**
@@ -79,16 +71,14 @@ export function isFilePart(part: unknown): part is FilePart {
 
 /**
  * Type guard for data parts
- * Handles both "data" type and "data-*" prefixed types
+ * AI SDK uses `data-${string}` pattern for data parts
  */
-export function isDataPart(part: unknown): part is DataPartInfo {
+export function isDataPart(part: unknown): part is DataPart {
     if (typeof part !== "object" || part === null || !("type" in part)) {
         return false;
     }
-    const type = (part as DataPartInfo).type;
-    const isDataType =
-        type === "data" || (typeof type === "string" && type.startsWith("data-"));
-    return isDataType && "data" in part;
+    const type = (part as { type: string }).type;
+    return typeof type === "string" && type.startsWith("data-") && "data" in part;
 }
 
 /**
@@ -126,7 +116,8 @@ export function getReasoningContent(message: UIMessage): string | null {
  */
 export function getToolParts(message: UIMessage): ToolPart[] {
     if (!message.parts) return [];
-    return message.parts.filter(isToolPart);
+    // Cast is safe because isToolPart validates the structure at runtime
+    return message.parts.filter((part) => isToolPart(part)) as ToolPart[];
 }
 
 /**
@@ -134,22 +125,21 @@ export function getToolParts(message: UIMessage): ToolPart[] {
  */
 export function getFileParts(message: UIMessage): FilePart[] {
     if (!message.parts) return [];
-    return message.parts.filter(isFilePart);
+    // Cast is safe because isFilePart validates the structure at runtime
+    return message.parts.filter((part) => isFilePart(part)) as FilePart[];
 }
 
 /**
  * Extract data parts from a message (for generative UI)
  *
- * Handles both generic "data" type and specific "data-*" types
- * (e.g., data-askUserInput, data-showReferences) emitted by streaming API
+ * AI SDK uses `data-${string}` pattern for data parts
+ * (e.g., data-askUserInput, data-showReferences)
  */
 export function getDataParts(message: UIMessage): DataPart[] {
     if (!message.parts) return [];
-    return message.parts.filter(
-        (part): part is DataPart =>
-            part.type === "data" ||
-            (typeof part.type === "string" && part.type.startsWith("data-"))
-    ) as DataPart[];
+    return message.parts.filter((part): part is DataPart =>
+        part.type.startsWith("data-")
+    );
 }
 
 /**

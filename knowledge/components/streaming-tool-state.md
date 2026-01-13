@@ -293,8 +293,8 @@ writer.write({
 
 ### The Problem (January 2026)
 
-Tool errors are invisible in regular chat. Every tool result is marked `output-available`
-regardless of actual success. This creates:
+Tool errors are invisible in regular chat. Every tool result is marked
+`output-available` regardless of actual success. This creates:
 
 1. **False success indicators**: Red dot never appears even when tools fail
 2. **Silent failures**: SubagentResult `success: false` goes undetected
@@ -342,10 +342,10 @@ if (part.output && "error" in part.output) {
 
 ```typescript
 addToolOutput({
-  tool: 'getWeatherInformation',
+  tool: "getWeatherInformation",
   toolCallId: toolCall.toolCallId,
-  state: 'output-error',
-  errorText: 'Unable to get the weather information',
+  state: "output-error",
+  errorText: "Unable to get the weather information",
 });
 ```
 
@@ -356,18 +356,18 @@ addToolOutput({
 ```typescript
 // In onFinish and onStepFinish
 function detectToolError(output: unknown): { isError: boolean; errorText?: string } {
-  if (typeof output !== 'object' || output === null) {
+  if (typeof output !== "object" || output === null) {
     return { isError: false };
   }
 
   const obj = output as Record<string, unknown>;
 
   // Pattern 1: SubagentResult with success: false
-  if ('success' in obj && obj.success === false) {
+  if ("success" in obj && obj.success === false) {
     const error = obj.error as { message?: string } | undefined;
     return {
       isError: true,
-      errorText: error?.message ?? 'Operation failed',
+      errorText: error?.message ?? "Operation failed",
     };
   }
 
@@ -375,12 +375,12 @@ function detectToolError(output: unknown): { isError: boolean; errorText?: strin
   if (obj.error === true) {
     return {
       isError: true,
-      errorText: String(obj.message ?? 'Operation failed'),
+      errorText: String(obj.message ?? "Operation failed"),
     };
   }
 
   // Pattern 3: Tool returned { error: "message" } object
-  if ('error' in obj && typeof obj.error === 'string') {
+  if ("error" in obj && typeof obj.error === "string") {
     return {
       isError: true,
       errorText: obj.error,
@@ -400,7 +400,7 @@ await upsertToolPart(connectionId, messageId, {
   toolName,
   input,
   output,
-  state: isError ? 'output_error' : 'output_available',
+  state: isError ? "output_error" : "output_available",
   errorText: isError ? errorText : undefined,
 });
 ```
@@ -408,7 +408,8 @@ await upsertToolPart(connectionId, messageId, {
 **UI Display (Two-tier):**
 
 1. **All users**: Friendly error message in collapsed view
-2. **Admins only**: Debug panel with full details (already exists via `usePermissions().isAdmin`)
+2. **Admins only**: Debug panel with full details (already exists via
+   `usePermissions().isAdmin`)
 
 ### Architecture Decision: Detect Errors in Connection Route
 

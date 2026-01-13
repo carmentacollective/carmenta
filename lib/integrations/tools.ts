@@ -132,10 +132,12 @@ function createServiceTool(service: ServiceDefinition, userEmail: string) {
                 // Return the response content
                 // The adapter returns MCPToolResponse format, extract relevant parts
                 if (response.isError) {
-                    return { error: response.content
+                    return {
+                        error: response.content
                             .filter((c) => c.type === "text")
                             .map((c) => c.text)
-                            .join("\n"), };
+                            .join("\n"),
+                    };
                 }
 
                 // Try to parse JSON responses
@@ -159,7 +161,9 @@ function createServiceTool(service: ServiceDefinition, userEmail: string) {
                     extra: { userEmail },
                 });
 
-                return { error: error instanceof Error ? error.message : "Unknown error", };
+                return {
+                    error: error instanceof Error ? error.message : "Unknown error",
+                };
             }
         },
     });
