@@ -448,7 +448,9 @@ describe("Integration Server Actions", () => {
 
                 await connectApiKeyService("coinmarketcap", "test-api-key");
 
-                expect(insertValues?.isDefault).toBe(true);
+                expect(
+                    (insertValues as unknown as { isDefault?: boolean })?.isDefault
+                ).toBe(true);
             });
 
             it("uses account label as accountId when provided", async () => {
@@ -490,8 +492,13 @@ describe("Integration Server Actions", () => {
                     "work-account"
                 );
 
-                expect(insertValues?.accountId).toBe("work-account");
-                expect(insertValues?.accountDisplayName).toBe("work-account");
+                expect(
+                    (insertValues as unknown as { accountId?: string })?.accountId
+                ).toBe("work-account");
+                expect(
+                    (insertValues as unknown as { accountDisplayName?: string })
+                        ?.accountDisplayName
+                ).toBe("work-account");
             });
         });
 
@@ -1212,9 +1219,8 @@ describe("Integration Server Actions", () => {
         });
 
         it("filters services based on user permissions in production", async () => {
-            // Override NODE_ENV for this test
-            const originalEnv = process.env.NODE_ENV;
-            process.env.NODE_ENV = "production";
+            // Override NODE_ENV for this test using vi.stubEnv
+            vi.stubEnv("NODE_ENV", "production");
 
             mockCurrentUser.mockResolvedValue({
                 ...testUser,
@@ -1231,7 +1237,7 @@ describe("Integration Server Actions", () => {
             expect(result.available).toHaveLength(1);
             expect(result.available[0].id).toBe("coinmarketcap");
 
-            process.env.NODE_ENV = originalEnv;
+            vi.unstubAllEnvs();
         });
 
         it("sorts connected services by most recent first", async () => {

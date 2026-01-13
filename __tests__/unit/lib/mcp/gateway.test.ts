@@ -50,6 +50,7 @@ function createMockServer(overrides: Partial<McpServer> = {}): McpServer {
         connectedAt: new Date(),
         lastConnectedAt: new Date(),
         createdAt: new Date(),
+        updatedAt: new Date(),
         ...overrides,
     };
 }
@@ -865,7 +866,7 @@ describe("MCP Gateway", () => {
             const tools = await getMcpGatewayTools("test@example.com");
 
             // Execute the tool
-            const result = await tools.mcp_notion.execute(
+            const result = await tools.mcp_notion.execute!(
                 { action: "search", params: { query: "test" } },
                 { toolCallId: "test-call", messages: [] }
             );
@@ -883,7 +884,7 @@ describe("MCP Gateway", () => {
 
             const tools = await getMcpGatewayTools("test@example.com");
 
-            const result = await tools.mcp_broken.execute(
+            const result = await tools.mcp_broken.execute!(
                 { action: "fail", params: {} },
                 { toolCallId: "test-call", messages: [] }
             );
