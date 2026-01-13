@@ -180,11 +180,8 @@ describe("runConcierge integration", () => {
     });
 
     it("returns defaults and reports to Sentry when tool call fails", async () => {
-        // This error occurs when generateText fails or returns no tool calls
+        // This test verifies behavior when no tool calls are generated
         // Common causes: API errors, network issues, model doesn't call the tool
-        const toolCallError = new Error(
-            "No tool call generated - model did not select routing"
-        );
         (generateText as any).mockResolvedValueOnce({
             text: "Some response without tool calls",
             toolCalls: [], // No tool calls generated

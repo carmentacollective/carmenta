@@ -12,7 +12,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { uiMessageChunkSchema } from "ai";
 import { encodeConnectionId } from "@/lib/sqids";
 

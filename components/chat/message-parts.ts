@@ -54,7 +54,8 @@ export function isToolPart(part: unknown): part is ToolPart {
         typeof (part as ToolPart).type === "string" &&
         (part as ToolPart).type.startsWith("tool-") &&
         "toolCallId" in part &&
-        "state" in part
+        "state" in part &&
+        "input" in part
     );
 }
 
@@ -89,31 +90,37 @@ export function isDataPart(part: unknown): part is DataPartInfo {
  * Extract plain text content from a message
  */
 export function getMessageContent(message: UIMessage): string {
+    if (!message.parts) return "";
     const textParts = message.parts
-        .filter((part): part is { type: "text"; text: string } => part.type === "text")
+        .filter(
+            (part): part is { type: "text"; text: string } =>
+                part.type === "text" && typeof part.text === "string"
+        )
         .map((part) => part.text);
 
-    return textParts.join("\n");
+    return textParts.join("");
 }
 
 /**
  * Extract reasoning/thinking content from a message
  */
-export function getReasoningContent(message: UIMessage): string | undefined {
+export function getReasoningContent(message: UIMessage): string | null {
+    if (!message.parts) return null;
     const reasoningParts = message.parts
         .filter(
             (part): part is { type: "reasoning"; text: string } =>
-                part.type === "reasoning"
+                part.type === "reasoning" && typeof part.text === "string"
         )
         .map((part) => part.text);
 
-    return reasoningParts.length > 0 ? reasoningParts.join("\n") : undefined;
+    return reasoningParts.length > 0 ? reasoningParts.join("\n") : null;
 }
 
 /**
  * Extract tool parts from a message
  */
 export function getToolParts(message: UIMessage): ToolPart[] {
+    if (!message.parts) return [];
     return message.parts.filter(isToolPart);
 }
 
@@ -121,6 +128,7 @@ export function getToolParts(message: UIMessage): ToolPart[] {
  * Extract file parts from a message
  */
 export function getFileParts(message: UIMessage): FilePart[] {
+    if (!message.parts) return [];
     return message.parts.filter(isFilePart);
 }
 
@@ -131,6 +139,7 @@ export function getFileParts(message: UIMessage): FilePart[] {
  * (e.g., data-askUserInput, data-showReferences) emitted by streaming API
  */
 export function getDataParts(message: UIMessage): DataPart[] {
+    if (!message.parts) return [];
     return message.parts.filter(
         (part): part is DataPart =>
             part.type === "data" ||
@@ -157,7 +166,6 @@ export type ToolStatus = "pending" | "running" | "completed" | "error";
 export function getToolStatus(state: ToolPart["state"]): ToolStatus {
     switch (state) {
         case "input-streaming":
-            return "pending";
         case "input-available":
             return "running";
         case "output-available":
