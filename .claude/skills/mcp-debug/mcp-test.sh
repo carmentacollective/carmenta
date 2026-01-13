@@ -8,8 +8,13 @@
 #   ./mcp-test.sh whatsapp chats
 #   ./mcp-test.sh whatsapp chat_context '{"chatJid":"120363190723262072@g.us","days":7}'
 
-MACHINA_TOKEN="82bd3fb311c8f9a43b699bdc10d40defa4d0ba1d46331d094c24bca896325b84"
-MCP_URL="http://localhost:9900/mcp"
+# Token must be set in environment (never commit secrets to source control)
+if [ -z "$MACHINA_TOKEN" ]; then
+    echo "Error: MACHINA_TOKEN environment variable is required"
+    echo "Set it with: export MACHINA_TOKEN=your_token_here"
+    exit 1
+fi
+MCP_URL="${MCP_URL:-http://localhost:9900/mcp}"
 
 TOOL="${1:-messages}"
 ACTION="${2:-describe}"

@@ -181,7 +181,8 @@ mcp call machina --params '{"action":"contacts_search","params":{"query":"Mom"}}
 **401 Unauthorized**
 
 - Verify token: `echo $MACHINA_TOKEN`
-- Check header format: `Authorization=Bearer` (not `Authorization: Bearer`)
+- Check mcptools header syntax: `Authorization=Bearer` (mcptools uses `=`, HTTP uses
+  `:`)
 
 **Tool not found**
 
