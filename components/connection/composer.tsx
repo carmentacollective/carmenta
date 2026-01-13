@@ -416,9 +416,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             textarea.style.height = `${textarea.scrollHeight}px`;
         };
 
-        let rafId: number;
+        let rafId: number | undefined;
         const throttledResize = () => {
-            cancelAnimationFrame(rafId);
+            if (rafId !== undefined) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(resize);
         };
 
@@ -426,7 +426,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         window.addEventListener("resize", throttledResize);
         return () => {
             window.removeEventListener("resize", throttledResize);
-            cancelAnimationFrame(rafId);
+            if (rafId !== undefined) cancelAnimationFrame(rafId);
         };
     }, [input]);
 
