@@ -45,7 +45,7 @@ export function KBPageContent({
     const [aboutSaveState, setAboutSaveState] = useState<
         "idle" | "saving" | "saved" | "error"
     >("idle");
-    const [_isPending, startTransition] = useTransition();
+    const [, startTransition] = useTransition();
     const hasAboutChanges = aboutContent !== (identityDocument?.content ?? "");
     const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -60,6 +60,13 @@ export function KBPageContent({
             });
         }
     }, [identityDocument?.content, aboutSaveState, hasAboutChanges]);
+
+    // Cleanup timeout on unmount to prevent state updates on unmounted component
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, []);
 
     // Refresh the page when Carmenta makes changes
     const handleChangesComplete = useCallback(() => {
