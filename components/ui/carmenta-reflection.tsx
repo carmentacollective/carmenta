@@ -15,11 +15,8 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
-/** How far the logo bobs up/down in pixels. Used for both animation and container sizing. */
+/** How far the logo bobs up/down in pixels */
 const FLOAT_AMPLITUDE = 4;
-
-/** Base height of reflection as fraction of logo size */
-const REFLECTION_HEIGHT_RATIO = 0.6;
 
 interface CarmentaReflectionProps {
     size?: number;
@@ -50,11 +47,8 @@ export function CarmentaReflection({
                 priority
             />
 
-            {/* Reflection - extra height accommodates downward float animation */}
-            <div
-                className="relative -mt-2 overflow-hidden"
-                style={{ height: size * REFLECTION_HEIGHT_RATIO + FLOAT_AMPLITUDE }}
-            >
+            {/* Reflection - mask gradient handles the fade */}
+            <div className="-mt-2">
                 <div
                     className="opacity-30"
                     style={{
