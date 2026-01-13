@@ -36,7 +36,7 @@ export const ScrollToBottomButton = memo(function ScrollToBottomButton({
         <button
             onClick={onScrollToBottom}
             className={cn(
-                "btn-glass-interactive z-sticky flex h-10 w-10 items-center justify-center",
+                "btn-glass-interactive z-dropdown flex h-10 w-10 items-center justify-center",
                 className
             )}
             aria-label="Scroll to bottom"
