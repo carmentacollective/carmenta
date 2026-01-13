@@ -165,7 +165,7 @@ export function getToolStatus(state: ToolPart["state"]): ToolStatus {
 
 /**
  * Extract error message from tool part.
- * Checks both AI SDK pattern (errorText) and our API pattern (output.error + output.message)
+ * Checks AI SDK pattern, SubagentResult pattern, and legacy API pattern.
  */
 export function getToolError(
     part: ToolPart,
@@ -174,7 +174,17 @@ export function getToolError(
 ): string | undefined {
     // AI SDK pattern: errorText field on the part itself
     if (part.errorText) return part.errorText;
-    // Our API pattern: error flag in output with message
-    if (output?.error) return String(output.message ?? fallbackMessage);
+
+    // SubagentResult pattern: { success: false, error: { message: "..." } }
+    if (output?.success === false && output.error) {
+        const error = output.error as { message?: string };
+        return error.message ?? fallbackMessage;
+    }
+
+    // Legacy API pattern: error flag (boolean true) in output with message
+    if (output?.error === true) {
+        return String(output.message ?? fallbackMessage);
+    }
+
     return undefined;
 }
