@@ -1063,11 +1063,7 @@ describe("ComposerButton Variants", () => {
         expect(queueButton).toBeInTheDocument();
     });
 
-    it("disables send button while uploading", () => {
-        // This would require mocking isUploading to true
-        // The mock currently returns isUploading: false
-        expect(true).toBe(true);
-    });
+    // Upload state disabling is tested via integration tests
 });
 
 describe("Mobile Queue Behavior", () => {
