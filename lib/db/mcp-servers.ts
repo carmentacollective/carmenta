@@ -124,7 +124,10 @@ export async function createMcpServer(input: CreateMcpServerInput): Promise<McpS
                 authHeaderName: authType === "header" ? authHeaderName : null,
                 enabled: true,
                 status: "connected",
-                serverManifest,
+                errorMessage: null,
+                serverManifest: serverManifest
+                    ? serverManifest
+                    : sql`mcp_servers.server_manifest`,
                 lastConnectedAt: new Date(),
                 updatedAt: new Date(),
             },
