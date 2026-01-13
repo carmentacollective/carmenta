@@ -120,7 +120,7 @@ export async function createMcpServer(input: CreateMcpServerInput): Promise<McpS
                 authType,
                 encryptedCredentials: credentials
                     ? encryptCredentials({ token: credentials.token })
-                    : sql`excluded.encrypted_credentials`,
+                    : sql`mcp_servers.encrypted_credentials`,
                 authHeaderName: authType === "header" ? authHeaderName : null,
                 enabled: true,
                 status: "connected",
