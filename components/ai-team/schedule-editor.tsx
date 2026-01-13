@@ -215,7 +215,7 @@ export function ScheduleEditor({
                                     initial={{ opacity: 0, y: -4 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -4 }}
-                                    className="border-foreground/10 bg-background absolute top-6 left-0 z-10 w-48 rounded-lg border shadow-lg"
+                                    className="border-foreground/10 bg-background z-dropdown absolute top-6 left-0 w-48 rounded-lg border shadow-lg"
                                 >
                                     {timezones.map((tz) => (
                                         <button

@@ -134,7 +134,7 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.95 }}
                         className={cn(
-                            "z-modal absolute top-12 right-0 w-80",
+                            "z-dropdown absolute top-12 right-0 w-80",
                             "border-foreground/10 bg-background rounded-xl border",
                             "shadow-lg shadow-black/10"
                         )}

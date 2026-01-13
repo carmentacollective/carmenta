@@ -289,7 +289,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                             delay: 0.6,
                             ease: [0.23, 1, 0.32, 1],
                         }}
-                        className="z-modal absolute top-full left-1/2 mt-3 w-56 -translate-x-1/2 sm:w-72"
+                        className="z-dropdown absolute top-full left-1/2 mt-3 w-56 -translate-x-1/2 sm:w-72"
                     >
                         {/* Speech tail pointing up to Oracle */}
                         <div className="absolute -top-2 left-6 h-4 w-4 rotate-45 border-t border-l border-white/20 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-black/50" />
