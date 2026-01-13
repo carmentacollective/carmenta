@@ -846,6 +846,18 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 onStartFresh={clearDraft}
             />
 
+            {/* Message queue display - shows queued messages during streaming */}
+            {messageQueue.length > 0 && (
+                <MessageQueueDisplay
+                    queue={messageQueue}
+                    onRemove={removeFromQueue}
+                    onEdit={editQueuedMessage}
+                    onInterrupt={handleInterrupt}
+                    canInterrupt={isLoading}
+                    processingIndex={isQueueProcessing ? 0 : undefined}
+                />
+            )}
+
             <form
                 ref={formRef}
                 onSubmit={handleSubmit}
@@ -978,18 +990,6 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     </div>
                 </div>
             </form>
-
-            {/* Message queue display - shows queued messages during streaming */}
-            {messageQueue.length > 0 && (
-                <MessageQueueDisplay
-                    queue={messageQueue}
-                    onRemove={removeFromQueue}
-                    onEdit={editQueuedMessage}
-                    onInterrupt={handleInterrupt}
-                    canInterrupt={isLoading}
-                    processingIndex={isQueueProcessing ? 0 : undefined}
-                />
-            )}
 
             {/* Tip zone - shows below input when focused (one-time hint for new users) */}
             <AnimatePresence>
