@@ -808,7 +808,7 @@ async function executeRetrieve(
         const contentTruncated = rawContent.length > MAX_RETRIEVE_CONTENT_CHARS;
         const content = contentTruncated
             ? rawContent.slice(0, MAX_RETRIEVE_CONTENT_CHARS) +
-              `\n\n[Content truncated - ${rawContent.length} chars total]`
+              `\n\n[Content truncated - ${rawContent.length} chars total. View full document in the Knowledge Base.]`
             : rawContent;
 
         logger.info(

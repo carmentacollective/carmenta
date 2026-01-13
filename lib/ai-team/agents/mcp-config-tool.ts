@@ -37,6 +37,12 @@ import { safeInvoke } from "@/lib/ai-team/dcos/utils";
 const MCP_CONFIG_ID = "mcp-config";
 
 /**
+ * Maximum tools to include in connection test summary.
+ * Prevents context overflow when MCP servers expose many tools.
+ */
+const MAX_TOOLS_IN_SUMMARY = 10;
+
+/**
  * Describe MCP config operations for progressive disclosure
  */
 function describeOperations(): SubagentDescription {
@@ -406,12 +412,6 @@ async function executeGuide(
         );
     }
 }
-
-/**
- * Maximum tools to include in connection test summary.
- * Prevents context overflow when MCP servers expose many tools.
- */
-const MAX_TOOLS_IN_SUMMARY = 10;
 
 /**
  * Create MCP server result
