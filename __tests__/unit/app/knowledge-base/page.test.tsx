@@ -62,8 +62,18 @@ vi.mock("@/components/knowledge-viewer", () => ({
 }));
 
 vi.mock("@/components/knowledge-viewer/kb-page-content", () => ({
-    KBPageContent: ({ initialFolders }: { initialFolders: unknown[] }) => (
-        <div data-testid="knowledge-viewer" data-folder-count={initialFolders.length}>
+    KBPageContent: ({
+        identityDocument,
+        memoriesFolders,
+    }: {
+        identityDocument: unknown;
+        memoriesFolders: unknown[];
+    }) => (
+        <div
+            data-testid="knowledge-viewer"
+            data-folder-count={memoriesFolders.length}
+            data-has-identity={identityDocument ? "true" : "false"}
+        >
             KB Page Content
         </div>
     ),
@@ -291,19 +301,20 @@ describe("/knowledge-base page", () => {
     });
 
     describe("Knowledge Viewer Rendering", () => {
-        it("passes folders to KnowledgeViewer", async () => {
+        it("passes identity and memories to KBPageContent", async () => {
             // Act
             const KnowledgeBasePage = (await import("@/app/knowledge-base/page"))
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert - Profile + Memories = 2 folders (Communication moved to /communication page)
+            // Assert - Identity doc extracted, memories folder with placeholder
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
-            expect(viewer).toHaveAttribute("data-folder-count", "2");
+            expect(viewer).toHaveAttribute("data-has-identity", "true");
+            expect(viewer).toHaveAttribute("data-folder-count", "1"); // memories placeholder
         });
 
-        it("always includes values folder even when no user folders exist", async () => {
+        it("shows empty memories when no knowledge folders exist", async () => {
             // Arrange: No user folders
             mocks.mockGetKBFolders.mockResolvedValue([]);
 
@@ -312,10 +323,10 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Should still render viewer with memories folder (always present)
+            // Assert: Should render with memories placeholder
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
-            expect(viewer).toHaveAttribute("data-folder-count", "1"); // memories folder always present
+            expect(viewer).toHaveAttribute("data-folder-count", "1"); // memories placeholder
         });
 
         it("renders with folders when they exist", async () => {
@@ -399,7 +410,7 @@ describe("/knowledge-base page", () => {
             });
         });
 
-        it("handles empty folders array with values folder always present", async () => {
+        it("handles empty folders array with memories placeholder", async () => {
             // Arrange: No user folders
             mocks.mockGetKBFolders.mockResolvedValue([]);
 
@@ -408,7 +419,7 @@ describe("/knowledge-base page", () => {
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Memories folder always present, so viewer renders (never empty state)
+            // Assert: Memories folder always present with placeholder
             const { getByTestId } = render(result as ReactElement);
             expect(getByTestId("knowledge-viewer")).toBeInTheDocument();
             expect(getByTestId("knowledge-viewer")).toHaveAttribute(
