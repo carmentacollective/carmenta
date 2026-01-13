@@ -10,7 +10,7 @@
  * - get: Get details of a specific automation by ID or name
  * - update: Update prompt, name, or integrations
  * - runs: Get run history for an automation
- * - run: Get details of a specific run including execution trace
+ * - run: Get details of a specific run including execution summary and errors
  */
 
 import { tool } from "ai";
@@ -35,6 +35,12 @@ import { safeInvoke } from "@/lib/ai-team/dcos/utils";
  * DCOS subagent ID
  */
 const DCOS_ID = "dcos";
+
+/**
+ * Max characters for final outcome in execution summary.
+ * Prevents large final text from bloating tool results.
+ */
+const MAX_FINAL_OUTCOME_CHARS = 500;
 
 /**
  * Maximum runs to return in a single query
@@ -130,7 +136,7 @@ function describeOperations(): SubagentDescription {
             {
                 name: "run",
                 description:
-                    "Get details of a specific run including execution trace, tool calls, and errors.",
+                    "Get details of a specific run including execution summary (step count, tools used) and errors.",
                 params: [
                     {
                         name: "runId",
@@ -174,12 +180,83 @@ interface RunSummary {
     notificationsSent: number;
 }
 
+/**
+ * Compact summary of execution trace for AI consumption.
+ * Returns essential debugging info without the full trace blob.
+ */
+interface ExecutionSummary {
+    stepCount: number;
+    toolsUsed: { name: string; count: number }[];
+    /** Truncated final output (max 500 chars) */
+    finalOutcome?: string;
+    /** If failed, which step failed */
+    failedAtStep?: number;
+}
+
 interface RunDetail extends RunSummary {
     error: string | null;
-    executionTrace: unknown;
+    /** Compact summary instead of full trace - prevents context overflow */
+    executionSummary: ExecutionSummary | null;
     errorDetails: unknown;
     modelId: string | null;
     sentryTraceId: string | null;
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Build a compact execution summary from the full trace.
+ * Returns the essential info for AI troubleshooting without the full blob.
+ *
+ * Design decision: The full executionTrace can be 100KB+ (all tool inputs/outputs,
+ * reasoning content, etc.). When returned as a tool result, this becomes part of
+ * conversation history and causes "input too long" errors on subsequent messages.
+ * This summary provides enough context for the AI to help troubleshoot.
+ */
+function buildExecutionSummary(
+    trace: {
+        steps?: Array<{ toolCalls?: Array<{ toolName: string }> }>;
+        finalText?: string;
+    } | null,
+    errorDetails: { failedStep?: number } | null
+): ExecutionSummary | null {
+    if (!trace || !trace.steps) {
+        return null;
+    }
+
+    // Count tool usage across all steps
+    const toolCounts = new Map<string, number>();
+    for (const step of trace.steps) {
+        if (step.toolCalls) {
+            for (const tc of step.toolCalls) {
+                // Guard against malformed tool calls missing toolName
+                if (tc.toolName) {
+                    toolCounts.set(tc.toolName, (toolCounts.get(tc.toolName) ?? 0) + 1);
+                }
+            }
+        }
+    }
+
+    // Convert to array sorted by count (descending)
+    const toolsUsed = Array.from(toolCounts.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
+
+    // Truncate final outcome to prevent large text
+    const finalOutcome = trace.finalText
+        ? trace.finalText.length > MAX_FINAL_OUTCOME_CHARS
+            ? trace.finalText.slice(0, MAX_FINAL_OUTCOME_CHARS) + "..."
+            : trace.finalText
+        : undefined;
+
+    return {
+        stepCount: trace.steps.length,
+        toolsUsed,
+        finalOutcome,
+        failedAtStep: errorDetails?.failedStep,
+    };
 }
 
 // ============================================================================
@@ -511,6 +588,16 @@ async function executeRun(
             return successResult({ run: null, found: false });
         }
 
+        // Build compact summary instead of returning full trace
+        // This prevents context overflow when the AI processes run details
+        const executionSummary = buildExecutionSummary(
+            run.executionTrace as {
+                steps?: Array<{ toolCalls?: Array<{ toolName: string }> }>;
+                finalText?: string;
+            } | null,
+            run.errorDetails as { failedStep?: number } | null
+        );
+
         const runDetail: RunDetail = {
             id: run.id,
             status: run.status,
@@ -521,7 +608,7 @@ async function executeRun(
             toolCallsExecuted: run.toolCallsExecuted,
             notificationsSent: run.notificationsSent,
             error: run.error,
-            executionTrace: run.executionTrace,
+            executionSummary,
             errorDetails: run.errorDetails,
             modelId: run.modelId,
             sentryTraceId: run.sentryTraceId,

@@ -278,7 +278,15 @@ describe("DCOS Tool", () => {
             const result = (await executeTool(dcosTool, {
                 action: "run",
                 runId: testJobRun.id,
-            })) as SubagentResult<{ run: { executionTrace: unknown }; found: boolean }>;
+            })) as SubagentResult<{
+                run: {
+                    executionSummary: {
+                        stepCount: number;
+                        toolsUsed: Array<{ name: string; count: number }>;
+                    } | null;
+                };
+                found: boolean;
+            }>;
 
             expect(result.success).toBe(true);
             expect(result.data).toHaveProperty("found", true);
@@ -286,8 +294,10 @@ describe("DCOS Tool", () => {
             const run = result.data!.run;
             expect(run).toHaveProperty("id", testJobRun.id);
             expect(run).toHaveProperty("status", "completed");
-            expect(run).toHaveProperty("executionTrace");
-            expect(run.executionTrace).toHaveProperty("steps");
+            // executionSummary replaces executionTrace - contains stepCount and toolsUsed
+            expect(run).toHaveProperty("executionSummary");
+            expect(run.executionSummary).toHaveProperty("stepCount");
+            expect(run.executionSummary).toHaveProperty("toolsUsed");
         });
 
         it("returns not found for non-existent run", async () => {
