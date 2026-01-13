@@ -408,6 +408,12 @@ async function executeGuide(
 }
 
 /**
+ * Maximum tools to include in connection test summary.
+ * Prevents context overflow when MCP servers expose many tools.
+ */
+const MAX_TOOLS_IN_SUMMARY = 10;
+
+/**
  * Create MCP server result
  */
 interface CreateData {
@@ -419,11 +425,12 @@ interface CreateData {
         url: string;
         status: string;
     };
-    // Connection test results
+    // Connection test results - summarized to prevent context overflow
     connectionTest?: {
         success: boolean;
         toolCount?: number;
-        tools?: Array<{ name: string; description?: string }>;
+        /** Tool names only (no descriptions), limited to MAX_TOOLS_IN_SUMMARY */
+        toolNames?: string[];
         error?: string;
     };
     // User-facing message with delight
@@ -552,6 +559,11 @@ async function executeCreate(
                 : "⚠️ MCP server added but connection failed"
         );
 
+        // Build tool names summary (names only, limited count) to prevent context overflow
+        const toolNames = testResult.tools
+            ?.slice(0, MAX_TOOLS_IN_SUMMARY)
+            .map((t) => t.name);
+
         return successResult<CreateData>({
             success: true,
             server: {
@@ -564,7 +576,7 @@ async function executeCreate(
             connectionTest: {
                 success: testResult.success,
                 toolCount: testResult.tools?.length,
-                tools: testResult.tools,
+                toolNames,
                 error: testResult.error,
             },
             message,

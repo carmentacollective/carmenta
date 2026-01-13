@@ -42,6 +42,14 @@ const LIBRARIAN_ID = "librarian";
 const MAX_EXTRACTION_STEPS = 10;
 
 /**
+ * Content truncation limits to prevent context overflow.
+ * These apply to content returned in tool results.
+ */
+const MAX_SEARCH_CONTENT_CHARS = 500; // Preview only for search results
+const MAX_RETRIEVE_CONTENT_CHARS = 4000; // Larger limit for explicit retrieval
+const MAX_SEARCH_RESULTS = 5; // Hard cap on search results
+
+/**
  * Librarian model ID - derived from LIBRARIAN_FALLBACK_CHAIN to stay in sync
  */
 const LIBRARIAN_MODEL = LIBRARIAN_FALLBACK_CHAIN[0];
@@ -390,7 +398,10 @@ interface SearchData {
     results: Array<{
         path: string;
         name: string;
-        content: string;
+        /** Content preview, truncated to MAX_SEARCH_CONTENT_CHARS */
+        contentPreview: string;
+        /** True if content was truncated */
+        contentTruncated: boolean;
         description: string | null;
         relevance: number;
     }>;
@@ -405,21 +416,31 @@ async function executeSearch(
     context: SubagentContext
 ): Promise<SubagentResult<SearchData>> {
     const { query, maxResults = 5 } = params;
+    // Enforce hard cap on results to prevent context overflow
+    const cappedMaxResults = Math.min(maxResults, MAX_SEARCH_RESULTS);
 
     try {
         const response = await searchKnowledge(context.userId, query, {
-            maxResults,
+            maxResults: cappedMaxResults,
             includeContent: true,
         });
 
+        // Truncate content to preview length to prevent context overflow
         const data: SearchData = {
-            results: response.results.map((r) => ({
-                path: r.path,
-                name: r.name,
-                content: r.content,
-                description: r.description,
-                relevance: r.relevance,
-            })),
+            results: response.results.map((r) => {
+                const content = r.content ?? "";
+                const truncated = content.length > MAX_SEARCH_CONTENT_CHARS;
+                return {
+                    path: r.path,
+                    name: r.name,
+                    contentPreview: truncated
+                        ? content.slice(0, MAX_SEARCH_CONTENT_CHARS) + "..."
+                        : content,
+                    contentTruncated: truncated,
+                    description: r.description,
+                    relevance: r.relevance,
+                };
+            }),
             totalFound: response.metadata.totalBeforeFiltering,
         };
 
@@ -760,7 +781,10 @@ interface RetrieveData {
     document?: {
         path: string;
         name: string;
+        /** Content, truncated to MAX_RETRIEVE_CONTENT_CHARS if too large */
         content: string;
+        /** True if content was truncated */
+        contentTruncated: boolean;
         description: string | null;
     };
 }
@@ -779,8 +803,21 @@ async function executeRetrieve(
             return successResult<RetrieveData>({ found: false });
         }
 
+        // Truncate content if too large to prevent context overflow
+        const rawContent = doc.content ?? "";
+        const contentTruncated = rawContent.length > MAX_RETRIEVE_CONTENT_CHARS;
+        const content = contentTruncated
+            ? rawContent.slice(0, MAX_RETRIEVE_CONTENT_CHARS) +
+              `\n\n[Content truncated - ${rawContent.length} chars total]`
+            : rawContent;
+
         logger.info(
-            { userId: context.userId, path: params.path },
+            {
+                userId: context.userId,
+                path: params.path,
+                contentTruncated,
+                originalLength: rawContent.length,
+            },
             "📚 Librarian retrieve completed"
         );
 
@@ -789,7 +826,8 @@ async function executeRetrieve(
             document: {
                 path: doc.path,
                 name: doc.name,
-                content: doc.content,
+                content,
+                contentTruncated,
                 description: doc.description,
             },
         });
