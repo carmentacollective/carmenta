@@ -1,51 +1,21 @@
 /**
  * Sentry Server Configuration
  *
- * Initializes Sentry on the server for error tracking, performance monitoring,
- * and LLM tracing via the Vercel AI SDK integration.
+ * Intentionally minimal - using Sentry's defaults which include:
+ * - vercelAIIntegration (LLM tracing for Vercel AI SDK)
+ * - consoleIntegration (breadcrumbs from console calls)
+ * - All standard Node.js integrations
+ *
+ * We previously had custom config (enabled: false in dev, explicit integrations,
+ * custom onRequestError) that may have contributed to Turbopack hanging in an
+ * infinite error loop. Stripped to vanilla to match official docs exactly.
+ *
+ * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
  */
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
     dsn: process.env.SENTRY_DSN,
-
-    // Performance monitoring - capture 100% of transactions in dev, 10% in prod
-    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
-
-    // Only send errors in production
-    enabled: process.env.NODE_ENV === "production",
-
-    // Set environment - use SENTRY_ENVIRONMENT for deployment distinction
+    tracesSampleRate: 1.0,
     environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV,
-
-    // Don't log debug info in production
-    debug: false,
-
-    // Integrations including Vercel AI SDK for LLM tracing
-    integrations: [
-        // Vercel AI SDK integration for LLM tracing (enabled by default in Node runtime)
-        // This automatically captures spans for streamText, generateText, etc.
-        Sentry.vercelAIIntegration({
-            // Record inputs/outputs for LLM debugging
-            // Note: This captures prompts and responses - be mindful of PII
-            recordInputs: true,
-            recordOutputs: true,
-        }),
-    ],
-
-    // Filter out noisy errors
-    ignoreErrors: [
-        // Expected operational errors
-        "ECONNRESET",
-        "ETIMEDOUT",
-        // User-cancelled requests
-        "AbortError",
-    ],
-
-    // Add tags for filtering in Sentry dashboard
-    initialScope: {
-        tags: {
-            component: "server",
-        },
-    },
 });
