@@ -7,6 +7,9 @@
 
 import type { UIMessage, DataPart } from "ai";
 
+// Re-export DataPart from AI SDK for consumers
+export type { DataPart };
+
 /**
  * Tool state from AI SDK
  *
