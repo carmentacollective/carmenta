@@ -5,7 +5,7 @@
  * Follows patterns from connections.ts and mcp-hubby.
  */
 
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 import { db } from "./client";
 import {
@@ -61,7 +61,10 @@ export interface UpdateMcpServerInput {
 // ============================================================================
 
 /**
- * Creates a new MCP server configuration
+ * Creates or updates an MCP server configuration.
+ *
+ * Uses upsert on (userEmail, identifier, accountId) unique constraint.
+ * If server exists with same key, updates URL, credentials, and reconnects.
  */
 export async function createMcpServer(input: CreateMcpServerInput): Promise<McpServer> {
     const {
@@ -77,7 +80,7 @@ export async function createMcpServer(input: CreateMcpServerInput): Promise<McpS
         serverManifest,
     } = input;
 
-    // Check if this is the first server for this identifier
+    // Check if this is the first server for this identifier (for isDefault)
     const existing = await db.query.mcpServers.findFirst({
         where: and(
             eq(mcpServers.userEmail, userEmail),
@@ -87,6 +90,7 @@ export async function createMcpServer(input: CreateMcpServerInput): Promise<McpS
 
     const isDefault = !existing;
 
+    // Upsert: create or update on conflict with unique constraint
     const [server] = await db
         .insert(mcpServers)
         .values({
@@ -107,11 +111,32 @@ export async function createMcpServer(input: CreateMcpServerInput): Promise<McpS
             serverManifest,
             lastConnectedAt: new Date(),
         })
+        .onConflictDoUpdate({
+            target: [mcpServers.userEmail, mcpServers.identifier, mcpServers.accountId],
+            set: {
+                displayName,
+                url,
+                transport,
+                authType,
+                encryptedCredentials: credentials
+                    ? encryptCredentials({ token: credentials.token })
+                    : sql`mcp_servers.encrypted_credentials`,
+                authHeaderName: authType === "header" ? authHeaderName : null,
+                enabled: true,
+                status: "connected",
+                errorMessage: null,
+                serverManifest: serverManifest
+                    ? serverManifest
+                    : sql`mcp_servers.server_manifest`,
+                lastConnectedAt: new Date(),
+                updatedAt: new Date(),
+            },
+        })
         .returning();
 
     logger.info(
         { serverId: server.id, identifier, userEmail },
-        "Created MCP server configuration"
+        "Created/updated MCP server configuration"
     );
 
     // Log the connection event
