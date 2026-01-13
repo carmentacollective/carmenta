@@ -13,13 +13,50 @@
  * - While React Server Components are streaming
  * - During initial app hydration
  *
+ * Progress messaging appears after 3 seconds to acknowledge longer waits.
+ * Exit transition is handled via CSS opacity animation coordinated with
+ * content entrance animations in the app.
+ *
  * @see knowledge/components/pwa-mobile-enhancements.md
  */
 
+"use client";
+
+import { useState, useEffect } from "react";
+
+const PROGRESS_MESSAGES = [
+    "Setting the stage...",
+    "Gathering our thoughts...",
+    "Preparing our space...",
+] as const;
+
 export default function Loading() {
+    const [secondsElapsed, setSecondsElapsed] = useState(0);
+    const [messageIndex] = useState(() =>
+        Math.floor(Math.random() * PROGRESS_MESSAGES.length)
+    );
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSecondsElapsed((s) => s + 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Progress message shown after 3 seconds
+    const showProgress = secondsElapsed >= 3;
+    const progressMessage =
+        secondsElapsed >= 8 ? "Almost there..." : PROGRESS_MESSAGES[messageIndex];
+
     return (
-        <div className="z-loading bg-background fixed inset-0 flex items-center justify-center">
-            {/* Keyframe animations and dark mode adjustments - inline to ensure they're available before CSS loads */}
+        <div
+            className="z-loading bg-background fixed inset-0 flex flex-col items-center justify-center"
+            style={{
+                // Fade out when content is ready (content renders on top with entrance animation)
+                animation: "loaderFadeIn 0.3s ease-out",
+            }}
+        >
+            {/* Keyframe animations - inline to ensure they're available before CSS loads */}
             <style
                 dangerouslySetInnerHTML={{
                     __html: `
@@ -29,6 +66,14 @@ export default function Loading() {
                         }
                         @keyframes loaderSpin {
                             to { transform: rotate(360deg); }
+                        }
+                        @keyframes loaderFadeIn {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                        @keyframes loaderMessageFadeIn {
+                            from { opacity: 0; transform: translateY(8px); }
+                            to { opacity: 1; transform: translateY(0); }
                         }
                         @media (prefers-color-scheme: dark) {
                             .orbit-path-dark {
@@ -88,6 +133,18 @@ export default function Loading() {
                     }}
                 />
             </div>
+
+            {/* Progress message - appears after 3 seconds */}
+            {showProgress && (
+                <p
+                    className="text-foreground/40 mt-8 text-sm font-light tracking-wide"
+                    style={{
+                        animation: "loaderMessageFadeIn 0.5s ease-out forwards",
+                    }}
+                >
+                    {progressMessage}
+                </p>
+            )}
         </div>
     );
 }
