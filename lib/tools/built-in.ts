@@ -95,8 +95,7 @@ export const builtInTools = {
                 );
                 return {
                     expression,
-                    error: true,
-                    message:
+                    error:
                         error instanceof Error
                             ? error.message
                             : "Could not evaluate expression",
@@ -122,14 +121,10 @@ export const builtInTools = {
             const result = await provider.extract(url, { maxLength });
 
             if (!result) {
-                return {
-                    error: true,
-                    message:
-                        "That page isn't loading. It might be down or blocking access.",
+                return { error: "That page isn't loading. It might be down or blocking access.",
                     title: "",
                     content: "",
-                    url,
-                };
+                    url, };
             }
 
             // Surface warnings about partial/problematic extractions
@@ -184,14 +179,10 @@ export const builtInTools = {
                     tags: { component: "tools", tool: "deepResearch" },
                     extra: { objective, depth, focusAreas },
                 });
-                return {
-                    error: true,
-                    message:
-                        "Research didn't find much. The robots are investigating. 🤖",
+                return { error: "Research didn't find much. The robots are investigating. 🤖",
                     summary: "",
                     findings: [],
-                    sources: [],
-                };
+                    sources: [], };
             }
 
             return {
@@ -222,11 +213,8 @@ export const builtInTools = {
             const result = await provider.search(query, { maxResults });
 
             if (!result) {
-                return {
-                    error: true,
-                    message: "Search came up empty. The robots are on it. 🤖",
-                    results: [],
-                };
+                return { error: "Search came up empty. The robots are on it. 🤖",
+                    results: [], };
             }
 
             return {
@@ -266,10 +254,7 @@ export const builtInTools = {
                     { tool: "giphy" },
                     "GIPHY_API_KEY environment variable not configured"
                 );
-                return {
-                    error: true,
-                    message: "Giphy is not configured. Missing API key.",
-                };
+                return { error: "Giphy is not configured. Missing API key.", };
             }
 
             const DEFAULT_RATING = "pg";
@@ -278,10 +263,7 @@ export const builtInTools = {
                 switch (action) {
                     case "search": {
                         if (!query) {
-                            return {
-                                error: true,
-                                message: "Search action requires a query parameter.",
-                            };
+                            return { error: "Search action requires a query parameter.", };
                         }
 
                         logger.info({ query, limit }, "Searching Giphy");
@@ -358,13 +340,9 @@ export const builtInTools = {
                 Sentry.captureException(error, {
                     tags: { component: "tool", tool: "giphy", action },
                 });
-                return {
-                    error: true,
-                    message:
-                        error instanceof Error
+                return { error: error instanceof Error
                             ? error.message
-                            : "Failed to fetch GIFs from Giphy",
-                };
+                            : "Failed to fetch GIFs from Giphy", };
             }
         },
     }),
@@ -404,10 +382,7 @@ export const builtInTools = {
                             .json<ImgflipGetMemesResponse>();
 
                         if (!response.success) {
-                            return {
-                                error: true,
-                                message: "Failed to fetch meme templates",
-                            };
+                            return { error: "Failed to fetch meme templates", };
                         }
 
                         // Return top 50 most popular templates
@@ -431,19 +406,11 @@ export const builtInTools = {
                                 { tool: "imgflip" },
                                 "IMGFLIP_USERNAME or IMGFLIP_PASSWORD not configured"
                             );
-                            return {
-                                error: true,
-                                message:
-                                    "Imgflip meme creation is not configured. Missing credentials.",
-                            };
+                            return { error: "Imgflip meme creation is not configured. Missing credentials.", };
                         }
 
                         if (!templateId) {
-                            return {
-                                error: true,
-                                message:
-                                    "templateId is required for create_meme. Use list_templates to find template IDs.",
-                            };
+                            return { error: "templateId is required for create_meme. Use list_templates to find template IDs.", };
                         }
 
                         logger.info(
@@ -468,11 +435,7 @@ export const builtInTools = {
                             .json<ImgflipCaptionResponse>();
 
                         if (!response.success) {
-                            return {
-                                error: true,
-                                message:
-                                    response.error_message || "Failed to create meme",
-                            };
+                            return { error: response.error_message || "Failed to create meme", };
                         }
 
                         return {
@@ -487,13 +450,9 @@ export const builtInTools = {
                 Sentry.captureException(error, {
                     tags: { component: "tool", tool: "imgflip", action },
                 });
-                return {
-                    error: true,
-                    message:
-                        error instanceof Error
+                return { error: error instanceof Error
                             ? error.message
-                            : "Failed to communicate with Imgflip",
-                };
+                            : "Failed to communicate with Imgflip", };
             }
         },
     }),

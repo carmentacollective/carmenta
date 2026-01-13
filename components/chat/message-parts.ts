@@ -126,10 +126,15 @@ export function getFileParts(message: UIMessage): FilePart[] {
 
 /**
  * Extract data parts from a message (for generative UI)
+ *
+ * Handles both generic "data" type and specific "data-*" types
+ * (e.g., data-askUserInput, data-showReferences) emitted by streaming API
  */
 export function getDataParts(message: UIMessage): DataPart[] {
     return message.parts.filter(
-        (part): part is DataPart => part.type === "data"
+        (part): part is DataPart =>
+            part.type === "data" ||
+            (typeof part.type === "string" && part.type.startsWith("data-"))
     ) as DataPart[];
 }
 
