@@ -83,7 +83,7 @@ export function McpToolResult({
 
     // Extract server and action info
     const serverName = getMcpServerName(toolName);
-    const action = typeof input.action === "string" ? input.action : "operation";
+    const action = typeof input?.action === "string" ? input.action : "operation";
 
     // Build description: "action · result summary"
     const resultSummary =
