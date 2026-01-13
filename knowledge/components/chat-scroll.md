@@ -8,6 +8,10 @@ while content streams in token-by-token.
 
 ## Key Behaviors
 
+**Keyboard-aware scrolling**: Suppresses auto-scroll during mobile keyboard open/close
+transitions (350ms window) to prevent jarring scroll jumps when the viewport resizes.
+Works with `interactiveWidget: resizes-content` in the viewport config.
+
 **Auto-scroll during streaming**: Uses `instant` scroll behavior to keep up with rapid
 token streams. Smooth scroll can't keep pace and creates visual stutter.
 
@@ -86,3 +90,6 @@ This implementation combines patterns from:
 - **User returns to bottom**: Automatically resumes streaming scroll.
 
 - **Rapid token streams**: Instant scroll keeps up without visual jank.
+
+- **Mobile keyboard opens/closes**: Auto-scroll paused during 350ms transition window to
+  prevent viewport resize from triggering unwanted scrolls.

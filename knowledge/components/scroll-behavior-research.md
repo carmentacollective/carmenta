@@ -27,6 +27,8 @@ systems fight each other.
    - `touch-pan-y` for proper mobile scrolling
    - `overscroll-contain` prevents iOS bounce jank
    - Safe area insets for notched devices
+   - `interactiveWidget: resizes-content` viewport config for keyboard handling
+   - Keyboard transition suppression (350ms) prevents auto-scroll during viewport resize
 
 3. **Visual polish**
    - `chat-viewport-fade` masks (top/bottom gradient)
