@@ -61,6 +61,11 @@ export const viewport = {
     maximumScale: 5,
     userScalable: true,
     viewportFit: "cover",
+    // Mobile keyboard handling: resize content instead of overlaying
+    // On Android, this makes viewport shrink when keyboard opens - flex layouts reflow automatically
+    // Works with 100dvh in globals.css - iOS uses dvh for similar behavior (Safari lacks this property)
+    // Supported: Chrome 108+ (Android), Firefox 132+. Unsupported browsers gracefully ignore.
+    interactiveWidget: "resizes-content",
     themeColor: [
         { media: "(prefers-color-scheme: light)", color: "#F8F4F8" },
         { media: "(prefers-color-scheme: dark)", color: "#1A0F20" },
