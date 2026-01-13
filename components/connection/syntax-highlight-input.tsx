@@ -80,12 +80,11 @@ const COMMANDS = [
     { id: "explain", name: "Explain", description: "Break down concept" },
 ];
 
-// Easter eggs - ONLY rare/intentional phrases, not common words
-// Avoid: we, us, our, together, create, build, ship, flow (too common, will annoy)
+// Easter eggs - words that get special highlighting treatment
 const EASTER_EGGS = {
-    love: ["love you", "love carmenta"], // Intentional affection
-    gratitude: ["thank you"], // Warmth when expressing thanks
-    celebration: ["hell yeah", "nailed it"], // Rare enough to delight
+    love: ["love"],
+    gratitude: ["thank you", "thanks"],
+    celebration: ["hell yeah", "nailed it"],
 } as const;
 
 const ALL_EASTER_WORDS = Object.values(EASTER_EGGS).flat();
