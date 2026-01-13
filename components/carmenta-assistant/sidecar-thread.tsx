@@ -15,7 +15,7 @@
  * - Shows the conversation (same as HoloThread)
  */
 
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { SparkleIcon } from "@phosphor-icons/react";
@@ -79,12 +79,10 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
     const { concierge } = useConcierge();
     const { isCodeMode } = useCodeMode();
 
-    // Track stopped messages for visual indicator (same pattern as HoloThread)
-    // Currently tracked but not displayed - can add wasStopped prop to MessageBubble later
-    const [_stoppedMessageIds, setStoppedMessageIds] = useState<Set<string>>(new Set());
-
-    const handleMarkMessageStopped = useCallback((messageId: string) => {
-        setStoppedMessageIds((prev) => new Set([...prev, messageId]));
+    // Composer requires onMarkMessageStopped callback - no-op for now
+    // Will add visual stopped indicator to MessageBubble if needed
+    const handleMarkMessageStopped = useCallback((_messageId: string) => {
+        // no-op
     }, []);
 
     // PWA Share Target: Handle content shared from other apps
