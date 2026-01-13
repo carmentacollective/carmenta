@@ -407,31 +407,27 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         }
     }, [showShiftEnterHint, isFocused]);
 
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │  AUTO-RESIZE: Only for multi-line content!                       │
-    // │                                                                   │
-    // │  Single-line content MUST NOT have explicit height set.          │
-    // │  CSS min-height + symmetric padding handles vertical centering.  │
-    // │  Setting scrollHeight for single-line makes textarea too tall    │
-    // │  and causes text to render at TOP, not vertically centered.      │
-    // │                                                                   │
-    // │  If vertical alignment breaks, check:                            │
-    // │  1. This effect is NOT setting height for single-line            │
-    // │  2. CHAT_TEXTAREA_CLASSES has symmetric padding (py-3 / py-4)    │
-    // │  3. No other code is setting explicit height on the textarea     │
-    // └─────────────────────────────────────────────────────────────────┘
+    // Auto-resize textarea to fit content (also on window resize for mobile)
     useEffect(() => {
-        const textarea = inputRef.current;
-        if (!textarea?.style) return;
-
-        // Only auto-resize for multi-line content (has newlines)
-        if (input.includes("\n")) {
+        const resize = () => {
+            const textarea = inputRef.current;
+            if (!textarea?.style) return;
             textarea.style.height = "auto";
             textarea.style.height = `${textarea.scrollHeight}px`;
-        } else {
-            // Single-line: remove explicit height, let CSS handle centering
-            textarea.style.height = "";
-        }
+        };
+
+        let rafId: number | undefined;
+        const throttledResize = () => {
+            if (rafId !== undefined) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(resize);
+        };
+
+        resize();
+        window.addEventListener("resize", throttledResize);
+        return () => {
+            window.removeEventListener("resize", throttledResize);
+            if (rafId !== undefined) cancelAnimationFrame(rafId);
+        };
     }, [input]);
 
     const handleSubmit = useCallback(
