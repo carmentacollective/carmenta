@@ -38,9 +38,9 @@ function isTargetedTest(): boolean {
  * 2. System load: Tiered reduction only when system is actually struggling
  *
  * Full test suite strategy (DX-focused):
- * - Load ratio < 1.2: Use 8 workers (optimal speed)
- * - Load ratio 1.2-1.8: Use 6 workers (modest reduction)
- * - Load ratio > 1.8: Use 4 workers (system struggling)
+ * - Load ratio < 1.2: Use 10 workers (optimal speed)
+ * - Load ratio 1.2-1.8: Use 8 workers (modest reduction)
+ * - Load ratio > 1.8: Use 5 workers (system struggling)
  *
  * Single file tests: Use 2-4 workers max (limited parallelization benefit)
  *
@@ -51,8 +51,8 @@ function isTargetedTest(): boolean {
  * - 20 workers: 20.07s (+1.5% slower)
  * - 28 workers: 24.09s (+21.9% slower)
  *
- * Conclusion: Optimal is ~57% of cores (8/14 = 0.57). Performance degrades above
- * this due to resource contention. This ratio scales across different CPU counts.
+ * Conclusion: ~71% of cores (10/14 = 0.71) provides good parallelization without
+ * significant resource contention. This ratio scales across different CPU counts.
  */
 function calculateOptimalWorkers(): {
     workers: number;
@@ -93,9 +93,9 @@ function calculateOptimalWorkers(): {
     }
 
     // Full test suite: Scale workers based on system load
-    // Optimal is ~57% of cores based on benchmark results (8/14 = 0.57)
+    // Optimal is ~71% of cores (10/14 = 0.71)
     // This ratio balances parallelization with resource contention across different CPU counts
-    const OPTIMAL_RATIO = 0.57;
+    const OPTIMAL_RATIO = 0.71;
     const OPTIMAL_WORKERS = Math.max(4, Math.ceil(cpuCount * OPTIMAL_RATIO));
 
     // Calculate load ratio (0 = idle, 1 = fully loaded, >1 = overloaded)
