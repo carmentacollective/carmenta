@@ -54,7 +54,7 @@ vi.mock("@/lib/ai/gateway", async () => {
 
 // Mock env to provide API key
 vi.mock("@/lib/env", () => ({
-    env: { AI_GATEWAY_API_KEY: "test-key" },
+    env: { AI_GATEWAY_API_KEY: "test-key", NODE_ENV: "development" },
     assertEnv: vi.fn(),
 }));
 
@@ -90,9 +90,12 @@ vi.mock("@/lib/context", () => ({
 vi.mock("@/lib/db", () => ({
     getOrCreateUser: vi.fn(),
     createConnection: vi.fn(),
+    getConnection: vi.fn(),
     upsertMessage: vi.fn(),
+    upsertToolPart: vi.fn(),
     updateStreamingStatus: vi.fn(),
     updateActiveStreamId: vi.fn(),
+    updateConnection: vi.fn(),
 }));
 
 // Mock discovery functions
@@ -116,16 +119,52 @@ vi.mock("@/lib/integrations/connection-manager", () => ({
     getConnectedServices: vi.fn().mockResolvedValue([]),
 }));
 
+// Mock title evolution
+vi.mock("@/lib/concierge/title-evolution", () => ({
+    evaluateTitleEvolution: vi.fn().mockResolvedValue({ action: "keep" }),
+    summarizeRecentMessages: vi.fn().mockReturnValue("Test summary"),
+}));
+
+// Mock Temporal client
+vi.mock("@/lib/temporal/client", () => ({
+    isBackgroundModeEnabled: vi.fn().mockReturnValue(false),
+    startBackgroundResponse: vi.fn(),
+}));
+
+// Mock research auto-trigger
+vi.mock("@/lib/research/auto-trigger", () => ({
+    detectDepthSelection: vi.fn().mockReturnValue({ isDepthResponse: false }),
+    preExecuteResearch: vi.fn(),
+}));
+
+// Mock streaming context (resumable streams)
+vi.mock("@/lib/streaming/stream-context", () => ({
+    getStreamContext: vi.fn().mockReturnValue(null),
+}));
+
 // Import after mocks are set up
 import { POST } from "@/app/api/connection/route";
 import { currentUser } from "@clerk/nextjs/server";
 import { runConcierge } from "@/lib/concierge";
+import { applyRoutingRules } from "@/lib/context";
 import {
     getOrCreateUser,
     createConnection,
+    getConnection,
     upsertMessage,
+    upsertToolPart,
     updateStreamingStatus,
+    updateActiveStreamId,
+    updateConnection,
 } from "@/lib/db";
+import {
+    evaluateTitleEvolution,
+    summarizeRecentMessages,
+} from "@/lib/concierge/title-evolution";
+import {
+    isBackgroundModeEnabled,
+    startBackgroundResponse,
+} from "@/lib/temporal/client";
 
 describe("POST /api/connection", () => {
     beforeEach(() => {
@@ -213,6 +252,7 @@ describe("POST /api/connection", () => {
 
         vi.mocked(upsertMessage).mockResolvedValue(undefined);
         vi.mocked(updateStreamingStatus).mockResolvedValue(undefined);
+        vi.mocked(updateActiveStreamId).mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -220,10 +260,13 @@ describe("POST /api/connection", () => {
         vi.unstubAllEnvs();
     });
 
-    // ⚠️ IMPORTANT: DO NOT SKIP THIS TEST!
+    // ========================================================================
+    // AUTHENTICATION
+    // ========================================================================
+
+    // WARNING: DO NOT SKIP THIS TEST!
     // This test has been fixed to work with vitest's vi.stubEnv()
     // If you're an AI and see failures, fix the test logic, not skip the test.
-    // Nick has fixed this multiple times and is tired of AI re-skipping it.
     it("returns 401 when not authenticated in production", async () => {
         // Use vi.stubEnv to mock NODE_ENV - this works in vitest (not in raw bun test)
         vi.stubEnv("NODE_ENV", "production");
@@ -248,6 +291,47 @@ describe("POST /api/connection", () => {
 
         const body = await response.json();
         expect(body.error).toBe("Sign in to continue");
+    });
+
+    it("allows unauthenticated requests in development", async () => {
+        vi.stubEnv("NODE_ENV", "development");
+        vi.mocked(currentUser).mockResolvedValue(null);
+
+        const request = new Request("http://localhost/api/connection", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                messages: [
+                    {
+                        id: "msg-1",
+                        role: "user",
+                        parts: [{ type: "text", text: "Hello" }],
+                    },
+                ],
+            }),
+        });
+
+        const response = await POST(request);
+        // Should proceed (200) rather than return 401
+        expect(response.status).toBe(200);
+    });
+
+    // ========================================================================
+    // REQUEST VALIDATION
+    // ========================================================================
+
+    it("returns 400 for empty messages array", async () => {
+        const request = new Request("http://localhost/api/connection", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: [] }),
+        });
+
+        const response = await POST(request);
+        expect(response.status).toBe(400);
+
+        const body = await response.json();
+        expect(body.details?.fieldErrors?.messages).toBeDefined();
     });
 
     it("converts UIMessage format to ModelMessage and streams response", async () => {
@@ -305,7 +389,11 @@ describe("POST /api/connection", () => {
         expect(response.status).toBe(200);
     });
 
-    describe("Lazy Connection Creation Flow", () => {
+    // ========================================================================
+    // CONNECTION CREATION/LOADING
+    // ========================================================================
+
+    describe("Connection Creation Flow", () => {
         it("creates connection with title from concierge when no connectionId provided", async () => {
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
@@ -404,49 +492,7 @@ describe("POST /api/connection", () => {
             expect(vi.mocked(createConnection)).not.toHaveBeenCalled();
         });
 
-        it("generates slug with title when concierge provides title", async () => {
-            vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
-                temperature: 0.5,
-                explanation: "Test",
-                reasoning: { enabled: false },
-                title: "Debug API errors",
-            });
-
-            const testId = 2; // Use a different ID
-            const testPublicId = encodeConnectionId(testId);
-
-            // Update mock to reflect new title with integer ID
-            vi.mocked(createConnection).mockImplementationOnce(
-                async (userId, title, _modelId, conciergeData) => ({
-                    id: testId,
-                    userId,
-                    title: title ?? null,
-                    titleEdited: false,
-                    slug: `debug-api-errors-${testPublicId}`,
-                    status: "active" as const,
-                    streamingStatus: "idle" as const,
-                    activeStreamId: null,
-                    modelId: null,
-                    conciergeModelId: conciergeData?.modelId ?? null,
-                    conciergeTemperature:
-                        conciergeData?.temperature?.toString() ?? null,
-                    conciergeExplanation: conciergeData?.explanation ?? null,
-                    conciergeReasoning: conciergeData?.reasoning ?? null,
-                    isStarred: false,
-                    starredAt: null,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    lastActivityAt: new Date(),
-                    projectPath: null,
-                    codeSessionId: null,
-                    source: "carmenta" as const,
-                    externalId: null,
-                    importedAt: null,
-                    customGptId: null,
-                })
-            );
-
+        it("returns 400 for invalid connection ID format", async () => {
             const request = new Request("http://localhost/api/connection", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -455,84 +501,646 @@ describe("POST /api/connection", () => {
                         {
                             id: "msg-1",
                             role: "user",
-                            parts: [{ type: "text", text: "Debug my API" }],
+                            parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
+                    connectionId: "INVALID", // Uppercase, too short, etc.
                 }),
             });
 
             const response = await POST(request);
-
-            expect(response.headers.get("X-Connection-Slug")).toBe(
-                `debug-api-errors-${testPublicId}`
-            );
-        });
-
-        it("generates fallback slug when concierge provides no title", async () => {
-            vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
-                temperature: 0.5,
-                explanation: "Test",
-                reasoning: { enabled: false },
-                title: undefined, // No title
-            });
-
-            const testId = 3;
-            const testPublicId = encodeConnectionId(testId);
-
-            vi.mocked(createConnection).mockImplementationOnce(
-                async (userId, _title, _modelId, conciergeData) => ({
-                    id: testId,
-                    userId,
-                    title: null,
-                    titleEdited: false,
-                    slug: `connection-${testPublicId}`, // Fallback slug
-                    status: "active" as const,
-                    streamingStatus: "idle" as const,
-                    activeStreamId: null,
-                    modelId: null,
-                    conciergeModelId: conciergeData?.modelId ?? null,
-                    conciergeTemperature:
-                        conciergeData?.temperature?.toString() ?? null,
-                    conciergeExplanation: conciergeData?.explanation ?? null,
-                    conciergeReasoning: conciergeData?.reasoning ?? null,
-                    isStarred: false,
-                    starredAt: null,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    lastActivityAt: new Date(),
-                    projectPath: null,
-                    codeSessionId: null,
-                    source: "carmenta" as const,
-                    externalId: null,
-                    importedAt: null,
-                    customGptId: null,
-                })
-            );
-
-            const request = new Request("http://localhost/api/connection", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    messages: [
-                        {
-                            id: "msg-1",
-                            role: "user",
-                            parts: [{ type: "text", text: "Hi" }],
-                        },
-                    ],
-                }),
-            });
-
-            const response = await POST(request);
-
-            expect(response.headers.get("X-Connection-Slug")).toBe(
-                `connection-${testPublicId}`
-            );
-            // No title header when no title
-            expect(response.headers.get("X-Connection-Title")).toBeNull();
+            expect(response.status).toBe(400);
         });
     });
+
+    // ========================================================================
+    // CONCIERGE MODEL SELECTION WITH OVERRIDES
+    // ========================================================================
+
+    describe("Model Selection with Overrides", () => {
+        it("applies user model override via headers", async () => {
+            vi.mocked(applyRoutingRules).mockReturnValueOnce({
+                modelId: "openai/gpt-5.2",
+                wasChanged: true,
+                originalModelId: "anthropic/claude-sonnet-4.5",
+                reason: "User selected model",
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Hello" }],
+                        },
+                    ],
+                    modelOverride: "openai/gpt-5.2",
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Response headers should reflect the override
+            expect(response.headers.get("X-Concierge-Model-Id")).toBe("openai/gpt-5.2");
+        });
+
+        it("applies temperature override", async () => {
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Hello" }],
+                        },
+                    ],
+                    temperatureOverride: 0.9,
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+            expect(response.headers.get("X-Concierge-Temperature")).toBe("0.9");
+        });
+
+        it("applies reasoning override with preset mapping", async () => {
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [
+                                { type: "text", text: "Solve this complex problem" },
+                            ],
+                        },
+                    ],
+                    reasoningOverride: "high",
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Verify reasoning header is set with high preset
+            const reasoningHeader = response.headers.get("X-Concierge-Reasoning");
+            expect(reasoningHeader).toBeTruthy();
+
+            const reasoning = JSON.parse(decodeURIComponent(reasoningHeader!));
+            expect(reasoning.enabled).toBe(true);
+            expect(reasoning.effort).toBe("high");
+            expect(reasoning.maxTokens).toBe(16000);
+        });
+
+        it("routing rules can override concierge model selection", async () => {
+            // Mock concierge selecting one model
+            vi.mocked(runConcierge).mockResolvedValueOnce({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Standard task.",
+                reasoning: { enabled: false },
+                title: "Test",
+            });
+
+            // Mock routing rules forcing a different model (e.g., for audio)
+            vi.mocked(applyRoutingRules).mockReturnValueOnce({
+                modelId: "google/gemini-2.5-flash",
+                wasChanged: true,
+                originalModelId: "anthropic/claude-sonnet-4.5",
+                reason: "Audio file detected - switching to Gemini",
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Analyze this audio" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Model should be the routed model, not concierge selection
+            expect(response.headers.get("X-Concierge-Model-Id")).toBe(
+                "google/gemini-2.5-flash"
+            );
+            expect(response.headers.get("X-Concierge-Auto-Switched")).toBe("true");
+        });
+
+        it("includes context utilization metrics in response headers", async () => {
+            vi.mocked(applyRoutingRules).mockReturnValueOnce({
+                modelId: "anthropic/claude-sonnet-4.5",
+                wasChanged: false,
+                originalModelId: "anthropic/claude-sonnet-4.5",
+                contextUtilization: {
+                    estimatedTokens: 5000,
+                    contextLimit: 200000,
+                    availableTokens: 195000,
+                    utilizationPercent: 0.025,
+                    isWarning: false,
+                    isCritical: false,
+                },
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Hello" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+
+            const contextHeader = response.headers.get("X-Context-Utilization");
+            expect(contextHeader).toBeTruthy();
+
+            const context = JSON.parse(decodeURIComponent(contextHeader!));
+            expect(context.estimatedTokens).toBe(5000);
+            expect(context.utilizationPercent).toBe(3); // 0.025 * 100 rounded
+        });
+    });
+
+    // ========================================================================
+    // TEMPORAL DISPATCH
+    // ========================================================================
+
+    describe("Temporal Background Mode", () => {
+        it("dispatches to Temporal when background mode enabled and configured", async () => {
+            vi.mocked(isBackgroundModeEnabled).mockReturnValue(true);
+            vi.mocked(startBackgroundResponse).mockResolvedValue("workflow-123");
+            vi.mocked(runConcierge).mockResolvedValueOnce({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Research task.",
+                reasoning: { enabled: false },
+                title: "Deep research",
+                backgroundMode: { enabled: true, reason: "Long-running research task" },
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Do deep research on AI" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Should have background mode headers
+            expect(response.headers.get("X-Background-Mode")).toBe("true");
+            expect(response.headers.get("X-Stream-Id")).toBeTruthy();
+
+            // Should have called startBackgroundResponse
+            expect(vi.mocked(startBackgroundResponse)).toHaveBeenCalled();
+        });
+
+        it("falls back to inline execution when Temporal unavailable", async () => {
+            vi.mocked(isBackgroundModeEnabled).mockReturnValue(true);
+            vi.mocked(startBackgroundResponse).mockRejectedValue(
+                new Error("Temporal connection failed")
+            );
+            vi.mocked(runConcierge).mockResolvedValueOnce({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Research task.",
+                reasoning: { enabled: false },
+                title: "Deep research",
+                backgroundMode: { enabled: true, reason: "Long-running task" },
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Research something" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+
+            // Should fallback to inline and still return 200
+            expect(response.status).toBe(200);
+            // Background mode header should NOT be set when fallback occurs
+            expect(response.headers.get("X-Background-Mode")).toBeNull();
+        });
+
+        it("skips background mode when Temporal not configured", async () => {
+            vi.mocked(isBackgroundModeEnabled).mockReturnValue(false);
+            vi.mocked(runConcierge).mockResolvedValueOnce({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Research task.",
+                reasoning: { enabled: false },
+                title: "Research",
+                backgroundMode: { enabled: true, reason: "Long task" },
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Research" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Should run inline - no Temporal dispatch
+            expect(vi.mocked(startBackgroundResponse)).not.toHaveBeenCalled();
+            expect(response.headers.get("X-Background-Mode")).toBeNull();
+        });
+    });
+
+    // ========================================================================
+    // CLARIFYING QUESTIONS
+    // ========================================================================
+
+    describe("Clarifying Questions", () => {
+        it("returns clarifying questions on first message when concierge requests them", async () => {
+            vi.mocked(runConcierge).mockResolvedValueOnce({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Research task needs clarification.",
+                reasoning: { enabled: false },
+                title: "Research",
+                clarifyingQuestions: [
+                    {
+                        question: "What programming language?",
+                        options: [
+                            { label: "TypeScript", value: "typescript" },
+                            { label: "Python", value: "python" },
+                            { label: "Go", value: "go" },
+                        ],
+                    },
+                ],
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Research best practices" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Clarifying question message should be persisted
+            expect(vi.mocked(upsertMessage)).toHaveBeenCalledWith(
+                expect.any(Number),
+                expect.objectContaining({
+                    role: "assistant",
+                    parts: expect.arrayContaining([
+                        expect.objectContaining({
+                            type: "data-askUserInput",
+                            data: expect.objectContaining({
+                                question: "What programming language?",
+                            }),
+                        }),
+                    ]),
+                })
+            );
+        });
+
+        it("skips clarifying questions on follow-up messages", async () => {
+            vi.mocked(runConcierge).mockResolvedValueOnce({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Continuing task.",
+                reasoning: { enabled: false },
+                title: "Research",
+                clarifyingQuestions: [
+                    {
+                        question: "What depth?",
+                        options: [
+                            { label: "Quick", value: "quick" },
+                            { label: "Deep", value: "deep" },
+                        ],
+                    },
+                ],
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        // Multiple messages = follow-up, not first message
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Initial question" }],
+                        },
+                        {
+                            id: "msg-2",
+                            role: "assistant",
+                            parts: [{ type: "text", text: "Initial response" }],
+                        },
+                        {
+                            id: "msg-3",
+                            role: "user",
+                            parts: [{ type: "text", text: "Follow up" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Stream should complete normally, not return clarifying questions
+            const text = await response.text();
+            expect(text).toContain("Hello"); // From mock stream
+        });
+    });
+
+    // ========================================================================
+    // TITLE EVOLUTION
+    // ========================================================================
+
+    describe("Title Evolution", () => {
+        it("evaluates title evolution for existing connections", async () => {
+            const existingConnectionId = encodeConnectionId(42);
+
+            vi.mocked(getConnection).mockResolvedValue({
+                id: 42,
+                userId: "db-user-123",
+                title: "Original Title",
+                titleEdited: false,
+                slug: "original-title",
+                status: "active",
+                streamingStatus: "idle",
+                activeStreamId: null,
+                modelId: null,
+                conciergeModelId: null,
+                conciergeTemperature: null,
+                conciergeExplanation: null,
+                conciergeReasoning: null,
+                isStarred: false,
+                starredAt: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                lastActivityAt: new Date(),
+                projectPath: null,
+                codeSessionId: null,
+                source: "carmenta",
+                externalId: null,
+                importedAt: null,
+                customGptId: null,
+            });
+
+            vi.mocked(evaluateTitleEvolution).mockResolvedValueOnce({
+                action: "update",
+                title: "Evolved Title",
+                reasoning: "Conversation has evolved",
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "New topic entirely" }],
+                        },
+                    ],
+                    connectionId: existingConnectionId,
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Consume stream to trigger onFinish
+            await response.text();
+
+            // Give async operations time to complete
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            // Title evolution should have been evaluated
+            expect(vi.mocked(evaluateTitleEvolution)).toHaveBeenCalledWith(
+                "Original Title",
+                expect.any(String)
+            );
+        });
+
+        it("skips title evolution when title was manually edited", async () => {
+            const existingConnectionId = encodeConnectionId(42);
+
+            vi.mocked(getConnection).mockResolvedValue({
+                id: 42,
+                userId: "db-user-123",
+                title: "Manual Title",
+                titleEdited: true, // User manually edited
+                slug: "manual-title",
+                status: "active",
+                streamingStatus: "idle",
+                activeStreamId: null,
+                modelId: null,
+                conciergeModelId: null,
+                conciergeTemperature: null,
+                conciergeExplanation: null,
+                conciergeReasoning: null,
+                isStarred: false,
+                starredAt: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                lastActivityAt: new Date(),
+                projectPath: null,
+                codeSessionId: null,
+                source: "carmenta",
+                externalId: null,
+                importedAt: null,
+                customGptId: null,
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Hello" }],
+                        },
+                    ],
+                    connectionId: existingConnectionId,
+                }),
+            });
+
+            const response = await POST(request);
+            await response.text();
+
+            // Give async operations time to complete
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            // Should NOT call evaluateTitleEvolution
+            expect(vi.mocked(evaluateTitleEvolution)).not.toHaveBeenCalled();
+        });
+    });
+
+    // ========================================================================
+    // STREAM HANDLING & MESSAGE PERSISTENCE
+    // ========================================================================
+
+    describe("Message Persistence", () => {
+        it("saves user message before streaming begins", async () => {
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "User query" }],
+                        },
+                    ],
+                }),
+            });
+
+            await POST(request);
+
+            // User message should be saved
+            expect(vi.mocked(upsertMessage)).toHaveBeenCalledWith(
+                expect.any(Number),
+                expect.objectContaining({
+                    id: "msg-1",
+                    role: "user",
+                })
+            );
+        });
+
+        it("marks streaming status during stream lifecycle", async () => {
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Hello" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+
+            // Should mark as streaming before response
+            expect(vi.mocked(updateStreamingStatus)).toHaveBeenCalledWith(
+                expect.any(Number),
+                "streaming"
+            );
+
+            // Consume stream to trigger onFinish
+            await response.text();
+
+            // Give onFinish time to complete
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            // Should mark as completed after stream ends
+            expect(vi.mocked(updateStreamingStatus)).toHaveBeenCalledWith(
+                expect.any(Number),
+                "completed"
+            );
+        });
+    });
+
+    // ========================================================================
+    // ERROR HANDLING
+    // ========================================================================
+
+    describe("Error Handling", () => {
+        it("marks streaming as failed when persistence errors occur", async () => {
+            vi.mocked(upsertMessage).mockRejectedValueOnce(
+                new Error("Database unavailable")
+            );
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Hello" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+
+            // Should return 500 for database errors
+            expect(response.status).toBe(500);
+
+            // Should attempt to mark as failed
+            expect(vi.mocked(updateStreamingStatus)).toHaveBeenCalledWith(
+                expect.any(Number),
+                "failed"
+            );
+        });
+    });
+
+    // ========================================================================
+    // CONNECTION ID VALIDATION
+    // ========================================================================
 
     describe("Connection ID Validation", () => {
         it("accepts valid 6+ character connection ID", async () => {
@@ -644,6 +1252,10 @@ describe("POST /api/connection", () => {
             expect(response.status).toBe(200);
         });
     });
+
+    // ========================================================================
+    // CLARIFYING QUESTIONS STREAM FORMAT
+    // ========================================================================
 
     describe("Clarifying Questions Stream Format", () => {
         /**

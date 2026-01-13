@@ -528,7 +528,7 @@ vi.mock("./lib/db/notifications", async () => {
         });
     };
 
-    const markNotificationRead = async (notificationId: string) => {
+    const markNotificationRead = async (userId: string, notificationId: string) => {
         const currentDb = await getCurrentDb();
         const [notification] = await currentDb
             .update(schema.notifications)
@@ -536,7 +536,12 @@ vi.mock("./lib/db/notifications", async () => {
                 read: true,
                 readAt: new Date(),
             })
-            .where(eq(schema.notifications.id, notificationId))
+            .where(
+                and(
+                    eq(schema.notifications.id, notificationId),
+                    eq(schema.notifications.userId, userId)
+                )
+            )
             .returning();
         return notification ?? null;
     };
