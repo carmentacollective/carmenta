@@ -41,6 +41,11 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 /**
  * Page context for Carmenta
@@ -1082,21 +1087,27 @@ function McpConfigContent({
                             </div>
                         )}
 
-                        {/* Tools List */}
+                        {/* Success intro */}
+                        {detailResult?.success &&
+                            detailResult.tools &&
+                            detailResult.tools.length > 0 && (
+                                <p className="text-muted-foreground mb-4 text-sm">
+                                    Connected! Here&apos;s what we can do together:
+                                </p>
+                            )}
+
+                        {/* Capabilities List */}
                         {detailResult?.tools && detailResult.tools.length > 0 && (
                             <div className="mb-4">
-                                <h3 className="text-muted-foreground mb-2 text-sm font-semibold">
-                                    Available Tools ({detailResult.toolCount})
-                                </h3>
                                 <div className="space-y-2">
                                     {detailResult.tools.map((tool) => (
                                         <div
                                             key={tool.name}
                                             className="border-border bg-muted/50 rounded-lg border p-3"
                                         >
-                                            <code className="text-foreground text-sm font-medium">
+                                            <span className="text-foreground text-sm font-medium">
                                                 {tool.name}
-                                            </code>
+                                            </span>
                                             {tool.description && (
                                                 <p className="text-muted-foreground mt-1 text-xs">
                                                     {tool.description}
@@ -1108,56 +1119,60 @@ function McpConfigContent({
                             </div>
                         )}
 
-                        {/* Debug Info */}
+                        {/* Technical Details (collapsed) */}
                         {detailResult?.debug && (
-                            <div>
-                                <h3 className="text-muted-foreground mb-2 text-sm font-semibold">
-                                    Debug Info
-                                </h3>
-                                <div className="border-border bg-muted/50 rounded-lg border p-3 font-mono text-xs">
-                                    <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-                                        <span className="text-muted-foreground/70">
-                                            URL
-                                        </span>
-                                        <span className="text-foreground break-all">
-                                            {detailResult.debug.url}
-                                        </span>
-                                        <span className="text-muted-foreground/70">
-                                            Transport
-                                        </span>
-                                        <span className="text-foreground">
-                                            {detailResult.debug.transport}
-                                        </span>
-                                        <span className="text-muted-foreground/70">
-                                            Auth Type
-                                        </span>
-                                        <span className="text-foreground">
-                                            {detailResult.debug.authType}
-                                        </span>
-                                        {detailResult.debug.hasCredentials !==
-                                            undefined && (
-                                            <>
-                                                <span className="text-muted-foreground/70">
-                                                    Credentials
-                                                </span>
-                                                <span className="text-foreground">
-                                                    {detailResult.debug.hasCredentials
-                                                        ? "✓ Present"
-                                                        : "✗ Missing"}
-                                                </span>
-                                            </>
-                                        )}
-                                        <span className="text-muted-foreground/70">
-                                            Tested At
-                                        </span>
-                                        <span className="text-foreground">
-                                            {new Date(
-                                                detailResult.debug.testedAt
-                                            ).toLocaleString()}
-                                        </span>
+                            <Collapsible>
+                                <CollapsibleTrigger className="text-muted-foreground hover:text-foreground group flex w-full items-center gap-1 text-xs transition-colors">
+                                    <CaretRightIcon className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />
+                                    Technical details
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <div className="border-border bg-muted/50 mt-2 rounded-lg border p-3 font-mono text-xs">
+                                        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+                                            <span className="text-muted-foreground/70">
+                                                URL
+                                            </span>
+                                            <span className="text-foreground break-all">
+                                                {detailResult.debug.url}
+                                            </span>
+                                            <span className="text-muted-foreground/70">
+                                                Transport
+                                            </span>
+                                            <span className="text-foreground">
+                                                {detailResult.debug.transport}
+                                            </span>
+                                            <span className="text-muted-foreground/70">
+                                                Auth Type
+                                            </span>
+                                            <span className="text-foreground">
+                                                {detailResult.debug.authType}
+                                            </span>
+                                            {detailResult.debug.hasCredentials !==
+                                                undefined && (
+                                                <>
+                                                    <span className="text-muted-foreground/70">
+                                                        Credentials
+                                                    </span>
+                                                    <span className="text-foreground">
+                                                        {detailResult.debug
+                                                            .hasCredentials
+                                                            ? "✓ Present"
+                                                            : "✗ Missing"}
+                                                    </span>
+                                                </>
+                                            )}
+                                            <span className="text-muted-foreground/70">
+                                                Tested At
+                                            </span>
+                                            <span className="text-foreground">
+                                                {new Date(
+                                                    detailResult.debug.testedAt
+                                                ).toLocaleString()}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                </CollapsibleContent>
+                            </Collapsible>
                         )}
                     </div>
 
