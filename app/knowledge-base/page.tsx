@@ -62,29 +62,18 @@ export default async function KnowledgeBasePage() {
         getRecentActivity(),
     ]);
 
-    // Build folder structure: Profile, Memories
+    // Build folder structure: Memories
+    // About You (profile.identity) is passed separately for prominent display
     // Communication preferences are on dedicated /communication page
     // Philosophy (Heart-Centered AI) is on dedicated /philosophy page
     const allFolders: KBFolder[] = [];
     const profileFolder = userFolders.find((f) => f.path === "profile");
 
-    // 1. Profile - personal identity info (displays as "About You" document)
-    if (profileFolder) {
-        const identityDoc = profileFolder.documents.find(
-            (d) => d.path === "profile.identity"
-        );
-        if (identityDoc) {
-            allFolders.push({
-                id: "about",
-                name: "about",
-                path: "about",
-                documents: [identityDoc],
-                children: [],
-            });
-        }
-    }
+    // Extract the identity document for prominent display at top of KB
+    const identityDoc =
+        profileFolder?.documents.find((d) => d.path === "profile.identity") ?? null;
 
-    // 2. Memories - learned knowledge from conversations
+    // Memories - learned knowledge from conversations
     // Aggregate ALL folders under knowledge.* namespace (knowledge.people, knowledge.preferences, etc.)
     // Since getKBFolders() now returns a tree structure with nested children,
     // we need to recursively collect all documents from the knowledge folder and its descendants
@@ -99,14 +88,12 @@ export default async function KnowledgeBasePage() {
         return docs;
     };
 
-    // Filter out documents that duplicate profile content (about-you, identity, etc.)
-    // These belong in profile.identity, not knowledge.*
+    // Collect all knowledge documents
+    // Note: The Librarian is instructed to never create knowledge.about-* or knowledge.identity*
+    // documents - identity facts belong only in profile.identity. If such documents somehow
+    // exist, we show them rather than hide, so we can identify and fix the source.
     const knowledgeDocuments = knowledgeFolder
-        ? collectAllDocuments(knowledgeFolder).filter(
-              (d) =>
-                  !d.path.toLowerCase().includes("about") &&
-                  !d.path.toLowerCase().includes("identity")
-          )
+        ? collectAllDocuments(knowledgeFolder)
         : [];
 
     if (knowledgeDocuments.length > 0) {
@@ -168,8 +155,11 @@ export default async function KnowledgeBasePage() {
                 </div>
             </section>
 
-            {/* Librarian Task Bar + Knowledge Viewer */}
-            <KBPageContent initialFolders={allFolders} />
+            {/* About You + Memories */}
+            <KBPageContent
+                identityDocument={identityDoc}
+                memoriesFolders={allFolders}
+            />
         </StandardPageLayout>
     );
 }
