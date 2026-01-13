@@ -25,6 +25,13 @@ import { ValidationError } from "@/lib/errors";
  */
 const CREDENTIALS_SERVICE = "google-internal";
 
+/**
+ * Escape single quotes in Drive API query strings to prevent injection
+ */
+function escapeQueryValue(value: string): string {
+    return value.replace(/'/g, "\\'");
+}
+
 export class GoogleDriveAdapter extends ServiceAdapter {
     serviceName = "googleDrive";
     serviceDisplayName = "Google Drive";
@@ -502,6 +509,14 @@ export class GoogleDriveAdapter extends ServiceAdapter {
             order_by?: string;
         };
 
+        // Validate folder_id format to prevent query injection
+        // Google Drive file IDs are alphanumeric with hyphens/underscores, or "root"
+        if (folder_id !== "root" && !/^[a-zA-Z0-9_-]+$/.test(folder_id)) {
+            return this.createErrorResponse(
+                `Invalid folder_id format. Must be alphanumeric with dashes/underscores or "root".`
+            );
+        }
+
         const auth = this.createAuthClient(accessToken);
         const drive = google.drive({ version: "v3", auth });
 
@@ -537,10 +552,13 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         const auth = this.createAuthClient(accessToken);
         const drive = google.drive({ version: "v3", auth });
 
+        // Escape single quotes in user query to prevent injection
+        const escapedQuery = escapeQueryValue(query);
+
         // Add trashed = false to user query if not already specified
-        const fullQuery = query.includes("trashed")
-            ? query
-            : `(${query}) and trashed = false`;
+        const fullQuery = escapedQuery.includes("trashed")
+            ? escapedQuery
+            : `(${escapedQuery}) and trashed = false`;
 
         const response = await drive.files.list({
             q: fullQuery,

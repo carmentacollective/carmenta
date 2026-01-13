@@ -64,6 +64,7 @@ function buildRfc2822Email(params: {
     to: string;
     subject: string;
     body: string;
+    from?: string;
     cc?: string;
     bcc?: string;
     replyTo?: string;
@@ -73,6 +74,8 @@ function buildRfc2822Email(params: {
 }): string {
     const lines: string[] = [];
 
+    // RFC 2822 requires From: header. If not provided, Gmail will infer from authenticated user.
+    if (params.from) lines.push(`From: ${sanitizeHeader(params.from)}`);
     lines.push(`To: ${sanitizeHeader(params.to)}`);
     if (params.cc) lines.push(`Cc: ${sanitizeHeader(params.cc)}`);
     if (params.bcc) lines.push(`Bcc: ${sanitizeHeader(params.bcc)}`);
@@ -645,10 +648,25 @@ export class GmailAdapter extends ServiceAdapter {
             in_reply_to?: string;
         };
 
+        // Fetch user's email for RFC 2822 From: header
+        let userEmail: string | undefined;
+        try {
+            const profile = await httpClient
+                .get(`${GMAIL_API_BASE}/users/me/profile`, {
+                    headers: this.buildHeaders(accessToken),
+                })
+                .json<{ emailAddress: string }>();
+            userEmail = profile.emailAddress;
+        } catch (error) {
+            logger.warn({ error }, "Failed to fetch user profile for From header");
+            // Continue without From header - Gmail will infer from authenticated user
+        }
+
         const email = buildRfc2822Email({
             to,
             subject,
             body,
+            from: userEmail,
             cc,
             bcc,
             replyTo: reply_to,
@@ -1014,6 +1032,14 @@ export class GmailAdapter extends ServiceAdapter {
 
         const addLabelIds = add_labels ?? [];
         const removeLabelIds = remove_labels ?? [];
+
+        if (addLabelIds.length === 0 && removeLabelIds.length === 0) {
+            return this.createJSONResponse({
+                success: true,
+                message: "No labels to add or remove",
+                message_ids,
+            });
+        }
 
         try {
             if (message_ids.length === 1) {
