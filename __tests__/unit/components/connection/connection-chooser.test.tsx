@@ -143,11 +143,11 @@ describe("ConnectionChooser", () => {
         });
 
         it("displays active connection title", async () => {
-            render(<ConnectionChooser />);
+            const { container } = render(<ConnectionChooser />);
 
-            // TypewriterTitle renders the full title in a single span
+            // TypewriterTitle may animate the text with a cursor, so use flexible matching
             await vi.waitFor(() => {
-                expect(screen.getByText("First Conversation")).toBeInTheDocument();
+                expect(container).toHaveTextContent("First Conversation");
             });
         });
 
@@ -185,11 +185,11 @@ describe("ConnectionChooser", () => {
         });
 
         it("enters edit mode when title is clicked (not dropdown)", async () => {
-            render(<ConnectionChooser />);
+            const { container } = render(<ConnectionChooser />);
 
-            // Wait for title to render, then click the edit button
+            // Wait for title to render (TypewriterTitle may animate with cursor)
             await vi.waitFor(() => {
-                expect(screen.getByText("First Conversation")).toBeInTheDocument();
+                expect(container).toHaveTextContent("First Conversation");
             });
 
             // Click the title button to enter edit mode
