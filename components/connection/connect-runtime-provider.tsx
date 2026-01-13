@@ -977,55 +977,58 @@ function ConnectRuntimeProviderInner({
 
     // Background mode polling hook
     // When background work completes, refreshes messages from database
+    // Helper to update messages, title, and URL - shared by background and foreground recovery
+    const handleRecoveredMessages = useCallback(
+        (messages: UIMessageLike[], title: string | null, slug: string) => {
+            // Convert to AI SDK format and update messages
+            const aiMessages = messages.map(toAIMessage);
+            setMessagesRef.current(aiMessages);
+
+            // Update title if changed
+            if (title) {
+                document.title = `${title} | Carmenta`;
+            }
+
+            // Update URL based on mode (connection vs code)
+            if (slug) {
+                const currentPath = window.location.pathname;
+                if (currentPath.startsWith("/code/")) {
+                    // Code mode URL: /code/[repo]/[slug]/[id]
+                    const pathParts = currentPath.split("/");
+                    const repo = pathParts[2];
+                    const id = pathParts[pathParts.length - 1];
+                    if (repo && id) {
+                        window.history.replaceState(
+                            { ...window.history.state },
+                            "",
+                            `/code/${repo}/${slug}/${id}`
+                        );
+                    }
+                } else if (currentPath.includes("/connection/")) {
+                    // Standard connection URL: /connection/[slug]/[id]
+                    const pathParts = currentPath.split("/");
+                    const id = pathParts[pathParts.length - 1];
+                    if (id) {
+                        window.history.replaceState(
+                            { ...window.history.state },
+                            "",
+                            `/connection/${slug}/${id}`
+                        );
+                    }
+                }
+            }
+
+            clearTransientMessages();
+        },
+        [clearTransientMessages]
+    );
+
     const {
         isBackgroundMode,
         startPolling: startBackgroundPolling,
         stopPolling: stopBackgroundPolling,
     } = useBackgroundMode({
-        onComplete: useCallback(
-            (messages, title, slug) => {
-                // Convert to AI SDK format and update messages
-                const aiMessages = messages.map(toAIMessage);
-                setMessagesRef.current(aiMessages);
-
-                // Update title and URL if changed
-                if (title) {
-                    document.title = `${title} | Carmenta`;
-                }
-
-                // Update URL based on mode (connection vs code)
-                const currentPath = window.location.pathname;
-                if (slug) {
-                    if (currentPath.startsWith("/code/")) {
-                        // Code mode URL: /code/[repo]/[slug]/[id]
-                        const pathParts = currentPath.split("/");
-                        const repo = pathParts[2];
-                        const id = pathParts[pathParts.length - 1];
-                        if (repo && id) {
-                            window.history.replaceState(
-                                { ...window.history.state },
-                                "",
-                                `/code/${repo}/${slug}/${id}`
-                            );
-                        }
-                    } else if (currentPath.includes("/connection/")) {
-                        // Standard connection URL: /connection/[slug]/[id]
-                        const pathParts = currentPath.split("/");
-                        const id = pathParts[pathParts.length - 1];
-                        if (id) {
-                            window.history.replaceState(
-                                { ...window.history.state },
-                                "",
-                                `/connection/${slug}/${id}`
-                            );
-                        }
-                    }
-                }
-
-                clearTransientMessages();
-            },
-            [clearTransientMessages]
-        ),
+        onComplete: handleRecoveredMessages,
         onFailed: useCallback(() => {
             setDisplayError(new Error("Background work failed"));
             clearTransientMessages();
@@ -1285,44 +1288,7 @@ function ConnectRuntimeProviderInner({
         isBackgroundMode,
         isLoading,
         startPolling: startBackgroundPolling,
-        onMessagesRecovered: useCallback(
-            (recoveredMessages, title, slug) => {
-                // Same logic as background mode onComplete
-                const aiMessages = recoveredMessages.map(toAIMessage);
-                setMessages(aiMessages);
-
-                if (title) {
-                    document.title = `${title} | Carmenta`;
-                }
-                if (slug) {
-                    const currentPath = window.location.pathname;
-                    if (currentPath.startsWith("/code/")) {
-                        const pathParts = currentPath.split("/");
-                        const repo = pathParts[2];
-                        const id = pathParts[pathParts.length - 1];
-                        if (repo && id) {
-                            window.history.replaceState(
-                                { ...window.history.state },
-                                "",
-                                `/code/${repo}/${slug}/${id}`
-                            );
-                        }
-                    } else if (currentPath.includes("/connection/")) {
-                        const pathParts = currentPath.split("/");
-                        const id = pathParts[pathParts.length - 1];
-                        if (id) {
-                            window.history.replaceState(
-                                { ...window.history.state },
-                                "",
-                                `/connection/${slug}/${id}`
-                            );
-                        }
-                    }
-                }
-                clearTransientMessages();
-            },
-            [setMessages, clearTransientMessages]
-        ),
+        onMessagesRecovered: handleRecoveredMessages,
         onBackgroundFailed: useCallback(() => {
             setDisplayError(
                 new Error("Background work failed while app was backgrounded")

@@ -47,12 +47,36 @@ interface UseForegroundRecoveryOptions {
 
 /**
  * Detects if conversation is incomplete (waiting for assistant response).
- * An incomplete conversation has the last message from user, meaning
- * the AI was generating a response that may have been interrupted.
+ * An incomplete conversation has either:
+ * 1. Last message from user (before first token)
+ * 2. Last message from assistant with empty or incomplete content (mid-stream)
+ *
+ * Once streaming starts, the last message becomes "assistant", so we check
+ * if it has any text content. Empty or very short content suggests interruption.
  */
 function isConversationIncomplete(messages: UIMessageLike[]): boolean {
     const lastMessage = messages.at(-1);
-    return lastMessage?.role === "user";
+    if (!lastMessage) return false;
+
+    // Definitely incomplete if last message is from user
+    if (lastMessage.role === "user") return true;
+
+    // If last message is assistant, check if it has meaningful content
+    // Empty parts or very short content suggests stream was interrupted
+    if (lastMessage.role === "assistant") {
+        const textParts = lastMessage.parts.filter((p) => p.type === "text");
+        if (textParts.length === 0) return true; // No text yet, definitely incomplete
+
+        const totalTextLength = textParts.reduce((sum, part) => {
+            const text = typeof part.text === "string" ? part.text : "";
+            return sum + text.length;
+        }, 0);
+
+        // Less than 10 characters suggests interrupted stream
+        return totalTextLength < 10;
+    }
+
+    return false;
 }
 
 export function useForegroundRecovery({
@@ -68,6 +92,9 @@ export function useForegroundRecovery({
     // Track if we've already attempted recovery for this foreground event
     const recoveryAttemptedRef = useRef(false);
 
+    // Store connectionId to detect if it changed during async operations
+    const connectionIdRef = useRef(connectionId);
+
     // Store callbacks and messages in refs to avoid dependency issues
     const messagesRef = useRef(messages);
     const startPollingRef = useRef(startPolling);
@@ -76,12 +103,14 @@ export function useForegroundRecovery({
     const onStreamInterruptedRef = useRef(onStreamInterrupted);
 
     useEffect(() => {
+        connectionIdRef.current = connectionId;
         messagesRef.current = messages;
         startPollingRef.current = startPolling;
         onMessagesRecoveredRef.current = onMessagesRecovered;
         onBackgroundFailedRef.current = onBackgroundFailed;
         onStreamInterruptedRef.current = onStreamInterrupted;
     }, [
+        connectionId,
         messages,
         startPolling,
         onMessagesRecovered,
@@ -176,6 +205,18 @@ export function useForegroundRecovery({
 
         try {
             const result = await pollBackgroundModeStatus(connectionId);
+
+            // Check if connectionId changed during async operation
+            if (connectionIdRef.current !== connectionId) {
+                logger.debug(
+                    {
+                        polledFor: connectionId,
+                        currentConnection: connectionIdRef.current,
+                    },
+                    "Connection changed during foreground recovery poll - discarding stale result"
+                );
+                return;
+            }
 
             if (!result) {
                 logger.warn(
