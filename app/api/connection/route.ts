@@ -51,6 +51,7 @@ import { findSuggestableIntegrations } from "@/lib/integrations/services";
 import { getMcpGatewayTools } from "@/lib/mcp/gateway";
 import { initBraintrustLogger, logTraceData } from "@/lib/braintrust";
 import { builtInTools, createSearchKnowledgeTool } from "@/lib/tools/built-in";
+import { detectToolError } from "@/lib/tools/tool-errors";
 import { createImageArtistTool } from "@/lib/ai-team/agents/image-artist-tool";
 import { createLibrarianTool } from "@/lib/ai-team/agents/librarian-tool";
 import { createMcpConfigTool } from "@/lib/ai-team/agents/mcp-config-tool";
@@ -947,6 +948,9 @@ export async function POST(req: Request) {
                             continue;
                         }
 
+                        // Detect error state from tool output
+                        const errorDetection = detectToolError(toolResult.output);
+
                         await upsertToolPart(
                             currentConnectionId,
                             assistantMessageId,
@@ -963,6 +967,11 @@ export async function POST(req: Request) {
                                     string,
                                     unknown
                                 >,
+                                // Persist error state if tool returned failure pattern
+                                state: errorDetection.isError
+                                    ? "output_error"
+                                    : "output_available",
+                                errorText: errorDetection.errorText,
                             },
                             baseOrder + i
                         );
@@ -1095,12 +1104,32 @@ export async function POST(req: Request) {
                         const toolResult = toolResults.find(
                             (tr) => tr.toolCallId === tc.toolCallId
                         );
+
+                        // Detect error state from tool output
+                        const errorDetection = toolResult
+                            ? detectToolError(toolResult.output)
+                            : { isError: false };
+
+                        // Determine state: error > available > input-only
+                        let state: string;
+                        if (toolResult) {
+                            state = errorDetection.isError
+                                ? "output-error"
+                                : "output-available";
+                        } else {
+                            state = "input-available";
+                        }
+
                         parts.push({
                             type: `tool-${tc.toolName}`,
                             toolCallId: tc.toolCallId,
-                            state: toolResult ? "output-available" : "input-available",
+                            state,
                             input: tc.input,
                             ...(toolResult && { output: toolResult.output }),
+                            // Include errorText for error state
+                            ...(errorDetection.isError && errorDetection.errorText
+                                ? { errorText: errorDetection.errorText }
+                                : {}),
                         });
                     }
 
