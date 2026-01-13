@@ -130,6 +130,8 @@ export interface SyntaxHighlightInputHandle {
     get value(): string;
     /** For auto-resize: access underlying element's scrollHeight */
     get scrollHeight(): number;
+    /** For auto-resize: access underlying element's clientHeight */
+    get clientHeight(): number;
     /** For auto-resize: access underlying element's style */
     get style(): CSSStyleDeclaration | undefined;
 }
@@ -194,6 +196,9 @@ export const SyntaxHighlightInput = forwardRef<
             },
             get scrollHeight() {
                 return textareaRef.current?.scrollHeight ?? 0;
+            },
+            get clientHeight() {
+                return textareaRef.current?.clientHeight ?? 0;
             },
             get style() {
                 return textareaRef.current?.style;
