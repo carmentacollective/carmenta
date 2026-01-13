@@ -9,7 +9,7 @@
 
 // Cache versioning: Update BUILD_VERSION when deploying new releases
 // This ensures old caches are automatically cleaned up
-const BUILD_VERSION = "2025-11-30-001";
+const BUILD_VERSION = "2026-01-13-001";
 const CACHE_NAME = `carmenta-${BUILD_VERSION}`;
 const RUNTIME_CACHE = `carmenta-runtime-${BUILD_VERSION}`;
 
