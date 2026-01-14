@@ -801,10 +801,10 @@ describe("MCP Gateway", () => {
     });
 
     // ========================================================================
-    // Client Caching
+    // Client Lifecycle
     // ========================================================================
-    describe("client caching", () => {
-        it("reuses cached client for subsequent calls", async () => {
+    describe("client lifecycle", () => {
+        it("creates fresh client for each call and closes after use", async () => {
             const server = createMockServer();
             const mockClient = createMockClient({
                 tool: { description: "Tool", execute: vi.fn().mockResolvedValue({}) },
@@ -819,11 +819,13 @@ describe("MCP Gateway", () => {
             // Second call
             await executeMcpAction("test-server", "tool", {}, "test@example.com");
 
-            // Client should only be created once (cached after first successful use)
-            expect(mockCreateMCPClient).toHaveBeenCalledTimes(1);
+            // Fresh client created for each call (no in-memory caching)
+            expect(mockCreateMCPClient).toHaveBeenCalledTimes(2);
+            // Client closed after each call
+            expect(mockClient.close).toHaveBeenCalledTimes(2);
         });
 
-        it("clears cache and closes client on connection error", async () => {
+        it("closes client on connection error", async () => {
             const server = createMockServer();
             const mockClient = createMockClient();
             mockClient.tools.mockRejectedValue(new Error("Connection lost"));
