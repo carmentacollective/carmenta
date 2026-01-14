@@ -14,6 +14,7 @@ import { useState, useEffect, useRef } from "react";
 import { CaretRightIcon, CopyIcon, CheckIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { glass, border, spacing } from "@/lib/design-tokens";
 import { ToolDebugPanel } from "@/components/tools/shared/tool-debug-panel";
 import { type ToolStatus as ToolStatusType } from "@/lib/tools/tool-config";
@@ -538,21 +539,25 @@ function SmartJsonView({ data }: { data: unknown }) {
 
     return (
         <div className="relative">
-            <button
-                onClick={handleCopy}
-                className={cn(
-                    "absolute top-2 right-2 rounded p-1",
-                    "text-muted-foreground/50 hover:text-muted-foreground",
-                    "transition-colors hover:bg-white/10"
-                )}
-                title="Copy JSON"
-            >
-                {copied ? (
-                    <CheckIcon className="h-3.5 w-3.5 text-green-500" />
-                ) : (
-                    <CopyIcon className="h-3.5 w-3.5" />
-                )}
-            </button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        onClick={handleCopy}
+                        className={cn(
+                            "absolute top-2 right-2 rounded p-1",
+                            "text-muted-foreground/50 hover:text-muted-foreground",
+                            "transition-colors hover:bg-white/10"
+                        )}
+                    >
+                        {copied ? (
+                            <CheckIcon className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                            <CopyIcon className="h-3.5 w-3.5" />
+                        )}
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent>Copy JSON</TooltipContent>
+            </Tooltip>
             <pre className="max-h-64 overflow-auto rounded bg-black/20 p-2 pr-8 font-mono text-xs">
                 {displayJson}
             </pre>

@@ -28,6 +28,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 
@@ -554,48 +555,68 @@ export default function ImportReviewPage() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() =>
-                                                            reviewExtraction(
-                                                                extraction.id,
-                                                                "approve"
-                                                            )
-                                                        }
-                                                        disabled={processing}
-                                                        title="Approve"
-                                                    >
-                                                        <CheckIcon className="h-4 w-4 text-green-600" />
-                                                    </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() => {
-                                                            setEditingId(extraction.id);
-                                                            setEditContent(
-                                                                extraction.content
-                                                            );
-                                                        }}
-                                                        disabled={processing}
-                                                        title="Edit"
-                                                    >
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() =>
-                                                            reviewExtraction(
-                                                                extraction.id,
-                                                                "reject"
-                                                            )
-                                                        }
-                                                        disabled={processing}
-                                                        title="Skip"
-                                                    >
-                                                        <XCircleIcon className="h-4 w-4 text-red-600" />
-                                                    </Button>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                onClick={() =>
+                                                                    reviewExtraction(
+                                                                        extraction.id,
+                                                                        "approve"
+                                                                    )
+                                                                }
+                                                                disabled={processing}
+                                                            >
+                                                                <CheckIcon className="h-4 w-4 text-green-600" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            Approve
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                onClick={() => {
+                                                                    setEditingId(
+                                                                        extraction.id
+                                                                    );
+                                                                    setEditContent(
+                                                                        extraction.content
+                                                                    );
+                                                                }}
+                                                                disabled={processing}
+                                                            >
+                                                                <PencilIcon className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            Edit
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                onClick={() =>
+                                                                    reviewExtraction(
+                                                                        extraction.id,
+                                                                        "reject"
+                                                                    )
+                                                                }
+                                                                disabled={processing}
+                                                            >
+                                                                <XCircleIcon className="h-4 w-4 text-red-600" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            Skip
+                                                        </TooltipContent>
+                                                    </Tooltip>
                                                 </>
                                             )}
                                         </div>

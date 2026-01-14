@@ -20,6 +20,7 @@ import {
 } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { ToolRenderer } from "../shared";
 
@@ -379,15 +380,19 @@ function TaskCard({ task, compact = false }: { task: Task; compact?: boolean }) 
                             {task.title}
                         </h4>
                         {task.url && (
-                            <a
-                                href={task.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-                                title="Open in ClickUp"
-                            >
-                                <ArrowSquareOut className="text-muted-foreground hover:text-primary h-4 w-4" />
-                            </a>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <a
+                                        href={task.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                                    >
+                                        <ArrowSquareOut className="text-muted-foreground hover:text-primary h-4 w-4" />
+                                    </a>
+                                </TooltipTrigger>
+                                <TooltipContent>Open in ClickUp</TooltipContent>
+                            </Tooltip>
                         )}
                     </div>
 

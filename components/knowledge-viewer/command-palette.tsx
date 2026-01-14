@@ -27,6 +27,7 @@ import {
     CaretDown,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { KBDocument, KBFolder, KBSearchResult } from "@/lib/kb/actions";
 import {
     searchKB,
@@ -313,18 +314,22 @@ export function CommandPalette({
                                 onChange={(e) => setQuery(e.target.value)}
                                 className="text-foreground placeholder:text-foreground/40 flex-1 bg-transparent text-base outline-none"
                             />
-                            <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className={cn(
-                                    "hover:bg-foreground/5 rounded-md p-1.5 transition-colors",
-                                    showFilters || hasActiveFilters
-                                        ? "text-primary"
-                                        : "text-foreground/40"
-                                )}
-                                title="Toggle filters"
-                            >
-                                <Funnel className="h-4 w-4" />
-                            </button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => setShowFilters(!showFilters)}
+                                        className={cn(
+                                            "hover:bg-foreground/5 rounded-md p-1.5 transition-colors",
+                                            showFilters || hasActiveFilters
+                                                ? "text-primary"
+                                                : "text-foreground/40"
+                                        )}
+                                    >
+                                        <Funnel className="h-4 w-4" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Toggle filters</TooltipContent>
+                            </Tooltip>
                             {isSearching ? (
                                 <span className="text-foreground/40 text-xs">
                                     searching...

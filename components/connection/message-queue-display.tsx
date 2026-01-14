@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { XIcon, PencilSimpleIcon, LightningIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { QueuedMessage } from "@/lib/hooks/use-message-queue";
 
 interface MessageQueueDisplayProps {
@@ -160,47 +161,63 @@ export function MessageQueueDisplay({
                                 >
                                     {/* Interrupt button - send this now */}
                                     {canInterrupt && onInterrupt && (
-                                        <button
-                                            onClick={() => onInterrupt(message)}
-                                            className={cn(
-                                                "flex h-6 w-6 items-center justify-center rounded",
-                                                "text-foreground/50 hover:bg-primary/20 hover:text-primary",
-                                                "transition-colors"
-                                            )}
-                                            title="Send now (interrupts current)"
-                                        >
-                                            <LightningIcon
-                                                className="h-3.5 w-3.5"
-                                                weight="fill"
-                                            />
-                                        </button>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <button
+                                                    onClick={() => onInterrupt(message)}
+                                                    className={cn(
+                                                        "flex h-6 w-6 items-center justify-center rounded",
+                                                        "text-foreground/50 hover:bg-primary/20 hover:text-primary",
+                                                        "transition-colors"
+                                                    )}
+                                                >
+                                                    <LightningIcon
+                                                        className="h-3.5 w-3.5"
+                                                        weight="fill"
+                                                    />
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                Send now (interrupts current)
+                                            </TooltipContent>
+                                        </Tooltip>
                                     )}
 
                                     {/* Edit button */}
-                                    <button
-                                        onClick={() => handleStartEdit(message)}
-                                        className={cn(
-                                            "flex h-6 w-6 items-center justify-center rounded",
-                                            "text-foreground/50 hover:bg-foreground/10 hover:text-foreground/80",
-                                            "transition-colors"
-                                        )}
-                                        title="Edit message"
-                                    >
-                                        <PencilSimpleIcon className="h-3.5 w-3.5" />
-                                    </button>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                onClick={() => handleStartEdit(message)}
+                                                className={cn(
+                                                    "flex h-6 w-6 items-center justify-center rounded",
+                                                    "text-foreground/50 hover:bg-foreground/10 hover:text-foreground/80",
+                                                    "transition-colors"
+                                                )}
+                                            >
+                                                <PencilSimpleIcon className="h-3.5 w-3.5" />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Edit message</TooltipContent>
+                                    </Tooltip>
 
                                     {/* Remove button */}
-                                    <button
-                                        onClick={() => onRemove(message.id)}
-                                        className={cn(
-                                            "flex h-6 w-6 items-center justify-center rounded",
-                                            "text-foreground/50 hover:bg-destructive/20 hover:text-destructive",
-                                            "transition-colors"
-                                        )}
-                                        title="Remove from queue"
-                                    >
-                                        <XIcon className="h-3.5 w-3.5" />
-                                    </button>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                onClick={() => onRemove(message.id)}
+                                                className={cn(
+                                                    "flex h-6 w-6 items-center justify-center rounded",
+                                                    "text-foreground/50 hover:bg-destructive/20 hover:text-destructive",
+                                                    "transition-colors"
+                                                )}
+                                            >
+                                                <XIcon className="h-3.5 w-3.5" />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Remove from queue
+                                        </TooltipContent>
+                                    </Tooltip>
                                 </div>
                             )}
 
