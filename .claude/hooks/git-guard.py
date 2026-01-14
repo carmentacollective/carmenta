@@ -439,8 +439,16 @@ def main():
         v for v in violations if v.violation_type == ViolationType.NEEDS_CONFIRMATION
     ]
 
+    # Output violations to stderr so Claude Code can display them
+    def print_violations(violations: list[Violation]) -> None:
+        for v in violations:
+            print(f"🛡️ Git Guard: {v.message}", file=sys.stderr)
+            if v.suggestion:
+                print(f"   → {v.suggestion}", file=sys.stderr)
+
     # Hard blocks take priority - exit 2, never bypassable
     if hard_blocks:
+        print_violations(hard_blocks)
         sys.exit(2)
 
     # Check for confirmation flag in command
@@ -453,6 +461,7 @@ def main():
             sys.exit(0)
         else:
             # No confirmation - block
+            print_violations(needs_confirmation)
             sys.exit(2)
 
     # No violations - command is allowed
