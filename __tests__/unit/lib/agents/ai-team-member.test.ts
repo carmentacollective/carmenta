@@ -1,7 +1,7 @@
 /**
- * Employee Agent Unit Tests
+ * AI Team Member Unit Tests
  *
- * Tests the AI employee execution logic with mocked AI SDK responses.
+ * Tests the AI Team member execution logic with mocked AI SDK responses.
  * Focuses on edge cases and error handling.
  */
 
@@ -61,17 +61,16 @@ vi.mock("@/lib/ai/message-pruning", () => ({
 }));
 
 import { generateText } from "ai";
-import { runEmployee, type EmployeeInput } from "@/lib/agents/employee";
+import { runAITeamMember, type AITeamMemberInput } from "@/lib/agents/ai-team-member";
 
-const baseInput: EmployeeInput = {
+const baseInput: AITeamMemberInput = {
     jobId: "job-123",
     userId: "user-456",
     userEmail: "test@example.com",
     prompt: "Check the weather",
-    memory: {},
 };
 
-describe("runEmployee", () => {
+describe("runAITeamMember", () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -97,7 +96,7 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(true);
         expect(result.summary).toBe("Weather checked successfully");
@@ -124,7 +123,7 @@ describe("runEmployee", () => {
         } as any);
 
         // Should NOT throw - should fall back to text response
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(true);
         expect(result.summary).toBe("I completed the task.");
@@ -148,7 +147,7 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(true);
         expect(result.summary).toBe("Task done via text.");
@@ -166,7 +165,7 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(true);
         expect(result.summary).toBe("Here is your answer without explicit completion.");
@@ -175,7 +174,7 @@ describe("runEmployee", () => {
     it("returns error result when execution throws", async () => {
         vi.mocked(generateText).mockRejectedValue(new Error("API rate limited"));
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(false);
         expect(result.summary).toContain("API rate limited");
@@ -220,48 +219,9 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.toolCallsExecuted).toBe(4);
-    });
-
-    it("merges memory updates from completion", async () => {
-        const inputWithMemory: EmployeeInput = {
-            ...baseInput,
-            memory: { existingKey: "existingValue", overwriteMe: "old" },
-        };
-
-        vi.mocked(generateText).mockResolvedValue({
-            text: "",
-            steps: [
-                {
-                    toolCalls: [
-                        {
-                            toolName: "complete",
-                            toolCallId: "call-1",
-                            args: {
-                                summary: "Memory updated",
-                                notifications: [],
-                                memoryUpdates: {
-                                    newKey: "newValue",
-                                    overwriteMe: "new",
-                                },
-                            },
-                        },
-                    ],
-                    toolResults: [],
-                },
-            ],
-            usage: { promptTokens: 100, completionTokens: 50 },
-        } as any);
-
-        const result = await runEmployee(inputWithMemory);
-
-        expect(result.updatedMemory).toEqual({
-            existingKey: "existingValue",
-            overwriteMe: "new",
-            newKey: "newValue",
-        });
     });
 
     it("extracts notifications from completion", async () => {
@@ -296,7 +256,7 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.notifications).toHaveLength(2);
         expect(result.notifications[0]).toEqual({
@@ -327,11 +287,10 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(true);
         expect(result.notifications).toEqual([]);
-        expect(result.updatedMemory).toEqual({});
     });
 
     it("handles steps with undefined toolCalls array", async () => {
@@ -345,7 +304,7 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(true);
         expect(result.toolCallsExecuted).toBe(0);
@@ -359,7 +318,7 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(true);
         expect(result.summary).toBe("Task completed without explicit summary.");
@@ -372,7 +331,7 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(true);
         expect(result.summary).toBe("Task completed without explicit summary.");
@@ -406,32 +365,15 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.summary).toBe("Found in step 3");
-    });
-
-    it("preserves original memory when no updates provided", async () => {
-        const inputWithMemory: EmployeeInput = {
-            ...baseInput,
-            memory: { preserved: "value", another: 123 },
-        };
-
-        vi.mocked(generateText).mockResolvedValue({
-            text: "Done",
-            steps: [],
-            usage: { promptTokens: 100, completionTokens: 50 },
-        } as any);
-
-        const result = await runEmployee(inputWithMemory);
-
-        expect(result.updatedMemory).toEqual({ preserved: "value", another: 123 });
     });
 
     it("handles error with non-Error object", async () => {
         vi.mocked(generateText).mockRejectedValue("String error");
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         expect(result.success).toBe(false);
         expect(result.summary).toContain("Unknown error");
@@ -455,7 +397,7 @@ describe("runEmployee", () => {
             usage: { promptTokens: 100, completionTokens: 50 },
         } as any);
 
-        const result = await runEmployee(baseInput);
+        const result = await runAITeamMember(baseInput);
 
         // Empty args object should fall back to text (no summary present)
         expect(result.success).toBe(true);

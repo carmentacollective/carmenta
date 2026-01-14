@@ -1,5 +1,5 @@
 /**
- * AI Employee Agent
+ * AI Team Member Agent
  *
  * Executes scheduled jobs using the same tools and patterns as the main chat.
  * Uses Vercel AI SDK with ToolLoopAgent for agentic execution.
@@ -8,7 +8,7 @@
  * - Focused on completing a specific task (defined by job prompt)
  * - More aggressive message pruning (less history needed)
  * - Explicit completion signal via tool call
- * - No streaming (runs in background worker)
+ * - Streaming optional (supports background worker)
  */
 
 import {
@@ -28,6 +28,7 @@ import { getIntegrationTools } from "@/lib/integrations/tools";
 import { builtInTools } from "@/lib/tools/built-in";
 import { pruneModelMessages } from "@/lib/ai/message-pruning";
 import { writeStatus } from "@/lib/streaming";
+import { AI_TEAM_SYSTEM_PROMPT } from "./ai-team-system-prompt";
 import type {
     JobExecutionTrace,
     JobExecutionStep,
@@ -35,39 +36,59 @@ import type {
     JobTokenUsage,
 } from "@/lib/db/schema";
 import type { ModelMessage } from "ai";
+import { getFallbackChain } from "@/lib/model-config";
 
 /**
- * Fallback chain for employee execution
- * Sonnet for balanced cost/capability, with fallbacks
+ * Fallback chain for AI Team member execution
+ * Sonnet for balanced cost/capability, with fallbacks from model-config
  */
-const EMPLOYEE_FALLBACK_CHAIN = [
-    "anthropic/claude-sonnet-4.5",
-    "google/gemini-3-pro-preview",
-    "openai/gpt-5.2",
-];
+const AI_TEAM_MODEL_CHAIN = getFallbackChain("anthropic/claude-sonnet-4.5");
 
 /**
  * Maximum steps per job execution
- * Employees should complete focused tasks efficiently
+ * AI Team members should complete focused tasks efficiently
  */
 const MAX_STEPS = 15;
 
 /**
- * Input for employee execution
+ * Job context for AI Team member execution
  */
-export interface EmployeeInput {
+export interface AITeamJobContext {
+    jobId: string;
+    jobName: string;
+    scheduleDisplay: string;
+    totalRuns: number;
+    totalSuccesses: number;
+    lastRunAt: string | null;
+    lastRunOutcome: string | null;
+    agentNotes: string;
+    userConfig: Record<string, unknown>;
+    task: string;
+}
+
+/**
+ * Input for AI Team member execution
+ */
+export interface AITeamMemberInput {
     jobId: string;
     userId: string;
     userEmail: string;
     prompt: string;
-    memory: Record<string, unknown>;
     messages?: ModelMessage[];
+
+    /** New AI Team job context (when available) */
+    jobContext?: AITeamJobContext;
 }
 
 /**
- * Result from employee execution
+ * Completion status from AI Team member
  */
-export interface EmployeeResult {
+export type AITeamStatus = "success" | "partial" | "failed" | "blocked";
+
+/**
+ * Result from AI Team member execution
+ */
+export interface AITeamMemberResult {
     success: boolean;
     summary: string;
     notifications: Array<{
@@ -75,8 +96,14 @@ export interface EmployeeResult {
         body: string;
         priority: "low" | "normal" | "high" | "urgent";
     }>;
-    updatedMemory: Record<string, unknown>;
     toolCallsExecuted: number;
+
+    /** Completion status (new AI Team framework) */
+    status?: AITeamStatus;
+    /** Updated agent notes (markdown) */
+    updatedNotes?: string;
+    /** Reason for blocked status */
+    blockedReason?: string;
 
     /** Full execution trace with tool calls and outputs */
     executionTrace?: JobExecutionTrace;
@@ -96,9 +123,27 @@ export interface EmployeeResult {
  * Schema for the complete tool parameters
  */
 const completeToolSchema = z.object({
-    summary: z
+    summary: z.string().describe("Outcomes for the user—what changed, what matters"),
+
+    notes: z
         .string()
-        .describe("Brief summary of what was accomplished (1-2 sentences)"),
+        .optional()
+        .describe(
+            "Full updated notes document (markdown). Replaces previous notes entirely."
+        ),
+
+    status: z
+        .enum(["success", "partial", "failed", "blocked"])
+        .default("success")
+        .describe(
+            "success=completed, partial=some work done, failed=couldn't complete, blocked=needs user action"
+        ),
+
+    blockedReason: z
+        .string()
+        .optional()
+        .describe("If blocked, explain what user action is needed"),
+
     notifications: z
         .array(
             z.object({
@@ -110,22 +155,26 @@ const completeToolSchema = z.object({
             })
         )
         .optional()
-        .describe("Optional notifications to send to the user"),
+        .describe("For time-sensitive items only"),
+
+    // Legacy field - still supported for backward compatibility
     memoryUpdates: z
         .record(z.string(), z.unknown())
         .optional()
-        .describe("Key-value pairs to persist for next run"),
+        .describe("DEPRECATED: Use notes field instead"),
 });
 
 type CompleteToolParams = z.infer<typeof completeToolSchema>;
 
 function createCompleteTool() {
     return tool({
-        description:
-            "Call this when you have completed the task. Provide a summary and any notifications for the user.",
+        description: "Call when done. Provide summary, updated notes, and status.",
         inputSchema: completeToolSchema,
         execute: async ({
             summary,
+            notes,
+            status,
+            blockedReason,
             notifications,
             memoryUpdates,
         }: CompleteToolParams) => {
@@ -133,6 +182,9 @@ function createCompleteTool() {
             return {
                 completed: true,
                 summary,
+                notes: notes ?? null,
+                status: status ?? "success",
+                blockedReason: blockedReason ?? null,
                 notifications: notifications ?? [],
                 memoryUpdates: memoryUpdates ?? {},
             };
@@ -141,34 +193,69 @@ function createCompleteTool() {
 }
 
 /**
- * Build system prompt for employee execution
+ * Format user config for display in prompt.
+ * Excludes userNotes since it's shown separately.
  */
-function buildEmployeePrompt(
-    jobPrompt: string,
-    memory: Record<string, unknown>
-): string {
-    const memorySection =
-        Object.keys(memory).length > 0
-            ? `
-<memory>
-Context from previous runs:
-${JSON.stringify(memory, null, 2)}
-</memory>`
-            : "";
+function formatUserConfig(config: Record<string, unknown>): string {
+    // Filter out userNotes - it's displayed in its own section
+    const { userNotes: _, ...configWithoutNotes } = config;
+    if (Object.keys(configWithoutNotes).length === 0) {
+        return "_No configuration set._";
+    }
+    return JSON.stringify(configWithoutNotes, null, 2);
+}
 
+/**
+ * Build the dynamic user prompt for AI Team member execution.
+ * Contains all job-specific context: identity, notes, config, task.
+ */
+function buildAITeamUserPrompt(context: AITeamJobContext): string {
+    const lastRunDisplay = context.lastRunAt
+        ? `${context.lastRunAt} (${context.lastRunOutcome})`
+        : "First run";
+
+    const userNotes = (context.userConfig?.userNotes as string | undefined) || null;
+
+    return `## Your Job
+
+**${context.jobName}**
+Schedule: ${context.scheduleDisplay}
+Runs: ${context.totalRuns} total, ${context.totalSuccesses} successful
+Last run: ${lastRunDisplay}
+
+## Your Notes
+
+${context.agentNotes || "_No notes yet. This is your first run._"}
+
+## User Configuration
+
+${formatUserConfig(context.userConfig)}
+
+## User's Notes to You
+
+${userNotes || "_No specific guidance provided._"}
+
+## Task
+
+${context.task}`;
+}
+
+/**
+ * Build legacy system prompt for AI Team member execution (backward compatibility).
+ * Used when jobContext is not provided.
+ */
+function buildLegacyAITeamMemberPrompt(jobPrompt: string): string {
     return `You are an AI employee executing a scheduled task. Complete the task thoroughly but efficiently.
 
 <task>
 ${jobPrompt}
 </task>
-${memorySection}
 
 <guidelines>
 - Focus on the specific task - don't go beyond what's asked
 - Use available tools to accomplish the task
 - When done, call the 'complete' tool with a summary
 - Include notifications for anything the user should know about
-- Update memory with any context useful for future runs
 - If you cannot complete the task, explain why in the summary
 </guidelines>
 
@@ -264,26 +351,27 @@ function extractTokenUsage(
  * Run an AI employee to execute a scheduled job
  *
  * @param input - Job context and user information
- * @returns Execution result with summary, notifications, and updated memory
+ * @returns Execution result with summary and notifications
  *
  * @example
  * ```ts
- * const result = await runEmployee({
+ * const result = await runAITeamMember({
  *   jobId: "123",
  *   userId: "user-456",
  *   userEmail: "user@example.com",
  *   prompt: "Check my email and summarize important messages",
- *   memory: {},
  * });
  * ```
  */
-export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult> {
-    const { jobId, userEmail, prompt, memory, messages = [] } = input;
+export async function runAITeamMember(
+    input: AITeamMemberInput
+): Promise<AITeamMemberResult> {
+    const { jobId, userEmail, prompt, messages = [], jobContext } = input;
 
-    const employeeLogger = logger.child({ jobId, userEmail });
-    employeeLogger.info(
+    const aiTeamLogger = logger.child({ jobId, userEmail });
+    aiTeamLogger.info(
         { prompt: prompt.slice(0, 100) },
-        "🤖 Starting employee execution"
+        "🤖 Starting AI Team member execution"
     );
 
     const startTime = Date.now();
@@ -297,7 +385,6 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                 jobId,
                 userEmail,
                 promptLength: prompt.length,
-                memoryKeys: Object.keys(memory).length,
             },
         },
         async (span) => {
@@ -314,37 +401,49 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                     complete: completeTool,
                 };
 
-                employeeLogger.debug(
+                aiTeamLogger.debug(
                     { tools: Object.keys(allTools) },
-                    "Loaded tools for employee"
+                    "Loaded tools for AI Team member"
                 );
-
-                // Build system prompt
-                const systemPrompt = buildEmployeePrompt(prompt, memory);
 
                 // Prune messages for employee context
                 const prunedMessages = pruneModelMessages(messages, {
                     mode: "employee",
                 });
 
-                // Prepare messages with system prompt
-                const allMessages: ModelMessage[] = [
-                    { role: "system", content: systemPrompt },
-                    ...prunedMessages,
-                    // Add a user message to trigger execution if no messages provided
-                    ...(prunedMessages.length === 0
-                        ? [
-                              {
-                                  role: "user" as const,
-                                  content: "Please execute the task.",
-                              },
-                          ]
-                        : []),
-                ];
+                // Build messages based on whether we have new AI Team context
+                let allMessages: ModelMessage[];
+
+                if (jobContext) {
+                    // New AI Team framework: static system + dynamic user prompt
+                    allMessages = [
+                        { role: "system", content: AI_TEAM_SYSTEM_PROMPT },
+                        ...prunedMessages,
+                        {
+                            role: "user" as const,
+                            content: buildAITeamUserPrompt(jobContext),
+                        },
+                    ];
+                } else {
+                    // Legacy: combined system prompt
+                    const systemPrompt = buildLegacyAITeamMemberPrompt(prompt);
+                    allMessages = [
+                        { role: "system", content: systemPrompt },
+                        ...prunedMessages,
+                        ...(prunedMessages.length === 0
+                            ? [
+                                  {
+                                      role: "user" as const,
+                                      content: "Please execute the task.",
+                                  },
+                              ]
+                            : []),
+                    ];
+                }
 
                 // Get gateway client
                 const gateway = getGatewayClient();
-                const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
+                const primaryModel = AI_TEAM_MODEL_CHAIN[0];
 
                 // Execute with tool loop
                 const result = await generateText({
@@ -354,7 +453,7 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                     stopWhen: [hasToolCall("complete"), stepCountIs(MAX_STEPS)],
                     providerOptions: {
                         gateway: {
-                            models: EMPLOYEE_FALLBACK_CHAIN.map(translateModelId),
+                            models: AI_TEAM_MODEL_CHAIN.map(translateModelId),
                         },
                     },
                 });
@@ -390,22 +489,28 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
 
                 // Require summary to be present - empty args object should fall back to text
                 if (completion?.summary) {
-                    employeeLogger.info(
+                    aiTeamLogger.info(
                         {
                             summary: completion.summary,
                             notificationCount: completion.notifications?.length ?? 0,
                             toolCallsExecuted,
                             durationMs,
                         },
-                        "✅ Employee completed task"
+                        "✅ AI Team member completed task"
                     );
 
+                    // Map status to success boolean for backward compatibility
+                    const status = (completion.status ?? "success") as AITeamStatus;
+                    const isSuccess = status === "success" || status === "partial";
+
                     return {
-                        success: true,
+                        success: isSuccess,
                         summary: completion.summary,
                         notifications: completion.notifications ?? [],
-                        updatedMemory: { ...memory, ...completion.memoryUpdates },
                         toolCallsExecuted,
+                        status,
+                        updatedNotes: completion.notes ?? undefined,
+                        blockedReason: completion.blockedReason ?? undefined,
                         executionTrace,
                         tokenUsage,
                         modelId: primaryModel,
@@ -418,17 +523,17 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                 const lastText =
                     result.text || "Task completed without explicit summary.";
 
-                employeeLogger.warn(
+                aiTeamLogger.warn(
                     { text: lastText.slice(0, 200), steps: result.steps.length },
-                    "⚠️ Employee finished without calling complete tool"
+                    "⚠️ AI Team member finished without calling complete tool"
                 );
 
                 return {
                     success: true,
                     summary: lastText,
                     notifications: [],
-                    updatedMemory: memory,
                     toolCallsExecuted,
+                    status: "success" as AITeamStatus,
                     executionTrace,
                     tokenUsage,
                     modelId: primaryModel,
@@ -438,9 +543,9 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
             } catch (error) {
                 const durationMs = Date.now() - startTime;
 
-                employeeLogger.error({ error }, "❌ Employee execution failed");
+                aiTeamLogger.error({ error }, "❌ AI Team member execution failed");
                 Sentry.captureException(error, {
-                    tags: { component: "ai-team", agent: "employee" },
+                    tags: { component: "ai-team", agent: "ai-team-member" },
                     extra: { jobId, userEmail },
                 });
 
@@ -461,10 +566,9 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
                     success: false,
                     summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
                     notifications: [],
-                    updatedMemory: memory,
                     toolCallsExecuted: 0,
                     errorDetails,
-                    modelId: EMPLOYEE_FALLBACK_CHAIN[0],
+                    modelId: AI_TEAM_MODEL_CHAIN[0],
                     durationMs,
                     sentryTraceId,
                 };
@@ -476,24 +580,24 @@ export async function runEmployee(input: EmployeeInput): Promise<EmployeeResult>
 /**
  * Run an AI employee with streaming output for live progress viewing.
  *
- * Same logic as runEmployee but streams progress to a UIMessageStreamWriter,
+ * Same logic as runAITeamMember but streams progress to a UIMessageStreamWriter,
  * allowing users to "tap in" and watch the agent work in real-time.
  *
  * @param input - Job context and user information
  * @param writer - Stream writer for emitting progress
- * @returns Execution result with summary, notifications, and updated memory
+ * @returns Execution result with summary and notifications
  */
-export async function runEmployeeStreaming(
-    input: EmployeeInput,
+export async function runAITeamMemberStreaming(
+    input: AITeamMemberInput,
     writer: UIMessageStreamWriter
-): Promise<EmployeeResult> {
-    const { jobId, userEmail, prompt, memory, messages = [] } = input;
+): Promise<AITeamMemberResult> {
+    const { jobId, userEmail, prompt, messages = [], jobContext } = input;
     const startTime = Date.now();
 
-    const employeeLogger = logger.child({ jobId, userEmail });
-    employeeLogger.info(
+    const aiTeamLogger = logger.child({ jobId, userEmail });
+    aiTeamLogger.info(
         { prompt: prompt.slice(0, 100) },
-        "🤖 Starting streaming employee execution"
+        "🤖 Starting streaming AI Team member execution"
     );
 
     // Emit starting status
@@ -523,26 +627,43 @@ export async function runEmployeeStreaming(
 
                 writeStatus(writer, `job-${jobId}-tools`, "Tools ready", "🔧");
 
-                // Build system prompt and prepare messages
-                const systemPrompt = buildEmployeePrompt(prompt, memory);
+                // Prepare messages
                 const prunedMessages = pruneModelMessages(messages, {
                     mode: "employee",
                 });
-                const allMessages: ModelMessage[] = [
-                    { role: "system", content: systemPrompt },
-                    ...prunedMessages,
-                    ...(prunedMessages.length === 0
-                        ? [
-                              {
-                                  role: "user" as const,
-                                  content: "Please execute the task.",
-                              },
-                          ]
-                        : []),
-                ];
+
+                // Build messages based on whether we have new AI Team context
+                let allMessages: ModelMessage[];
+
+                if (jobContext) {
+                    // New AI Team framework: static system + dynamic user prompt
+                    allMessages = [
+                        { role: "system", content: AI_TEAM_SYSTEM_PROMPT },
+                        ...prunedMessages,
+                        {
+                            role: "user" as const,
+                            content: buildAITeamUserPrompt(jobContext),
+                        },
+                    ];
+                } else {
+                    // Legacy: combined system prompt
+                    const systemPrompt = buildLegacyAITeamMemberPrompt(prompt);
+                    allMessages = [
+                        { role: "system", content: systemPrompt },
+                        ...prunedMessages,
+                        ...(prunedMessages.length === 0
+                            ? [
+                                  {
+                                      role: "user" as const,
+                                      content: "Please execute the task.",
+                                  },
+                              ]
+                            : []),
+                    ];
+                }
 
                 const gateway = getGatewayClient();
-                const primaryModel = EMPLOYEE_FALLBACK_CHAIN[0];
+                const primaryModel = AI_TEAM_MODEL_CHAIN[0];
                 let completeCallData: Partial<CompleteToolParams> | null = null;
 
                 // Stream execution
@@ -553,7 +674,7 @@ export async function runEmployeeStreaming(
                     stopWhen: [hasToolCall("complete"), stepCountIs(MAX_STEPS)],
                     providerOptions: {
                         gateway: {
-                            models: EMPLOYEE_FALLBACK_CHAIN.map(translateModelId),
+                            models: AI_TEAM_MODEL_CHAIN.map(translateModelId),
                         },
                     },
                     onChunk: ({ chunk }) => {
@@ -595,14 +716,11 @@ export async function runEmployeeStreaming(
                 writer.merge(result.toUIMessageStream({ sendReasoning: false }));
 
                 // Wait for stream to complete and get full result
-                employeeLogger.debug(
-                    {},
-                    "⏳ Waiting for stream response to complete..."
-                );
+                aiTeamLogger.debug({}, "⏳ Waiting for stream response to complete...");
 
                 // Wait for the full text to ensure stream is consumed
                 const fullText = await result.text;
-                employeeLogger.debug(
+                aiTeamLogger.debug(
                     { textLength: fullText?.length ?? 0 },
                     "✅ Full text received from stream"
                 );
@@ -610,7 +728,7 @@ export async function runEmployeeStreaming(
                 const steps = await result.steps;
 
                 // Log the raw structure for debugging
-                employeeLogger.info(
+                aiTeamLogger.info(
                     {
                         stepsCount: steps?.length ?? 0,
                         stepsType: typeof steps,
@@ -636,7 +754,7 @@ export async function runEmployeeStreaming(
                 const executionTrace = extractExecutionTrace(steps, fullText);
                 const tokenUsage = extractTokenUsage(usage);
 
-                employeeLogger.info(
+                aiTeamLogger.info(
                     {
                         traceStepCount: executionTrace.steps.length,
                         hasFinalText: !!executionTrace.finalText,
@@ -660,7 +778,7 @@ export async function runEmployeeStreaming(
                         "✅"
                     );
 
-                    employeeLogger.info(
+                    aiTeamLogger.info(
                         {
                             summary: completion.summary,
                             notificationCount: completion.notifications?.length ?? 0,
@@ -670,12 +788,18 @@ export async function runEmployeeStreaming(
                         "✅ Streaming employee completed task"
                     );
 
+                    // Map status to success boolean for backward compatibility
+                    const status = (completion.status ?? "success") as AITeamStatus;
+                    const isSuccess = status === "success" || status === "partial";
+
                     return {
-                        success: true,
+                        success: isSuccess,
                         summary: completion.summary,
                         notifications: completion.notifications ?? [],
-                        updatedMemory: { ...memory, ...completion.memoryUpdates },
                         toolCallsExecuted,
+                        status,
+                        updatedNotes: completion.notes ?? undefined,
+                        blockedReason: completion.blockedReason ?? undefined,
                         executionTrace,
                         tokenUsage,
                         modelId: primaryModel,
@@ -687,7 +811,7 @@ export async function runEmployeeStreaming(
                 // No explicit completion
                 writeStatus(writer, `job-${jobId}-complete`, "Task finished", "✅");
 
-                employeeLogger.warn(
+                aiTeamLogger.warn(
                     { text: fullText.slice(0, 200) },
                     "⚠️ Streaming employee finished without calling complete tool"
                 );
@@ -696,8 +820,8 @@ export async function runEmployeeStreaming(
                     success: true,
                     summary: fullText || "Task completed without explicit summary.",
                     notifications: [],
-                    updatedMemory: memory,
                     toolCallsExecuted,
+                    status: "success" as AITeamStatus,
                     executionTrace,
                     tokenUsage,
                     modelId: primaryModel,
@@ -714,12 +838,12 @@ export async function runEmployeeStreaming(
                     "❌"
                 );
 
-                employeeLogger.error(
+                aiTeamLogger.error(
                     { error },
-                    "❌ Streaming employee execution failed"
+                    "❌ Streaming AI Team member execution failed"
                 );
                 Sentry.captureException(error, {
-                    tags: { component: "ai-team", agent: "employee-stream" },
+                    tags: { component: "ai-team", agent: "ai-team-member-stream" },
                     extra: { jobId, userEmail, toolCallsExecuted },
                 });
 
@@ -735,10 +859,9 @@ export async function runEmployeeStreaming(
                     success: false,
                     summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
                     notifications: [],
-                    updatedMemory: memory,
                     toolCallsExecuted,
                     errorDetails,
-                    modelId: EMPLOYEE_FALLBACK_CHAIN[0],
+                    modelId: AI_TEAM_MODEL_CHAIN[0],
                     durationMs,
                     sentryTraceId,
                 };

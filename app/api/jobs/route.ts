@@ -179,7 +179,6 @@ export async function POST(request: NextRequest) {
             scheduleCron,
             scheduleDisplayText,
             timezone,
-            memory: {},
             isActive: true,
         })
         .returning();
