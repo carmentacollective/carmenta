@@ -47,7 +47,7 @@ import {
 import { CopyButton } from "@/components/ui/copy-button";
 import { RegenerateMenu } from "@/components/ui/regenerate-menu";
 import {
-    ScrollToBottomButton,
+    ComposerScrollIndicator,
     ToolPartRenderer,
     getMessageContent,
     getReasoningContent,
@@ -315,13 +315,13 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
             {/* Input container with safe area for notched devices - glass treatment matches header */}
             {/* NOTE: No motion.div wrapper here - CSS transforms on iOS Safari cause cursor
                 positioning bugs where the cursor appears displaced from the textarea */}
-            <div className="landscape-compact-input border-foreground/5 dark:bg-card/60 flex flex-none items-center justify-center border-t bg-white/60 px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl @md:px-4 @md:pt-3 @md:pb-4">
-                <div className="relative flex w-full flex-col items-center">
-                    <ScrollToBottomButton
-                        isAtBottom={isAtBottom}
-                        onScrollToBottom={() => scrollToBottom("smooth")}
-                        className="absolute -top-14 h-11 w-11 @md:-top-12"
-                    />
+            <div className="landscape-compact-input border-foreground/5 dark:bg-card/60 flex flex-none flex-col border-t bg-white/60 backdrop-blur-2xl">
+                {/* Scroll indicator - integrated into composer area, no z-index conflicts */}
+                <ComposerScrollIndicator
+                    isAtBottom={isAtBottom}
+                    onScrollToBottom={() => scrollToBottom("smooth")}
+                />
+                <div className="flex w-full items-center justify-center px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] @md:px-4 @md:pt-3 @md:pb-4">
                     <Composer onMarkMessageStopped={handleMarkMessageStopped} />
                 </div>
             </div>
