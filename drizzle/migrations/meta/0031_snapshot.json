@@ -1,6 +1,6 @@
 {
-  "id": "7c2df261-2a18-43ea-a74c-14bd79754228",
-  "prevId": "28ef60f1-679a-45cc-ac14-d32ce642989d",
+  "id": "22ba16bc-e998-4721-8cfc-7a9c20b1057d",
+  "prevId": "7c2df261-2a18-43ea-a74c-14bd79754228",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2658,13 +2658,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'UTC'"
-        },
-        "memory": {
-          "name": "memory",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
         },
         "agent_notes": {
           "name": "agent_notes",
