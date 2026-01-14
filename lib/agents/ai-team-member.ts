@@ -77,7 +77,6 @@ export interface AITeamMemberInput {
     userId: string;
     userEmail: string;
     prompt: string;
-    memory: Record<string, unknown>;
     messages?: ModelMessage[];
 
     /** New AI Team job context (when available) */
@@ -100,7 +99,6 @@ export interface AITeamMemberResult {
         body: string;
         priority: "low" | "normal" | "high" | "urgent";
     }>;
-    updatedMemory: Record<string, unknown>;
     toolCallsExecuted: number;
 
     /** Completion status (new AI Team framework) */
@@ -249,32 +247,18 @@ ${context.task}`;
  * Build legacy system prompt for AI Team member execution (backward compatibility).
  * Used when jobContext is not provided.
  */
-function buildLegacyAITeamMemberPrompt(
-    jobPrompt: string,
-    memory: Record<string, unknown>
-): string {
-    const memorySection =
-        Object.keys(memory).length > 0
-            ? `
-<memory>
-Context from previous runs:
-${JSON.stringify(memory, null, 2)}
-</memory>`
-            : "";
-
+function buildLegacyAITeamMemberPrompt(jobPrompt: string): string {
     return `You are an AI employee executing a scheduled task. Complete the task thoroughly but efficiently.
 
 <task>
 ${jobPrompt}
 </task>
-${memorySection}
 
 <guidelines>
 - Focus on the specific task - don't go beyond what's asked
 - Use available tools to accomplish the task
 - When done, call the 'complete' tool with a summary
 - Include notifications for anything the user should know about
-- Update memory with any context useful for future runs
 - If you cannot complete the task, explain why in the summary
 </guidelines>
 
@@ -370,7 +354,7 @@ function extractTokenUsage(
  * Run an AI employee to execute a scheduled job
  *
  * @param input - Job context and user information
- * @returns Execution result with summary, notifications, and updated memory
+ * @returns Execution result with summary and notifications
  *
  * @example
  * ```ts
@@ -379,14 +363,13 @@ function extractTokenUsage(
  *   userId: "user-456",
  *   userEmail: "user@example.com",
  *   prompt: "Check my email and summarize important messages",
- *   memory: {},
  * });
  * ```
  */
 export async function runAITeamMember(
     input: AITeamMemberInput
 ): Promise<AITeamMemberResult> {
-    const { jobId, userEmail, prompt, memory, messages = [], jobContext } = input;
+    const { jobId, userEmail, prompt, messages = [], jobContext } = input;
 
     const aiTeamLogger = logger.child({ jobId, userEmail });
     aiTeamLogger.info(
@@ -405,7 +388,6 @@ export async function runAITeamMember(
                 jobId,
                 userEmail,
                 promptLength: prompt.length,
-                memoryKeys: Object.keys(memory).length,
             },
         },
         async (span) => {
@@ -447,7 +429,7 @@ export async function runAITeamMember(
                     ];
                 } else {
                     // Legacy: combined system prompt
-                    const systemPrompt = buildLegacyAITeamMemberPrompt(prompt, memory);
+                    const systemPrompt = buildLegacyAITeamMemberPrompt(prompt);
                     allMessages = [
                         { role: "system", content: systemPrompt },
                         ...prunedMessages,
@@ -528,7 +510,6 @@ export async function runAITeamMember(
                         success: isSuccess,
                         summary: completion.summary,
                         notifications: completion.notifications ?? [],
-                        updatedMemory: { ...memory, ...completion.memoryUpdates },
                         toolCallsExecuted,
                         status,
                         updatedNotes: completion.notes ?? undefined,
@@ -554,7 +535,6 @@ export async function runAITeamMember(
                     success: true,
                     summary: lastText,
                     notifications: [],
-                    updatedMemory: memory,
                     toolCallsExecuted,
                     status: "success" as AITeamStatus,
                     executionTrace,
@@ -589,7 +569,6 @@ export async function runAITeamMember(
                     success: false,
                     summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
                     notifications: [],
-                    updatedMemory: memory,
                     toolCallsExecuted: 0,
                     errorDetails,
                     modelId: AI_TEAM_MODEL_CHAIN[0],
@@ -609,13 +588,13 @@ export async function runAITeamMember(
  *
  * @param input - Job context and user information
  * @param writer - Stream writer for emitting progress
- * @returns Execution result with summary, notifications, and updated memory
+ * @returns Execution result with summary and notifications
  */
 export async function runAITeamMemberStreaming(
     input: AITeamMemberInput,
     writer: UIMessageStreamWriter
 ): Promise<AITeamMemberResult> {
-    const { jobId, userEmail, prompt, memory, messages = [], jobContext } = input;
+    const { jobId, userEmail, prompt, messages = [], jobContext } = input;
     const startTime = Date.now();
 
     const aiTeamLogger = logger.child({ jobId, userEmail });
@@ -671,7 +650,7 @@ export async function runAITeamMemberStreaming(
                     ];
                 } else {
                     // Legacy: combined system prompt
-                    const systemPrompt = buildLegacyAITeamMemberPrompt(prompt, memory);
+                    const systemPrompt = buildLegacyAITeamMemberPrompt(prompt);
                     allMessages = [
                         { role: "system", content: systemPrompt },
                         ...prunedMessages,
@@ -820,7 +799,6 @@ export async function runAITeamMemberStreaming(
                         success: isSuccess,
                         summary: completion.summary,
                         notifications: completion.notifications ?? [],
-                        updatedMemory: { ...memory, ...completion.memoryUpdates },
                         toolCallsExecuted,
                         status,
                         updatedNotes: completion.notes ?? undefined,
@@ -845,7 +823,6 @@ export async function runAITeamMemberStreaming(
                     success: true,
                     summary: fullText || "Task completed without explicit summary.",
                     notifications: [],
-                    updatedMemory: memory,
                     toolCallsExecuted,
                     status: "success" as AITeamStatus,
                     executionTrace,
@@ -885,7 +862,6 @@ export async function runAITeamMemberStreaming(
                     success: false,
                     summary: `Execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
                     notifications: [],
-                    updatedMemory: memory,
                     toolCallsExecuted,
                     errorDetails,
                     modelId: AI_TEAM_MODEL_CHAIN[0],

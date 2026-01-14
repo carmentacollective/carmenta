@@ -1489,13 +1489,6 @@ export const scheduledJobs = pgTable(
         timezone: text("timezone").notNull().default("UTC"),
 
         /**
-         * Persistent memory between runs (LEGACY)
-         * Agents can store state here that persists across executions
-         * @deprecated Use agentNotes for new implementations
-         */
-        memory: jsonb("memory").notNull().default({}),
-
-        /**
          * Agent's working notes (markdown)
          * Visible to users, written by the agent after each run.
          * Like a team member's working document.

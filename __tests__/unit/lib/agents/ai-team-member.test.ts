@@ -68,7 +68,6 @@ const baseInput: AITeamMemberInput = {
     userId: "user-456",
     userEmail: "test@example.com",
     prompt: "Check the weather",
-    memory: {},
 };
 
 describe("runAITeamMember", () => {
@@ -225,45 +224,6 @@ describe("runAITeamMember", () => {
         expect(result.toolCallsExecuted).toBe(4);
     });
 
-    it("merges memory updates from completion", async () => {
-        const inputWithMemory: AITeamMemberInput = {
-            ...baseInput,
-            memory: { existingKey: "existingValue", overwriteMe: "old" },
-        };
-
-        vi.mocked(generateText).mockResolvedValue({
-            text: "",
-            steps: [
-                {
-                    toolCalls: [
-                        {
-                            toolName: "complete",
-                            toolCallId: "call-1",
-                            args: {
-                                summary: "Memory updated",
-                                notifications: [],
-                                memoryUpdates: {
-                                    newKey: "newValue",
-                                    overwriteMe: "new",
-                                },
-                            },
-                        },
-                    ],
-                    toolResults: [],
-                },
-            ],
-            usage: { promptTokens: 100, completionTokens: 50 },
-        } as any);
-
-        const result = await runAITeamMember(inputWithMemory);
-
-        expect(result.updatedMemory).toEqual({
-            existingKey: "existingValue",
-            overwriteMe: "new",
-            newKey: "newValue",
-        });
-    });
-
     it("extracts notifications from completion", async () => {
         vi.mocked(generateText).mockResolvedValue({
             text: "",
@@ -331,7 +291,6 @@ describe("runAITeamMember", () => {
 
         expect(result.success).toBe(true);
         expect(result.notifications).toEqual([]);
-        expect(result.updatedMemory).toEqual({});
     });
 
     it("handles steps with undefined toolCalls array", async () => {
@@ -409,23 +368,6 @@ describe("runAITeamMember", () => {
         const result = await runAITeamMember(baseInput);
 
         expect(result.summary).toBe("Found in step 3");
-    });
-
-    it("preserves original memory when no updates provided", async () => {
-        const inputWithMemory: AITeamMemberInput = {
-            ...baseInput,
-            memory: { preserved: "value", another: 123 },
-        };
-
-        vi.mocked(generateText).mockResolvedValue({
-            text: "Done",
-            steps: [],
-            usage: { promptTokens: 100, completionTokens: 50 },
-        } as any);
-
-        const result = await runAITeamMember(inputWithMemory);
-
-        expect(result.updatedMemory).toEqual({ preserved: "value", another: 123 });
     });
 
     it("handles error with non-Error object", async () => {

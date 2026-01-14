@@ -26,16 +26,15 @@ import { logger } from "../../lib/logger";
 import { captureActivityError } from "../lib/activity-sentry";
 
 /**
- * Extended job context including user information for employee agent
+ * Extended job context including user information for AI Team member
  */
 export interface FullJobContext {
     jobId: string;
     userId: string;
     userEmail: string;
     prompt: string;
-    memory: Record<string, unknown>;
 
-    /** New AI Team framework context */
+    /** AI Team framework context */
     jobContext?: AITeamJobContext;
 }
 
@@ -103,7 +102,6 @@ export async function loadFullJobContext(jobId: string): Promise<FullJobContext>
             userId: job.userId,
             userEmail: user.email,
             prompt: job.prompt,
-            memory: (job.memory as Record<string, unknown>) || {},
             jobContext,
         };
     } catch (error) {
@@ -129,7 +127,6 @@ export async function executeAITeamMember(
         userId: context.userId,
         userEmail: context.userEmail,
         prompt: context.prompt,
-        memory: context.memory,
         jobContext: context.jobContext,
     });
 }
@@ -143,12 +140,12 @@ export async function generateJobStreamId(jobId: string): Promise<string> {
 }
 
 /**
- * Execute job using the AI employee agent with streaming to Redis.
+ * Execute job using the AI Team member with streaming to Redis.
  *
  * This is the streaming execution path that allows users to "tap in"
  * and watch the agent work in real-time.
  *
- * @param context - Job context with prompt, user info, memory
+ * @param context - Job context with prompt, user info, job context
  * @param streamId - Pre-generated stream ID (already saved to DB)
  */
 export async function executeStreamingAITeamMember(
@@ -182,7 +179,6 @@ export async function executeStreamingAITeamMember(
                         userId: context.userId,
                         userEmail: context.userEmail,
                         prompt: context.prompt,
-                        memory: context.memory,
                         jobContext: context.jobContext,
                     },
                     writer
@@ -277,11 +273,10 @@ export async function recordEmployeeRun(
         });
     }
 
-    // Update job with new memory and last run time
+    // Update job with last run time
     await db
         .update(scheduledJobs)
         .set({
-            memory: result.updatedMemory,
             lastRunAt: new Date(),
             updatedAt: new Date(),
         })
@@ -412,19 +407,18 @@ export async function finalizeJobRun(
             });
         }
 
-        // Build job update - always update memory and lastRunAt
+        // Build job update
         const jobUpdate: Record<string, unknown> = {
-            memory: result.updatedMemory,
             lastRunAt: new Date(),
             updatedAt: new Date(),
         };
 
-        // Save agent notes if provided (new AI Team framework)
+        // Save agent notes if provided
         if (result.updatedNotes !== undefined) {
             jobUpdate.agentNotes = result.updatedNotes;
         }
 
-        // Update job with new memory, notes, and last run time
+        // Update job with notes and last run time
         await db
             .update(scheduledJobs)
             .set(jobUpdate)

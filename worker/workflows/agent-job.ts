@@ -147,7 +147,6 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
             summary: `Failed: ${errorMessage}`,
             toolCallsExecuted: 0,
             notifications: [],
-            updatedMemory: context.memory,
             // Observability fields for debugging
             errorDetails: {
                 message: errorMessage,
