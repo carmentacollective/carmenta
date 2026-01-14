@@ -80,13 +80,16 @@ export function getAdapter(serviceId: string): ServiceAdapter | null {
 }
 
 /**
- * Build a short description for the tool from service definition
+ * Build a short description for the tool from service definition.
  * This appears in the tool list and should be concise.
+ * The "describe" pattern is documented in the system prompt, not repeated here.
  */
 function buildToolDescription(service: ServiceDefinition): string {
     const actions =
         service.capabilities?.slice(0, 4).join(", ") || "various operations";
-    return `${service.description}. Actions: ${actions}. Call with action='describe' for full documentation.`;
+    const remaining = (service.capabilities?.length ?? 0) - 4;
+    const moreText = remaining > 0 ? ` +${remaining} more` : "";
+    return `${service.description}. Top operations: ${actions}${moreText}`;
 }
 
 /**
@@ -97,12 +100,14 @@ const integrationToolSchema = z.object({
     action: z
         .string()
         .describe(
-            "Action to perform. Use 'describe' to get full documentation of available actions."
+            "Action to perform. Use 'describe' for all operations, or 'describe' with params.operation for one."
         ),
     params: z
         .record(z.string(), z.unknown())
         .optional()
-        .describe("Parameters for the action (see describe for details)"),
+        .describe(
+            "Parameters for the action. For describe: {operation: 'name'} for single operation details."
+        ),
 });
 
 /**
@@ -123,9 +128,28 @@ function createServiceTool(service: ServiceDefinition, userEmail: string) {
                 "Executing integration tool"
             );
 
-            // Handle describe action - returns full documentation
+            // Handle describe action - returns documentation
             if (action === "describe") {
                 const help = adapter.getHelp();
+                const operationName = params?.operation as string | undefined;
+
+                // Targeted describe: return just one operation
+                if (operationName) {
+                    const operation = help.operations.find(
+                        (op) => op.name === operationName
+                    );
+                    if (operation) {
+                        return {
+                            service: help.service,
+                            operation,
+                        };
+                    }
+                    return {
+                        error: `Operation '${operationName}' not found. Use action='describe' to see available operations.`,
+                    };
+                }
+
+                // Full describe: return all operations
                 return {
                     service: help.service,
                     description: help.description,
@@ -197,13 +221,12 @@ function createAdapterTool(adapterId: string, userEmail: string) {
     }
 
     const help = adapter.getHelp();
-    const actions =
-        help.commonOperations?.slice(0, 4).join(", ") ||
-        help.operations
-            .slice(0, 4)
-            .map((o) => o.name)
-            .join(", ");
-    const description = `${help.description || help.service}. Actions: ${actions}. Call with action='describe' for full documentation.`;
+    const topOps =
+        help.commonOperations?.slice(0, 4) ||
+        help.operations.slice(0, 4).map((o) => o.name);
+    const remaining = (help.commonOperations?.length ?? help.operations.length) - 4;
+    const moreText = remaining > 0 ? ` +${remaining} more` : "";
+    const description = `${help.description || help.service}. Top operations: ${topOps.join(", ")}${moreText}`;
 
     return tool({
         description,
@@ -212,6 +235,25 @@ function createAdapterTool(adapterId: string, userEmail: string) {
             logger.info({ service: adapterId, action, userEmail }, "Executing tool");
 
             if (action === "describe") {
+                const operationName = params?.operation as string | undefined;
+
+                // Targeted describe: return just one operation
+                if (operationName) {
+                    const operation = help.operations.find(
+                        (op) => op.name === operationName
+                    );
+                    if (operation) {
+                        return {
+                            service: help.service,
+                            operation,
+                        };
+                    }
+                    return {
+                        error: `Operation '${operationName}' not found. Use action='describe' to see available operations.`,
+                    };
+                }
+
+                // Full describe: return all operations
                 return {
                     service: help.service,
                     description: help.description,
