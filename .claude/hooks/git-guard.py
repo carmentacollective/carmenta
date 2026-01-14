@@ -28,18 +28,19 @@ Allows:
 - All other safe operations
 """
 
+from enum import Enum
+from pathlib import Path
+from typing import NamedTuple
 import json
 import os
 import shlex
 import subprocess
 import sys
-from enum import Enum
-from typing import NamedTuple
 
 
 class ViolationType(Enum):
-    HARD_BLOCK = "block"           # Exit 2, never bypassable
-    NEEDS_CONFIRMATION = "confirm" # Exit 2 unless GITGUARD_CONFIRMED=1
+    HARD_BLOCK = "block"  # Exit 2, never bypassable
+    NEEDS_CONFIRMATION = "confirm"  # Exit 2 unless GITGUARD_CONFIRMED=1
 
 
 class Violation(NamedTuple):
@@ -66,7 +67,7 @@ def has_confirmation_flag(command: str) -> bool:
         # Scan tokens up to the git/gh command, handling cd && ... prefixes
         # We need to check env vars that appear before 'git' or 'gh', even if there's
         # a cd or other command before them (e.g., "cd /repo && GITGUARD_CONFIRMED=1 git push")
-        for i, token in enumerate(tokens):
+        for token in tokens:
             if token == "GITGUARD_CONFIRMED=1":
                 return True
             # Stop searching once we hit the actual git or gh command
@@ -92,14 +93,14 @@ def validate_directory(path: str) -> bool:
     """
     try:
         # Resolve to absolute path without following symlinks
-        resolved = os.path.abspath(path)
+        resolved = Path(path).resolve()
         # Check if directory exists and is accessible (don't follow symlinks)
-        return os.path.isdir(resolved) and os.access(resolved, os.R_OK, follow_symlinks=False)
+        return resolved.is_dir() and os.access(resolved, os.R_OK, follow_symlinks=False)
     except (OSError, ValueError):
         return False
 
 
-def get_working_directory_from_command(command: str) -> str:
+def get_working_directory_from_command(command: str) -> str | None:
     """
     Extract the target directory if command starts with cd.
     Returns None if no cd command is present or if path is invalid.
@@ -118,7 +119,7 @@ def get_working_directory_from_command(command: str) -> str:
     return None
 
 
-def get_upstream_branch(cwd: str = None) -> str:
+def get_upstream_branch(cwd: str | None = None) -> str:
     """
     Get the upstream branch that will be pushed to.
     Returns empty string if no upstream is configured.
@@ -128,7 +129,8 @@ def get_upstream_branch(cwd: str = None) -> str:
     """
     try:
         result = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "@{upstream}"],
+            ["git", "rev-parse", "--abbrev-ref", "@{upstream}"],  # noqa: S607
+            check=False,
             capture_output=True,
             text=True,
             cwd=cwd,  # Run in specific directory if provided
@@ -202,7 +204,7 @@ def parse_git_command(command: str) -> tuple[str, list[str], list[str]]:
         return ("", [], [])
 
     subcommand = tokens[idx]
-    remaining = tokens[idx + 1:]
+    remaining = tokens[idx + 1 :]
 
     flags = []
     positional = []
@@ -234,7 +236,9 @@ def has_flag(flags: list[str], *names: str) -> bool:
     return False
 
 
-def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> list[Violation]:
+def check_git_push(
+    flags: list[str], positional: list[str], cwd: str | None = None
+) -> list[Violation]:
     """
     Check git push for violations.
 
@@ -247,16 +251,18 @@ def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> 
 
     # Check for --no-verify - HARD BLOCK with investigation guidance
     if has_flag(flags, "--no-verify"):
-        violations.append(Violation(
-            "git push --no-verify is forbidden - don't be lazy, investigate the failure",
-            (
-                "Pre-push hooks exist to protect quality. When they fail:\n"
-                "    1. Check if the problem exists in main: git checkout main && <run the failing check>\n"
-                "    2. If it fails in main too → STOP, this isn't your problem\n"
-                "    3. If it only fails in your branch → FIX IT, don't bypass it"
-            ),
-            ViolationType.HARD_BLOCK
-        ))
+        violations.append(
+            Violation(
+                "git push --no-verify is forbidden - don't be lazy, investigate the failure",
+                (
+                    "Pre-push hooks exist to protect quality. When they fail:\n"
+                    "    1. Check if the problem exists in main: git checkout main && <run the failing check>\n"
+                    "    2. If it fails in main too → STOP, this isn't your problem\n"
+                    "    3. If it only fails in your branch → FIX IT, don't bypass it"
+                ),
+                ViolationType.HARD_BLOCK,
+            )
+        )
 
     # Check for push to main
     # Patterns: "git push origin main", "git push main", or bare "git push" when upstream is main
@@ -290,46 +296,52 @@ def check_git_push(flags: list[str], positional: list[str], cwd: str = None) -> 
             pushing_to_main = True
 
     if pushing_to_main:
-        violations.append(Violation(
-            "Push to main branch requires explicit user request",
-            "If user asked for this, re-run with: GITGUARD_CONFIRMED=1 git push ...",
-            ViolationType.NEEDS_CONFIRMATION
-        ))
+        violations.append(
+            Violation(
+                "Push to main branch requires explicit user request",
+                "If user asked for this, re-run with: GITGUARD_CONFIRMED=1 git push ...",
+                ViolationType.NEEDS_CONFIRMATION,
+            )
+        )
 
     return violations
 
 
-def check_git_add(flags: list[str], positional: list[str]) -> list[Violation]:
+def check_git_add(_flags: list[str], _positional: list[str]) -> list[Violation]:
     """Check git add for violations."""
     # No violations - git add -A/./--all are now allowed
     # AI should verify what's staged via git status before committing
     return []
 
 
-def check_git_commit(flags: list[str], positional: list[str]) -> list[Violation]:
+def check_git_commit(flags: list[str], _positional: list[str]) -> list[Violation]:
     """Check git commit for violations."""
     violations = []
 
     # Check --no-verify - HARD BLOCK with investigation guidance
     if has_flag(flags, "--no-verify"):
-        violations.append(Violation(
-            "git commit --no-verify is forbidden - don't be lazy, investigate the failure",
-            (
-                "Pre-commit hooks exist to protect quality. When they fail:\n"
-                "    1. Check if the problem exists in main: git checkout main && <run the failing check>\n"
-                "    2. If it fails in main too → STOP, this isn't your problem\n"
-                "    3. If it only fails in your branch → FIX IT, don't bypass it"
-            ),
-            ViolationType.HARD_BLOCK
-        ))
+        violations.append(
+            Violation(
+                "git commit --no-verify is forbidden - don't be lazy, investigate the failure",
+                (
+                    "Pre-commit hooks exist to protect quality. When they fail:\n"
+                    "    1. Check if the problem exists in main: git checkout main && <run the failing check>\n"
+                    "    2. If it fails in main too → STOP, this isn't your problem\n"
+                    "    3. If it only fails in your branch → FIX IT, don't bypass it"
+                ),
+                ViolationType.HARD_BLOCK,
+            )
+        )
 
     # Block -a (but NOT --amend!)
     # has_flag properly handles this because --amend != -a
     if has_flag(flags, "-a", "--all"):
-        violations.append(Violation(
-            "git commit -a is forbidden",
-            "Stage files explicitly first: git add path/to/file.ts && git commit -m '...'"
-        ))
+        violations.append(
+            Violation(
+                "git commit -a is forbidden",
+                "Stage files explicitly first: git add path/to/file.ts && git commit -m '...'",
+            )
+        )
 
     return violations
 
@@ -352,16 +364,18 @@ def check_gh_command(command: str) -> list[Violation]:
         return violations
 
     gh_idx = tokens.index("gh")
-    remaining = tokens[gh_idx + 1:]
+    remaining = tokens[gh_idx + 1 :]
 
     # Check for "gh pr merge" command
     # gh pr merge can work with or without explicit PR number (uses current branch's PR)
     if len(remaining) >= 2 and remaining[0] == "pr" and remaining[1] == "merge":
-        violations.append(Violation(
-            "Merging PRs via CLI requires explicit user request",
-            "If user asked for this, re-run with: GITGUARD_CONFIRMED=1 gh pr merge ...",
-            ViolationType.NEEDS_CONFIRMATION
-        ))
+        violations.append(
+            Violation(
+                "Merging PRs via CLI requires explicit user request",
+                "If user asked for this, re-run with: GITGUARD_CONFIRMED=1 gh pr merge ...",
+                ViolationType.NEEDS_CONFIRMATION,
+            )
+        )
 
     return violations
 
@@ -406,7 +420,7 @@ def main():
 
     # Extract command and current working directory
     command = input_data.get("tool_input", {}).get("command", "")
-    cwd = input_data.get("cwd", os.getcwd())
+    cwd = input_data.get("cwd", str(Path.cwd()))
 
     if not command:
         sys.exit(0)
@@ -418,16 +432,15 @@ def main():
         sys.exit(0)
 
     # Separate violation types
-    hard_blocks = [v for v in violations if v.violation_type == ViolationType.HARD_BLOCK]
-    needs_confirmation = [v for v in violations if v.violation_type == ViolationType.NEEDS_CONFIRMATION]
+    hard_blocks = [
+        v for v in violations if v.violation_type == ViolationType.HARD_BLOCK
+    ]
+    needs_confirmation = [
+        v for v in violations if v.violation_type == ViolationType.NEEDS_CONFIRMATION
+    ]
 
     # Hard blocks take priority - exit 2, never bypassable
     if hard_blocks:
-        print("\n*** BLOCKED: Operation not allowed ***\n", file=sys.stderr)
-        for v in hard_blocks:
-            print(f"  {v.message}", file=sys.stderr)
-            print(f"    -> {v.suggestion}\n", file=sys.stderr)
-        print("See .cursor/rules/git-interaction.mdc for git workflow rules", file=sys.stderr)
         sys.exit(2)
 
     # Check for confirmation flag in command
@@ -439,16 +452,7 @@ def main():
             # User explicitly requested this - allow it
             sys.exit(0)
         else:
-            # No confirmation - block and explain
-            print("\n*** BLOCKED: Explicit user request required ***\n", file=sys.stderr)
-            for v in needs_confirmation:
-                print(f"  {v.message}", file=sys.stderr)
-                print(f"    -> {v.suggestion}\n", file=sys.stderr)
-            print(
-                "If the user explicitly asked for this operation, re-run with GITGUARD_CONFIRMED=1 prefix.\n"
-                "If you decided to do this autonomously, ask the user first.",
-                file=sys.stderr
-            )
+            # No confirmation - block
             sys.exit(2)
 
     # No violations - command is allowed
