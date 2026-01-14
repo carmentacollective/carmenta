@@ -19,6 +19,10 @@ import { z } from "zod";
 
 import { logger } from "@/lib/logger";
 import { sendPushNotification, isPushConfigured } from "@/lib/push";
+import type {
+    SendPushResult,
+    SubscriptionResult,
+} from "@/lib/push/notification-service";
 import {
     type SubagentResult,
     type SubagentDescription,
@@ -73,12 +77,59 @@ function describeOperations(): SubagentDescription {
 }
 
 /**
- * Result data for send action
+ * Result data for send action - enriched for LLM decision-making
  */
 interface SendData {
+    /** Whether notification was successfully sent to at least one device */
     sent: boolean;
+    /** Number of devices that received the notification */
     devicesNotified: number;
+    /** Total active subscriptions for this user */
     totalSubscriptions: number;
+    /** Device types that received the notification (e.g., ["ios", "mac"]) */
+    deviceTypes: string[];
+    /** Why some devices failed, if any (helps decide next steps) */
+    failureReasons?: string[];
+    /** ISO timestamp when notification was sent */
+    sentAt: string;
+    /** Guidance for what to do next based on the result */
+    nextStep?: string;
+}
+
+/**
+ * Determine next step guidance based on notification result
+ */
+function getNextStepGuidance(result: SendPushResult): string | undefined {
+    if (result.success && result.devicesNotified === result.totalSubscriptions) {
+        // Complete success
+        return undefined;
+    }
+
+    if (result.success && result.devicesNotified < result.totalSubscriptions) {
+        // Partial success - count failures by reason
+        const expiredCount = result.results.filter(
+            (r: SubscriptionResult) =>
+                !r.success && r.failureReason === "subscription_expired"
+        ).length;
+
+        if (expiredCount > 0) {
+            return `${expiredCount} device(s) had expired subscriptions. The notification reached their other devices.`;
+        }
+        return `Notification delivered to ${result.devicesNotified} of ${result.totalSubscriptions} devices.`;
+    }
+
+    // Complete failure
+    if (result.failureReasons.includes("network_error")) {
+        return "Network issue prevented delivery. Consider SMS as fallback for time-sensitive messages.";
+    }
+    if (
+        result.failureReasons.includes("subscription_expired") ||
+        result.failureReasons.includes("subscription_not_found")
+    ) {
+        return "All subscriptions expired. They'll need to re-enable notifications in Carmenta.";
+    }
+
+    return "Push delivery failed. Consider SMS for urgent messages.";
 }
 
 /**
@@ -98,7 +149,7 @@ async function executeSend(
         );
         return errorResult(
             "PERMANENT",
-            "Push notifications aren't set up on this server. The notification wasn't sent, but you can continue."
+            "Push notifications aren't set up on this server. Consider SMS as an alternative."
         );
     }
 
@@ -120,7 +171,7 @@ async function executeSend(
 
             return errorResult(
                 "PERMANENT",
-                "They haven't enabled push notifications yet. The notification wasn't sent, but you can continue with other methods."
+                "They haven't enabled push notifications yet (no devices registered). Consider SMS for urgent messages."
             );
         }
 
@@ -130,14 +181,18 @@ async function executeSend(
                     userEmail: context.userEmail,
                     error: result.error,
                     totalSubscriptions: result.totalSubscriptions,
+                    failureReasons: result.failureReasons,
                 },
                 "🔔 Push notification failed to all devices"
             );
 
+            const guidance = getNextStepGuidance(result);
+
             return errorResult(
-                "TEMPORARY",
-                result.error ??
-                    "Push notification failed to send. Try SMS as a fallback."
+                result.failureReasons.includes("network_error")
+                    ? "TEMPORARY"
+                    : "PERMANENT",
+                guidance ?? result.error ?? "Push notification failed to send."
             );
         }
 
@@ -146,15 +201,23 @@ async function executeSend(
                 userEmail: context.userEmail,
                 devicesNotified: result.devicesNotified,
                 totalSubscriptions: result.totalSubscriptions,
+                deviceTypes: result.deviceTypesNotified,
                 title,
             },
             "🔔 Push notification sent"
         );
 
+        const nextStep = getNextStepGuidance(result);
+
         return successResult<SendData>({
             sent: true,
             devicesNotified: result.devicesNotified,
             totalSubscriptions: result.totalSubscriptions,
+            deviceTypes: result.deviceTypesNotified,
+            failureReasons:
+                result.failureReasons.length > 0 ? result.failureReasons : undefined,
+            sentAt: result.sentAt,
+            nextStep,
         });
     } catch (error) {
         logger.error(
@@ -178,9 +241,9 @@ async function executeSend(
 
         return errorResult(
             isNetworkError ? "TEMPORARY" : "PERMANENT",
-            error instanceof Error
-                ? `Notification couldn't go through: ${error.message}`
-                : "Notification couldn't go through. The robots have been notified. 🤖"
+            isNetworkError
+                ? "Network issue prevented delivery. Consider SMS as fallback."
+                : "Unexpected error sending notification. The team has been notified."
         );
     }
 }

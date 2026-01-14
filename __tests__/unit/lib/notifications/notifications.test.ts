@@ -163,6 +163,11 @@ describe("Push Notification Tool", () => {
                 success: true,
                 devicesNotified: 2,
                 totalSubscriptions: 2,
+                deviceTypesNotified: ["ios", "mac"],
+                deviceTypesFailed: [],
+                failureReasons: [],
+                results: [],
+                sentAt: new Date().toISOString(),
             });
 
             const user = await createTestUser("vapid-configured@test.com");
@@ -182,6 +187,7 @@ describe("Push Notification Tool", () => {
                     sent: true,
                     devicesNotified: 2,
                     totalSubscriptions: 2,
+                    deviceTypes: ["ios", "mac"],
                 },
             });
             expect(mockSendPushNotification).toHaveBeenCalledWith({
@@ -202,6 +208,11 @@ describe("Push Notification Tool", () => {
                 success: false,
                 totalSubscriptions: 0,
                 devicesNotified: 0,
+                deviceTypesNotified: [],
+                deviceTypesFailed: [],
+                failureReasons: [],
+                results: [],
+                sentAt: new Date().toISOString(),
             });
 
             const user = await createTestUser("no-subscriptions@test.com");
@@ -224,13 +235,18 @@ describe("Push Notification Tool", () => {
             });
         });
 
-        it("returns TEMPORARY error on push service failure with active subscriptions", async () => {
+        it("returns TEMPORARY error on push service failure with network error", async () => {
             mockIsPushConfigured.mockReturnValue(true);
             mockSendPushNotification.mockResolvedValue({
                 success: false,
-                error: "Push service temporarily unavailable",
+                error: "Network error",
                 totalSubscriptions: 3,
                 devicesNotified: 0,
+                deviceTypesNotified: [],
+                deviceTypesFailed: ["ios", "mac", "windows"],
+                failureReasons: ["network_error"],
+                results: [],
+                sentAt: new Date().toISOString(),
             });
 
             const user = await createTestUser("service-failure@test.com");
@@ -247,7 +263,7 @@ describe("Push Notification Tool", () => {
                 success: false,
                 error: {
                     code: "TEMPORARY",
-                    message: expect.stringContaining("temporarily unavailable"),
+                    message: expect.stringContaining("Network"),
                     retryable: true,
                 },
             });
