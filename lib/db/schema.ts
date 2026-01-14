@@ -1388,7 +1388,30 @@ export const jobRunStatusEnum = pgEnum("job_run_status", [
     "pending",
     "running",
     "completed",
+    "partial",
     "failed",
+    "blocked",
+]);
+
+/**
+ * Model tier for AI Team jobs
+ * Controls cost/capability trade-off
+ */
+export const modelTierEnum = pgEnum("model_tier", [
+    "quick", // Fast, cheap (haiku-class)
+    "balanced", // Default (sonnet-class)
+    "deep", // Complex reasoning (opus-class)
+]);
+
+/**
+ * Reasoning level for AI Team jobs
+ * Controls extended thinking budget
+ */
+export const reasoningLevelEnum = pgEnum("reasoning_level", [
+    "none",
+    "low",
+    "medium",
+    "high",
 ]);
 
 // ============================================================================
@@ -1466,10 +1489,45 @@ export const scheduledJobs = pgTable(
         timezone: text("timezone").notNull().default("UTC"),
 
         /**
-         * Persistent memory between runs
+         * Persistent memory between runs (LEGACY)
          * Agents can store state here that persists across executions
+         * @deprecated Use agentNotes for new implementations
          */
         memory: jsonb("memory").notNull().default({}),
+
+        /**
+         * Agent's working notes (markdown)
+         * Visible to users, written by the agent after each run.
+         * Like a team member's working document.
+         */
+        agentNotes: text("agent_notes").notNull().default(""),
+
+        /**
+         * User configuration for the job
+         * Structured settings the agent reads but doesn't modify.
+         */
+        userConfig: jsonb("user_config").notNull().default({}),
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Model Settings (Advanced)
+        // ═══════════════════════════════════════════════════════════════════
+
+        /**
+         * Model tier controls capability/cost trade-off
+         * quick = haiku-class, balanced = sonnet-class, deep = opus-class
+         */
+        modelTier: modelTierEnum("model_tier").notNull().default("balanced"),
+
+        /**
+         * Reasoning level controls extended thinking budget
+         */
+        reasoningLevel: reasoningLevelEnum("reasoning_level").notNull().default("none"),
+
+        /**
+         * Temperature for generation (0.0 - 1.0)
+         * null = use model default
+         */
+        temperature: real("temperature"),
 
         /** Whether the job is active (Temporal schedule is running) */
         isActive: boolean("is_active").notNull().default(true),

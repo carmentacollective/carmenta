@@ -10,16 +10,17 @@
  */
 
 import { createUIMessageStream, JsonToSseTransformStream } from "ai";
-import { eq } from "drizzle-orm";
+import { eq, count, and, desc, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import { db } from "../../lib/db";
 import { scheduledJobs, jobRuns, jobNotifications, users } from "../../lib/db/schema";
 import {
-    runEmployee,
-    runEmployeeStreaming,
-    type EmployeeResult,
-} from "../../lib/agents/employee";
+    runAITeamMember,
+    runAITeamMemberStreaming,
+    type AITeamMemberResult,
+    type AITeamJobContext,
+} from "../../lib/agents/ai-team-member";
 import { getBackgroundStreamContext } from "../../lib/streaming/stream-context";
 import { logger } from "../../lib/logger";
 import { captureActivityError } from "../lib/activity-sentry";
@@ -33,6 +34,9 @@ export interface FullJobContext {
     userEmail: string;
     prompt: string;
     memory: Record<string, unknown>;
+
+    /** New AI Team framework context */
+    jobContext?: AITeamJobContext;
 }
 
 /**
@@ -57,12 +61,50 @@ export async function loadFullJobContext(jobId: string): Promise<FullJobContext>
             throw new Error(`User not found for job: ${jobId}`);
         }
 
+        // Get run stats for AI Team context
+        const [totalRunsResult, successRunsResult] = await Promise.all([
+            db.select({ count: count() }).from(jobRuns).where(eq(jobRuns.jobId, jobId)),
+            db
+                .select({ count: count() })
+                .from(jobRuns)
+                .where(
+                    and(
+                        eq(jobRuns.jobId, jobId),
+                        inArray(jobRuns.status, ["completed", "partial"])
+                    )
+                ),
+        ]);
+
+        const totalRuns = totalRunsResult[0]?.count ?? 0;
+        const totalSuccesses = successRunsResult[0]?.count ?? 0;
+
+        // Get last run info
+        const lastRun = await db.query.jobRuns.findFirst({
+            where: eq(jobRuns.jobId, jobId),
+            orderBy: [desc(jobRuns.startedAt)],
+        });
+
+        // Build AI Team job context (new framework)
+        const jobContext: AITeamJobContext = {
+            jobId: job.id,
+            jobName: job.name,
+            scheduleDisplay: job.scheduleDisplayText || job.scheduleCron,
+            totalRuns,
+            totalSuccesses,
+            lastRunAt: lastRun?.completedAt?.toISOString() ?? null,
+            lastRunOutcome: lastRun?.status ?? null,
+            agentNotes: job.agentNotes ?? "",
+            userConfig: (job.userConfig as Record<string, unknown>) ?? {},
+            task: job.prompt,
+        };
+
         return {
             jobId: job.id,
             userId: job.userId,
             userEmail: user.email,
             prompt: job.prompt,
             memory: (job.memory as Record<string, unknown>) || {},
+            jobContext,
         };
     } catch (error) {
         captureActivityError(error, {
@@ -79,15 +121,16 @@ export async function loadFullJobContext(jobId: string): Promise<FullJobContext>
  * This is the new execution path that uses Vercel AI SDK with
  * the same tools available to the main chat interface.
  */
-export async function executeEmployee(
+export async function executeAITeamMember(
     context: FullJobContext
-): Promise<EmployeeResult> {
-    return runEmployee({
+): Promise<AITeamMemberResult> {
+    return runAITeamMember({
         jobId: context.jobId,
         userId: context.userId,
         userEmail: context.userEmail,
         prompt: context.prompt,
         memory: context.memory,
+        jobContext: context.jobContext,
     });
 }
 
@@ -108,14 +151,14 @@ export async function generateJobStreamId(jobId: string): Promise<string> {
  * @param context - Job context with prompt, user info, memory
  * @param streamId - Pre-generated stream ID (already saved to DB)
  */
-export async function executeStreamingEmployee(
+export async function executeStreamingAITeamMember(
     context: FullJobContext,
     streamId: string
-): Promise<EmployeeResult> {
+): Promise<AITeamMemberResult> {
     const activityLogger = logger.child({
         jobId: context.jobId,
         streamId,
-        activity: "executeStreamingEmployee",
+        activity: "executeStreamingAITeamMember",
     });
 
     try {
@@ -128,18 +171,19 @@ export async function executeStreamingEmployee(
 
         activityLogger.info({}, "🚀 Starting streaming employee execution");
 
-        let employeeResult: EmployeeResult | null = null;
+        let employeeResult: AITeamMemberResult | null = null;
 
         // Create UI message stream that wraps employee execution
         const stream = createUIMessageStream({
             execute: async ({ writer }) => {
-                employeeResult = await runEmployeeStreaming(
+                employeeResult = await runAITeamMemberStreaming(
                     {
                         jobId: context.jobId,
                         userId: context.userId,
                         userEmail: context.userEmail,
                         prompt: context.prompt,
                         memory: context.memory,
+                        jobContext: context.jobContext,
                     },
                     writer
                 );
@@ -169,7 +213,7 @@ export async function executeStreamingEmployee(
         }
 
         // TypeScript narrowing doesn't work after async callbacks - use explicit type
-        const result = employeeResult as EmployeeResult;
+        const result = employeeResult as AITeamMemberResult;
 
         activityLogger.info(
             {
@@ -190,7 +234,7 @@ export async function executeStreamingEmployee(
         return result;
     } catch (error) {
         captureActivityError(error, {
-            activityName: "executeStreamingEmployee",
+            activityName: "executeStreamingAITeamMember",
             jobId: context.jobId,
             userId: context.userId,
             streamId,
@@ -205,7 +249,7 @@ export async function executeStreamingEmployee(
 export async function recordEmployeeRun(
     jobId: string,
     userId: string,
-    result: EmployeeResult
+    result: AITeamMemberResult
 ): Promise<void> {
     // Insert job run record and capture the ID
     const [jobRun] = await db
@@ -296,7 +340,7 @@ export async function finalizeJobRun(
     runId: string,
     jobId: string,
     userId: string,
-    result: EmployeeResult
+    result: AITeamMemberResult
 ): Promise<void> {
     const activityLogger = logger.child({
         runId,
@@ -319,11 +363,28 @@ export async function finalizeJobRun(
     );
 
     try {
+        // Map AI Team status to database status
+        // "success" → "completed", others map directly with validation
+        const mapStatusToDb = (
+            status: string | undefined,
+            success: boolean
+        ): "completed" | "partial" | "failed" | "blocked" => {
+            if (!status) return success ? "completed" : "failed";
+            if (status === "success") return "completed";
+            const validStatuses = ["partial", "failed", "blocked"] as const;
+            if (validStatuses.includes(status as (typeof validStatuses)[number])) {
+                return status as "partial" | "failed" | "blocked";
+            }
+            // Unknown status - fall back to success/failed based on boolean
+            return success ? "completed" : "failed";
+        };
+        const dbStatus = mapStatusToDb(result.status, result.success);
+
         // Update the run record with results and observability data
         await db
             .update(jobRuns)
             .set({
-                status: result.success ? "completed" : "failed",
+                status: dbStatus,
                 summary: result.summary,
                 toolCallsExecuted: result.toolCallsExecuted,
                 notificationsSent: result.notifications.length,
@@ -351,14 +412,22 @@ export async function finalizeJobRun(
             });
         }
 
-        // Update job with new memory and last run time
+        // Build job update - always update memory and lastRunAt
+        const jobUpdate: Record<string, unknown> = {
+            memory: result.updatedMemory,
+            lastRunAt: new Date(),
+            updatedAt: new Date(),
+        };
+
+        // Save agent notes if provided (new AI Team framework)
+        if (result.updatedNotes !== undefined) {
+            jobUpdate.agentNotes = result.updatedNotes;
+        }
+
+        // Update job with new memory, notes, and last run time
         await db
             .update(scheduledJobs)
-            .set({
-                memory: result.updatedMemory,
-                lastRunAt: new Date(),
-                updatedAt: new Date(),
-            })
+            .set(jobUpdate)
             .where(eq(scheduledJobs.id, jobId));
     } catch (error) {
         captureActivityError(error, {

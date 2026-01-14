@@ -1,14 +1,14 @@
 /**
  * Agent Job Workflow
  *
- * Executes a scheduled job using the employee agent with streaming to Redis.
+ * Executes a scheduled job using the AI Team member with streaming to Redis.
  * Allows users to "tap in" and watch the agent work in real-time.
  *
  * Flow:
  * 1. Load job context (prompt, memory, user info)
  * 2. Create job run record with "running" status
  * 3. Generate streamId and save to run record (so UI can connect immediately)
- * 4. Execute streaming employee (streams to Redis under that streamId)
+ * 4. Execute streaming AI Team member (streams to Redis under that streamId)
  * 5. Finalize run with results
  */
 
@@ -79,7 +79,7 @@ const {
     loadFullJobContext,
     createJobRun,
     generateJobStreamId,
-    executeStreamingEmployee,
+    executeStreamingAITeamMember,
     updateJobRunStreamId,
     finalizeJobRun,
     clearJobRunStreamId,
@@ -102,7 +102,7 @@ export interface AgentJobResult {
 }
 
 /**
- * Main workflow - loads job context, executes streaming employee, records result
+ * Main workflow - loads job context, executes streaming AI Team member, records result
  */
 export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobResult> {
     const { jobId } = input;
@@ -119,8 +119,8 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
     await updateJobRunStreamId(runId, streamId);
 
     try {
-        // Execute streaming employee - streams to Redis under streamId
-        const result = await executeStreamingEmployee(context, streamId);
+        // Execute streaming AI Team member - streams to Redis under streamId
+        const result = await executeStreamingAITeamMember(context, streamId);
 
         // Finalize with results (this clears streamId too)
         await finalizeJobRun(runId, jobId, context.userId, result);
