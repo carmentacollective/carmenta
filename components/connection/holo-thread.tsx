@@ -426,10 +426,8 @@ function MessageBubble({
 /**
  * Message action toolbar - positioned below message bubble
  *
- * Visibility pattern (LibreChat-inspired):
- * - Last message: Always visible (teaches the pattern)
- * - Older messages: Hover-reveal on desktop, always visible on mobile
- * - During streaming: Hidden (don't show actions for incomplete content)
+ * Always visible for all messages (better for mobile touch targets).
+ * Hidden during streaming since content is incomplete.
  *
  * For assistant messages, also shows regenerate button.
  */
@@ -483,12 +481,7 @@ function MessageActions({
     return (
         <div
             className={cn(
-                "mt-1 flex items-center gap-1 transition-opacity",
-                // Last message: always visible
-                // Older messages: hidden on desktop until hover, always visible on mobile
-                isLast
-                    ? "opacity-100"
-                    : "opacity-100 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100",
+                "mt-1 flex items-center gap-1",
                 align === "right" && "justify-end"
             )}
         >
