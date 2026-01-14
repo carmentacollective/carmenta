@@ -16,11 +16,11 @@ Exit codes:
 - 0: Always (outputs JSON for Claude to consume)
 """
 
+from pathlib import Path
 import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
     if input_data.get("source") != "compact":
         sys.exit(0)
 
-    cwd = input_data.get("cwd", os.getcwd())
+    cwd = input_data.get("cwd", str(Path.cwd()))
 
     # Try to find settings.local.json
     # Check cwd first, then check if we can find main repo's .claude
@@ -44,7 +44,8 @@ def main():
         # Try to find it via git rev-parse --git-common-dir
         try:
             result = subprocess.run(
-                ["git", "rev-parse", "--git-common-dir"],
+                ["git", "rev-parse", "--git-common-dir"],  # noqa: S607
+                check=False,
                 capture_output=True,
                 text=True,
                 cwd=cwd,
@@ -64,7 +65,7 @@ def main():
         state = settings.get("worktreeState")
         if not state:
             sys.exit(0)
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         sys.exit(0)
 
     # Build context message
@@ -97,11 +98,11 @@ def main():
     output = {
         "hookSpecificOutput": {
             "hookEventName": "SessionStart",
-            "additionalContext": context
+            "additionalContext": context,
         }
     }
+    print(json.dumps(output))  # noqa: T201 - hooks communicate via stdout
 
-    print(json.dumps(output))
     sys.exit(0)
 
 

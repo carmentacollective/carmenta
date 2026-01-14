@@ -17,18 +17,18 @@ Exit codes:
 - 0: Always (this hook only saves state, never blocks)
 """
 
+from pathlib import Path
 import json
-import os
 import subprocess
 import sys
-from pathlib import Path
 
 
 def run_git(args: list[str], cwd: str) -> str:
     """Run a git command and return stdout, or empty string on failure."""
     try:
-        result = subprocess.run(
-            ["git"] + args,
+        result = subprocess.run(  # noqa: S603
+            ["git", *args],  # noqa: S607
+            check=False,
             capture_output=True,
             text=True,
             cwd=cwd,
@@ -59,7 +59,7 @@ def main():
     except json.JSONDecodeError:
         sys.exit(0)
 
-    cwd = input_data.get("cwd", os.getcwd())
+    cwd = input_data.get("cwd", str(Path.cwd()))
 
     # Gather git state
     state = {
