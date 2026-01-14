@@ -19,6 +19,10 @@ import { z } from "zod";
 
 import { logger } from "@/lib/logger";
 import { sendPushNotification, isPushConfigured } from "@/lib/push";
+import type {
+    SendPushResult,
+    SubscriptionResult,
+} from "@/lib/push/notification-service";
 import {
     type SubagentResult,
     type SubagentDescription,
@@ -95,23 +99,22 @@ interface SendData {
 /**
  * Determine next step guidance based on notification result
  */
-function getNextStepGuidance(result: {
-    success: boolean;
-    devicesNotified: number;
-    totalSubscriptions: number;
-    failureReasons: string[];
-    deviceTypesNotified: string[];
-}): string | undefined {
+function getNextStepGuidance(result: SendPushResult): string | undefined {
     if (result.success && result.devicesNotified === result.totalSubscriptions) {
         // Complete success
         return undefined;
     }
 
     if (result.success && result.devicesNotified < result.totalSubscriptions) {
-        // Partial success
+        // Partial success - count failures by reason
         const failedCount = result.totalSubscriptions - result.devicesNotified;
-        if (result.failureReasons.includes("subscription_expired")) {
-            return `${failedCount} device(s) had expired subscriptions. The notification reached their other devices.`;
+        const expiredCount = result.results.filter(
+            (r: SubscriptionResult) =>
+                !r.success && r.failureReason === "subscription_expired"
+        ).length;
+
+        if (expiredCount > 0) {
+            return `${expiredCount} device(s) had expired subscriptions. The notification reached their other devices.`;
         }
         return `Notification delivered to ${result.devicesNotified} of ${result.totalSubscriptions} devices.`;
     }

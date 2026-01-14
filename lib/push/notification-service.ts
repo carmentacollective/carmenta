@@ -280,12 +280,24 @@ export async function sendPushNotification(
                                 error instanceof Error
                                     ? error.message
                                     : "Unknown error";
+
+                            // Check both error.code and error.message for network issues
+                            const errorCode =
+                                error instanceof Error && "code" in error
+                                    ? String(error.code)
+                                    : "";
                             const isNetworkError =
+                                errorCode.includes("ECONNREFUSED") ||
+                                errorCode.includes("ECONNRESET") ||
+                                errorCode.includes("ETIMEDOUT") ||
+                                errorCode.includes("ENOTFOUND") ||
+                                errorCode.includes("EAI_AGAIN") ||
                                 errorMsg.includes("ECONNREFUSED") ||
                                 errorMsg.includes("ETIMEDOUT") ||
                                 errorMsg.includes("ENOTFOUND") ||
                                 errorMsg.includes("network") ||
-                                errorMsg.includes("timeout");
+                                errorMsg.includes("timeout") ||
+                                errorMsg.includes("socket hang up");
 
                             // Other errors - log but don't deactivate
                             requestLogger.error(
