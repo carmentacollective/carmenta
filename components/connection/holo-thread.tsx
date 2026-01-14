@@ -609,7 +609,9 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(content);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editModeMinWidth, setEditModeMinWidth] = useState<number | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const bubbleRef = useRef<HTMLDivElement>(null);
 
     // Focus textarea when entering edit mode
     useEffect(() => {
@@ -628,6 +630,10 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     }, [isEditing, content]);
 
     const handleEdit = useCallback(() => {
+        // Capture current width to prevent shrinking during edit
+        if (bubbleRef.current) {
+            setEditModeMinWidth(bubbleRef.current.offsetWidth);
+        }
         setEditContent(content);
         setIsEditing(true);
     }, [content]);
@@ -635,6 +641,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     const handleCancel = useCallback(() => {
         setIsEditing(false);
         setEditContent(content);
+        setEditModeMinWidth(null);
     }, [content]);
 
     const handleSave = useCallback(async () => {
@@ -643,6 +650,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
         // No changes made - just exit edit mode
         if (editContent.trim() === content.trim()) {
             setIsEditing(false);
+            setEditModeMinWidth(null);
             return;
         }
 
@@ -650,6 +658,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
         try {
             await editMessageAndRegenerate(message.id, editContent.trim());
             setIsEditing(false);
+            setEditModeMinWidth(null);
         } catch (err) {
             logger.error({ error: err }, "Failed to save edit");
             toast.error("Failed to save edit");
@@ -687,7 +696,13 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                     <UserAvatar />
                 </div>
 
-                <div className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3 @md:px-5 @md:py-4">
+                <div
+                    ref={bubbleRef}
+                    className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3 @md:px-5 @md:py-4"
+                    style={
+                        editModeMinWidth ? { minWidth: editModeMinWidth } : undefined
+                    }
+                >
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
