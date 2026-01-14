@@ -107,7 +107,6 @@ function getNextStepGuidance(result: SendPushResult): string | undefined {
 
     if (result.success && result.devicesNotified < result.totalSubscriptions) {
         // Partial success - count failures by reason
-        const failedCount = result.totalSubscriptions - result.devicesNotified;
         const expiredCount = result.results.filter(
             (r: SubscriptionResult) =>
                 !r.success && r.failureReason === "subscription_expired"
