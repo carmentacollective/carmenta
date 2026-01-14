@@ -36,16 +36,13 @@ import type {
     JobTokenUsage,
 } from "@/lib/db/schema";
 import type { ModelMessage } from "ai";
+import { getFallbackChain } from "@/lib/model-config";
 
 /**
  * Fallback chain for AI Team member execution
- * Sonnet for balanced cost/capability, with fallbacks
+ * Sonnet for balanced cost/capability, with fallbacks from model-config
  */
-const AI_TEAM_MODEL_CHAIN = [
-    "anthropic/claude-sonnet-4.5",
-    "google/gemini-3-pro-preview",
-    "openai/gpt-5.2",
-];
+const AI_TEAM_MODEL_CHAIN = getFallbackChain("anthropic/claude-sonnet-4.5");
 
 /**
  * Maximum steps per job execution
@@ -406,7 +403,7 @@ export async function runAITeamMember(
 
                 aiTeamLogger.debug(
                     { tools: Object.keys(allTools) },
-                    "Loaded tools for employee"
+                    "Loaded tools for AI Team member"
                 );
 
                 // Prune messages for employee context
