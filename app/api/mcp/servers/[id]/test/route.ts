@@ -8,12 +8,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 import { findUserByClerkId } from "@/lib/db/users";
-import {
-    getMcpServer,
-    updateMcpServer,
-    getMcpServerCredentials,
-} from "@/lib/db/mcp-servers";
-import { testMcpConnection } from "@/lib/mcp/client";
+import { getMcpServer, updateMcpServer } from "@/lib/db/mcp-servers";
+import { getTools } from "@/lib/mcp/gateway";
 import { logger } from "@/lib/logger";
 import {
     unauthorizedResponse,
@@ -78,24 +74,17 @@ export async function POST(_request: Request, context: RouteContext) {
             );
         }
 
-        // Get credentials for authentication
-        const credentials = await getMcpServerCredentials(serverId);
+        try {
+            // Fetch fresh tools (ttl: 0 bypasses cache and clears it)
+            const tools = await getTools(server, { ttl: 0 });
 
-        // Test connection
-        const result = await testMcpConnection({
-            url: server.url,
-            transport: server.transport,
-            authType: server.authType as "none" | "bearer" | "header",
-            token: credentials?.token,
-            headerName: server.authHeaderName ?? undefined,
-        });
-
-        // Update server status based on test result
-        if (result.success) {
             // Store manifest with tool names for meaningful LLM tool descriptions
-            // Without tool names, the LLM sees "Machina. Use action='describe'"
-            // With tool names, it sees "Machina. Top operations: list_tasks, create_task +8 more"
-            const toolNames = result.tools?.map((t) => t.name) ?? [];
+            const toolNames = tools.map((t) => t.name);
+
+            // For single-tool servers (gateway pattern like MCP Hubby), store the
+            // tool's description for better LLM semantic matching
+            const singleToolDescription =
+                tools.length === 1 ? tools[0]?.description : undefined;
 
             await updateMcpServer(serverId, {
                 status: "connected",
@@ -104,6 +93,7 @@ export async function POST(_request: Request, context: RouteContext) {
                     name: server.displayName,
                     toolCount: toolNames.length,
                     tools: toolNames,
+                    description: singleToolDescription,
                 },
             });
 
@@ -111,7 +101,7 @@ export async function POST(_request: Request, context: RouteContext) {
                 {
                     serverId,
                     identifier: server.identifier,
-                    toolCount: result.tools?.length,
+                    toolCount: tools.length,
                 },
                 "MCP server test succeeded"
             );
@@ -119,8 +109,8 @@ export async function POST(_request: Request, context: RouteContext) {
             return NextResponse.json({
                 success: true,
                 status: "connected",
-                toolCount: result.tools?.length ?? 0,
-                tools: result.tools?.map((t) => ({
+                toolCount: tools.length,
+                tools: tools.map((t) => ({
                     name: t.name,
                     description: t.description,
                 })),
@@ -131,14 +121,17 @@ export async function POST(_request: Request, context: RouteContext) {
                     testedAt: new Date().toISOString(),
                 },
             });
-        } else {
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error ? error.message : "Connection test failed";
+
             await updateMcpServer(serverId, {
                 status: "error",
-                errorMessage: result.error ?? "Connection test failed",
+                errorMessage,
             });
 
             logger.warn(
-                { serverId, identifier: server.identifier, error: result.error },
+                { serverId, identifier: server.identifier, error: errorMessage },
                 "MCP server test failed"
             );
 
@@ -146,12 +139,11 @@ export async function POST(_request: Request, context: RouteContext) {
                 {
                     success: false,
                     status: "error",
-                    error: result.error ?? "Connection test failed",
+                    error: errorMessage,
                     debug: {
                         url: server.url,
                         transport: server.transport,
                         authType: server.authType,
-                        hasCredentials: !!credentials?.token,
                         testedAt: new Date().toISOString(),
                     },
                 },

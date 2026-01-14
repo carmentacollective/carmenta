@@ -23,6 +23,7 @@ import {
 } from "@/lib/db/mcp-servers";
 import type { McpServer } from "@/lib/db/schema";
 import { logger } from "@/lib/logger";
+import { getRedisClient } from "@/lib/redis/client";
 
 // ============================================================================
 // TYPES
@@ -31,6 +32,11 @@ import { logger } from "@/lib/logger";
 interface McpTool {
     name: string;
     description?: string;
+}
+
+interface GetToolsOptions {
+    /** Cache TTL in seconds. undefined = no caching. 0 = clear cache. >0 = cache with TTL. */
+    ttl?: number;
 }
 
 const mcpGatewaySchema = z.object({
@@ -46,84 +52,10 @@ const mcpGatewaySchema = z.object({
 });
 
 // ============================================================================
-// MCP CLIENT CACHING
+// CONSTANTS
 // ============================================================================
 
-interface CachedClient {
-    client: Awaited<ReturnType<typeof createMCPClient>>;
-    expiresAt: number;
-}
-
-// Cache version - increment to bust all existing caches
-const CACHE_VERSION = 2;
-const clientCache = new Map<string, CachedClient>();
-const CLIENT_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-function getCacheKey(serverId: number): string {
-    return `v${CACHE_VERSION}:${serverId}`;
-}
-
-async function getCachedClient(
-    server: McpServer
-): Promise<Awaited<ReturnType<typeof createMCPClient>>> {
-    const cacheKey = getCacheKey(server.id);
-    const cached = clientCache.get(cacheKey);
-    const now = Date.now();
-
-    // Return cached client if still valid
-    if (cached && cached.expiresAt > now) {
-        return cached.client;
-    }
-
-    // Clean up expired client
-    if (cached) {
-        await cached.client
-            .close()
-            .catch((err) =>
-                logger.warn(
-                    { err, serverId: server.id },
-                    "Failed to close expired MCP client"
-                )
-            );
-        clientCache.delete(cacheKey);
-    }
-
-    // Create new client (don't cache yet - wait for successful verification)
-    return createClient(server);
-}
-
-/**
- * Cache a client after successful verification (tools() call worked)
- */
-function cacheClient(
-    server: McpServer,
-    client: Awaited<ReturnType<typeof createMCPClient>>
-) {
-    const cacheKey = getCacheKey(server.id);
-    clientCache.set(cacheKey, {
-        client,
-        expiresAt: Date.now() + CLIENT_TTL_MS,
-    });
-}
-
-/**
- * Clear cached client on connection errors
- */
-function clearCachedClient(serverId: number) {
-    const cacheKey = getCacheKey(serverId);
-    const cached = clientCache.get(cacheKey);
-    if (cached) {
-        cached.client
-            .close()
-            .catch((err) =>
-                logger.warn(
-                    { err, serverId },
-                    "Failed to close MCP client during cache clear"
-                )
-            );
-        clientCache.delete(cacheKey);
-    }
-}
+const TOOLS_CACHE_PREFIX = "mcp:tools:";
 
 // ============================================================================
 // MCP CLIENT
@@ -159,87 +91,144 @@ async function createClient(server: McpServer) {
 }
 
 // ============================================================================
-// OPERATIONS
+// TOOLS CACHE (Redis)
 // ============================================================================
 
-async function listTools(server: McpServer): Promise<McpTool[]> {
-    const client = await getCachedClient(server);
-    const clientWasNew = !clientCache.has(getCacheKey(server.id));
+/**
+ * Get tools for an MCP server with optional caching.
+ *
+ * @param server - The MCP server to get tools from
+ * @param options.ttl - Cache TTL in seconds. undefined = no caching. 0 = clear cache. >0 = cache with TTL.
+ * @returns Array of tools with name and description
+ */
+export async function getTools(
+    server: McpServer,
+    options: GetToolsOptions = {}
+): Promise<McpTool[]> {
+    const { ttl } = options;
+    const cacheKey = `${TOOLS_CACHE_PREFIX}${server.id}`;
+
+    // Check cache only if TTL is specified and > 0
+    if (ttl !== undefined && ttl > 0) {
+        try {
+            const redis = await getRedisClient();
+            if (redis) {
+                const cached = await redis.get(cacheKey);
+                if (cached) {
+                    logger.debug({ serverId: server.id }, "Tools cache hit");
+                    return JSON.parse(cached) as McpTool[];
+                }
+            }
+        } catch (error) {
+            logger.warn({ error, serverId: server.id }, "Failed to read tools cache");
+        }
+    }
+
+    // Fetch fresh from MCP server
+    logger.debug({ serverId: server.id, ttl }, "Fetching tools from MCP server");
+    const client = await createClient(server);
+
     try {
         const tools = await client.tools();
-        // Only cache after successful connection
-        cacheClient(server, client);
-        return Object.entries(tools).map(([name, t]) => ({
+        const toolList = Object.entries(tools).map(([name, t]) => ({
             name,
             description: (t as Tool).description,
         }));
-    } catch (error) {
-        clearCachedClient(server.id); // Closes if cached
-        // If client was newly created (not cached), close it to prevent leak
-        if (clientWasNew) {
-            client.close().catch(() => {});
+
+        // Handle caching based on TTL
+        if (ttl !== undefined) {
+            try {
+                const redis = await getRedisClient();
+                if (redis) {
+                    if (ttl > 0) {
+                        // Cache with TTL
+                        await redis.set(cacheKey, JSON.stringify(toolList), {
+                            EX: ttl,
+                        });
+                        logger.debug(
+                            { serverId: server.id, toolCount: toolList.length, ttl },
+                            "Tools cached"
+                        );
+                    } else {
+                        // ttl=0 means clear the cache
+                        await redis.del(cacheKey);
+                        logger.info({ serverId: server.id }, "Tools cache cleared");
+                    }
+                }
+            } catch (error) {
+                logger.warn(
+                    { error, serverId: server.id },
+                    "Failed to update tools cache"
+                );
+            }
         }
-        throw error;
+
+        return toolList;
+    } finally {
+        await client
+            .close()
+            .catch((err) =>
+                logger.warn({ err, serverId: server.id }, "Failed to close MCP client")
+            );
     }
 }
+
+// ============================================================================
+// TOOL EXECUTION
+// ============================================================================
 
 async function callTool(
     server: McpServer,
     action: string,
     params: Record<string, unknown>
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
-    const client = await getCachedClient(server);
-    const clientWasNew = !clientCache.has(getCacheKey(server.id));
-    let tools;
+    const client = await createClient(server);
+
     try {
-        tools = await client.tools();
-        // Cache after successful connection
-        cacheClient(server, client);
-    } catch (error) {
-        clearCachedClient(server.id); // Closes if cached
-        // If client was newly created (not cached), close it to prevent leak
-        if (clientWasNew) {
-            client.close().catch(() => {});
-        }
-        throw error;
-    }
+        const tools = await client.tools();
+        const toolNames = Object.keys(tools);
 
-    const toolNames = Object.keys(tools);
-
-    // Gateway pattern: If server has single tool, always call it with action/params
-    // This handles MCP servers that use progressive disclosure (one gateway tool)
-    if (toolNames.length === 1) {
-        const gatewayToolName = toolNames[0];
-        const t = tools[gatewayToolName] as Tool<Record<string, unknown>, unknown>;
-        if (!t?.execute) {
-            return {
-                success: false,
-                error: `Gateway tool '${gatewayToolName}' not executable`,
-            };
-        }
-        // Pass action and params to the gateway tool
-        const result = await t.execute(
-            { action, params },
-            {
-                toolCallId: crypto.randomUUID(),
-                messages: [],
+        // Gateway pattern: If server has single tool, always call it with action/params
+        // This handles MCP servers that use progressive disclosure (one gateway tool)
+        if (toolNames.length === 1) {
+            const gatewayToolName = toolNames[0];
+            const t = tools[gatewayToolName] as Tool<Record<string, unknown>, unknown>;
+            if (!t?.execute) {
+                return {
+                    success: false,
+                    error: `Gateway tool '${gatewayToolName}' not executable`,
+                };
             }
-        );
+            // Pass action and params to the gateway tool
+            const result = await t.execute(
+                { action, params },
+                {
+                    toolCallId: crypto.randomUUID(),
+                    messages: [],
+                }
+            );
+            return processToolResult(result);
+        }
+
+        // Multi-tool server: action IS the tool name
+        const t = tools[action] as Tool<Record<string, unknown>, unknown>;
+        if (!t?.execute) {
+            return { success: false, error: `Tool '${action}' not found` };
+        }
+
+        const result = await t.execute(params, {
+            toolCallId: crypto.randomUUID(),
+            messages: [],
+        });
+
         return processToolResult(result);
+    } finally {
+        await client
+            .close()
+            .catch((err) =>
+                logger.warn({ err, serverId: server.id }, "Failed to close MCP client")
+            );
     }
-
-    // Multi-tool server: action IS the tool name
-    const t = tools[action] as Tool<Record<string, unknown>, unknown>;
-    if (!t?.execute) {
-        return { success: false, error: `Tool '${action}' not found` };
-    }
-
-    const result = await t.execute(params, {
-        toolCallId: crypto.randomUUID(),
-        messages: [],
-    });
-
-    return processToolResult(result);
 }
 
 function processToolResult(result: unknown): {
@@ -349,7 +338,7 @@ export async function describeMcpOperations(
     }
 
     try {
-        const tools = await listTools(server);
+        const tools = await getTools(server);
         childLogger.info({ toolCount: tools.length }, "Fetched MCP tools");
 
         // Update cached manifest
