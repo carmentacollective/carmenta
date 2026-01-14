@@ -182,11 +182,32 @@ async function callTool(
     action: string,
     params: Record<string, unknown>
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
+    const childLogger = logger.child({
+        server: server.identifier,
+        action,
+    });
+
     const client = await createClient(server);
 
     try {
         const tools = await client.tools();
         const toolNames = Object.keys(tools);
+
+        childLogger.debug(
+            { toolCount: toolNames.length, toolNames },
+            "MCP tools fetched for execution"
+        );
+
+        // Handle edge case: no tools returned (connection issue or empty server)
+        if (toolNames.length === 0) {
+            childLogger.warn(
+                "MCP server returned no tools - possible connection issue"
+            );
+            return {
+                success: false,
+                error: `No tools available from '${server.identifier}'. The server may be offline or misconfigured.`,
+            };
+        }
 
         // Gateway pattern: If server has single tool, always call it with action/params
         // This handles MCP servers that use progressive disclosure (one gateway tool)
@@ -211,9 +232,22 @@ async function callTool(
         }
 
         // Multi-tool server: action IS the tool name
+        // Note: This code path is hit when server exposes multiple tools (NOT gateway pattern)
+        childLogger.debug(
+            { availableTools: toolNames },
+            "Multi-tool server detected, looking up action as tool name"
+        );
+
         const t = tools[action] as Tool<Record<string, unknown>, unknown>;
         if (!t?.execute) {
-            return { success: false, error: `Tool '${action}' not found` };
+            childLogger.warn(
+                { requestedAction: action, availableTools: toolNames },
+                "Tool not found in multi-tool server"
+            );
+            return {
+                success: false,
+                error: `Tool '${action}' not found on '${server.identifier}'. Available tools: ${toolNames.join(", ")}`,
+            };
         }
 
         const result = await t.execute(params, {
@@ -241,8 +275,8 @@ function processToolResult(result: unknown): {
         const content = "content" in result ? result.content : undefined;
         const errorText = Array.isArray(content)
             ? content
-                  .filter((c: any) => c.type === "text")
-                  .map((c: any) => c.text)
+                  .filter((c: { type: string }) => c.type === "text")
+                  .map((c: { text: string }) => c.text)
                   .join("\n")
             : String(result);
 

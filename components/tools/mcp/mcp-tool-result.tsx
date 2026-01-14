@@ -39,13 +39,16 @@ interface McpToolResultProps {
  * Tool result renderer optimized for MCP tools.
  */
 export function McpToolResult({
-    toolCallId,
+    toolCallId: _toolCallId,
     toolName,
     status,
     input,
     output,
     error,
 }: McpToolResultProps) {
+    // Extract action for display (fallback to "operation" if missing)
+    const action = typeof input?.action === "string" ? input.action : "operation";
+
     const [expanded, setExpanded] = useState(false);
     const [timing, setTiming] = useState<{ startedAt?: number; completedAt?: number }>(
         {}
@@ -57,7 +60,7 @@ export function McpToolResult({
         const prevStatus = prevStatusRef.current;
 
         if (status === "running" && prevStatus !== "running") {
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronizing timing state with external status prop
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronizing timing with external status prop transition
             setTiming({ startedAt: Date.now() });
         }
 
@@ -81,9 +84,8 @@ export function McpToolResult({
             ? timing.completedAt - timing.startedAt
             : undefined;
 
-    // Extract server and action info
+    // Extract server name
     const serverName = getMcpServerName(toolName);
-    const action = typeof input?.action === "string" ? input.action : "operation";
 
     // Build description: "action · result summary"
     const resultSummary =
