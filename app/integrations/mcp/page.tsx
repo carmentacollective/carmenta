@@ -597,6 +597,7 @@ function McpConfigContent({
 
                 if (response.ok) {
                     await loadServers();
+                    toast.success("Server removed");
                 } else {
                     const data = await response.json().catch(() => ({}));
                     const errorMessage =
@@ -705,6 +706,7 @@ function McpConfigContent({
                 }
 
                 await loadServers();
+                toast.success("Server added");
                 setAddDialogOpen(false);
                 setNewServerUrl("");
                 setNewServerName("");

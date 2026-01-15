@@ -17,6 +17,7 @@ import { useRef, useEffect, useCallback } from "react";
 import { ArrowElbowDownLeftIcon, SquareIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { ChatTextarea, type ChatTextareaRef } from "./chat-textarea";
 
 export interface SimpleComposerProps {
@@ -44,13 +45,14 @@ export function SimpleComposer({
     className,
 }: SimpleComposerProps) {
     const inputRef = useRef<ChatTextareaRef>(null);
+    const isMobile = useIsMobile();
 
-    // Auto-focus on mount
+    // Auto-focus on mount (skip on mobile to avoid keyboard popup)
     useEffect(() => {
-        if (autoFocus) {
+        if (autoFocus && isMobile === false) {
             inputRef.current?.focus();
         }
-    }, [autoFocus]);
+    }, [autoFocus, isMobile]);
 
     const handleSubmit = useCallback(() => {
         if (value.trim() && !isLoading && !disabled) {
@@ -60,12 +62,15 @@ export function SimpleComposer({
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            // On mobile, Enter should insert newline (native behavior), not submit
+            if (isMobile === true) return;
+
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSubmit();
             }
         },
-        [handleSubmit]
+        [handleSubmit, isMobile]
     );
 
     const isDisabled = disabled || isLoading;

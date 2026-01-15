@@ -13,6 +13,7 @@
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling
  */
 import * as Sentry from "@sentry/nextjs";
+import { CircleNotch } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -84,7 +85,7 @@ export default function Error({
                             (e.target as HTMLImageElement).style.display = "none";
                         }}
                     />
-                    <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-solid border-r-transparent" />
+                    <CircleNotch className="text-primary mx-auto mb-4 h-8 w-8 animate-spin" />
                     <h2 className="text-foreground mb-4 text-xl font-semibold tracking-tight">
                         Updating...
                     </h2>

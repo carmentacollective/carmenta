@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { PaperPlaneTiltIcon, ChatCircleIcon, CheckIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { useChatContext } from "@/components/connection/connect-runtime-provider";
 import { Button } from "@/components/ui/button";
@@ -176,6 +177,7 @@ function OtherInput({
     isSubmitted: boolean;
 }) {
     const [text, setText] = useState("");
+    const isMobile = useIsMobile();
 
     const handleSubmit = () => {
         if (text.trim()) {
@@ -184,6 +186,9 @@ function OtherInput({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        // On mobile, Enter should insert newline (native behavior), not submit
+        if (isMobile === true) return;
+
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             handleSubmit();

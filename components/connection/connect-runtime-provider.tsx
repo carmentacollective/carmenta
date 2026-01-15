@@ -512,7 +512,7 @@ async function fetchWithRetry(
             const response = await fetch(input, init);
             // If we were retrying and succeeded, dismiss the toast
             if (toastId !== undefined) {
-                toast.success("Reconnected", { id: toastId, duration: 2000 });
+                toast.success("Reconnected", { id: toastId, duration: 4000 });
             }
             return response;
         } catch (error) {

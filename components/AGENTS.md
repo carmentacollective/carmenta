@@ -25,21 +25,36 @@ are acceptable—these don't participate in the page-level hierarchy.
 
 ## Tooltips
 
-Use Radix `<Tooltip>` primitives for all new components. Apply semantic z-index classes:
+Two tooltip systems with consistent 400ms show delay:
+
+**Radix Tooltips** (component-based): Use for interactive triggers, complex content, or
+when you need fine-grained control. TooltipProvider defaults to 400ms delay.
 
 ```tsx
-<Tooltip>
-  <TooltipTrigger asChild>
-    <Button variant="ghost" size="icon">
-      <CopyIcon />
-    </Button>
-  </TooltipTrigger>
-  <TooltipContent className="z-tooltip">Copy to clipboard</TooltipContent>
-</Tooltip>
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="ghost" size="icon">
+        <CopyIcon />
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>Copy to clipboard</TooltipContent>
+  </Tooltip>
+</TooltipProvider>
 ```
 
-Legacy tooltip implementations (`data-tooltip-id`, `className="tooltip"`) exist in older
-components but should not be used in new code.
+**GlobalTooltip** (attribute-based): Use for simple text tooltips without wrapping. Add
+`data-tooltip-id="tip"` and `data-tooltip-content="message"` to any element.
+
+```tsx
+<button data-tooltip-id="tip" data-tooltip-content="Delete item">
+  <TrashIcon />
+</button>
+```
+
+Both systems share 400ms show delay. GlobalTooltip uses 500ms hide delay for hover
+stability. Choose based on complexity—attributes for simple cases, components for rich
+interactions.
 
 ## Relevant Rules
 
