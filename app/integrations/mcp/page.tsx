@@ -1176,6 +1176,21 @@ function McpConfigContent({
                     </div>
 
                     <DialogFooter className="border-border border-t px-6 py-4">
+                        {detailResult && !detailResult.success && detailServer && (
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    const serverToRetest = detailServer;
+                                    setDetailServer(null);
+                                    setDetailResult(null);
+                                    handleTest(serverToRetest);
+                                }}
+                                className="mr-auto"
+                            >
+                                <ArrowsClockwiseIcon className="mr-2 h-4 w-4" />
+                                Try again
+                            </Button>
+                        )}
                         <Button
                             variant="ghost"
                             onClick={() => {

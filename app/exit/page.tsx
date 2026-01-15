@@ -65,12 +65,35 @@ export default function ExitPage() {
                             : "We'll remember where we left off"}
                     </p>
                     {error && (
-                        <button
-                            onClick={() => router.push("/")}
-                            className="text-primary hover:text-primary/80 mt-4 text-sm font-medium"
-                        >
-                            Return home
-                        </button>
+                        <div className="mt-4 flex gap-3">
+                            <button
+                                onClick={() => {
+                                    if (isExiting) return;
+                                    setError(false);
+                                    setIsExiting(true);
+                                    signOut()
+                                        .then(() => router.push("/"))
+                                        .catch((err) => {
+                                            logger.error(
+                                                { error: err },
+                                                "Sign out retry failed"
+                                            );
+                                            setError(true);
+                                            setIsExiting(false);
+                                        });
+                                }}
+                                disabled={isExiting}
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                            >
+                                Try Again
+                            </button>
+                            <button
+                                onClick={() => router.push("/")}
+                                className="text-foreground/70 hover:text-foreground text-sm font-medium"
+                            >
+                                Return home
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
