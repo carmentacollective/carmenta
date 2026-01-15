@@ -242,7 +242,7 @@ export default function ImportReviewPage() {
                 toast.error("Failed to review extraction", {
                     description:
                         data.errors?.join(", ") ||
-                        "The item is still here—click approve or reject to try again.",
+                        "The item is still here—we'll try again when approved or rejected.",
                     duration: 6000,
                 });
             }

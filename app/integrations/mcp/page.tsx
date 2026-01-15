@@ -610,9 +610,12 @@ function McpConfigContent({
                     );
                 }
             } catch (error) {
-                toast.error("Network error removing server. Check your connection.", {
-                    duration: 6000,
-                });
+                toast.error(
+                    "Network error removing server. Check the connection and try again.",
+                    {
+                        duration: 6000,
+                    }
+                );
                 logger.error({ error, serverId: server.id }, "Failed to delete server");
                 Sentry.captureException(error, {
                     tags: { component: "mcp-config-page", action: "delete_server" },
