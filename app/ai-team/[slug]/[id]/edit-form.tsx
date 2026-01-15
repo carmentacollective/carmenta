@@ -293,9 +293,17 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                     className="space-y-6"
                 >
                     {error && (
-                        <div className="flex items-center gap-2 rounded-xl bg-red-500/10 p-4 text-red-500">
-                            <WarningCircleIcon className="h-5 w-5" />
-                            <span>{error}</span>
+                        <div className="flex items-center justify-between gap-2 rounded-xl bg-red-500/10 p-4 text-red-500">
+                            <div className="flex items-center gap-2">
+                                <WarningCircleIcon className="h-5 w-5 shrink-0" />
+                                <span>{error}</span>
+                            </div>
+                            <button
+                                onClick={() => setError(null)}
+                                className="shrink-0 text-sm font-medium text-red-500/70 transition-colors hover:text-red-500"
+                            >
+                                Dismiss
+                            </button>
                         </div>
                     )}
 

@@ -55,6 +55,7 @@ function IntegrationsContent() {
     const [globalMessage, setGlobalMessage] = useState<{
         type: "success" | "error";
         text: string;
+        serviceId?: string;
     } | null>(null);
 
     // API key modal state
@@ -166,6 +167,7 @@ function IntegrationsContent() {
             setGlobalMessage({
                 type: "error",
                 text: errorMessages[error] ?? message ?? "Connection failed",
+                serviceId: service ?? undefined,
             });
             // Clear URL params without reload
             window.history.replaceState({}, "", "/integrations");
@@ -476,13 +478,33 @@ function IntegrationsContent() {
                             {globalMessage.text}
                         </span>
                     </div>
-                    <button
-                        onClick={() => setGlobalMessage(null)}
-                        className="hover:bg-foreground/10 rounded-lg p-1"
-                        aria-label="Dismiss message"
-                    >
-                        <XIcon className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {globalMessage.type === "error" && globalMessage.serviceId && (
+                            <button
+                                onClick={() => {
+                                    const serviceId = globalMessage.serviceId;
+                                    setGlobalMessage(null);
+                                    if (serviceId) {
+                                        setConnectingServices((prev) =>
+                                            new Set(prev).add(serviceId)
+                                        );
+                                        markOAuthStarted(serviceId);
+                                        window.location.href = `/connect/${serviceId}`;
+                                    }
+                                }}
+                                className="rounded-lg bg-red-500/20 px-3 py-1.5 text-sm font-medium hover:bg-red-500/30"
+                            >
+                                Try again
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setGlobalMessage(null)}
+                            className="hover:bg-foreground/10 rounded-lg p-1"
+                            aria-label="Dismiss message"
+                        >
+                            <XIcon className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
             )}
 

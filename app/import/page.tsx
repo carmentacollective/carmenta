@@ -1206,8 +1206,21 @@ export default function ImportPage() {
                         {/* Show errors during discovery flow */}
                         {error && (
                             <Card className="mb-6 border-red-500/30 bg-red-500/5">
-                                <CardContent className="py-4">
+                                <CardContent className="flex items-center justify-between py-4">
                                     <p className="text-sm text-red-600">{error}</p>
+                                    {discoveryState === "idle" && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setError(null);
+                                                setDiscoveryState("invited");
+                                            }}
+                                            className="ml-4 shrink-0"
+                                        >
+                                            Try Discovery Again
+                                        </Button>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}

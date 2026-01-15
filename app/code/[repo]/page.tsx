@@ -9,7 +9,7 @@
  * Example: /code/carmenta-code
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -38,27 +38,28 @@ export default function CodeProjectPage() {
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
 
-    useEffect(() => {
-        async function fetchSessions() {
-            try {
-                const response = await fetch(`/api/code/${repo}/sessions`);
-                if (!response.ok) {
-                    throw new Error("Failed to fetch sessions");
-                }
-                const data = await response.json();
-                setSessions(data.sessions);
-            } catch (err) {
-                const message =
-                    err instanceof Error ? err.message : "Something went wrong";
-                setError(message);
-                logger.error({ error: err, repo }, "Failed to fetch code sessions");
-            } finally {
-                setIsLoading(false);
+    const fetchSessions = useCallback(async () => {
+        setError(null);
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/code/${repo}/sessions`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch sessions");
             }
+            const data = await response.json();
+            setSessions(data.sessions);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Something went wrong";
+            setError(message);
+            logger.error({ error: err, repo }, "Failed to fetch code sessions");
+        } finally {
+            setIsLoading(false);
         }
-
-        fetchSessions();
     }, [repo]);
+
+    useEffect(() => {
+        fetchSessions();
+    }, [fetchSessions]);
 
     return (
         <div className="fixed inset-0 overflow-hidden">
@@ -107,12 +108,20 @@ export default function CodeProjectPage() {
                             className="rounded-xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-900 dark:bg-red-950/30"
                         >
                             <p className="text-red-700 dark:text-red-400">{error}</p>
-                            <button
-                                onClick={() => router.push("/code")}
-                                className="mt-4 text-sm text-red-600 underline hover:no-underline dark:text-red-500"
-                            >
-                                Back to projects
-                            </button>
+                            <div className="mt-4 flex items-center justify-center gap-3">
+                                <button
+                                    onClick={fetchSessions}
+                                    className="rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-200 dark:bg-red-900/50 dark:text-red-400 dark:hover:bg-red-900"
+                                >
+                                    Try again
+                                </button>
+                                <button
+                                    onClick={() => router.push("/code")}
+                                    className="text-sm text-red-600 underline hover:no-underline dark:text-red-500"
+                                >
+                                    Back to projects
+                                </button>
+                            </div>
                         </motion.div>
                     ) : (
                         <motion.div
