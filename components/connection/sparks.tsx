@@ -66,8 +66,33 @@ export function Sparks({ onPrefill, className }: SparksProps) {
         [onPrefill, router]
     );
 
-    // Don't render anything while loading or if no sparks
-    if (isLoading || sparks.length === 0) {
+    // Show skeleton while loading to prevent layout shift
+    if (isLoading) {
+        return (
+            <div
+                className={cn(
+                    "flex flex-wrap justify-center gap-x-3 gap-y-4",
+                    className
+                )}
+            >
+                {[1, 2, 3].map((i) => (
+                    <div
+                        key={i}
+                        className={cn(
+                            "h-11 w-32 animate-pulse rounded-full",
+                            "bg-foreground/5 backdrop-blur-sm",
+                            "border-foreground/10 border",
+                            // Match responsive visibility of actual sparks
+                            i > 3 && "hidden sm:block"
+                        )}
+                    />
+                ))}
+            </div>
+        );
+    }
+
+    // No sparks to show (empty state after loading)
+    if (sparks.length === 0) {
         return null;
     }
 

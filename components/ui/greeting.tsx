@@ -68,7 +68,14 @@ export function Greeting({ className, subtitleClassName, subtitle }: GreetingPro
 
     const displaySubtitle = subtitle ?? defaultSubtitle;
 
-    if (!isLoaded) return null;
+    // Show skeleton while auth state loads to prevent layout shift
+    if (!isLoaded) {
+        return (
+            <div className="greeting-container">
+                <div className="bg-foreground/5 h-10 w-48 animate-pulse rounded-lg" />
+            </div>
+        );
+    }
 
     // Birthday gets special treatment
     if (hasBirthday) {

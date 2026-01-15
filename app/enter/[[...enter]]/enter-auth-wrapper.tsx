@@ -67,6 +67,26 @@ export function EnterAuthWrapper() {
         }
     }, [isSignedIn, user, rememberedEmail]);
 
+    // Show loading overlay when signed in - redirect is in progress
+    if (isSignedIn) {
+        return (
+            <div className="flex flex-col items-center text-center">
+                <Image
+                    src="/logos/icon-transparent.png"
+                    alt="Carmenta"
+                    width={64}
+                    height={64}
+                    className="mb-4 h-16 w-16 animate-pulse"
+                    priority
+                />
+                <h1 className="text-foreground/90 text-2xl font-semibold tracking-tight">
+                    Taking you to your workspace...
+                </h1>
+                <p className="text-muted-foreground mt-2 text-sm">Just a moment</p>
+            </div>
+        );
+    }
+
     return (
         <>
             {/* Logo and heading */}
