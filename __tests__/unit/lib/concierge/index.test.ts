@@ -9,6 +9,7 @@ import {
     detectAttachments,
     buildReasoningConfig,
     conciergeSchema,
+    categorizeError,
 } from "@/lib/concierge";
 import { parseConciergeHeaders } from "@/lib/concierge/context";
 
@@ -442,5 +443,69 @@ describe("parseConciergeHeaders", () => {
         const result = parseConciergeHeaders(response);
 
         expect(result?.reasoning.enabled).toBe(false);
+    });
+});
+
+describe("categorizeError", () => {
+    it("falls through to unknown for non-APICallError with status code", () => {
+        // APICallError.isInstance() check fails for generic Error objects,
+        // so status codes on generic errors don't trigger rate_limit/server_error categories.
+        // This documents that behavior - only real APICallError instances get status code handling.
+        const error = new Error("Too many requests");
+        (error as any).statusCode = 429;
+        (error as any).isRetryable = true;
+
+        const result = categorizeError(error);
+
+        // Generic error falls through to unknown (not rate_limit)
+        expect(result.category).toBe("unknown");
+        expect(result.message).toBe("Too many requests");
+    });
+
+    it("categorizes timeout errors from message", () => {
+        const error = new Error("Request timed out after 30000ms");
+
+        const result = categorizeError(error);
+
+        expect(result.category).toBe("timeout");
+        expect(result.isRetryable).toBe(true);
+    });
+
+    it("categorizes malformed response errors", () => {
+        const error = new Error(
+            "Invalid error response format: Gateway request failed"
+        );
+
+        const result = categorizeError(error);
+
+        expect(result.category).toBe("malformed_response");
+        expect(result.isRetryable).toBe(false);
+    });
+
+    it("categorizes generic invalid response errors", () => {
+        const error = new Error("Invalid response from gateway");
+
+        const result = categorizeError(error);
+
+        expect(result.category).toBe("malformed_response");
+        expect(result.isRetryable).toBe(false);
+    });
+
+    it("returns unknown for unrecognized errors", () => {
+        const error = new Error("Something unexpected happened");
+
+        const result = categorizeError(error);
+
+        expect(result.category).toBe("unknown");
+        expect(result.isRetryable).toBe(false);
+    });
+
+    it("handles non-Error objects", () => {
+        const error = "Just a string error";
+
+        const result = categorizeError(error);
+
+        expect(result.category).toBe("unknown");
+        expect(result.message).toBe("Just a string error");
     });
 });
