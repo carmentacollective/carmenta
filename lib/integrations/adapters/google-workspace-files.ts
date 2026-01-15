@@ -9,7 +9,9 @@
  * No full Drive browsing - that would require CASA audit ($15-75k/year).
  */
 
-import { google } from "googleapis";
+import { drive, auth } from "@googleapis/drive";
+import { sheets } from "@googleapis/sheets";
+import { docs } from "@googleapis/docs";
 import { ServiceAdapter, HelpResponse, MCPToolResponse } from "./base";
 import { logger } from "@/lib/logger";
 
@@ -21,9 +23,9 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
      * Create an OAuth2 client configured with the user's access token
      */
     private createAuthClient(accessToken: string) {
-        const auth = new google.auth.OAuth2();
-        auth.setCredentials({ access_token: accessToken });
-        return auth;
+        const oauth2Client = new auth.OAuth2();
+        oauth2Client.setCredentials({ access_token: accessToken });
+        return oauth2Client;
     }
 
     /**
@@ -35,10 +37,10 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
     ): Promise<{ success: boolean; error?: string }> {
         try {
             const auth = this.createAuthClient(credentialOrToken);
-            const drive = google.drive({ version: "v3", auth });
+            const driveClient = drive({ version: "v3", auth });
 
             // Simple request to verify token is valid
-            await drive.about.get({ fields: "user" });
+            await driveClient.about.get({ fields: "user" });
 
             return { success: true };
         } catch (error) {
@@ -278,7 +280,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const sheets = google.sheets({ version: "v4", auth });
+        const sheetsClient = sheets({ version: "v4", auth });
 
         // Build the request body
         const requestBody: {
@@ -328,7 +330,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
             "Creating Google Sheet"
         );
 
-        const response = await sheets.spreadsheets.create({ requestBody });
+        const response = await sheetsClient.spreadsheets.create({ requestBody });
 
         const { spreadsheetId, spreadsheetUrl } = response.data;
 
@@ -365,12 +367,12 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const docs = google.docs({ version: "v1", auth });
+        const docsClient = docs({ version: "v1", auth });
 
         logger.info({ title, hasContent: !!content }, "Creating Google Doc");
 
         // Create the document
-        const createResponse = await docs.documents.create({
+        const createResponse = await docsClient.documents.create({
             requestBody: { title },
         });
 
@@ -392,7 +394,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         // Insert content if provided
         if (content && content.length > 0) {
             try {
-                await docs.documents.batchUpdate({
+                await docsClient.documents.batchUpdate({
                     documentId,
                     requestBody: {
                         requests: [
@@ -455,11 +457,11 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const sheets = google.sheets({ version: "v4", auth });
+        const sheetsClient = sheets({ version: "v4", auth });
 
         logger.info({ spreadsheetId: spreadsheet_id, range }, "Reading Google Sheet");
 
-        const response = await sheets.spreadsheets.values.get({
+        const response = await sheetsClient.spreadsheets.values.get({
             spreadsheetId: spreadsheet_id,
             range: range || "A:ZZ", // All columns if no range specified
         });
