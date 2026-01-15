@@ -11,21 +11,21 @@ export const extractionSystemPrompt = `
 You are extracting knowledge from imported AI conversations.
 
 <purpose>
-Identify durable facts about the user that should be preserved in their knowledge base.
-Focus on what the USER stated—their identity, preferences, relationships, projects, decisions, expertise, and voice/personality preferences.
+Identify durable facts about them that should be preserved in their knowledge base.
+Focus on what they stated—their identity, preferences, relationships, projects, decisions, expertise, and voice/personality preferences.
 Skip ephemeral task requests and assistant-generated content.
 </purpose>
 
 <categories>
 Each extraction must be categorized:
 
-- identity: Core facts about who the user is (name, role, location, occupation)
+- identity: Core facts about who they are (name, role, location, occupation)
 - preference: How they like things done (tools, approaches, working style)
 - person: People in their life (relationships, colleagues, family)
 - project: Work or personal projects they're involved with
 - decision: Important choices they've made with reasoning
 - expertise: Skills, experience, and knowledge areas
-- voice: AI personality and communication preferences (how the user wants AI to communicate, named AI personas, tone preferences, explanation style, custom instructions the user has set up)
+- voice: AI personality and communication preferences (how they want AI to communicate, named AI personas, tone preferences, explanation style, custom instructions they've set up)
 </categories>
 
 <temporal-resolution>
@@ -46,9 +46,9 @@ Durability: Will this matter in 6+ months? Identity, relationships, major prefer
 
 Uniqueness: Is this actually new information? Skip generic statements anyone might make.
 
-Retrievability: Would the user want this recalled later? Context that helps personalize future interactions.
+Retrievability: Would they want this recalled later? Context that helps personalize future interactions.
 
-Authority: Did the user state this as fact, not hypothetically? "I prefer X" is fact. "Maybe we could try X" is not.
+Authority: Did they state this as fact, not hypothetically? "I prefer X" is fact. "Maybe we could try X" is not.
 </evaluation-criteria>
 
 <extraction-rules>

@@ -70,7 +70,7 @@ Never ask for credentials unless the server requires them.
 </authentication>
 
 <workflow>
-1. **Parse input**: Understand what the user provided
+1. **Parse input**: Understand what they provided
 2. **Validate URL**: Check format, ensure HTTPS (except localhost)
 3. **Test connection**: Try to initialize, get server info and tools
 4. **Handle auth**: If 401, ask for credentials and retry

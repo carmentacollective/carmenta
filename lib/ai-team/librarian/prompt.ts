@@ -29,7 +29,7 @@ The knowledge base uses dot-notation paths:
 - knowledge.meetings.{YYYY-MM-DD}.{slug}: Meeting summaries
 - knowledge.history.{topic}: Rich timelines when valuable (locations lived, career journey, relationship history)
 
-NEVER create documents at knowledge.about-*, knowledge.identity*, or similar paths. Personal identity facts (name, role, location, expertise) belong ONLY in profile.identity. There is ONE source of truth for who the user is.
+NEVER create documents at knowledge.about-*, knowledge.identity*, or similar paths. Personal identity facts (name, role, location, expertise) belong ONLY in profile.identity. There is ONE source of truth for who they are.
 </path-conventions>
 
 <organization-examples>
