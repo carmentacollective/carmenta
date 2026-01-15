@@ -48,6 +48,11 @@ export interface UseMessageQueueOptions {
     onProcessingStart?: () => void;
     /** Callback when queue processing ends */
     onProcessingEnd?: () => void;
+    /** Callback to track sent message for stop-restore behavior */
+    onMessageSent?: (message: {
+        content: string;
+        files?: Array<{ url: string; mediaType: string; name: string }>;
+    }) => void;
 }
 
 export interface UseMessageQueueReturn {
@@ -70,6 +75,8 @@ export interface UseMessageQueueReturn {
     isFull: boolean;
     /** Whether queue is currently being processed */
     isProcessing: boolean;
+    /** Index of message currently being processed (for UI display) */
+    processingIndex: number | undefined;
     /** Process the queue immediately (called after streaming ends) */
     processQueue: () => Promise<void>;
 }
@@ -129,12 +136,16 @@ export function useMessageQueue({
     sendMessage,
     onProcessingStart,
     onProcessingEnd,
+    onMessageSent,
 }: UseMessageQueueOptions): UseMessageQueueReturn {
     const effectiveKey = connectionId ?? NEW_CONNECTION_KEY;
 
     // Initialize queue from localStorage
     const [queue, setQueue] = useState<QueuedMessage[]>(() => loadQueue(effectiveKey));
     const [isProcessing, setIsProcessing] = useState(false);
+    const [processingIndex, setProcessingIndex] = useState<number | undefined>(
+        undefined
+    );
 
     // Track previous streaming state to detect transitions
     const wasStreamingRef = useRef(isStreaming);
@@ -275,6 +286,7 @@ export function useMessageQueue({
         if (messageIndex === -1) return; // All messages have errors
 
         setIsProcessing(true);
+        setProcessingIndex(messageIndex); // Track which index is processing
         onProcessingStart?.();
 
         const message = queue[messageIndex];
@@ -289,6 +301,8 @@ export function useMessageQueue({
                 content: message.content,
                 files: message.files,
             });
+            // Track sent message for stop-restore behavior
+            onMessageSent?.({ content: message.content, files: message.files });
             // Remove successfully sent message
             setQueue((prev) => prev.filter((msg) => msg.id !== message.id));
         } catch (error) {
@@ -307,9 +321,17 @@ export function useMessageQueue({
         }
 
         setIsProcessing(false);
+        setProcessingIndex(undefined); // Clear processing index when done
         onProcessingEnd?.();
         // Effect below will re-trigger if more messages remain
-    }, [queue, isProcessing, sendMessage, onProcessingStart, onProcessingEnd]);
+    }, [
+        queue,
+        isProcessing,
+        sendMessage,
+        onProcessingStart,
+        onProcessingEnd,
+        onMessageSent,
+    ]);
 
     // Auto-process queue when streaming ends or when previous message completes
     useEffect(() => {
@@ -347,6 +369,7 @@ export function useMessageQueue({
         clear,
         isFull: queue.length >= MAX_QUEUE_SIZE,
         isProcessing,
+        processingIndex,
         processQueue,
     };
 }

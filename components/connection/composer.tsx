@@ -39,7 +39,7 @@ import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
 import { useMessageEffects } from "@/lib/hooks/use-message-effects";
 import { useDraftPersistence } from "@/lib/hooks/use-draft-persistence";
-import { PASTE_THRESHOLD, isSpreadsheet } from "@/lib/storage/file-config";
+import { PASTE_THRESHOLD } from "@/lib/storage/file-config";
 import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
 import { VoiceInputButton, type VoiceInputButtonRef } from "@/components/voice";
 
@@ -148,11 +148,35 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         edit: editQueuedMessage,
         retry: retryQueuedMessage,
         isFull: isQueueFull,
-        isProcessing: isQueueProcessing,
+        processingIndex: queueProcessingIndex,
     } = useMessageQueue({
         connectionId: activeConnectionId,
         isStreaming: isLoading,
         sendMessage: append,
+        onMessageSent: useCallback(
+            (message: {
+                content: string;
+                files?: Array<{ url: string; mediaType: string; name: string }>;
+            }) => {
+                // Update lastSentMessageRef and lastSentFilesRef for queued messages
+                // so stop restoration works correctly
+                lastSentMessageRef.current = message.content;
+                if (message.files?.length) {
+                    // Convert to format with size (size unknown for queued messages, use 0)
+                    lastSentFilesRef.current = message.files.map(
+                        (f: { url: string; mediaType: string; name: string }) => ({
+                            url: f.url,
+                            name: f.name,
+                            mediaType: f.mediaType,
+                            size: 0,
+                        })
+                    );
+                } else {
+                    lastSentFilesRef.current = null;
+                }
+            },
+            []
+        ),
     });
 
     // IME composition state
@@ -884,7 +908,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     onRetry={retryQueuedMessage}
                     onInterrupt={handleInterrupt}
                     canInterrupt={isLoading}
-                    processingIndex={isQueueProcessing ? 0 : undefined}
+                    processingIndex={queueProcessingIndex}
                 />
             )}
 
