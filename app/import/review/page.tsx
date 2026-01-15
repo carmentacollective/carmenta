@@ -136,6 +136,7 @@ export default function ImportReviewPage() {
             logger.error({ error }, "Failed to fetch extractions");
             toast.error("Failed to load extractions", {
                 description: "Please try refreshing the page",
+                duration: 6000,
             });
         } finally {
             setLoading(false);
@@ -239,13 +240,18 @@ export default function ImportReviewPage() {
                 );
             } else {
                 toast.error("Failed to review extraction", {
-                    description: data.errors?.join(", ") || "Please try again",
+                    description:
+                        data.errors?.join(", ") ||
+                        "The item is still here—click approve or reject to try again.",
+                    duration: 6000,
                 });
             }
         } catch (error) {
             logger.error({ error }, "Failed to review extraction");
             toast.error("Failed to review extraction", {
-                description: "Please try again",
+                description:
+                    "Network issue. The item is still here—click approve or reject to try again.",
+                duration: 6000,
             });
         } finally {
             setProcessing(false);
