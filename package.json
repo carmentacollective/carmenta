@@ -26,10 +26,10 @@
   "scripts": {
     "analyze": "next experimental-analyze",
     "analyze:webpack": "ANALYZE=true next build --webpack",
-    "build": "next build --webpack",
+    "build": "next build",
     "render-build": "bash ./scripts/render-deploy.sh",
-    "dev": "next dev --webpack",
-    "dev:debug": "NODE_OPTIONS='--inspect' next dev --webpack",
+    "dev": "next dev",
+    "dev:debug": "NODE_OPTIONS='--inspect' next dev",
     "dev:temporal": "docker compose -f docker/docker-compose.dev.yml up",
     "build:worker": "tsx scripts/build-worker.ts",
     "db:generate": "drizzle-kit generate",
