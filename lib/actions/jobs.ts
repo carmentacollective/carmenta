@@ -30,6 +30,7 @@ export interface PublicJob {
     lastRunAt: Date | null;
     nextRunAt: Date | null;
     createdAt: Date;
+    agentNotes: string; // Internal notes maintained by the agent across runs
 }
 
 /**
@@ -88,5 +89,6 @@ export async function loadJob(encodedId: string): Promise<PublicJob | null> {
         lastRunAt: job.lastRunAt,
         nextRunAt: job.nextRunAt,
         createdAt: job.createdAt,
+        agentNotes: job.agentNotes,
     };
 }
