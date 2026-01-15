@@ -61,7 +61,7 @@ These patterns warrant investigation:
 
 **Tooltip behavior variance**
 
-- Different tooltip components (Radix vs data-tooltip-\* vs title attribute)
+- Different tooltip components (Radix vs `data-tooltip-*` vs title attribute)
 - Different delay timings (instant vs 200ms vs 500ms) — standard is 300-500ms
 - Different positioning (above vs below vs auto)
 - Different styling (some with arrows, some without)

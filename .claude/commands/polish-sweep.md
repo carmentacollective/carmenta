@@ -129,4 +129,6 @@ components/ui/oracle-menu.tsx:ux-consistency:tooltip
 *:code-consistency:import-style
 ```
 
+Invalid lines are skipped with a warning.
+
 </ignore-file>

@@ -168,8 +168,8 @@ The command aggregates all agent findings into a prioritized report:
 
 ### components/ui/oracle-menu.tsx
 
-- **[consistency]** Line 45: Uses legacy data-tooltip-\* instead of Radix Tooltip
-- **[consistency]** Line 78: Uses data-tooltip-\* instead of Radix Tooltip
+- **[consistency]** Line 45: Uses legacy `data-tooltip-*` instead of Radix Tooltip
+- **[consistency]** Line 78: Uses `data-tooltip-*` instead of Radix Tooltip
 
 ...
 
