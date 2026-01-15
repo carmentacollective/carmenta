@@ -40,6 +40,33 @@ const buttonVariants = cva(
     }
 );
 
+/** Inline spinner for button loading state */
+function ButtonSpinner({ className }: { className?: string }) {
+    return (
+        <svg
+            className={cn("animate-spin", className)}
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+        >
+            <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+            />
+            <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+        </svg>
+    );
+}
+
 export interface ButtonProps
     extends
         React.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -49,6 +76,10 @@ export interface ButtonProps
     haptic?: boolean;
     /** Enable ripple effect on tap (default: false for buttons, they have solid backgrounds) */
     ripple?: boolean;
+    /** Show loading spinner and disable button */
+    loading?: boolean;
+    /** Text to show while loading (replaces children) */
+    loadingText?: string;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -60,12 +91,26 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             asChild = false,
             haptic = true,
             ripple = false,
+            loading = false,
+            loadingText,
+            disabled,
+            children,
             onMouseDown,
             onTouchStart,
             ...props
         },
         ref
     ) => {
+        // Auto-disable when loading
+        const isDisabled = disabled || loading;
+
+        // Determine spinner size based on button size
+        const spinnerSize =
+            size === "sm" || size === "icon-sm"
+                ? "h-3 w-3"
+                : size === "lg" || size === "icon-lg"
+                  ? "h-5 w-5"
+                  : "h-4 w-4";
         const internalRef = React.useRef<HTMLButtonElement>(null);
         // Prevent double feedback from touch + mouse events on touch devices
         const touchedRef = React.useRef(false);
@@ -117,7 +162,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         const Comp = asChild ? Slot : "button";
 
-        // For asChild, merge refs so ripple effect works
+        // For asChild, pass children directly (Fragment breaks Radix Slot pattern)
+        // The disabled state still applies via isDisabled
         if (asChild) {
             return (
                 <Comp
@@ -138,10 +184,23 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                     }}
                     onMouseDown={handleMouseDown}
                     onTouchStart={handleTouchStart}
+                    disabled={isDisabled}
                     {...props}
-                />
+                >
+                    {children}
+                </Comp>
             );
         }
+
+        // Loading content: spinner + optional text (only for non-asChild buttons)
+        const loadingContent = loading ? (
+            <>
+                <ButtonSpinner className={cn(spinnerSize, loadingText && "mr-2")} />
+                {loadingText ?? children}
+            </>
+        ) : (
+            children
+        );
 
         return (
             <button
@@ -160,8 +219,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 }}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
+                disabled={isDisabled}
                 {...props}
-            />
+            >
+                {loadingContent}
+            </button>
         );
     }
 );

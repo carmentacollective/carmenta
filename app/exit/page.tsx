@@ -14,13 +14,13 @@ import { logger } from "@/lib/client-logger";
 export default function ExitPage() {
     const router = useRouter();
     const { signOut } = useClerk();
-    const [isExiting, setIsExiting] = useState(false);
+    // Start with isExiting true since sign-out begins immediately on mount
+    const [isExiting, setIsExiting] = useState(true);
     const [error, setError] = useState(false);
 
     useEffect(() => {
         const handleExit = async () => {
             try {
-                setIsExiting(true);
                 await signOut();
                 // Short delay for the animation to show
                 setTimeout(() => {

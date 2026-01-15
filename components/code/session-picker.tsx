@@ -55,6 +55,12 @@ export function SessionPicker({
         setIsCreating(true);
         // Navigate to new session - session will be created on first message
         router.push(`/code/${repoSlug}/new`);
+
+        // Reset creating state after 5 seconds as fallback
+        // (in case navigation fails silently)
+        setTimeout(() => {
+            setIsCreating(false);
+        }, 5000);
     };
 
     const handleSelectSession = (session: CodeSession) => {

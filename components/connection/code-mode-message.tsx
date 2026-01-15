@@ -513,11 +513,12 @@ function TransientActivity({ messages }: { messages: TransientMessage[] }) {
 function StreamHealthIndicator({ isStreaming }: { isStreaming: boolean }) {
     const streamHealth = useStreamHealth();
 
-    // Only show when streaming, have running tools, and it's been a few seconds
+    // Show earlier (1.5s) to reassure users that work is still happening
+    // Previous value of 3s felt too long during code operations
     if (
         !isStreaming ||
         !streamHealth.hasRunningTools ||
-        streamHealth.secondsSinceActivity < 3
+        streamHealth.secondsSinceActivity < 1.5
     ) {
         return null;
     }
@@ -537,7 +538,7 @@ function StreamHealthIndicator({ isStreaming }: { isStreaming: boolean }) {
 
             <span className="italic">
                 Still working...
-                {streamHealth.secondsSinceActivity >= 5 && (
+                {streamHealth.secondsSinceActivity >= 3 && (
                     <span className="ml-1 font-mono">
                         ({streamHealth.secondsSinceActivity}s since last update)
                     </span>

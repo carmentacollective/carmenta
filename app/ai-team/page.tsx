@@ -286,11 +286,11 @@ function AITeamContent({
                 throw new Error(errorMessage);
             }
 
-            // Success - close sidecar and show message
+            // Success - close sidecar and show toast
             setCarmentaOpen(false);
             setHireMode(false);
             setPlaybook(null);
-            setSuccessMessage("New team member hired successfully!");
+            toast.success("New team member hired!");
             onChangesComplete();
         } catch (error) {
             logger.error({ error }, "Failed to hire automation");
@@ -786,7 +786,7 @@ function AITeamContent({
                                             onChange={() =>
                                                 handleToggleAutomation(automation)
                                             }
-                                            disabled={togglingJobs.has(automation.id)}
+                                            loading={togglingJobs.has(automation.id)}
                                             size="sm"
                                         />
                                     </div>

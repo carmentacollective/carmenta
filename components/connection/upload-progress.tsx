@@ -21,6 +21,7 @@ import {
     CheckCircle,
 } from "@phosphor-icons/react";
 import { useFileAttachments } from "./file-attachment-context";
+import { ArrowCounterClockwise } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { getFileCategory } from "@/lib/storage/file-config";
 import type { UploadProgress as UploadProgressType } from "@/lib/storage/types";
@@ -30,7 +31,13 @@ export function UploadProgressDisplay({
 }: {
     onInsertInline?: (fileId: string) => void;
 }) {
-    const { pendingFiles, removeFile, getTextContent } = useFileAttachments();
+    const { pendingFiles, removeFile, getTextContent, addFiles } = useFileAttachments();
+
+    // Retry handler - removes failed upload and re-adds the file
+    const handleRetry = (upload: UploadProgressType) => {
+        removeFile(upload.id);
+        addFiles([upload.file]);
+    };
 
     if (pendingFiles.length === 0) return null;
 
@@ -41,6 +48,7 @@ export function UploadProgressDisplay({
                     key={upload.id}
                     upload={upload}
                     onRemove={removeFile}
+                    onRetry={() => handleRetry(upload)}
                     onInsertInline={onInsertInline}
                     hasTextContent={!!getTextContent(upload.id)}
                 />
@@ -116,11 +124,13 @@ function FilePreviewThumbnail({ upload }: { upload: UploadProgressType }) {
 function UploadItem({
     upload,
     onRemove,
+    onRetry,
     onInsertInline,
     hasTextContent,
 }: {
     upload: UploadProgressType;
     onRemove: (id: string) => void;
+    onRetry: () => void;
     onInsertInline?: (fileId: string) => void;
     hasTextContent: boolean;
 }) {
@@ -185,6 +195,17 @@ function UploadItem({
                             )}
                         >
                             {statusMessage}
+                            {/* Retry button for failed uploads */}
+                            {isError && (
+                                <button
+                                    type="button"
+                                    onClick={onRetry}
+                                    className="text-primary hover:text-primary/80 ml-2 inline-flex items-center gap-1 font-medium"
+                                >
+                                    <ArrowCounterClockwise className="h-3 w-3" />
+                                    Retry
+                                </button>
+                            )}
                         </div>
                     ) : null;
                 })()}

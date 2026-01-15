@@ -7,6 +7,7 @@ interface LabelToggleProps {
     checked: boolean;
     onChange: (checked: boolean) => void;
     disabled?: boolean;
+    loading?: boolean;
     className?: string;
     size?: "sm" | "md";
 }
@@ -21,9 +22,11 @@ export function LabelToggle({
     checked,
     onChange,
     disabled = false,
+    loading = false,
     className,
     size = "md",
 }: LabelToggleProps) {
+    const isDisabled = disabled || loading;
     const sizes = {
         sm: {
             track: "h-6 w-12",
@@ -48,14 +51,15 @@ export function LabelToggle({
             type="button"
             role="switch"
             aria-checked={checked}
-            disabled={disabled}
-            onClick={() => !disabled && onChange(!checked)}
+            aria-busy={loading}
+            disabled={isDisabled}
+            onClick={() => !isDisabled && onChange(!checked)}
             className={cn(
                 "tap-target relative overflow-hidden rounded-full transition-colors duration-200",
                 "focus:ring-primary/40 focus:ring-offset-background focus:ring-2 focus:ring-offset-2 focus:outline-none",
                 s.track,
                 checked ? "bg-primary" : "bg-foreground/15 dark:bg-foreground/20",
-                disabled && "cursor-not-allowed opacity-50",
+                isDisabled && "cursor-not-allowed opacity-50",
                 className
             )}
         >
@@ -100,7 +104,8 @@ export function LabelToggle({
                 className={cn(
                     "absolute top-1 rounded-full shadow-md",
                     "bg-white dark:bg-white",
-                    s.thumb
+                    s.thumb,
+                    loading && "animate-pulse"
                 )}
                 style={{ left: checked ? s.thumbOffset.on : s.thumbOffset.off }}
             />
