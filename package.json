@@ -64,7 +64,7 @@
     "@ai-sdk/mcp": "^1.0.5",
     "@ai-sdk/react": "^3.0.29",
     "@anthropic-ai/claude-agent-sdk": "^0.2.3",
-    "@clerk/nextjs": "^6.36.3",
+    "@clerk/nextjs": "^6.36.7",
     "@deepgram/sdk": "^4.11.3",
     "@openrouter/ai-sdk-provider": "^1.5.4",
     "@phosphor-icons/react": "^2.1.10",
@@ -130,7 +130,7 @@
     "zod": "^4.3.4"
   },
   "devDependencies": {
-    "@clerk/testing": "^1.13.24",
+    "@clerk/testing": "^1.13.28",
     "@clerk/types": "^4.101.7",
     "@electric-sql/pglite": "^0.3.14",
     "@next/bundle-analyzer": "^16.1.2",

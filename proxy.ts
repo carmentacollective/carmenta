@@ -42,41 +42,44 @@ const isHealthRoute = createRouteMatcher(["/healthz"]);
 const isOAuthCallbackRoute = createRouteMatcher(["/integrations/oauth/callback(.*)"]);
 const isCodeRoute = createRouteMatcher(["/api/code(.*)", "/code(.*)"]);
 
-export const proxy = clerkMiddleware(async (auth, req) => {
-    const { userId } = await auth();
+export const proxy = clerkMiddleware(
+    async (auth, req) => {
+        const { userId } = await auth();
 
-    // Authenticated users on landing page → redirect to connection
-    if (userId && req.nextUrl.pathname === "/") {
-        return NextResponse.redirect(new URL("/connection", req.url));
-    }
+        // Authenticated users on landing page → redirect to connection
+        if (userId && req.nextUrl.pathname === "/") {
+            return NextResponse.redirect(new URL("/connection", req.url));
+        }
 
-    // Health check is public (used by Render for zero-downtime deployments)
-    // Uses /healthz (Kubernetes convention) to avoid /api route protection
-    if (isHealthRoute(req)) {
-        return;
-    }
+        // Health check is public (used by Render for zero-downtime deployments)
+        // Uses /healthz (Kubernetes convention) to avoid /api route protection
+        if (isHealthRoute(req)) {
+            return;
+        }
 
-    // OAuth callback is public (authenticated via state token)
-    // State token provides CSRF protection + user identity + one-time use
-    if (isOAuthCallbackRoute(req)) {
-        return;
-    }
+        // OAuth callback is public (authenticated via state token)
+        // State token provides CSRF protection + user identity + one-time use
+        if (isOAuthCallbackRoute(req)) {
+            return;
+        }
 
-    // Webhooks are public (use signature verification instead)
-    if (isWebhookRoute(req)) {
-        return;
-    }
+        // Webhooks are public (use signature verification instead)
+        if (isWebhookRoute(req)) {
+            return;
+        }
 
-    // Code mode is public (operates on local file system, no user data)
-    if (isCodeRoute(req)) {
-        return;
-    }
+        // Code mode is public (operates on local file system, no user data)
+        if (isCodeRoute(req)) {
+            return;
+        }
 
-    // Protect explicitly protected routes
-    if (isProtectedRoute(req)) {
-        await auth.protect();
-    }
-});
+        // Protect explicitly protected routes
+        if (isProtectedRoute(req)) {
+            await auth.protect();
+        }
+    },
+    { debug: process.env.CLERK_DEBUG === "true" }
+);
 
 export const config = {
     matcher: [

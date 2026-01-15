@@ -55,7 +55,11 @@ export default defineConfig({
     ],
 
     webServer: {
-        command: "pnpm dev",
+        // Use webpack instead of turbopack for E2E tests
+        // Turbopack has tree-shaking issues with Zod v4 that cause
+        // "ReferenceError: _check is not defined" errors
+        // See: https://github.com/colinhacks/zod/issues/5095
+        command: "pnpm next dev --webpack",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,

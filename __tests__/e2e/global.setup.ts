@@ -1,4 +1,4 @@
-import { clerkSetup, setupClerkTestingToken, clerk } from "@clerk/testing/playwright";
+import { clerkSetup, clerk } from "@clerk/testing/playwright";
 import { test as setup, expect } from "@playwright/test";
 
 /**
@@ -64,13 +64,13 @@ setup("warm up authenticated pages", async ({ page }) => {
 
     console.log("🔥 Warming up pages with authenticated user...");
 
-    // Set up Clerk testing token
-    await setupClerkTestingToken({ page });
-
-    // Navigate to a page first (required before clerk.signIn)
+    // Navigate to home page first (required before clerk.signIn)
+    // Following the official Clerk Playwright example pattern
     await page.goto("/");
 
-    // Sign in with test user
+    // Sign in with test user using Clerk's signIn helper
+    // The helper handles waiting for Clerk to be ready internally
+    console.log("  Signing in...");
     await clerk.signIn({
         page,
         signInParams: {
