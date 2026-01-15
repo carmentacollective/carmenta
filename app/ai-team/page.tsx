@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -212,9 +212,15 @@ function AITeamContent({
     const [hireMode, setHireMode] = useState(false);
     const [playbook, setPlaybook] = useState<Playbook | null>(null);
     const [isHiring, setIsHiring] = useState(false);
+    const closingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Start hire mode - opens sidecar with hire config
     const handleStartHire = useCallback(() => {
+        // Cancel any pending close cleanup
+        if (closingTimeoutRef.current) {
+            clearTimeout(closingTimeoutRef.current);
+            closingTimeoutRef.current = null;
+        }
         setHireMode(true);
         setPlaybook(null);
         setCarmentaOpen(true);
@@ -224,11 +230,21 @@ function AITeamContent({
     const handleCloseSidecar = useCallback((open: boolean) => {
         setCarmentaOpen(open);
         if (!open) {
-            // Reset hire mode after animation
-            setTimeout(() => {
+            // Reset hire mode after animation, cancel any pending timeout first
+            if (closingTimeoutRef.current) {
+                clearTimeout(closingTimeoutRef.current);
+            }
+            closingTimeoutRef.current = setTimeout(() => {
                 setHireMode(false);
                 setPlaybook(null);
+                closingTimeoutRef.current = null;
             }, 300);
+        } else {
+            // Opening - cancel any pending close cleanup
+            if (closingTimeoutRef.current) {
+                clearTimeout(closingTimeoutRef.current);
+                closingTimeoutRef.current = null;
+            }
         }
     }, []);
 
