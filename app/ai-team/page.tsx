@@ -15,6 +15,7 @@ import {
     BroadcastIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
+import { toast } from "sonner";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
@@ -25,6 +26,8 @@ import {
     CarmentaToggle,
     type SidecarWelcomeConfig,
 } from "@/components/carmenta-assistant";
+import type { Playbook } from "@/components/connection";
+import { PlaybookPreviewCard } from "@/components/ai-team/playbook-preview-card";
 import { RobotIcon, PlayIcon, WrenchIcon } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
 
@@ -109,6 +112,42 @@ const AI_TEAM_WELCOME: SidecarWelcomeConfig = {
 };
 
 /**
+ * Hire mode welcome configuration
+ */
+const HIRE_WELCOME: SidecarWelcomeConfig = {
+    heading: "Hire a New Team Member",
+    subtitle: "Describe what you need and we'll set it up",
+    suggestions: [
+        {
+            id: "email-triage",
+            label: "Email triage",
+            prompt: "Check my email every morning and flag what matters",
+            icon: BellIcon,
+            autoSubmit: false,
+        },
+        {
+            id: "competitor-monitor",
+            label: "Monitor competitors",
+            prompt: "Monitor competitor news and summarize weekly",
+            icon: LightningIcon,
+            autoSubmit: false,
+        },
+        {
+            id: "slack-triage",
+            label: "Slack triage",
+            prompt: "Triage my Slack DMs and surface the urgent ones",
+            icon: BroadcastIcon,
+            autoSubmit: false,
+        },
+    ],
+};
+
+/**
+ * Page context for hire mode
+ */
+const HIRE_PAGE_CONTEXT = `User is hiring a new AI team member. Guide them conversationally to understand what they need automated. Ask about: what task, how often it should run, what actions to take, and what integrations are needed. When you have enough info, signal readiness with READY_TO_HIRE.`;
+
+/**
  * Content component with all the UI logic
  */
 function AITeamContent({
@@ -168,8 +207,83 @@ function AITeamContent({
         });
     };
 
-    // Carmenta sheet state
+    // Carmenta sidecar state
     const [carmentaOpen, setCarmentaOpen] = useState(false);
+    const [hireMode, setHireMode] = useState(false);
+    const [playbook, setPlaybook] = useState<Playbook | null>(null);
+    const [isHiring, setIsHiring] = useState(false);
+
+    // Start hire mode - opens sidecar with hire config
+    const handleStartHire = useCallback(() => {
+        setHireMode(true);
+        setPlaybook(null);
+        setCarmentaOpen(true);
+    }, []);
+
+    // Close sidecar and reset hire state
+    const handleCloseSidecar = useCallback((open: boolean) => {
+        setCarmentaOpen(open);
+        if (!open) {
+            // Reset hire mode after animation
+            setTimeout(() => {
+                setHireMode(false);
+                setPlaybook(null);
+            }, 300);
+        }
+    }, []);
+
+    // Handle playbook extraction from hire wizard
+    const handlePlaybookReady = useCallback((newPlaybook: Playbook) => {
+        logger.info({ playbookName: newPlaybook.name }, "Playbook ready for hire");
+        setPlaybook(newPlaybook);
+    }, []);
+
+    // Create the automation from playbook
+    const handleHire = useCallback(async () => {
+        if (!playbook || isHiring) return;
+
+        setIsHiring(true);
+
+        try {
+            const response = await fetch("/api/jobs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: playbook.name,
+                    prompt: playbook.prompt,
+                    scheduleCron: playbook.schedule.cron,
+                    scheduleDisplayText: playbook.schedule.displayText,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                }),
+            });
+
+            if (!response.ok) {
+                let errorMessage = "Failed to create automation";
+                try {
+                    const error = await response.json();
+                    errorMessage = error.error ?? errorMessage;
+                } catch {
+                    // Failed to parse error response
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Success - close sidecar and show message
+            setCarmentaOpen(false);
+            setHireMode(false);
+            setPlaybook(null);
+            setSuccessMessage("New team member hired successfully!");
+            onChangesComplete();
+        } catch (error) {
+            logger.error({ error }, "Failed to hire automation");
+            toast.error("Failed to create automation. Please try again.");
+            Sentry.captureException(error, {
+                tags: { component: "ai-team-page", action: "hire" },
+            });
+        } finally {
+            setIsHiring(false);
+        }
+    }, [playbook, isHiring, onChangesComplete]);
 
     // Handle success states from redirects
     useEffect(() => {
@@ -392,13 +506,13 @@ function AITeamContent({
                             isOpen={carmentaOpen}
                             onClick={() => setCarmentaOpen(!carmentaOpen)}
                         />
-                        <Link
-                            href="/ai-team/hire"
+                        <button
+                            onClick={handleStartHire}
                             className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-4 py-2 font-medium transition-colors"
                         >
                             <PlusIcon className="h-4 w-4" />
                             Hire
-                        </Link>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -432,13 +546,13 @@ function AITeamContent({
                         updates, anything that runs automatically while we focus
                         elsewhere.
                     </p>
-                    <Link
-                        href="/ai-team/hire"
+                    <button
+                        onClick={handleStartHire}
                         className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-xl px-6 py-3 font-medium transition-colors"
                     >
                         <PlusIcon className="h-5 w-5" />
                         Hire Your First Team Member
-                    </Link>
+                    </button>
                 </div>
             ) : (
                 <div className="grid gap-8 lg:grid-cols-3">
@@ -675,15 +789,30 @@ function AITeamContent({
                 />
             )}
 
-            {/* Carmenta Sidecar for contextual AI Team help */}
+            {/* Carmenta Sidecar for contextual AI Team help + hire mode */}
+            {/* Key forces remount when mode changes to clear chat state */}
             <CarmentaSidecar
+                key={hireMode ? "hire" : "manage"}
                 open={carmentaOpen}
-                onOpenChange={setCarmentaOpen}
-                pageContext={PAGE_CONTEXT}
+                onOpenChange={handleCloseSidecar}
+                pageContext={hireMode ? HIRE_PAGE_CONTEXT : PAGE_CONTEXT}
                 onChangesComplete={onChangesComplete}
-                welcomeConfig={AI_TEAM_WELCOME}
-                title="Digital Chief of Staff"
-                description="Let's manage your agents"
+                welcomeConfig={hireMode ? HIRE_WELCOME : AI_TEAM_WELCOME}
+                title={hireMode ? "Hire a New Team Member" : "Digital Chief of Staff"}
+                description={
+                    hireMode ? "Describe what you need" : "Let's manage your agents"
+                }
+                endpoint={hireMode ? "/api/ai-team/hire" : "/api/dcos"}
+                onPlaybookReady={hireMode ? handlePlaybookReady : undefined}
+                auxiliaryContent={
+                    hireMode && playbook ? (
+                        <PlaybookPreviewCard
+                            playbook={playbook}
+                            onHire={handleHire}
+                            isHiring={isHiring}
+                        />
+                    ) : undefined
+                }
             />
         </StandardPageLayout>
     );

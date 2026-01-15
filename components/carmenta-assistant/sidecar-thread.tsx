@@ -15,7 +15,7 @@
  * - Shows the conversation (same as HoloThread)
  */
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { SparkleIcon } from "@phosphor-icons/react";
@@ -62,17 +62,22 @@ import type { SidecarWelcomeConfig, SidecarSuggestion } from "./carmenta-sidecar
 interface SidecarThreadProps {
     /** Context-aware welcome configuration */
     welcomeConfig?: SidecarWelcomeConfig;
+    /** Content to render below messages, above composer (e.g., playbook card) */
+    auxiliaryContent?: ReactNode;
 }
 
-export function SidecarThread({ welcomeConfig }: SidecarThreadProps) {
+export function SidecarThread({ welcomeConfig, auxiliaryContent }: SidecarThreadProps) {
     return (
         <FileAttachmentProvider>
-            <SidecarThreadInner welcomeConfig={welcomeConfig} />
+            <SidecarThreadInner
+                welcomeConfig={welcomeConfig}
+                auxiliaryContent={auxiliaryContent}
+            />
         </FileAttachmentProvider>
     );
 }
 
-function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
+function SidecarThreadInner({ welcomeConfig, auxiliaryContent }: SidecarThreadProps) {
     const router = useRouter();
     const { messages, isLoading, setInput, append } = useChatContext();
     const { addFiles, addPreUploadedFiles, isUploading } = useFileAttachments();
@@ -220,6 +225,21 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
                     )}
                 </div>
             </div>
+
+            {/* Auxiliary content slot (e.g., playbook card) */}
+            <AnimatePresence>
+                {auxiliaryContent && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: "auto" }}
+                        exit={{ opacity: 0, y: 20, height: 0 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="border-foreground/[0.08] flex-none border-t px-3 py-3"
+                    >
+                        {auxiliaryContent}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Input container - uses @container for responsive Composer layout */}
             <div className="border-foreground/5 dark:bg-card/60 @container flex flex-none items-center justify-center border-t bg-white/60 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl">

@@ -17,11 +17,19 @@
  * - Designed for workbench pages where the sidecar helps with the page's task
  */
 
-import { createContext, useContext, useCallback, useMemo, useEffect } from "react";
+import {
+    createContext,
+    useContext,
+    useCallback,
+    useMemo,
+    useEffect,
+    type ReactNode,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash, X } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import Image from "next/image";
+import type { UIMessage } from "@ai-sdk/react";
 
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -38,7 +46,11 @@ import {
     SheetDescription,
 } from "@/components/ui/sheet";
 import { PortalErrorBoundary } from "@/components/ui/portal-error-boundary";
-import { ConnectRuntimeProvider, useChatContext } from "@/components/connection";
+import {
+    ConnectRuntimeProvider,
+    useChatContext,
+    type Playbook,
+} from "@/components/connection";
 import { SidecarThread } from "./sidecar-thread";
 
 /** Panel width in pixels */
@@ -104,6 +116,14 @@ interface CarmentaSidecarProps {
     title?: string;
     /** Description shown below the title */
     description?: string;
+    /** API endpoint override (default: /api/dcos) */
+    endpoint?: string;
+    /** Initial messages to pre-fill conversation (skips welcome screen) */
+    initialMessages?: UIMessage[];
+    /** Content to render below messages, above composer (e.g., playbook card) */
+    auxiliaryContent?: ReactNode;
+    /** Callback when playbook is extracted (hire wizard) */
+    onPlaybookReady?: (playbook: Playbook) => void;
 }
 
 export function CarmentaSidecar({
@@ -114,6 +134,10 @@ export function CarmentaSidecar({
     welcomeConfig,
     title = "Carmenta",
     description = "Working together",
+    endpoint = "/api/dcos",
+    initialMessages,
+    auxiliaryContent,
+    onPlaybookReady,
 }: CarmentaSidecarProps) {
     // lg breakpoint = 1024px - enough room for meaningful side-by-side
     const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -146,6 +170,10 @@ export function CarmentaSidecar({
                     welcomeConfig={welcomeConfig}
                     title={title}
                     description={description}
+                    endpoint={endpoint}
+                    initialMessages={initialMessages}
+                    auxiliaryContent={auxiliaryContent}
+                    onPlaybookReady={onPlaybookReady}
                 />
             ) : (
                 <MobileSheet
@@ -156,6 +184,10 @@ export function CarmentaSidecar({
                     welcomeConfig={welcomeConfig}
                     title={title}
                     description={description}
+                    endpoint={endpoint}
+                    initialMessages={initialMessages}
+                    auxiliaryContent={auxiliaryContent}
+                    onPlaybookReady={onPlaybookReady}
                 />
             )}
         </SidecarContext.Provider>
@@ -174,6 +206,10 @@ function DesktopSidecar({
     welcomeConfig,
     title,
     description,
+    endpoint,
+    initialMessages,
+    auxiliaryContent,
+    onPlaybookReady,
 }: {
     open: boolean;
     onClose: () => void;
@@ -182,6 +218,10 @@ function DesktopSidecar({
     welcomeConfig?: SidecarWelcomeConfig;
     title: string;
     description: string;
+    endpoint: string;
+    initialMessages?: UIMessage[];
+    auxiliaryContent?: ReactNode;
+    onPlaybookReady?: (playbook: Playbook) => void;
 }) {
     // Automatically push body content when sidecar opens
     useEffect(() => {
@@ -220,9 +260,11 @@ function DesktopSidecar({
         <AnimatePresence>
             {open && (
                 <ConnectRuntimeProvider
-                    endpoint="/api/dcos"
+                    endpoint={endpoint}
                     pageContext={pageContext}
                     onChangesComplete={onChangesComplete}
+                    initialMessages={initialMessages}
+                    onPlaybookReady={onPlaybookReady}
                 >
                     <motion.aside
                         className={cn(
@@ -252,6 +294,7 @@ function DesktopSidecar({
                                 title={title}
                                 description={description}
                                 welcomeConfig={welcomeConfig}
+                                auxiliaryContent={auxiliaryContent}
                             />
                         </PortalErrorBoundary>
                     </motion.aside>
@@ -273,6 +316,10 @@ function MobileSheet({
     welcomeConfig,
     title,
     description,
+    endpoint,
+    initialMessages,
+    auxiliaryContent,
+    onPlaybookReady,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -281,6 +328,10 @@ function MobileSheet({
     welcomeConfig?: SidecarWelcomeConfig;
     title: string;
     description: string;
+    endpoint: string;
+    initialMessages?: UIMessage[];
+    auxiliaryContent?: ReactNode;
+    onPlaybookReady?: (playbook: Playbook) => void;
 }) {
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -298,15 +349,18 @@ function MobileSheet({
                     onDismiss={() => onOpenChange(false)}
                 >
                     <ConnectRuntimeProvider
-                        endpoint="/api/dcos"
+                        endpoint={endpoint}
                         pageContext={pageContext}
                         onChangesComplete={onChangesComplete}
+                        initialMessages={initialMessages}
+                        onPlaybookReady={onPlaybookReady}
                     >
                         <SidecarInner
                             onClose={() => onOpenChange(false)}
                             title={title}
                             description={description}
                             welcomeConfig={welcomeConfig}
+                            auxiliaryContent={auxiliaryContent}
                             isMobile
                         />
                     </ConnectRuntimeProvider>
@@ -324,12 +378,14 @@ function SidecarInner({
     title,
     description,
     welcomeConfig,
+    auxiliaryContent,
     isMobile = false,
 }: {
     onClose: () => void;
     title: string;
     description: string;
     welcomeConfig?: SidecarWelcomeConfig;
+    auxiliaryContent?: ReactNode;
     isMobile?: boolean;
 }) {
     const { messages, setMessages, stop } = useChatContext();
@@ -402,7 +458,10 @@ function SidecarInner({
 
             {/* Chat interface with context-aware welcome */}
             <div className="@container min-h-0 flex-1 overflow-hidden">
-                <SidecarThread welcomeConfig={welcomeConfig} />
+                <SidecarThread
+                    welcomeConfig={welcomeConfig}
+                    auxiliaryContent={auxiliaryContent}
+                />
             </div>
         </TooltipProvider>
     );
