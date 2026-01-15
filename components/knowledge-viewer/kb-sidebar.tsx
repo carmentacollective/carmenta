@@ -192,7 +192,7 @@ function DocumentItem({
         <button
             onClick={() => onSelect(doc.path)}
             data-tooltip-id={!mobile && doc.description ? "tip" : undefined}
-            data-tooltip-content={doc.description ?? undefined}
+            data-tooltip-content={doc.description || undefined}
             className={cn(
                 "flex w-full items-center gap-3 text-left transition-colors",
                 mobile
