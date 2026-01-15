@@ -192,6 +192,7 @@ const FileTreeItem = memo(function FileTreeItem({
     isSelected,
     isExpanded,
     isLoading,
+    isError,
     isFocused,
     onSelect,
     onToggle,
@@ -204,6 +205,7 @@ const FileTreeItem = memo(function FileTreeItem({
     isSelected: boolean;
     isExpanded: boolean;
     isLoading: boolean;
+    isError?: boolean;
     isFocused: boolean;
     onSelect: () => void;
     onToggle: () => void;
@@ -295,9 +297,14 @@ const FileTreeItem = memo(function FileTreeItem({
                 )}
 
                 {/* Filename */}
-                <span className="truncate">
+                <span className={cn("truncate", isError && "text-destructive")}>
                     <HighlightMatch text={file.name} query={searchQuery} />
                 </span>
+
+                {/* Error indicator for failed directory loads */}
+                {isError && isDirectory && (
+                    <span className="text-destructive text-xs">(Failed to load)</span>
+                )}
 
                 {/* File size for files - always visible on mobile, hover on desktop */}
                 {!isDirectory && file.size !== undefined && (
@@ -379,6 +386,8 @@ export function FileTree({
     isRoot = true,
 }: FileTreeProps) {
     const [loadingDirs, setLoadingDirs] = useState<Set<string>>(new Set());
+    // Track directories that failed to load
+    const [failedDirs, setFailedDirs] = useState<Set<string>>(new Set());
     // Internal focus state (used if no external control)
     const [internalFocusedPath, setInternalFocusedPath] = useState<string | null>(null);
     const focusedPath = externalFocusedPath ?? internalFocusedPath;
@@ -524,10 +533,24 @@ export function FileTree({
             if (isCurrentlyExpanded) {
                 onToggleDir(path);
             } else {
+                // Clear any previous error for this path
+                setFailedDirs((prev) => {
+                    if (prev.has(path)) {
+                        const next = new Set(prev);
+                        next.delete(path);
+                        return next;
+                    }
+                    return prev;
+                });
+
                 if (!childrenCache.has(path)) {
                     setLoadingDirs((prev) => new Set(prev).add(path));
                     try {
                         await loadChildren(path);
+                    } catch {
+                        // Track failed directory loads
+                        setFailedDirs((prev) => new Set(prev).add(path));
+                        return; // Don't expand on error
                     } finally {
                         setLoadingDirs((prev) => {
                             const next = new Set(prev);
@@ -557,6 +580,7 @@ export function FileTree({
         sortedFiles.map((file) => {
             const isExpanded = expandedDirs.has(file.path);
             const isLoading = loadingDirs.has(file.path);
+            const isError = failedDirs.has(file.path);
             const children = childrenCache.get(file.path);
             const isFocused = focusedPath === file.path;
 
@@ -567,6 +591,7 @@ export function FileTree({
                     isSelected={selectedPath === file.path}
                     isExpanded={isExpanded}
                     isLoading={isLoading}
+                    isError={isError}
                     isFocused={isFocused}
                     onSelect={() => {
                         setFocusedPath(file.path);
