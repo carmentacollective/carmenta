@@ -434,6 +434,19 @@ const DEFAULT_OVERRIDES: ModelOverrides = {
     reasoning: null,
 };
 
+/**
+ * Playbook type for AI Team hiring wizard
+ */
+export interface Playbook {
+    name: string;
+    description: string;
+    schedule: {
+        cron: string;
+        displayText: string;
+    };
+    prompt: string;
+}
+
 interface ConnectRuntimeProviderProps {
     children: ReactNode;
     /**
@@ -450,6 +463,8 @@ interface ConnectRuntimeProviderProps {
     pageContext?: string;
     /** Callback when agent makes changes */
     onChangesComplete?: () => void;
+    /** Callback when playbook is extracted (hire wizard) */
+    onPlaybookReady?: (playbook: Playbook) => void;
 }
 
 /**
@@ -874,6 +889,7 @@ function ConnectRuntimeProviderInner({
     initialMessages: initialMessagesProp,
     pageContext,
     onChangesComplete,
+    onPlaybookReady,
 }: ConnectRuntimeProviderProps) {
     const { setConcierge } = useConcierge();
 
@@ -1228,6 +1244,26 @@ function ConnectRuntimeProviderInner({
                             `/connection/${slug}/${connectionId}`
                         );
                     }
+                }
+            }
+
+            // Handle playbook data part (hire wizard)
+            if (part?.type === "data-playbook" && onPlaybookReady) {
+                const playbook = part?.data as Playbook;
+                // Validate all required playbook fields before accepting
+                if (
+                    playbook?.name &&
+                    playbook?.description &&
+                    playbook?.schedule &&
+                    playbook?.prompt
+                ) {
+                    logger.info(
+                        { playbookName: playbook.name },
+                        "Received playbook from hire wizard"
+                    );
+                    onPlaybookReady(playbook);
+                } else {
+                    logger.warn({ playbook }, "Received incomplete playbook, ignoring");
                 }
             }
 
@@ -1676,6 +1712,7 @@ export function ConnectRuntimeProvider({
     initialMessages,
     pageContext,
     onChangesComplete,
+    onPlaybookReady,
 }: ConnectRuntimeProviderProps) {
     return (
         <ConciergeWrapper>
@@ -1687,6 +1724,7 @@ export function ConnectRuntimeProvider({
                         initialMessages={initialMessages}
                         pageContext={pageContext}
                         onChangesComplete={onChangesComplete}
+                        onPlaybookReady={onPlaybookReady}
                     >
                         {children}
                     </ConnectRuntimeProviderInner>

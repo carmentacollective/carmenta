@@ -1,33 +1,46 @@
 /**
  * AI Team Hiring Wizard API
  *
- * Two-phase approach:
- * 1. Conversational: Understand what the user needs (no structured output)
- * 2. Extraction: When ready, use generateObject to extract the playbook
+ * Streaming endpoint for the hire wizard. Two-phase approach:
+ * 1. Conversational: Stream responses to understand what the user needs
+ * 2. Extraction: When READY_TO_HIRE signal detected, extract playbook and emit as data part
  *
- * The wizard signals readiness by including "READY_TO_HIRE" in its response.
- * We then make a separate structured extraction call.
+ * Compatible with useChat / ConnectRuntimeProvider for unified chat interface.
  */
 
-import { NextResponse } from "next/server";
-import { generateText, generateObject } from "ai";
+import {
+    createUIMessageStream,
+    createUIMessageStreamResponse,
+    streamText,
+    generateObject,
+    type UIMessage,
+} from "ai";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 import { logger } from "@/lib/logger";
+import {
+    unauthorizedResponse,
+    validationErrorResponse,
+    serverErrorResponse,
+} from "@/lib/api/responses";
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { getConnectedServices } from "@/lib/integrations/connection-manager";
 
+export const maxDuration = 60;
+
+/**
+ * UIMessage schema for request validation
+ */
+const messageSchema = z.object({
+    id: z.string(),
+    role: z.enum(["user", "assistant", "system"]),
+    parts: z.array(z.unknown()).min(1),
+}) as z.ZodType<UIMessage>;
+
 const requestSchema = z.object({
-    messages: z
-        .array(
-            z.object({
-                role: z.enum(["user", "assistant"]),
-                content: z.string(),
-            })
-        )
-        .min(1, "At least one message is required"),
+    messages: z.array(messageSchema).min(1, "At least one message is required"),
 });
 
 /**
@@ -69,11 +82,12 @@ The user has connected: {{INTEGRATIONS}}
 </connected-integrations>
 
 <when-ready>
-When you have enough information to create the automation, summarize what you understood and end your response with the exact phrase:
+When you have enough information to create the automation, summarize what you understood and end your response with:
 
 **Ready to hire your new team member!**
 
-READY_TO_HIRE
+Then on a new line, add this EXACT HTML comment (invisible to user but system detects it):
+<!-- READY_TO_HIRE -->
 
 This signals that you've gathered enough info. The system will then extract the details automatically.
 </when-ready>
@@ -107,28 +121,60 @@ Based on the conversation, extract:
 - The detailed instructions (prompt) for the automation
 - Which integrations are needed`;
 
+/**
+ * Helper to extract text content from UIMessage parts
+ */
+function getMessageText(message: UIMessage): string {
+    if (!message.parts || !Array.isArray(message.parts)) return "";
+    return message.parts
+        .filter(
+            (part): part is { type: "text"; text: string } =>
+                typeof part === "object" &&
+                part !== null &&
+                "type" in part &&
+                part.type === "text" &&
+                "text" in part
+        )
+        .map((part) => part.text)
+        .join("");
+}
+
 export async function POST(request: Request) {
     const { userId } = await auth();
-
-    if (!userId) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    let userEmail: string | undefined;
 
     try {
-        const body = await request.json();
-        const { messages } = requestSchema.parse(body);
+        if (!userId) {
+            return unauthorizedResponse();
+        }
 
         const user = await currentUser();
-        const userEmail = user?.emailAddresses[0]?.emailAddress;
+        userEmail = user?.emailAddresses[0]?.emailAddress;
+
+        if (!userEmail) {
+            return validationErrorResponse(null, "Account missing email address");
+        }
+
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch {
+            return validationErrorResponse(null, "Invalid JSON in request body");
+        }
+
+        const parseResult = requestSchema.safeParse(body);
+        if (!parseResult.success) {
+            return validationErrorResponse(parseResult.error.flatten());
+        }
+
+        const { messages } = parseResult.data;
 
         // Get user's connected integrations
         let connectedIntegrations: string[] = [];
-        if (userEmail) {
-            try {
-                connectedIntegrations = await getConnectedServices(userEmail);
-            } catch {
-                // Non-critical - continue without integration info
-            }
+        try {
+            connectedIntegrations = await getConnectedServices(userEmail);
+        } catch {
+            // Non-critical - continue without integration info
         }
 
         const integrationList =
@@ -144,73 +190,130 @@ export async function POST(request: Request) {
 
         const gateway = getGatewayClient();
 
-        // Phase 1: Conversational response
-        const result = await generateText({
-            model: gateway(translateModelId("anthropic/claude-sonnet-4.5")),
-            messages: [{ role: "system", content: systemPrompt }, ...messages],
-            providerOptions: {
-                gateway: {
-                    models: [
-                        "anthropic/claude-sonnet-4.5",
-                        "google/gemini-3-pro-preview",
-                    ].map(translateModelId),
-                },
-            },
-        });
-
-        // Check if wizard signaled readiness
-        const isReady = result.text.includes("READY_TO_HIRE");
-        let playbook = null;
-
-        if (isReady) {
-            // Phase 2: Structured extraction - include all messages with proper labels
-            const conversationContext = messages
-                .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
-                .join("\n\n");
-
-            const extraction = await generateObject({
-                model: gateway(translateModelId("anthropic/claude-sonnet-4.5")),
-                schema: playbookSchema,
-                prompt: `${EXTRACTION_PROMPT}\n\nConversation:\n${conversationContext}\n\nAssistant's final response:\n${result.text}`,
-                providerOptions: {
-                    gateway: {
-                        models: [
-                            "anthropic/claude-sonnet-4.5",
-                            "google/gemini-3-pro-preview",
-                        ].map(translateModelId),
-                    },
-                },
-            });
-
-            playbook = extraction.object;
-        }
-
-        // Clean up the response - remove the READY_TO_HIRE marker
-        const cleanContent = result.text.replace(/\n*READY_TO_HIRE\n*/g, "").trim();
+        // Convert UIMessages to simple format for the model
+        const simpleMessages = messages.map((m) => ({
+            role: m.role as "user" | "assistant" | "system",
+            content: getMessageText(m),
+        }));
 
         logger.info(
             {
                 userId,
+                userEmail,
                 messageCount: messages.length,
-                hasPlaybook: !!playbook,
             },
-            "Hiring wizard response generated"
+            "Hiring wizard request received"
         );
 
-        return NextResponse.json({
-            content: cleanContent,
-            playbook,
+        // Create streaming response
+        const stream = createUIMessageStream({
+            execute: async ({ writer }) => {
+                try {
+                    // Stream the conversational response
+                    const result = streamText({
+                        model: gateway(translateModelId("anthropic/claude-sonnet-4.5")),
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            ...simpleMessages,
+                        ],
+                        providerOptions: {
+                            gateway: {
+                                models: [
+                                    "anthropic/claude-sonnet-4.5",
+                                    "google/gemini-3-pro-preview",
+                                ].map(translateModelId),
+                            },
+                        },
+                        onFinish: async ({ text }) => {
+                            try {
+                                // Check if wizard signaled readiness (HTML comment won't render)
+                                const isReady = text.includes("<!-- READY_TO_HIRE -->");
+
+                                if (isReady) {
+                                    // Build conversation context for extraction
+                                    const conversationContext = simpleMessages
+                                        .map(
+                                            (m) =>
+                                                `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`
+                                        )
+                                        .join("\n\n");
+
+                                    // Extract playbook
+                                    const extraction = await generateObject({
+                                        model: gateway(
+                                            translateModelId(
+                                                "anthropic/claude-sonnet-4.5"
+                                            )
+                                        ),
+                                        schema: playbookSchema,
+                                        prompt: `${EXTRACTION_PROMPT}\n\nConversation:\n${conversationContext}\n\nAssistant's final response:\n${text}`,
+                                        providerOptions: {
+                                            gateway: {
+                                                models: [
+                                                    "anthropic/claude-sonnet-4.5",
+                                                    "google/gemini-3-pro-preview",
+                                                ].map(translateModelId),
+                                            },
+                                        },
+                                    });
+
+                                    // Emit playbook as data part
+                                    writer.write({
+                                        type: "data-playbook" as const,
+                                        data: extraction.object,
+                                    });
+
+                                    logger.info(
+                                        {
+                                            userId,
+                                            playbook: extraction.object.name,
+                                        },
+                                        "Playbook extracted from hiring conversation"
+                                    );
+                                }
+                            } catch (extractionError) {
+                                logger.error(
+                                    { error: extractionError, userId },
+                                    "Playbook extraction failed"
+                                );
+                                Sentry.captureException(extractionError, {
+                                    tags: {
+                                        route: "/api/ai-team/hire",
+                                        action: "extract-playbook",
+                                    },
+                                    extra: { userId, userEmail },
+                                });
+                            }
+                        },
+                    });
+
+                    // Merge the stream (READY_TO_HIRE marker is an HTML comment, won't render)
+                    writer.merge(result.toUIMessageStream({ sendReasoning: false }));
+                } catch (streamError) {
+                    logger.error(
+                        { error: streamError, userId },
+                        "Stream execution failed"
+                    );
+                    Sentry.captureException(streamError, {
+                        tags: { route: "/api/ai-team/hire", action: "stream" },
+                        extra: { userId, userEmail },
+                    });
+                    throw streamError;
+                }
+            },
         });
+
+        return createUIMessageStreamResponse({ stream });
     } catch (error) {
-        logger.error({ error, userId }, "Hiring wizard error");
+        logger.error({ error, userId, userEmail }, "Hiring wizard error");
         Sentry.captureException(error, {
             tags: { route: "/api/ai-team/hire", action: "generate" },
-            extra: { userId },
+            extra: { userId, userEmail },
         });
 
-        return NextResponse.json(
-            { error: "Failed to generate response" },
-            { status: 500 }
-        );
+        return serverErrorResponse(error, {
+            userEmail,
+            route: "ai-team-hire",
+        });
     }
 }
