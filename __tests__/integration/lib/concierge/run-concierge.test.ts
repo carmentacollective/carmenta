@@ -8,10 +8,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { UIMessage } from "ai";
 
 // Mock generateText and tool before importing the module under test
-vi.mock("ai", () => ({
-    generateText: vi.fn(),
-    tool: vi.fn((config) => config), // Pass-through mock for tool definition
-}));
+vi.mock("ai", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("ai")>();
+    return {
+        ...actual,
+        generateText: vi.fn(),
+        tool: vi.fn((config) => config), // Pass-through mock for tool definition
+    };
+});
 
 // Mock fs/promises for rubric loading
 vi.mock("fs/promises", () => {

@@ -10,7 +10,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 
 import * as Sentry from "@sentry/nextjs";
-import { generateText, tool, type UIMessage } from "ai";
+import { APICallError, generateText, tool, type UIMessage } from "ai";
 import { z } from "zod";
 
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
@@ -83,7 +83,9 @@ export {
     detectAttachments,
     buildReasoningConfig,
     conciergeSchema,
+    categorizeError,
 };
+export type { ConciergeErrorCategory, CategorizedError };
 
 /** Cache for the rubric content to avoid repeated file reads */
 let rubricCache: string | null = null;
@@ -107,6 +109,113 @@ async function getRubricContent(): Promise<string> {
  */
 export function clearRubricCache(): void {
     rubricCache = null;
+}
+
+/**
+ * Error categories for concierge failures.
+ * Helps distinguish transient issues from config/gateway problems.
+ */
+type ConciergeErrorCategory =
+    | "rate_limit" // 429 - transient, will clear
+    | "server_error" // 5xx - transient, can retry
+    | "malformed_response" // Gateway returned invalid format
+    | "auth_error" // 401/403 - config issue
+    | "timeout" // Request timed out
+    | "unknown"; // Catch-all
+
+interface CategorizedError {
+    category: ConciergeErrorCategory;
+    message: string;
+    isRetryable: boolean;
+    statusCode?: number;
+}
+
+/**
+ * Categorize an error for better observability and alerting.
+ * Helps Site Keeper distinguish transient issues from real problems.
+ */
+function categorizeError(error: unknown): CategorizedError {
+    const message = error instanceof Error ? error.message : String(error);
+
+    // AI SDK's APICallError includes status code and retryable flag
+    if (APICallError.isInstance(error)) {
+        const statusCode = error.statusCode;
+
+        if (statusCode === 429) {
+            return {
+                category: "rate_limit",
+                message,
+                isRetryable: true,
+                statusCode,
+            };
+        }
+
+        if (statusCode === 401 || statusCode === 403) {
+            return {
+                category: "auth_error",
+                message,
+                isRetryable: false,
+                statusCode,
+            };
+        }
+
+        if (statusCode && statusCode >= 500) {
+            return {
+                category: "server_error",
+                message,
+                isRetryable: true,
+                statusCode,
+            };
+        }
+
+        // APICallError without specific status - check message
+        if (message.includes("Invalid") || message.includes("malformed")) {
+            return {
+                category: "malformed_response",
+                message,
+                isRetryable: false,
+                statusCode,
+            };
+        }
+
+        return {
+            category: "unknown",
+            message,
+            isRetryable: error.isRetryable ?? false,
+            statusCode,
+        };
+    }
+
+    // Check for timeout patterns in generic errors
+    if (
+        message.toLowerCase().includes("timeout") ||
+        message.toLowerCase().includes("timed out")
+    ) {
+        return {
+            category: "timeout",
+            message,
+            isRetryable: true,
+        };
+    }
+
+    // Check for malformed response patterns
+    if (
+        message.includes("Invalid error response format") ||
+        message.includes("Invalid response") ||
+        message.includes("malformed")
+    ) {
+        return {
+            category: "malformed_response",
+            message,
+            isRetryable: false,
+        };
+    }
+
+    return {
+        category: "unknown",
+        message,
+        isRetryable: false,
+    };
 }
 
 /**
@@ -732,26 +841,31 @@ Return ONLY the JSON configuration. No markdown code fences, no explanations, no
 
                 return conciergeResult;
             } catch (error) {
-                const errorMessage =
-                    error instanceof Error ? error.message : String(error);
                 const errorName = error instanceof Error ? error.name : "UnknownError";
+                const categorized = categorizeError(error);
 
                 logger.error(
                     {
-                        error: errorMessage,
+                        error: categorized.message,
                         errorType: errorName,
+                        errorCategory: categorized.category,
+                        isRetryable: categorized.isRetryable,
+                        statusCode: categorized.statusCode,
                     },
-                    "Concierge failed, using defaults"
+                    `Concierge failed (${categorized.category}), using defaults`
                 );
 
                 Sentry.captureException(error, {
                     tags: {
                         component: "concierge",
                         error_type: errorName,
+                        error_category: categorized.category,
+                        is_retryable: String(categorized.isRetryable),
                     },
                     extra: {
                         conciergeModel: CONCIERGE_MODEL,
                         messageCount: messages.length,
+                        statusCode: categorized.statusCode,
                     },
                 });
 
