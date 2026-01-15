@@ -184,14 +184,6 @@ The command aggregates all agent findings into a prioritized report:
 | missing-haptic      | 3           | 3              |
 ```
 
-### Machine-Readable Output
-
-Optionally output JSON for tooling integration:
-
-```bash
-/polish-sweep --json > polish-report.json
-```
-
 ## Implementation
 
 ### Command: `/polish-sweep`
@@ -235,9 +227,9 @@ Users can focus the sweep:
 
 ```bash
 /polish-sweep                     # Full sweep (components + app)
-/polish-sweep components/tools    # Just tools directory
-/polish-sweep --high-only         # Only high-severity issues
-/polish-sweep --pattern=tooltip   # Filter to specific pattern
+/polish-sweep components          # Just components directory
+/polish-sweep app                 # Just app directory
+/polish-sweep components/tools    # Specific subdirectory
 ```
 
 ## Current Codebase Issues (From Analysis)
