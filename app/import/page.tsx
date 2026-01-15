@@ -409,6 +409,19 @@ export default function ImportPage() {
         }
     }, []);
 
+    // Retry from error state - preserves filters and parsed data if available
+    // Used when import fails but user has already done filter work they don't want to lose
+    const handleRetryFromError = useCallback(() => {
+        setError(null);
+        // If we have parsed data, go back to preview state (preserves filters)
+        // Otherwise, do a full reset (parsing failed, no data to preserve)
+        if (parsedData) {
+            setState("preview");
+        } else {
+            handleReset();
+        }
+    }, [parsedData, handleReset]);
+
     const handleImport = useCallback(async () => {
         if (filteredConversations.length === 0) {
             setError("We need at least one chat to bring over. Loosen those filters?");
@@ -460,20 +473,44 @@ export default function ImportPage() {
         }
     }, [filteredConversations, selectedProvider, userSettings]);
 
-    const handleSelectProvider = useCallback((provider: Provider) => {
-        setSelectedProvider(provider);
-        setState("idle");
-        setError(null);
-        setParsedData(null);
-        setFullConversations([]);
-        setUserSettings(null);
-        setFilters(DEFAULT_FILTERS);
-        // Reset discovery state when switching providers
-        setDiscoveryState("idle");
-        setDiscoveryJobId(null);
-        setExtractionStats(null);
-        setIsApprovingAll(false);
-    }, []);
+    // Check if user has done work that would be lost (filters modified or data parsed)
+    const hasUnsavedWork = useMemo(() => {
+        const filtersModified =
+            filters.dateStart !== DEFAULT_FILTERS.dateStart ||
+            filters.dateEnd !== DEFAULT_FILTERS.dateEnd ||
+            filters.keywordInclude !== DEFAULT_FILTERS.keywordInclude ||
+            filters.keywordExclude !== DEFAULT_FILTERS.keywordExclude ||
+            filters.minMessages !== DEFAULT_FILTERS.minMessages ||
+            filters.maxMessages !== DEFAULT_FILTERS.maxMessages ||
+            filters.customGptOnly !== DEFAULT_FILTERS.customGptOnly;
+        return filtersModified || parsedData !== null;
+    }, [filters, parsedData]);
+
+    const handleSelectProvider = useCallback(
+        (provider: Provider) => {
+            // If user has work in progress, confirm before losing it
+            if (hasUnsavedWork) {
+                const confirmed = window.confirm(
+                    "Switching providers will clear your current import. Continue?"
+                );
+                if (!confirmed) return;
+            }
+
+            setSelectedProvider(provider);
+            setState("idle");
+            setError(null);
+            setParsedData(null);
+            setFullConversations([]);
+            setUserSettings(null);
+            setFilters(DEFAULT_FILTERS);
+            // Reset discovery state when switching providers
+            setDiscoveryState("idle");
+            setDiscoveryJobId(null);
+            setExtractionStats(null);
+            setIsApprovingAll(false);
+        },
+        [hasUnsavedWork]
+    );
 
     // Discovery handlers
     const handleBeginDiscovery = useCallback(async () => {
@@ -718,13 +755,19 @@ export default function ImportPage() {
                                     weight="duotone"
                                 />
                                 <p className="mt-4 font-medium">{error}</p>
-                                <Button
-                                    variant="outline"
-                                    className="mt-4"
-                                    onClick={handleReset}
-                                >
-                                    Try Again
-                                </Button>
+                                <div className="mt-4 flex gap-2">
+                                    <Button
+                                        variant="default"
+                                        onClick={handleRetryFromError}
+                                    >
+                                        {parsedData ? "Back to Preview" : "Try Again"}
+                                    </Button>
+                                    {parsedData && (
+                                        <Button variant="outline" onClick={handleReset}>
+                                            Start Over
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

@@ -15,7 +15,12 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { XIcon, PencilSimpleIcon, LightningIcon } from "@phosphor-icons/react";
+import {
+    XIcon,
+    PencilSimpleIcon,
+    LightningIcon,
+    ArrowsClockwiseIcon,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -28,6 +33,8 @@ interface MessageQueueDisplayProps {
     onRemove: (id: string) => void;
     /** Edit a queued message */
     onEdit: (id: string, content: string) => void;
+    /** Retry a failed message */
+    onRetry: (id: string) => void;
     /** Interrupt: stop current generation and send this message now */
     onInterrupt?: (message: QueuedMessage) => void;
     /** Whether interrupt is available (AI is streaming) */
@@ -40,6 +47,7 @@ export function MessageQueueDisplay({
     queue,
     onRemove,
     onEdit,
+    onRetry,
     onInterrupt,
     canInterrupt = false,
     processingIndex,
@@ -78,6 +86,7 @@ export function MessageQueueDisplay({
                 {queue.map((message, index) => {
                     const isEditing = editingId === message.id;
                     const isProcessing = processingIndex === index;
+                    const hasError = !!message.error;
 
                     return (
                         <motion.div
@@ -89,19 +98,26 @@ export function MessageQueueDisplay({
                             className={cn(
                                 "group relative flex items-start gap-2 rounded-lg p-2",
                                 "bg-muted/50 border-border/50 border",
-                                isProcessing && "ring-primary/30 ring-2"
+                                isProcessing && "ring-primary/30 ring-2",
+                                hasError && "border-destructive/50 bg-destructive/5"
                             )}
                         >
                             {/* Status badge */}
                             <span
                                 className={cn(
                                     "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium",
-                                    isProcessing
-                                        ? "bg-primary/20 text-primary"
-                                        : "bg-foreground/10 text-foreground/60"
+                                    hasError
+                                        ? "bg-destructive/20 text-destructive"
+                                        : isProcessing
+                                          ? "bg-primary/20 text-primary"
+                                          : "bg-foreground/10 text-foreground/60"
                                 )}
                             >
-                                {isProcessing ? "Sending..." : "Queued"}
+                                {hasError
+                                    ? "Failed"
+                                    : isProcessing
+                                      ? "Sending..."
+                                      : "Queued"}
                             </span>
 
                             {/* Message content or edit field */}
@@ -159,8 +175,29 @@ export function MessageQueueDisplay({
                                         "[@media(hover:none)]:opacity-100"
                                     )}
                                 >
+                                    {/* Retry button - for failed messages */}
+                                    {hasError && (
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <button
+                                                    onClick={() => onRetry(message.id)}
+                                                    className={cn(
+                                                        "flex h-6 w-6 items-center justify-center rounded",
+                                                        "text-foreground/50 hover:bg-primary/20 hover:text-primary",
+                                                        "transition-colors"
+                                                    )}
+                                                >
+                                                    <ArrowsClockwiseIcon className="h-3.5 w-3.5" />
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                Retry sending
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    )}
+
                                     {/* Interrupt button - send this now */}
-                                    {canInterrupt && onInterrupt && (
+                                    {canInterrupt && onInterrupt && !hasError && (
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <button

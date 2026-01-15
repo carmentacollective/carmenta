@@ -27,6 +27,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { SquareIcon, ArrowElbowDownLeftIcon, PlusIcon } from "@phosphor-icons/react";
 
+import { toast } from "sonner";
+
 import { cn } from "@/lib/utils";
 import { CHAT_TEXTAREA_CLASSES } from "@/components/chat";
 import { useMessageQueue, type QueuedMessage } from "@/lib/hooks/use-message-queue";
@@ -106,6 +108,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         useChatContext();
     const {
         addFiles,
+        addPreUploadedFiles,
         isUploading,
         completedFiles,
         clearFiles,
@@ -143,6 +146,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         enqueue: enqueueMessage,
         remove: removeFromQueue,
         edit: editQueuedMessage,
+        retry: retryQueuedMessage,
         isFull: isQueueFull,
         isProcessing: isQueueProcessing,
     } = useMessageQueue({
@@ -154,8 +158,14 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
     // IME composition state
     const [isComposing, setIsComposing] = useState(false);
 
-    // Track last sent message for stop-returns-message behavior
+    // Track last sent message and files for stop-returns-content behavior
     const lastSentMessageRef = useRef<string | null>(null);
+    const lastSentFilesRef = useRef<Array<{
+        url: string;
+        name: string;
+        mediaType: string;
+        size: number;
+    }> | null>(null);
 
     // Prevent double-submit race condition - set synchronously before async append
     const isSubmittingRef = useRef(false);
@@ -288,37 +298,45 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             if (imageFiles.length > 0 || hasLargeText) {
                 e.preventDefault();
 
-                // Collect placeholders to insert at cursor
-                const placeholders: string[] = [];
+                try {
+                    // Collect placeholders to insert at cursor
+                    const placeholders: string[] = [];
 
-                // Process images - each gets its own placeholder
-                if (imageFiles.length > 0) {
-                    for (const imageFile of imageFiles) {
-                        const { placeholder, filename } = getNextPlaceholder(
-                            "image",
-                            imageFile.type
-                        );
-                        // Rename file to match placeholder naming
-                        const renamedFile = new File([imageFile], filename, {
-                            type: imageFile.type,
-                        });
-                        addFiles([renamedFile], placeholder);
+                    // Process images - each gets its own placeholder
+                    if (imageFiles.length > 0) {
+                        for (const imageFile of imageFiles) {
+                            const { placeholder, filename } = getNextPlaceholder(
+                                "image",
+                                imageFile.type
+                            );
+                            // Rename file to match placeholder naming
+                            const renamedFile = new File([imageFile], filename, {
+                                type: imageFile.type,
+                            });
+                            addFiles([renamedFile], placeholder);
+                            placeholders.push(placeholder);
+                        }
+                    }
+
+                    // Process large text as attachment
+                    if (hasLargeText) {
+                        const { placeholder, filename } = getNextPlaceholder("text");
+                        const blob = new Blob([plainText], { type: "text/plain" });
+                        const file = new File([blob], filename, { type: "text/plain" });
+                        addPastedText([file], plainText, placeholder);
                         placeholders.push(placeholder);
                     }
-                }
 
-                // Process large text as attachment
-                if (hasLargeText) {
-                    const { placeholder, filename } = getNextPlaceholder("text");
-                    const blob = new Blob([plainText], { type: "text/plain" });
-                    const file = new File([blob], filename, { type: "text/plain" });
-                    addPastedText([file], plainText, placeholder);
-                    placeholders.push(placeholder);
-                }
-
-                // Insert all placeholders at cursor position
-                if (placeholders.length > 0) {
-                    insertAtCursor(placeholders.join(" "));
+                    // Insert all placeholders at cursor position
+                    if (placeholders.length > 0) {
+                        insertAtCursor(placeholders.join(" "));
+                    }
+                } catch (err) {
+                    logger.error({ error: err }, "Failed to process pasted content");
+                    toast.error("Couldn't process pasted content", {
+                        description: "Try pasting again or attach the file manually.",
+                        duration: 6000,
+                    });
                 }
 
                 return;
@@ -523,14 +541,21 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Check for secret phrases (easter egg effects)
             checkMessage(userText);
 
-            // Capture files before clearing state
+            // Capture files before clearing state (for both send and stop restoration)
             const filesToSend = getFilesToSend(completedFiles).map((f) => ({
                 url: f.url,
                 mediaType: f.mediaType,
                 name: f.name,
             }));
+            // Store files with size info for stop restoration
+            lastSentFilesRef.current = completedFiles.map((f) => ({
+                url: f.url,
+                name: f.name,
+                mediaType: f.mediaType,
+                size: f.size,
+            }));
 
-            // Files clear optimistically (industry standard - don't restore on failure)
+            // Files clear optimistically
             clearFiles();
 
             try {
@@ -595,6 +620,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             setInput(lastSentMessageRef.current);
         }
         lastSentMessageRef.current = null;
+
+        // Restore files for quick correction (only if user hasn't added new files)
+        if (lastSentFilesRef.current?.length && completedFiles.length === 0) {
+            addPreUploadedFiles(lastSentFilesRef.current);
+        }
+        lastSentFilesRef.current = null;
     }, [
         isLoading,
         triggerHaptic,
@@ -604,6 +635,8 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         onMarkMessageStopped,
         input,
         setInput,
+        completedFiles.length,
+        addPreUploadedFiles,
     ]);
 
     // Interrupt: stop current generation and send this message immediately
@@ -848,6 +881,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     queue={messageQueue}
                     onRemove={removeFromQueue}
                     onEdit={editQueuedMessage}
+                    onRetry={retryQueuedMessage}
                     onInterrupt={handleInterrupt}
                     canInterrupt={isLoading}
                     processingIndex={isQueueProcessing ? 0 : undefined}

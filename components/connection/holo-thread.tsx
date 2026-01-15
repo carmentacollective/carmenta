@@ -661,7 +661,11 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
             setEditModeMinWidth(null);
         } catch (err) {
             logger.error({ error: err }, "Failed to save edit");
-            toast.error("Failed to save edit");
+            toast.error("Couldn't save your edit", {
+                description:
+                    "Your changes are still here—try again or press Escape to cancel.",
+                duration: 6000,
+            });
         } finally {
             setIsSubmitting(false);
         }

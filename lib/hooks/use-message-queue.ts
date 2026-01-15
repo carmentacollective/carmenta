@@ -29,6 +29,8 @@ export interface QueuedMessage {
     content: string;
     files?: Array<{ url: string; mediaType: string; name: string }>;
     timestamp: Date;
+    /** Error message if send failed - allows UI to show retry option */
+    error?: string;
 }
 
 export interface UseMessageQueueOptions {
@@ -60,6 +62,8 @@ export interface UseMessageQueueReturn {
     remove: (id: string) => void;
     /** Edit a queued message */
     edit: (id: string, content: string) => void;
+    /** Retry a failed message (clears error and re-processes) */
+    retry: (id: string) => void;
     /** Clear the entire queue */
     clear: () => void;
     /** Whether queue is at max capacity */
@@ -237,6 +241,19 @@ export function useMessageQueue({
         );
     }, []);
 
+    // Retry a failed message - clears error and moves to front for immediate processing
+    const retry = useCallback((id: string) => {
+        setQueue((prev) => {
+            const index = prev.findIndex((msg) => msg.id === id);
+            if (index === -1) return prev;
+
+            // Clear error and move to front
+            const message = { ...prev[index], error: undefined };
+            const rest = prev.filter((msg) => msg.id !== id);
+            return [message, ...rest];
+        });
+    }, []);
+
     // Clear entire queue
     const clear = useCallback(() => {
         setQueue([]);
@@ -253,10 +270,14 @@ export function useMessageQueue({
     const processQueue = useCallback(async () => {
         if (queue.length === 0 || isProcessing) return;
 
+        // Find first message without error (skip failed messages until user retries)
+        const messageIndex = queue.findIndex((msg) => !msg.error);
+        if (messageIndex === -1) return; // All messages have errors
+
         setIsProcessing(true);
         onProcessingStart?.();
 
-        const message = queue[0];
+        const message = queue[messageIndex];
         logger.info(
             { queueLength: queue.length, messageId: message.id },
             "Processing queued message"
@@ -269,13 +290,20 @@ export function useMessageQueue({
                 files: message.files,
             });
             // Remove successfully sent message
-            setQueue((prev) => prev.slice(1));
+            setQueue((prev) => prev.filter((msg) => msg.id !== message.id));
         } catch (error) {
+            const errorMessage =
+                error instanceof Error ? error.message : "Failed to send message";
             logger.error(
                 { error, messageId: message.id },
                 "Failed to send queued message"
             );
-            // Leave message in queue on error - user can retry or remove
+            // Mark message with error so user can see it failed and retry
+            setQueue((prev) =>
+                prev.map((msg) =>
+                    msg.id === message.id ? { ...msg, error: errorMessage } : msg
+                )
+            );
         }
 
         setIsProcessing(false);
@@ -315,6 +343,7 @@ export function useMessageQueue({
         enqueue,
         remove,
         edit,
+        retry,
         clear,
         isFull: queue.length >= MAX_QUEUE_SIZE,
         isProcessing,

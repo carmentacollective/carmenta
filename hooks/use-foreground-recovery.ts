@@ -39,8 +39,10 @@ interface UseForegroundRecoveryOptions {
         title: string | null,
         slug: string
     ) => void;
-    /** Called when background work failed while we were away */
-    onBackgroundFailed: () => void;
+    /** Called when background work failed while we were away
+     * @param partialMessages - Any messages recovered before failure (may be useful for display)
+     */
+    onBackgroundFailed: (partialMessages: UIMessageLike[] | null) => void;
     /** Called when stream was interrupted and server has no continuation */
     onStreamInterrupted?: () => void;
 }
@@ -150,12 +152,12 @@ export function useForegroundRecovery({
                     break;
 
                 case "failed":
-                    // Server failed while we were away
+                    // Server failed while we were away - pass any partial content for recovery
                     logger.warn(
-                        { connectionId: connId },
+                        { connectionId: connId, hasPartialMessages: !!result.messages },
                         "Background work failed while app was backgrounded"
                     );
-                    onBackgroundFailedRef.current();
+                    onBackgroundFailedRef.current(result.messages);
                     break;
 
                 case "idle":
