@@ -290,6 +290,7 @@ function AITeamContent({
             setCarmentaOpen(false);
             setHireMode(false);
             setPlaybook(null);
+            toast.success("New team member hired!");
             setSuccessMessage("New team member hired successfully!");
             onChangesComplete();
         } catch (error) {
@@ -786,7 +787,7 @@ function AITeamContent({
                                             onChange={() =>
                                                 handleToggleAutomation(automation)
                                             }
-                                            disabled={togglingJobs.has(automation.id)}
+                                            loading={togglingJobs.has(automation.id)}
                                             size="sm"
                                         />
                                     </div>
