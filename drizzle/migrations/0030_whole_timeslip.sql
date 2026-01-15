@@ -1,4 +1,4 @@
-CREATE TABLE "push_subscriptions" (
+CREATE TABLE IF NOT EXISTS "push_subscriptions" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "push_subscriptions_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_email" varchar(255) NOT NULL,
 	"subscription" jsonb NOT NULL,
@@ -10,7 +10,11 @@ CREATE TABLE "push_subscriptions" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "push_subscriptions" ADD CONSTRAINT "push_subscriptions_user_email_users_email_fk" FOREIGN KEY ("user_email") REFERENCES "public"."users"("email") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "push_subscriptions_user_email_idx" ON "push_subscriptions" USING btree ("user_email");--> statement-breakpoint
-CREATE UNIQUE INDEX "push_subscriptions_endpoint_idx" ON "push_subscriptions" USING btree ("endpoint");--> statement-breakpoint
-CREATE INDEX "push_subscriptions_user_active_idx" ON "push_subscriptions" USING btree ("user_email","is_active");
+DO $$ BEGIN
+    ALTER TABLE "push_subscriptions" ADD CONSTRAINT "push_subscriptions_user_email_users_email_fk" FOREIGN KEY ("user_email") REFERENCES "public"."users"("email") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "push_subscriptions_user_email_idx" ON "push_subscriptions" USING btree ("user_email");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "push_subscriptions_endpoint_idx" ON "push_subscriptions" USING btree ("endpoint");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "push_subscriptions_user_active_idx" ON "push_subscriptions" USING btree ("user_email","is_active");
