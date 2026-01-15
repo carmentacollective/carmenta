@@ -162,17 +162,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         const Comp = asChild ? Slot : "button";
 
-        // Loading content: spinner + optional text
-        const loadingContent = loading ? (
-            <>
-                <ButtonSpinner className={cn(spinnerSize, loadingText && "mr-2")} />
-                {loadingText ?? children}
-            </>
-        ) : (
-            children
-        );
-
-        // For asChild, merge refs so ripple effect works
+        // For asChild, pass children directly (Fragment breaks Radix Slot pattern)
+        // The disabled state still applies via isDisabled
         if (asChild) {
             return (
                 <Comp
@@ -196,10 +187,20 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                     disabled={isDisabled}
                     {...props}
                 >
-                    {loadingContent}
+                    {children}
                 </Comp>
             );
         }
+
+        // Loading content: spinner + optional text (only for non-asChild buttons)
+        const loadingContent = loading ? (
+            <>
+                <ButtonSpinner className={cn(spinnerSize, loadingText && "mr-2")} />
+                {loadingText ?? children}
+            </>
+        ) : (
+            children
+        );
 
         return (
             <button

@@ -286,12 +286,11 @@ function AITeamContent({
                 throw new Error(errorMessage);
             }
 
-            // Success - close sidecar and show message
+            // Success - close sidecar and show toast
             setCarmentaOpen(false);
             setHireMode(false);
             setPlaybook(null);
             toast.success("New team member hired!");
-            setSuccessMessage("New team member hired successfully!");
             onChangesComplete();
         } catch (error) {
             logger.error({ error }, "Failed to hire automation");
