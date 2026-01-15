@@ -203,7 +203,10 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
     }, []);
 
     // Stable callback ref to prevent effect re-runs during drag
-    const handleDragError = useCallback((error: string) => toast.error(error), []);
+    const handleDragError = useCallback(
+        (error: string) => toast.error(error, { duration: 6000 }),
+        []
+    );
 
     // Viewport-wide drag-drop for file uploads
     const { isDragging } = useDragDrop({

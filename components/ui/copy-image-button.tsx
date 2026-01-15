@@ -140,8 +140,8 @@ export function CopyImageButton({
                     tags: { component: "copy-image-button", action: "copy" },
                 });
 
-                // User-friendly error feedback
-                toast.error("Couldn't copy image to clipboard");
+                // User-friendly error feedback - 6s for errors so users can read
+                toast.error("Couldn't copy image to clipboard", { duration: 6000 });
             }
         },
         [src, triggerHaptic, onCopySuccess]

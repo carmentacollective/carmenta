@@ -513,9 +513,15 @@ function IntegrationsContent() {
                 <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-500/10 p-4 text-amber-700 dark:text-amber-400">
                     <div className="flex items-center gap-3">
                         <ArrowCounterClockwiseIcon className="h-5 w-5 flex-shrink-0" />
-                        <span className="text-sm font-medium">
-                            Didn't finish connecting {abandonedServiceName}?
-                        </span>
+                        <div className="text-sm">
+                            <span className="font-medium">
+                                {abandonedServiceName} connection incomplete
+                            </span>
+                            <span className="text-amber-600/80 dark:text-amber-400/70">
+                                {" "}
+                                — the authorization window was closed
+                            </span>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button

@@ -601,15 +601,21 @@ function McpConfigContent({
                 } else {
                     const data = await response.json().catch(() => ({}));
                     const errorMessage =
-                        data.error ?? "Couldn't remove server. Try again?";
-                    toast.error(errorMessage);
+                        data.error ??
+                        "Couldn't remove server. The config might be locked.";
+                    toast.error(errorMessage, { duration: 6000 });
                     logger.warn(
                         { serverId: server.id, status: response.status },
                         "Server delete failed"
                     );
                 }
             } catch (error) {
-                toast.error("Something went wrong. Try again?");
+                toast.error(
+                    "Network error removing server. Check the connection and try again.",
+                    {
+                        duration: 6000,
+                    }
+                );
                 logger.error({ error, serverId: server.id }, "Failed to delete server");
                 Sentry.captureException(error, {
                     tags: { component: "mcp-config-page", action: "delete_server" },
