@@ -198,11 +198,12 @@ function categorizeError(error: unknown): CategorizedError {
         };
     }
 
-    // Check for malformed response patterns
+    // Check for malformed response patterns (case-insensitive for consistency)
+    const lowerMessage = message.toLowerCase();
     if (
-        message.includes("Invalid error response format") ||
-        message.includes("Invalid response") ||
-        message.includes("malformed")
+        lowerMessage.includes("invalid error response format") ||
+        lowerMessage.includes("invalid response") ||
+        lowerMessage.includes("malformed")
     ) {
         return {
             category: "malformed_response",

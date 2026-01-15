@@ -447,17 +447,18 @@ describe("parseConciergeHeaders", () => {
 });
 
 describe("categorizeError", () => {
-    it("categorizes rate limit errors", () => {
-        // Simulate an API error with 429 status
+    it("falls through to unknown for non-APICallError with status code", () => {
+        // APICallError.isInstance() check fails for generic Error objects,
+        // so status codes on generic errors don't trigger rate_limit/server_error categories.
+        // This documents that behavior - only real APICallError instances get status code handling.
         const error = new Error("Too many requests");
         (error as any).statusCode = 429;
         (error as any).isRetryable = true;
 
-        // categorizeError checks for APICallError.isInstance, so generic errors
-        // won't match. Let's test the message-based fallbacks.
         const result = categorizeError(error);
 
-        // Generic error falls through to unknown
+        // Generic error falls through to unknown (not rate_limit)
+        expect(result.category).toBe("unknown");
         expect(result.message).toBe("Too many requests");
     });
 
