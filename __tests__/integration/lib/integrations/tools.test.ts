@@ -145,11 +145,13 @@ describe("Integration Tool Loading", () => {
             const tools = await getIntegrationTools(user.email);
             const coinmarketcapTool = tools.coinmarketcap;
 
-            // Description should be non-empty and mention actions
+            // Description should be non-empty and list top operations
             expect(coinmarketcapTool.description).toBeDefined();
             if (coinmarketcapTool.description) {
                 expect(coinmarketcapTool.description.length).toBeGreaterThan(0);
-                expect(coinmarketcapTool.description.toLowerCase()).toContain("action");
+                expect(coinmarketcapTool.description.toLowerCase()).toContain(
+                    "operations"
+                );
             }
         });
     });

@@ -43,12 +43,14 @@ const mcpGatewaySchema = z.object({
     action: z
         .string()
         .describe(
-            "Action to perform. Use 'describe' to see available operations from this MCP server."
+            "Action to perform. Use 'describe' for all operations, or 'describe' with params.operation for one."
         ),
     params: z
         .record(z.string(), z.unknown())
         .optional()
-        .describe("Parameters for the action (see describe for details)"),
+        .describe(
+            "Parameters for the action. For describe: {operation: 'name'} for single operation details."
+        ),
 });
 
 // ============================================================================
@@ -335,11 +337,11 @@ function buildToolDescription(server: McpServer): string {
     if (topTools.length > 0) {
         const remaining = toolCount - topTools.length;
         const moreText = remaining > 0 ? ` +${remaining} more` : "";
-        return `${serverName}. Top operations: ${topTools.join(", ")}${moreText}. Use action='describe' for full list.`;
+        return `${serverName}. Top operations: ${topTools.join(", ")}${moreText}`;
     }
 
-    const toolText = toolCount > 0 ? ` (${toolCount} tools)` : "";
-    return `${serverName}${toolText}. Use action='describe' to see available operations.`;
+    const toolText = toolCount > 0 ? ` (${toolCount} operations)` : "";
+    return `${serverName}${toolText}`;
 }
 
 export async function describeMcpOperations(
@@ -432,11 +434,34 @@ export async function executeMcpAction(
     const childLogger = logger.child({ serverIdentifier, action, userEmail });
 
     if (action === "describe") {
+        const operationName = params?.operation as string | undefined;
         const description = await describeMcpOperations(
             serverIdentifier,
             userEmail,
             accountId
         );
+
+        // Targeted describe: return just one operation
+        if (operationName) {
+            const tool = description.tools.find(
+                (t) => t.name === operationName || t.name.endsWith(`.${operationName}`)
+            );
+            if (tool) {
+                return {
+                    success: true,
+                    result: {
+                        server: description.server,
+                        operation: tool,
+                    },
+                };
+            }
+            return {
+                success: false,
+                error: `Operation '${operationName}' not found. Use action='describe' to see available operations.`,
+            };
+        }
+
+        // Full describe: return all operations
         return { success: true, result: description };
     }
 
