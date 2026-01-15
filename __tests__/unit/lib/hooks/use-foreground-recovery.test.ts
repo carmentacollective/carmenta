@@ -375,7 +375,50 @@ describe("useForegroundRecovery", () => {
                 await vi.advanceTimersByTimeAsync(150);
             });
 
-            expect(defaultCallbacks.onBackgroundFailed).toHaveBeenCalled();
+            // Should pass partial messages (null in this case) to callback
+            expect(defaultCallbacks.onBackgroundFailed).toHaveBeenCalledWith(null);
+        });
+
+        it("passes partial messages to onBackgroundFailed when available", async () => {
+            const partialMessages = [
+                {
+                    id: "1",
+                    role: "user" as const,
+                    parts: [{ type: "text" as const, text: "Hello" }],
+                },
+                {
+                    id: "2",
+                    role: "assistant" as const,
+                    parts: [{ type: "text" as const, text: "Partial response..." }],
+                },
+            ];
+
+            vi.mocked(pollBackgroundModeStatus).mockResolvedValue({
+                status: "failed",
+                messages: partialMessages,
+                title: null,
+                slug: "test",
+            });
+
+            renderTestHook({
+                connectionId: "conn-123",
+                messages: incompleteMessages,
+                isBackgroundMode: false,
+                isLoading: false,
+                ...defaultCallbacks,
+            });
+
+            triggerVisibilityChange("hidden");
+            triggerVisibilityChange("visible");
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(150);
+            });
+
+            // Should pass partial messages so caller can preserve them
+            expect(defaultCallbacks.onBackgroundFailed).toHaveBeenCalledWith(
+                partialMessages
+            );
         });
 
         it("calls onStreamInterrupted when server is idle", async () => {

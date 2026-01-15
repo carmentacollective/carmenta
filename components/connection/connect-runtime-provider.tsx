@@ -1371,12 +1371,23 @@ function ConnectRuntimeProviderInner({
         isLoading,
         startPolling: startBackgroundPolling,
         onMessagesRecovered: handleRecoveredMessages,
-        onBackgroundFailed: useCallback(() => {
-            setDisplayError(
-                new Error("Background work failed while app was backgrounded")
-            );
-            clearTransientMessages();
-        }, [clearTransientMessages]),
+        onBackgroundFailed: useCallback(
+            (partialMessages) => {
+                // Update messages if we have partial content (preserves what was generated)
+                if (partialMessages?.length) {
+                    const aiMessages = partialMessages.map(toAIMessage);
+                    setMessages(aiMessages);
+                }
+                // Show actionable toast instead of generic error
+                toast.error("Response failed while app was in background", {
+                    description:
+                        "Any partial response has been preserved. Use the retry button to continue.",
+                    duration: 6000,
+                });
+                clearTransientMessages();
+            },
+            [setMessages, clearTransientMessages]
+        ),
         onStreamInterrupted: useCallback(() => {
             // Show a toast so user knows response was interrupted
             // They can use the regenerate button to retry
