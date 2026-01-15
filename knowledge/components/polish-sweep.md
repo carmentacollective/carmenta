@@ -262,7 +262,6 @@ Based on exploration of Carmenta's codebase, these issues exist today:
 - All 4 agents with current Claude Code subagent architecture
 - Grep/Glob/Read tools sufficient for pattern detection
 - Parallel execution via Task tool
-- JSON output for CI integration
 
 ### Emerging (6-12 months)
 
