@@ -19,6 +19,10 @@ const config: NextConfig = {
             bodySizeLimit: "500mb",
         },
         proxyClientMaxBodySize: "500mb",
+        // Disable Turbopack filesystem cache to prevent 20+ second system freezes
+        // during cache writes. See: vercel/next.js#87796
+        // Trade-off: Cold starts on each `pnpm dev` (~2-3s), but no freeze.
+        turbopackFileSystemCacheForDev: false,
     },
 
     // Hide Next.js dev indicators (build indicator, etc)
