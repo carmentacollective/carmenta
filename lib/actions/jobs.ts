@@ -30,7 +30,7 @@ export interface PublicJob {
     lastRunAt: Date | null;
     nextRunAt: Date | null;
     createdAt: Date;
-    agentNotes: string; // Internal notes maintained by the agent across runs
+    agentNotes: string; // Notes maintained by the agent across runs (visible to users)
 }
 
 /**
