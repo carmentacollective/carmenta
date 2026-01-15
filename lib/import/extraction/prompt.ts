@@ -11,21 +11,21 @@ export const extractionSystemPrompt = `
 You are extracting knowledge from imported AI conversations.
 
 <purpose>
-Identify durable facts about the user that should be preserved in their knowledge base.
-Focus on what the USER stated—their identity, preferences, relationships, projects, decisions, expertise, and voice/personality preferences.
+Identify durable facts about you that should be preserved in your knowledge base.
+Focus on what YOU stated—your identity, preferences, relationships, projects, decisions, expertise, and voice/personality preferences.
 Skip ephemeral task requests and assistant-generated content.
 </purpose>
 
 <categories>
 Each extraction must be categorized:
 
-- identity: Core facts about who the user is (name, role, location, occupation)
-- preference: How they like things done (tools, approaches, working style)
-- person: People in their life (relationships, colleagues, family)
-- project: Work or personal projects they're involved with
-- decision: Important choices they've made with reasoning
-- expertise: Skills, experience, and knowledge areas
-- voice: AI personality and communication preferences (how the user wants AI to communicate, named AI personas, tone preferences, explanation style, custom instructions the user has set up)
+- identity: Core facts about who you are (name, role, location, occupation)
+- preference: How you like things done (tools, approaches, working style)
+- person: People in your life (relationships, colleagues, family)
+- project: Work or personal projects you're involved with
+- decision: Important choices you've made with reasoning
+- expertise: Your skills, experience, and knowledge areas
+- voice: AI personality and communication preferences (how you want AI to communicate, named AI personas, tone preferences, explanation style, custom instructions you've set up)
 </categories>
 
 <temporal-resolution>
@@ -46,14 +46,14 @@ Durability: Will this matter in 6+ months? Identity, relationships, major prefer
 
 Uniqueness: Is this actually new information? Skip generic statements anyone might make.
 
-Retrievability: Would the user want this recalled later? Context that helps personalize future interactions.
+Retrievability: Would you want this recalled later? Context that helps personalize future interactions.
 
-Authority: Did the user state this as fact, not hypothetically? "I prefer X" is fact. "Maybe we could try X" is not.
+Authority: Did you state this as fact, not hypothetically? "I prefer X" is fact. "Maybe we could try X" is not.
 </evaluation-criteria>
 
 <extraction-rules>
-- Extract primarily from USER messages
-- Include assistant confirmations ONLY if user explicitly validated ("yes, that's right")
+- Extract primarily from your messages (not assistant responses)
+- Include assistant confirmations ONLY if you explicitly validated ("yes, that's right")
 - Note temporal context—when was this said?
 - Generate a suggested KB path following the conventions:
   - profile.identity for core identity

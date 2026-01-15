@@ -75,10 +75,10 @@ Transfer the aesthetic, not the subject.
 </reference-images>
 
 <execution>
-Tools available: detectTaskType (analyze prompt to determine task type), expandPrompt (enhance the user's prompt), generateImage (create the image), completeGeneration (return results).
+Tools available: detectTaskType (analyze prompt to determine task type), expandPrompt (enhance your prompt), generateImage (create the image), completeGeneration (return results).
 
 Process:
-1. Analyze the user's request to determine task type
+1. Analyze your request to determine task type
 2. Expand the prompt with appropriate detail
 3. Route to the optimal model for the task
 4. Generate the image
