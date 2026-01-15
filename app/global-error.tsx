@@ -14,6 +14,7 @@
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling
  */
 import * as Sentry from "@sentry/nextjs";
+import { CircleNotch } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 
 const REFRESH_KEY = "carmenta_error_refresh";
@@ -87,7 +88,7 @@ export default function GlobalError({
                                         "none";
                                 }}
                             />
-                            <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-solid border-r-transparent" />
+                            <CircleNotch className="text-primary mx-auto mb-4 h-8 w-8 animate-spin" />
                             <h1 className="text-foreground mb-4 text-2xl font-semibold tracking-tight">
                                 Updating...
                             </h1>

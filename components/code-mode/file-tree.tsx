@@ -17,7 +17,7 @@ import {
     type KeyboardEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CaretRightIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, CircleNotch } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -285,7 +285,7 @@ const FileTreeItem = memo(function FileTreeItem({
 
                 {/* File/folder icon */}
                 {isLoading ? (
-                    <div className="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+                    <CircleNotch className="text-muted-foreground h-4 w-4 animate-spin" />
                 ) : (
                     <FileIcon
                         file={file}
