@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
     ArrowSquareOutIcon,
@@ -46,6 +46,13 @@ export function ApiKeyModal({
     const [showKey, setShowKey] = useState(false);
     // Reset key when modal closes to clear form state
     const [resetKey, setResetKey] = useState(0);
+    // Track if modal is open to ignore stale callbacks
+    const isOpenRef = useRef(open);
+
+    // Keep ref in sync with open prop (must use useEffect, can't update during render)
+    useEffect(() => {
+        isOpenRef.current = open;
+    }, [open]);
 
     // React 19: useActionState consolidates loading + error state
     const [state, formAction, isPending] = useActionState<ActionState, FormData>(
@@ -58,6 +65,12 @@ export function ApiKeyModal({
 
             try {
                 const result = await onSubmit(key.trim());
+
+                // Ignore completion if modal was closed while request was in-flight
+                if (!isOpenRef.current) {
+                    return { error: null };
+                }
+
                 if (result.success) {
                     // Reset form and close modal on success
                     setApiKey("");
@@ -67,6 +80,10 @@ export function ApiKeyModal({
                 }
                 return { error: result.error || "Failed to connect" };
             } catch (err) {
+                // Ignore errors if modal was closed
+                if (!isOpenRef.current) {
+                    return { error: null };
+                }
                 return {
                     error: err instanceof Error ? err.message : "An error occurred",
                 };

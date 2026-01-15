@@ -154,6 +154,8 @@ export default function ImportPage() {
     const [filters, setFilters] = useState<ImportFilters>(DEFAULT_FILTERS);
     const [filtersOpen, setFiltersOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    // Track in-flight parse request so Cancel can abort it
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Discovery state
     const [discoveryState, setDiscoveryState] = useState<DiscoveryState>("idle");
@@ -303,6 +305,10 @@ export default function ImportPage() {
             setState("uploading");
             setError(null);
 
+            // Create abort controller for this request
+            const abortController = new AbortController();
+            abortControllerRef.current = abortController;
+
             try {
                 const formData = new FormData();
                 formData.append("file", file);
@@ -312,6 +318,7 @@ export default function ImportPage() {
                 const response = await fetch(currentProvider.apiEndpoint, {
                     method: "POST",
                     body: formData,
+                    signal: abortController.signal,
                 });
 
                 const data = await response.json();
@@ -337,6 +344,15 @@ export default function ImportPage() {
                     `${currentProvider.name} export parsed successfully`
                 );
             } catch (err) {
+                // If aborted, don't show error - user clicked Cancel
+                if (err instanceof Error && err.name === "AbortError") {
+                    logger.info(
+                        { provider: selectedProvider },
+                        "Parse cancelled by user"
+                    );
+                    return;
+                }
+
                 const message =
                     err instanceof Error ? err.message : "Failed to parse export";
                 setError(message);
@@ -349,6 +365,9 @@ export default function ImportPage() {
                 Sentry.captureException(err, {
                     tags: { component: "import", platform: selectedProvider },
                 });
+            } finally {
+                // Clear abort controller ref when request completes
+                abortControllerRef.current = null;
             }
         },
         [clearFileInput, currentProvider, selectedProvider]
@@ -392,6 +411,12 @@ export default function ImportPage() {
     }, []);
 
     const handleReset = useCallback(() => {
+        // Abort any in-flight parse request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+
         setState("idle");
         setError(null);
         setParsedData(null);
