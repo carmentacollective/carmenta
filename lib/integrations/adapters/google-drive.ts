@@ -13,7 +13,7 @@
  * - Per-project: 10,000 queries per 100 seconds
  */
 
-import { google, drive_v3 } from "googleapis";
+import { drive, drive_v3, auth } from "@googleapis/drive";
 import { ServiceAdapter, HelpResponse, MCPToolResponse, RawAPIParams } from "./base";
 import { logger } from "@/lib/logger";
 import { getCredentials, listServiceAccounts } from "../connection-manager";
@@ -33,9 +33,9 @@ export class GoogleDriveAdapter extends ServiceAdapter {
      * Create an OAuth2 client configured with the user's access token
      */
     private createAuthClient(accessToken: string) {
-        const auth = new google.auth.OAuth2();
-        auth.setCredentials({ access_token: accessToken });
-        return auth;
+        const oauth2Client = new auth.OAuth2();
+        oauth2Client.setCredentials({ access_token: accessToken });
+        return oauth2Client;
     }
 
     /**
@@ -80,8 +80,8 @@ export class GoogleDriveAdapter extends ServiceAdapter {
     ): Promise<{ success: boolean; error?: string }> {
         try {
             const auth = this.createAuthClient(credentialOrToken);
-            const drive = google.drive({ version: "v3", auth });
-            await drive.about.get({ fields: "user" });
+            const driveClient = drive({ version: "v3", auth });
+            await driveClient.about.get({ fields: "user" });
             return { success: true };
         } catch (error) {
             logger.error({ error, userId }, "Failed to verify Google Drive connection");
@@ -511,9 +511,9 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         }
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
-        const response = await drive.files.list({
+        const response = await driveClient.files.list({
             q: `'${folder_id}' in parents and trashed = false`,
             pageSize: Math.min(page_size, 1000),
             pageToken: page_token,
@@ -543,7 +543,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
         // Add trashed = false to query if not already specified
         // Note: We trust the LLM to provide valid Drive query syntax.
@@ -553,7 +553,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
             ? query
             : `(${query}) and trashed = false`;
 
-        const response = await drive.files.list({
+        const response = await driveClient.files.list({
             q: fullQuery,
             pageSize: Math.min(page_size, 1000),
             pageToken: page_token,
@@ -574,9 +574,9 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         const { file_id } = params as { file_id: string };
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
-        const response = await drive.files.get({
+        const response = await driveClient.files.get({
             fileId: file_id,
             fields: "id, name, mimeType, size, modifiedTime, createdTime, webViewLink, webContentLink, iconLink, parents, owners, shared, permissions",
         });
@@ -597,10 +597,10 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
         // First get file metadata to determine type
-        const metadata = await drive.files.get({
+        const metadata = await driveClient.files.get({
             fileId: file_id,
             fields: "id, name, mimeType, size",
         });
@@ -626,7 +626,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         if (isGoogleFile) {
             // Export Google files
             const exportMime = this.getExportMimeType(mimeType, export_format);
-            const response = await drive.files.export(
+            const response = await driveClient.files.export(
                 { fileId: file_id, mimeType: exportMime },
                 { responseType: "arraybuffer" }
             );
@@ -646,7 +646,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
             outputMimeType = exportMime;
         } else {
             // Download regular files
-            const response = await drive.files.get(
+            const response = await driveClient.files.get(
                 { fileId: file_id, alt: "media" },
                 { responseType: "arraybuffer" }
             );
@@ -725,9 +725,9 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
-        const response = await drive.files.create({
+        const response = await driveClient.files.create({
             requestBody: {
                 name,
                 mimeType: "application/vnd.google-apps.folder",
@@ -754,17 +754,17 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
         // Get current parents
-        const file = await drive.files.get({
+        const file = await driveClient.files.get({
             fileId: file_id,
             fields: "parents",
         });
 
         const previousParents = file.data.parents?.join(",") || "";
 
-        const response = await drive.files.update({
+        const response = await driveClient.files.update({
             fileId: file_id,
             addParents: new_parent_id,
             removeParents: previousParents,
@@ -790,9 +790,9 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
-        const response = await drive.files.update({
+        const response = await driveClient.files.update({
             fileId: file_id,
             requestBody: { name: new_name },
             fields: "id, name, webViewLink",
@@ -816,10 +816,10 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         };
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
         if (permanently_delete) {
-            await drive.files.delete({ fileId: file_id });
+            await driveClient.files.delete({ fileId: file_id });
             return this.createJSONResponse({
                 success: true,
                 file_id,
@@ -827,7 +827,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
                 message: "File permanently deleted. This cannot be undone.",
             });
         } else {
-            await drive.files.update({
+            await driveClient.files.update({
                 fileId: file_id,
                 requestBody: { trashed: true },
             });
@@ -867,7 +867,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         }
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
         const permission: drive_v3.Schema$Permission = {
             role,
@@ -878,7 +878,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
             permission.emailAddress = email;
         }
 
-        const response = await drive.permissions.create({
+        const response = await driveClient.permissions.create({
             fileId: file_id,
             requestBody: permission,
             sendNotificationEmail: send_notification,
@@ -918,7 +918,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
         const { accessToken } = tokenResult;
 
         const auth = this.createAuthClient(accessToken);
-        const drive = google.drive({ version: "v3", auth });
+        const driveClient = drive({ version: "v3", auth });
 
         // Parse endpoint to determine which Drive API method to call
         // This is a simplified implementation - expand as needed
@@ -927,7 +927,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
             const resource = pathParts[0];
 
             if (resource === "about" && method === "GET") {
-                const response = await drive.about.get({
+                const response = await driveClient.about.get({
                     fields: (query?.fields as string) || "*",
                 });
                 return this.createJSONResponse(
@@ -937,7 +937,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
 
             if (resource === "files") {
                 if (pathParts.length === 1 && method === "GET") {
-                    const response = await drive.files.list(
+                    const response = await driveClient.files.list(
                         query as drive_v3.Params$Resource$Files$List
                     );
                     return this.createJSONResponse(
@@ -945,7 +945,7 @@ export class GoogleDriveAdapter extends ServiceAdapter {
                     );
                 }
                 if (pathParts.length === 2 && method === "GET") {
-                    const response = await drive.files.get({
+                    const response = await driveClient.files.get({
                         fileId: pathParts[1],
                         ...(query as object),
                     });
