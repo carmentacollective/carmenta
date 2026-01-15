@@ -1,1 +1,1 @@
-ALTER TABLE "scheduled_jobs" DROP COLUMN "integrations";
+ALTER TABLE "scheduled_jobs" DROP COLUMN IF EXISTS "integrations";
