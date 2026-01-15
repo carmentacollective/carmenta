@@ -703,6 +703,14 @@ export default function ImportPage() {
                                 <p className="text-muted-foreground mt-1 text-sm">
                                     This is worth doing carefully.
                                 </p>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleReset}
+                                    className="text-muted-foreground mt-4"
+                                >
+                                    Cancel
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>

@@ -15,7 +15,8 @@
 
 import * as Sentry from "@sentry/nextjs";
 import * as React from "react";
-import { XIcon, ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
+import { XIcon, ArrowCounterClockwiseIcon, HouseIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 import { logger } from "@/lib/client-logger";
 
 export interface PortalErrorBoundaryProps {
@@ -115,13 +116,21 @@ export class PortalErrorBoundary extends React.Component<
                                 <ArrowCounterClockwiseIcon className="h-4 w-4" />
                                 Try again
                             </button>
-                            {this.props.onDismiss && (
+                            {this.props.onDismiss ? (
                                 <button
                                     onClick={this.props.onDismiss}
                                     className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                                 >
                                     Close
                                 </button>
+                            ) : (
+                                <Link
+                                    href="/"
+                                    className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
+                                >
+                                    <HouseIcon className="h-4 w-4" />
+                                    Go Home
+                                </Link>
                             )}
                         </div>
                     </div>
