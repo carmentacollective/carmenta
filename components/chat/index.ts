@@ -23,6 +23,10 @@ export {
     ScrollToBottomButton,
     type ScrollToBottomButtonProps,
 } from "./scroll-to-bottom-button";
+export {
+    ComposerScrollIndicator,
+    type ComposerScrollIndicatorProps,
+} from "./composer-scroll-indicator";
 
 // Message part utilities - shared between HoloThread and SidecarThread
 export {

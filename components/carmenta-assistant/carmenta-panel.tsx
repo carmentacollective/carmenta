@@ -22,7 +22,7 @@ import {
     UserBubble,
     AssistantBubble,
     ThinkingBubble,
-    ScrollToBottomButton,
+    ComposerScrollIndicator,
 } from "@/components/chat";
 import { CopyButton } from "@/components/ui/copy-button";
 
@@ -235,22 +235,23 @@ export function CarmentaPanel({
                             </div>
                         </div>
 
-                        {/* Input area with scroll-to-bottom button */}
-                        <div className="border-foreground/[0.08] @container relative border-t p-3">
-                            <ScrollToBottomButton
+                        {/* Input area with scroll indicator */}
+                        <div className="border-foreground/[0.08] @container flex flex-col border-t">
+                            <ComposerScrollIndicator
                                 isAtBottom={isAtBottom}
                                 onScrollToBottom={() => scrollToBottom("smooth")}
-                                className="absolute -top-12 left-1/2 -translate-x-1/2"
                             />
-                            <SimpleComposer
-                                value={input}
-                                onChange={setInput}
-                                onSubmit={sendMessage}
-                                onStop={stop}
-                                isLoading={isLoading}
-                                placeholder={placeholder}
-                                autoFocus={isOpen}
-                            />
+                            <div className="p-3">
+                                <SimpleComposer
+                                    value={input}
+                                    onChange={setInput}
+                                    onSubmit={sendMessage}
+                                    onStop={stop}
+                                    isLoading={isLoading}
+                                    placeholder={placeholder}
+                                    autoFocus={isOpen}
+                                />
+                            </div>
                         </div>
                     </motion.aside>
                 </>

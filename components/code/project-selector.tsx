@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Project } from "@/lib/code/projects";
 
 interface ProjectSelectorProps {
@@ -186,9 +187,14 @@ export function ProjectSelector({
                                 />
                                 <span className="font-medium">{project.name}</span>
                                 {project.hasClaudeMd && (
-                                    <span title="Has CLAUDE.md">
-                                        <FileCode className="text-primary size-3" />
-                                    </span>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span>
+                                                <FileCode className="text-primary size-3" />
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Has CLAUDE.md</TooltipContent>
+                                    </Tooltip>
                                 )}
                                 <div className="text-muted-foreground ml-auto flex items-center gap-2 text-xs">
                                     {project.gitBranch && (

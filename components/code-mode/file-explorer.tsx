@@ -19,6 +19,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCodeMode } from "@/components/connection/connect-runtime-provider";
 import { FileTree } from "./file-tree";
 import { FilePreview } from "./file-preview";
@@ -354,21 +355,25 @@ export function FileExplorer() {
                                         </button>
                                     )}
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={loadRootDirectory}
-                                    disabled={isLoading}
-                                    className="h-11 w-11 shrink-0 sm:h-8 sm:w-8"
-                                    title="Refresh"
-                                >
-                                    <ArrowClockwise
-                                        className={cn(
-                                            "h-4 w-4",
-                                            isLoading && "animate-spin"
-                                        )}
-                                    />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={loadRootDirectory}
+                                            disabled={isLoading}
+                                            className="h-11 w-11 shrink-0 sm:h-8 sm:w-8"
+                                        >
+                                            <ArrowClockwise
+                                                className={cn(
+                                                    "h-4 w-4",
+                                                    isLoading && "animate-spin"
+                                                )}
+                                            />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Refresh</TooltipContent>
+                                </Tooltip>
                             </div>
 
                             {/* File tree - use dvh for iOS Safari dynamic viewport */}

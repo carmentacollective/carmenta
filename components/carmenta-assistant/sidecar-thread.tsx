@@ -44,7 +44,7 @@ import {
 } from "@/components/connection/file-attachment-context";
 import { DragDropOverlay } from "@/components/connection/drag-drop-overlay";
 import {
-    ScrollToBottomButton,
+    ComposerScrollIndicator,
     MessageActions,
     ToolPartRenderer,
     getMessageContent,
@@ -222,13 +222,13 @@ function SidecarThreadInner({ welcomeConfig }: SidecarThreadProps) {
             </div>
 
             {/* Input container - uses @container for responsive Composer layout */}
-            <div className="border-foreground/5 dark:bg-card/60 @container flex flex-none items-center justify-center border-t bg-white/60 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl">
-                <div className="relative flex w-full flex-col items-center">
-                    <ScrollToBottomButton
-                        isAtBottom={isAtBottom}
-                        onScrollToBottom={() => scrollToBottom("smooth")}
-                        className="absolute -top-12"
-                    />
+            <div className="border-foreground/5 dark:bg-card/60 @container flex flex-none flex-col border-t bg-white/60 backdrop-blur-2xl">
+                {/* Scroll indicator - integrated into composer area, no z-index conflicts */}
+                <ComposerScrollIndicator
+                    isAtBottom={isAtBottom}
+                    onScrollToBottom={() => scrollToBottom("smooth")}
+                />
+                <div className="flex w-full items-center justify-center px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                     <Composer onMarkMessageStopped={handleMarkMessageStopped} />
                 </div>
             </div>

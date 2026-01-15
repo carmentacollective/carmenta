@@ -47,7 +47,7 @@ import {
 import { CopyButton } from "@/components/ui/copy-button";
 import { RegenerateMenu } from "@/components/ui/regenerate-menu";
 import {
-    ScrollToBottomButton,
+    ComposerScrollIndicator,
     ToolPartRenderer,
     getMessageContent,
     getReasoningContent,
@@ -315,13 +315,13 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
             {/* Input container with safe area for notched devices - glass treatment matches header */}
             {/* NOTE: No motion.div wrapper here - CSS transforms on iOS Safari cause cursor
                 positioning bugs where the cursor appears displaced from the textarea */}
-            <div className="landscape-compact-input border-foreground/5 dark:bg-card/60 flex flex-none items-center justify-center border-t bg-white/60 px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl @md:px-4 @md:pt-3 @md:pb-4">
-                <div className="relative flex w-full flex-col items-center">
-                    <ScrollToBottomButton
-                        isAtBottom={isAtBottom}
-                        onScrollToBottom={() => scrollToBottom("smooth")}
-                        className="absolute -top-14 h-11 w-11 @md:-top-12"
-                    />
+            <div className="landscape-compact-input border-foreground/5 dark:bg-card/60 flex flex-none flex-col border-t bg-white/60 backdrop-blur-2xl">
+                {/* Scroll indicator - integrated into composer area, no z-index conflicts */}
+                <ComposerScrollIndicator
+                    isAtBottom={isAtBottom}
+                    onScrollToBottom={() => scrollToBottom("smooth")}
+                />
+                <div className="flex w-full items-center justify-center px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] @md:px-4 @md:pt-3 @md:pb-4">
                     <Composer onMarkMessageStopped={handleMarkMessageStopped} />
                 </div>
             </div>
@@ -426,10 +426,8 @@ function MessageBubble({
 /**
  * Message action toolbar - positioned below message bubble
  *
- * Visibility pattern (LibreChat-inspired):
- * - Last message: Always visible (teaches the pattern)
- * - Older messages: Hover-reveal on desktop, always visible on mobile
- * - During streaming: Hidden (don't show actions for incomplete content)
+ * Always visible for all messages (better for mobile touch targets).
+ * Hidden during streaming since content is incomplete.
  *
  * For assistant messages, also shows regenerate button.
  */
@@ -483,12 +481,7 @@ function MessageActions({
     return (
         <div
             className={cn(
-                "mt-1 flex items-center gap-1 transition-opacity",
-                // Last message: always visible
-                // Older messages: hidden on desktop until hover, always visible on mobile
-                isLast
-                    ? "opacity-100"
-                    : "opacity-100 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100",
+                "mt-1 flex items-center gap-1",
                 align === "right" && "justify-end"
             )}
         >
@@ -616,7 +609,9 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(content);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editModeMinWidth, setEditModeMinWidth] = useState<number | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const bubbleRef = useRef<HTMLDivElement>(null);
 
     // Focus textarea when entering edit mode
     useEffect(() => {
@@ -635,6 +630,10 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     }, [isEditing, content]);
 
     const handleEdit = useCallback(() => {
+        // Capture current width to prevent shrinking during edit
+        if (bubbleRef.current) {
+            setEditModeMinWidth(bubbleRef.current.offsetWidth);
+        }
         setEditContent(content);
         setIsEditing(true);
     }, [content]);
@@ -642,6 +641,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
     const handleCancel = useCallback(() => {
         setIsEditing(false);
         setEditContent(content);
+        setEditModeMinWidth(null);
     }, [content]);
 
     const handleSave = useCallback(async () => {
@@ -650,6 +650,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
         // No changes made - just exit edit mode
         if (editContent.trim() === content.trim()) {
             setIsEditing(false);
+            setEditModeMinWidth(null);
             return;
         }
 
@@ -657,6 +658,7 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
         try {
             await editMessageAndRegenerate(message.id, editContent.trim());
             setIsEditing(false);
+            setEditModeMinWidth(null);
         } catch (err) {
             logger.error({ error: err }, "Failed to save edit");
             toast.error("Failed to save edit");
@@ -694,7 +696,13 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                     <UserAvatar />
                 </div>
 
-                <div className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3 @md:px-5 @md:py-4">
+                <div
+                    ref={bubbleRef}
+                    className="user-message-bubble border-r-primary rounded-2xl rounded-br-md border-r-[3px] px-4 py-3 @md:px-5 @md:py-4"
+                    style={
+                        editModeMinWidth ? { minWidth: editModeMinWidth } : undefined
+                    }
+                >
                     {/* File previews */}
                     {fileParts.length > 0 && (
                         <div className="mb-3 flex flex-col gap-2">
