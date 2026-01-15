@@ -221,10 +221,13 @@ function createAdapterTool(adapterId: string, userEmail: string) {
     }
 
     const help = adapter.getHelp();
-    const topOps =
-        help.commonOperations?.slice(0, 4) ||
-        help.operations.slice(0, 4).map((o) => o.name);
-    const remaining = (help.commonOperations?.length ?? help.operations.length) - 4;
+    // Use commonOperations if non-empty, otherwise fall back to operations
+    const hasCommonOps = (help.commonOperations?.length ?? 0) > 0;
+    const topOps = hasCommonOps
+        ? help.commonOperations!.slice(0, 4)
+        : help.operations.slice(0, 4).map((o) => o.name);
+    // Always calculate remaining from total operations count
+    const remaining = help.operations.length - topOps.length;
     const moreText = remaining > 0 ? ` +${remaining} more` : "";
     const description = `${help.description || help.service}. Top operations: ${topOps.join(", ")}${moreText}`;
 
