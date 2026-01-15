@@ -47,6 +47,10 @@ export class ToolUIErrorBoundary extends React.Component<
         this.props.onError?.(error, errorInfo);
     }
 
+    handleRetry = () => {
+        this.setState({ hasError: false, error: undefined });
+    };
+
     render() {
         if (this.state.hasError) {
             return (
@@ -56,6 +60,12 @@ export class ToolUIErrorBoundary extends React.Component<
                             {this.props.componentName} failed to render
                         </p>
                         <p className="text-sm">{this.state.error?.message}</p>
+                        <button
+                            onClick={this.handleRetry}
+                            className="mt-3 rounded-md bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-500/20 dark:text-red-400"
+                        >
+                            Try Again
+                        </button>
                     </div>
                 )
             );

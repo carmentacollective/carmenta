@@ -123,12 +123,21 @@ export default function GlobalError({
                         <p className="text-muted-foreground mb-6 leading-relaxed">
                             We hit a bump. The robots have been notified.
                         </p>
-                        <button
-                            onClick={reset}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 py-2.5 transition-colors"
-                        >
-                            Refresh
-                        </button>
+                        <div className="flex gap-3">
+                            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                            <a
+                                href="/"
+                                className="border-foreground/20 text-foreground/70 hover:bg-foreground/5 rounded-lg border px-5 py-2.5 transition-colors"
+                            >
+                                Go Home
+                            </a>
+                            <button
+                                onClick={reset}
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 py-2.5 transition-colors"
+                            >
+                                Refresh
+                            </button>
+                        </div>
                     </div>
                 </div>
             </body>

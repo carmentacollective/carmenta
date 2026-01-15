@@ -223,7 +223,18 @@ export function McpAuthModal({
                             exit={{ opacity: 0, y: -8 }}
                             className="rounded-lg bg-red-500/10 p-3 text-center text-sm text-red-600 dark:text-red-400"
                         >
-                            {error}
+                            <p>{error}</p>
+                            <button
+                                onClick={() => {
+                                    if (isConnecting) return;
+                                    setError(null);
+                                    handleConnect();
+                                }}
+                                disabled={isConnecting}
+                                className="mt-2 text-xs font-medium underline hover:no-underline disabled:opacity-50"
+                            >
+                                Try Again
+                            </button>
                         </motion.div>
                     )}
                 </AnimatePresence>

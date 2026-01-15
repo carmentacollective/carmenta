@@ -24,7 +24,13 @@ import {
 } from "react";
 import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport, generateId } from "ai";
-import { WarningCircleIcon, ArrowsClockwiseIcon, XIcon } from "@phosphor-icons/react";
+import Link from "next/link";
+import {
+    WarningCircleIcon,
+    ArrowsClockwiseIcon,
+    XIcon,
+    HouseIcon,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 import { logger } from "@/lib/client-logger";
@@ -406,6 +412,13 @@ function RuntimeErrorBanner({
                 <p className="text-sm font-medium text-red-800">{displayMessage}</p>
             </div>
             <div className="flex items-center gap-1">
+                <Link
+                    href="/"
+                    className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
+                    aria-label="Go Home"
+                >
+                    <HouseIcon className="h-4 w-4" />
+                </Link>
                 <button
                     onClick={onRetry}
                     className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
@@ -497,7 +510,7 @@ function isRetryableNetworkError(error: unknown): boolean {
 /**
  * Fetch with retry for transient network errors.
  * Handles deploy windows where the server briefly restarts.
- * Shows toast notifications so users know we're working on it.
+ * Shows toast notifications with cancel option so users aren't trapped.
  */
 async function fetchWithRetry(
     input: RequestInfo | URL,
@@ -506,10 +519,26 @@ async function fetchWithRetry(
 ): Promise<Response> {
     let lastError: Error | null = null;
     let toastId: string | number | undefined;
+    let cancelled = false;
 
     for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+        // Check if user cancelled
+        if (cancelled) {
+            if (toastId !== undefined) {
+                toast.dismiss(toastId);
+            }
+            throw new Error("Cancelled by user");
+        }
+
         try {
             const response = await fetch(input, init);
+            // Check if user cancelled while fetch was in-flight
+            if (cancelled) {
+                if (toastId !== undefined) {
+                    toast.dismiss(toastId);
+                }
+                throw new Error("Cancelled by user");
+            }
             // If we were retrying and succeeded, dismiss the toast
             if (toastId !== undefined) {
                 toast.success("Reconnected", { id: toastId, duration: 4000 });
@@ -546,16 +575,33 @@ async function fetchWithRetry(
                 "🔄 Retrying after network error..."
             );
 
-            // Show/update toast to let user know we're retrying
+            // Show/update toast with cancel option
             const message =
                 attempt === 0
                     ? "Connection interrupted, reconnecting..."
                     : `Still reconnecting... (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1})`;
 
             if (toastId === undefined) {
-                toastId = toast.loading(message);
+                toastId = toast(message, {
+                    duration: Infinity,
+                    action: {
+                        label: "Cancel",
+                        onClick: () => {
+                            cancelled = true;
+                        },
+                    },
+                });
             } else {
-                toast.loading(message, { id: toastId });
+                toast(message, {
+                    id: toastId,
+                    duration: Infinity,
+                    action: {
+                        label: "Cancel",
+                        onClick: () => {
+                            cancelled = true;
+                        },
+                    },
+                });
             }
 
             await new Promise((resolve) => setTimeout(resolve, delay));
