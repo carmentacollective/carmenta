@@ -1250,12 +1250,11 @@ function ConnectRuntimeProviderInner({
             // Handle playbook data part (hire wizard)
             if (part?.type === "data-playbook" && onPlaybookReady) {
                 const playbook = part?.data as Playbook;
-                // Validate all required fields before passing to callback
+                // Validate all required playbook fields before accepting
                 if (
                     playbook?.name &&
                     playbook?.description &&
-                    playbook?.schedule?.cron &&
-                    playbook?.schedule?.displayText &&
+                    playbook?.schedule &&
                     playbook?.prompt
                 ) {
                     logger.info(
@@ -1264,10 +1263,7 @@ function ConnectRuntimeProviderInner({
                     );
                     onPlaybookReady(playbook);
                 } else {
-                    logger.warn(
-                        { playbook },
-                        "Received incomplete playbook from hire wizard"
-                    );
+                    logger.warn({ playbook }, "Received incomplete playbook, ignoring");
                 }
             }
 

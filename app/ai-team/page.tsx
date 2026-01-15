@@ -212,14 +212,16 @@ function AITeamContent({
     const [hireMode, setHireMode] = useState(false);
     const [playbook, setPlaybook] = useState<Playbook | null>(null);
     const [isHiring, setIsHiring] = useState(false);
-    const closingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Track timeout for hire mode reset to prevent race conditions
+    const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Start hire mode - opens sidecar with hire config
     const handleStartHire = useCallback(() => {
-        // Cancel any pending close cleanup
-        if (closingTimeoutRef.current) {
-            clearTimeout(closingTimeoutRef.current);
-            closingTimeoutRef.current = null;
+        // Cancel any pending reset
+        if (resetTimeoutRef.current) {
+            clearTimeout(resetTimeoutRef.current);
+            resetTimeoutRef.current = null;
         }
         setHireMode(true);
         setPlaybook(null);
@@ -230,20 +232,20 @@ function AITeamContent({
     const handleCloseSidecar = useCallback((open: boolean) => {
         setCarmentaOpen(open);
         if (!open) {
-            // Reset hire mode after animation, cancel any pending timeout first
-            if (closingTimeoutRef.current) {
-                clearTimeout(closingTimeoutRef.current);
+            // Reset hire mode after animation, cancel any existing timeout
+            if (resetTimeoutRef.current) {
+                clearTimeout(resetTimeoutRef.current);
             }
-            closingTimeoutRef.current = setTimeout(() => {
+            resetTimeoutRef.current = setTimeout(() => {
                 setHireMode(false);
                 setPlaybook(null);
-                closingTimeoutRef.current = null;
+                resetTimeoutRef.current = null;
             }, 300);
         } else {
-            // Opening - cancel any pending close cleanup
-            if (closingTimeoutRef.current) {
-                clearTimeout(closingTimeoutRef.current);
-                closingTimeoutRef.current = null;
+            // Opening - cancel any pending reset
+            if (resetTimeoutRef.current) {
+                clearTimeout(resetTimeoutRef.current);
+                resetTimeoutRef.current = null;
             }
         }
     }, []);
@@ -520,7 +522,7 @@ function AITeamContent({
                     <div className="flex items-center gap-3">
                         <CarmentaToggle
                             isOpen={carmentaOpen}
-                            onClick={() => setCarmentaOpen(!carmentaOpen)}
+                            onClick={() => handleCloseSidecar(!carmentaOpen)}
                         />
                         <button
                             onClick={handleStartHire}

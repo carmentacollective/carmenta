@@ -208,70 +208,98 @@ export async function POST(request: Request) {
         // Create streaming response
         const stream = createUIMessageStream({
             execute: async ({ writer }) => {
-                // Stream the conversational response
-                const result = streamText({
-                    model: gateway(translateModelId("anthropic/claude-sonnet-4.5")),
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        ...simpleMessages,
-                    ],
-                    providerOptions: {
-                        gateway: {
-                            models: [
-                                "anthropic/claude-sonnet-4.5",
-                                "google/gemini-3-pro-preview",
-                            ].map(translateModelId),
+                try {
+                    // Stream the conversational response
+                    const result = streamText({
+                        model: gateway(translateModelId("anthropic/claude-sonnet-4.5")),
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            ...simpleMessages,
+                        ],
+                        providerOptions: {
+                            gateway: {
+                                models: [
+                                    "anthropic/claude-sonnet-4.5",
+                                    "google/gemini-3-pro-preview",
+                                ].map(translateModelId),
+                            },
                         },
-                    },
-                    onFinish: async ({ text }) => {
-                        // Check if wizard signaled readiness (HTML comment won't render)
-                        const isReady = text.includes("<!-- READY_TO_HIRE -->");
+                        onFinish: async ({ text }) => {
+                            try {
+                                // Check if wizard signaled readiness (HTML comment won't render)
+                                const isReady = text.includes("<!-- READY_TO_HIRE -->");
 
-                        if (isReady) {
-                            // Build conversation context for extraction
-                            const conversationContext = simpleMessages
-                                .map(
-                                    (m) =>
-                                        `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`
-                                )
-                                .join("\n\n");
+                                if (isReady) {
+                                    // Build conversation context for extraction
+                                    const conversationContext = simpleMessages
+                                        .map(
+                                            (m) =>
+                                                `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`
+                                        )
+                                        .join("\n\n");
 
-                            // Extract playbook
-                            const extraction = await generateObject({
-                                model: gateway(
-                                    translateModelId("anthropic/claude-sonnet-4.5")
-                                ),
-                                schema: playbookSchema,
-                                prompt: `${EXTRACTION_PROMPT}\n\nConversation:\n${conversationContext}\n\nAssistant's final response:\n${text}`,
-                                providerOptions: {
-                                    gateway: {
-                                        models: [
-                                            "anthropic/claude-sonnet-4.5",
-                                            "google/gemini-3-pro-preview",
-                                        ].map(translateModelId),
+                                    // Extract playbook
+                                    const extraction = await generateObject({
+                                        model: gateway(
+                                            translateModelId(
+                                                "anthropic/claude-sonnet-4.5"
+                                            )
+                                        ),
+                                        schema: playbookSchema,
+                                        prompt: `${EXTRACTION_PROMPT}\n\nConversation:\n${conversationContext}\n\nAssistant's final response:\n${text}`,
+                                        providerOptions: {
+                                            gateway: {
+                                                models: [
+                                                    "anthropic/claude-sonnet-4.5",
+                                                    "google/gemini-3-pro-preview",
+                                                ].map(translateModelId),
+                                            },
+                                        },
+                                    });
+
+                                    // Emit playbook as data part
+                                    writer.write({
+                                        type: "data-playbook" as const,
+                                        data: extraction.object,
+                                    });
+
+                                    logger.info(
+                                        {
+                                            userId,
+                                            playbook: extraction.object.name,
+                                        },
+                                        "Playbook extracted from hiring conversation"
+                                    );
+                                }
+                            } catch (extractionError) {
+                                logger.error(
+                                    { error: extractionError, userId },
+                                    "Playbook extraction failed"
+                                );
+                                Sentry.captureException(extractionError, {
+                                    tags: {
+                                        route: "/api/ai-team/hire",
+                                        action: "extract-playbook",
                                     },
-                                },
-                            });
+                                    extra: { userId, userEmail },
+                                });
+                            }
+                        },
+                    });
 
-                            // Emit playbook as data part
-                            writer.write({
-                                type: "data-playbook" as const,
-                                data: extraction.object,
-                            });
-
-                            logger.info(
-                                {
-                                    userId,
-                                    playbook: extraction.object.name,
-                                },
-                                "Playbook extracted from hiring conversation"
-                            );
-                        }
-                    },
-                });
-
-                // Merge the stream (READY_TO_HIRE marker is an HTML comment, won't render)
-                writer.merge(result.toUIMessageStream({ sendReasoning: false }));
+                    // Merge the stream (READY_TO_HIRE marker is an HTML comment, won't render)
+                    writer.merge(result.toUIMessageStream({ sendReasoning: false }));
+                } catch (streamError) {
+                    logger.error(
+                        { error: streamError, userId },
+                        "Stream execution failed"
+                    );
+                    Sentry.captureException(streamError, {
+                        tags: { route: "/api/ai-team/hire", action: "stream" },
+                        extra: { userId, userEmail },
+                    });
+                    throw streamError;
+                }
             },
         });
 
