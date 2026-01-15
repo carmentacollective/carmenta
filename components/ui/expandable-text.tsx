@@ -121,7 +121,7 @@ export function ExpandableText({
                     // Hover state
                     "hover:scale-110 hover:shadow-xl",
                     // Active state
-                    "active:translate-y-1/2 active:scale-105",
+                    "active:translate-y-1/2 active:scale-95",
                     // Focus state
                     "focus:ring-primary/60 focus:ring-2 focus:outline-none"
                 )}
