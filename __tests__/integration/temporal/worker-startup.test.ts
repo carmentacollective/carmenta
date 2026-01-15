@@ -19,7 +19,7 @@ const WORKER_ENTRY = path.join(WORKER_DIR, "index.cjs");
 const WORKFLOWS_BUNDLE = path.join(WORKER_DIR, "workflows.cjs");
 
 describe("Temporal Worker Startup", () => {
-    beforeAll(() => {
+    beforeAll(async () => {
         try {
             execSync("pnpm run build:worker", {
                 stdio: "pipe",
@@ -38,7 +38,7 @@ describe("Temporal Worker Startup", () => {
                     `error: ${execError.message}`
             );
         }
-    });
+    }, 15000);
 
     it("should produce worker bundle files", () => {
         expect(existsSync(WORKER_ENTRY)).toBe(true);

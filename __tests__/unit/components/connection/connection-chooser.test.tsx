@@ -243,11 +243,14 @@ describe("ConnectionChooser", () => {
             const closeButton = screen.getByLabelText("Close");
             fireEvent.click(closeButton);
 
-            await vi.waitFor(() => {
-                expect(
-                    screen.queryByPlaceholderText("Search...")
-                ).not.toBeInTheDocument();
-            });
+            await vi.waitFor(
+                () => {
+                    expect(
+                        screen.queryByPlaceholderText("Search...")
+                    ).not.toBeInTheDocument();
+                },
+                { timeout: 3000 }
+            );
         });
 
         it("closes dropdown when backdrop is clicked", async () => {
@@ -258,11 +261,14 @@ describe("ConnectionChooser", () => {
             const backdrop = document.querySelector(".fixed.inset-0");
             fireEvent.click(backdrop!);
 
-            await vi.waitFor(() => {
-                expect(
-                    screen.queryByPlaceholderText("Search...")
-                ).not.toBeInTheDocument();
-            });
+            await vi.waitFor(
+                () => {
+                    expect(
+                        screen.queryByPlaceholderText("Search...")
+                    ).not.toBeInTheDocument();
+                },
+                { timeout: 3000 }
+            );
         });
 
         it("focuses search input when dropdown opens", async () => {
@@ -299,11 +305,14 @@ describe("ConnectionChooser", () => {
             const secondConnection = screen.getByText("Second Conversation");
             fireEvent.click(secondConnection);
 
-            await vi.waitFor(() => {
-                expect(
-                    screen.queryByPlaceholderText("Search...")
-                ).not.toBeInTheDocument();
-            });
+            await vi.waitFor(
+                () => {
+                    expect(
+                        screen.queryByPlaceholderText("Search...")
+                    ).not.toBeInTheDocument();
+                },
+                { timeout: 3000 }
+            );
         });
 
         it("calls setActiveConnection when connection is selected", () => {

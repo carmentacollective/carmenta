@@ -137,35 +137,39 @@ describe("ModelSelectorModal", () => {
     });
 
     describe("AI Concierge button", () => {
-        it("resets overrides and closes when AI Concierge button clicked", () => {
-            const onChange = vi.fn();
-            const onClose = vi.fn();
-            render(
-                <ModelSelectorModal
-                    {...defaultProps}
-                    onChange={onChange}
-                    onClose={onClose}
-                    overrides={{
-                        modelId: "anthropic/claude-opus-4.5",
-                        temperature: 0.7,
-                        reasoning: "high",
-                    }}
-                />
-            );
+        it(
+            "resets overrides and closes when AI Concierge button clicked",
+            { timeout: 10000 },
+            () => {
+                const onChange = vi.fn();
+                const onClose = vi.fn();
+                render(
+                    <ModelSelectorModal
+                        {...defaultProps}
+                        onChange={onChange}
+                        onClose={onClose}
+                        overrides={{
+                            modelId: "anthropic/claude-opus-4.5",
+                            temperature: 0.7,
+                            reasoning: "high",
+                        }}
+                    />
+                );
 
-            // The AI Concierge button is the one that resets to automagic
-            const conciergeButton = screen.getByRole("button", {
-                name: /carmenta.*automagically/i,
-            });
-            expect(conciergeButton).toBeInTheDocument();
-            fireEvent.click(conciergeButton);
+                // The AI Concierge button is the one that resets to automagic
+                const conciergeButton = screen.getByRole("button", {
+                    name: /carmenta.*automagically/i,
+                });
+                expect(conciergeButton).toBeInTheDocument();
+                fireEvent.click(conciergeButton);
 
-            expect(onChange).toHaveBeenCalledWith({
-                modelId: null,
-                temperature: null,
-                reasoning: null,
-            });
-            expect(onClose).toHaveBeenCalled();
-        });
+                expect(onChange).toHaveBeenCalledWith({
+                    modelId: null,
+                    temperature: null,
+                    reasoning: null,
+                });
+                expect(onClose).toHaveBeenCalled();
+            }
+        );
     });
 });

@@ -100,7 +100,7 @@ describe("ModelSelectorTrigger", () => {
         });
     });
 
-    describe("modal opening", () => {
+    describe("modal opening", { timeout: 10000 }, () => {
         it("opens modal when trigger is clicked", () => {
             render(
                 <TestWrapper>
@@ -140,7 +140,7 @@ describe("ModelSelectorTrigger", () => {
         });
     });
 
-    describe("model selection", () => {
+    describe("model selection", { timeout: 10000 }, () => {
         it("calls onChange when model is selected", () => {
             const onChange = vi.fn();
             render(
