@@ -6,7 +6,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
     ArrowLeftIcon,
+    CaretDownIcon,
     FloppyDiskIcon,
+    NotePencilIcon,
     TrashIcon,
     WarningCircleIcon,
     PlayIcon,
@@ -16,6 +18,12 @@ import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { ScheduleEditor } from "@/components/ai-team/schedule-editor";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
 import {
     Dialog,
@@ -48,6 +56,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
     const [infoMessage, setInfoMessage] = useState<string | null>(null);
     const [developerMode, setDeveloperMode] = useState(false);
     const [viewingRun, setViewingRun] = useState<{ id: string } | null>(null);
+    const [notesExpanded, setNotesExpanded] = useState(false);
 
     // Form state initialized from server data
     const [name, setName] = useState(job.name);
@@ -349,6 +358,38 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                         onScheduleChange={handleScheduleChange}
                         showCron={developerMode}
                     />
+
+                    {/* Agent Notes - internal notes maintained by the agent */}
+                    {job.agentNotes && (
+                        <Collapsible
+                            open={notesExpanded}
+                            onOpenChange={setNotesExpanded}
+                        >
+                            <CollapsibleTrigger className="border-foreground/10 hover:bg-foreground/[0.02] flex w-full items-center justify-between rounded-xl border px-4 py-3 transition-colors">
+                                <div className="flex items-center gap-2">
+                                    <NotePencilIcon className="text-foreground/60 h-4 w-4" />
+                                    <span className="text-foreground/70 text-sm font-medium">
+                                        Agent Notes
+                                    </span>
+                                </div>
+                                <CaretDownIcon
+                                    className={`text-foreground/40 h-4 w-4 transition-transform ${notesExpanded ? "rotate-180" : ""}`}
+                                />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <div className="border-foreground/10 bg-foreground/[0.02] mt-2 rounded-xl border p-4">
+                                    <p className="text-foreground/50 mb-3 text-xs">
+                                        Working notes the agent maintains for itself
+                                        across runs. You can guide its understanding
+                                        through your instructions above.
+                                    </p>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                        <MarkdownRenderer content={job.agentNotes} />
+                                    </div>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    )}
 
                     {/* Actions */}
                     <div className="border-foreground/10 flex items-center justify-between border-t pt-6">
