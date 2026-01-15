@@ -161,7 +161,11 @@ export default defineConfig({
             "__tests__/unit/**/*.{test,spec}.{ts,tsx}",
             "__tests__/integration/**/*.{test,spec}.{ts,tsx}",
         ],
-        pool: "threads",
+        // Forks vs Threads trade-off:
+        // - Threads: ~10-20% faster, but V8 threading bugs cause segfaults during cleanup
+        // - Forks: Slightly slower, but rock-solid stability (each worker is isolated process)
+        // We choose stability over speed. See: nodejs/node#58690, vitest-dev/vitest#1696
+        pool: "forks",
         isolate: true,
         maxWorkers,
         coverage: {
