@@ -1,43 +1,39 @@
-# Autotask Session: unified-composer
+# Autotask Session: UX Consistency Fixes
 
-Started: 2026-01-14 Complexity: balanced
+Started: 2026-01-15 Complexity: balanced
 
-## Phase: PR Creation
+## Phase: Implementation
 
 ## Requirements
 
-- Eliminate separate hire page by extending CarmentaSidecar
-- Add `endpoint`, `initialMessages`, `auxiliaryContent`, `onPlaybookReady` props
-- Convert hire API to streaming with data parts
-- Update AI Team page to use sidecar for hire mode
-- Delete hire page after consolidation
+- Fix all 27 UX consistency patterns identified by review
+- One PR with 6 atomic commits
+- All HIGH and MEDIUM severity issues addressed
+- Branch: ux-consistency-fixes
+
+## Commits Planned
+
+1. [ ] Tooltip consolidation (delays, docs, patterns)
+2. [ ] Toast feedback gaps (MCP success, durations)
+3. [ ] Spinner standardization (CSS → components)
+4. [ ] Animation timing (sheet symmetry, modal consistency)
+5. [ ] Form behavior (Enter key, autofocus, disabled states)
+6. [ ] Polish items (active states, hover scales)
 
 ## Todos
 
-- [x] Planning (approved)
-- [x] Implementation
-  - [x] Extend CarmentaSidecar props
-  - [x] Add auxiliary slot to SidecarThread
-  - [x] Convert hire API to streaming
-  - [x] Create PlaybookPreviewCard component
-  - [x] Update AI Team page
-  - [x] Delete hire page
-- [x] Validation
-- [x] Review (logic review completed, issues fixed)
+- [x] Planning
+- [ ] Implementation
+- [ ] Validation
+- [ ] Review
 - [ ] PR Creation
 - [ ] Bot Feedback
 - [ ] Completion
 
 ## Decisions Made
 
-- Auxiliary content renders below messages, above composer (420px too narrow for split)
-- Use streaming with data parts for playbook extraction (consistent with existing
-  patterns)
-- TypeScript types pass
-- Added key prop to force remount when switching modes (fixes message persistence bug)
-- Added toast error feedback for failed hires
-- Added isHiring double-click guard
-- Changed READY_TO_HIRE to HTML comment (won't render in markdown)
+- One PR approach chosen for atomic rollback capability
+- 6 commits by pattern type for clean git history
 
 ## Blockers
 
