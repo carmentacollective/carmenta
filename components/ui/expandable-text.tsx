@@ -123,7 +123,7 @@ export function ExpandableText({
                     // Hover state - brighter and lifted
                     "hover:bg-primary/95 hover:shadow-primary/30 hover:scale-110 hover:shadow-xl",
                     // Active state - pressed feel
-                    "active:translate-y-1/2 active:scale-95 active:shadow-md",
+                    "active:shadow-primary/20 active:translate-y-1/2 active:scale-95 active:shadow-md",
                     // Focus state - prominent ring for keyboard nav
                     "focus-visible:ring-primary-foreground/60 focus-visible:ring-2 focus-visible:outline-none"
                 )}
