@@ -28,19 +28,18 @@ are acceptable—these don't participate in the page-level hierarchy.
 Two tooltip systems with consistent 400ms show delay:
 
 **Radix Tooltips** (component-based): Use for interactive triggers, complex content, or
-when you need fine-grained control. TooltipProvider defaults to 400ms delay.
+when you need fine-grained control. `TooltipProvider` is in `app/layout.tsx` at the app
+level—don't add your own.
 
 ```tsx
-<TooltipProvider>
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <Button variant="ghost" size="icon">
-        <CopyIcon />
-      </Button>
-    </TooltipTrigger>
-    <TooltipContent>Copy to clipboard</TooltipContent>
-  </Tooltip>
-</TooltipProvider>
+<Tooltip>
+  <TooltipTrigger asChild>
+    <Button variant="ghost" size="icon">
+      <CopyIcon />
+    </Button>
+  </TooltipTrigger>
+  <TooltipContent>Copy to clipboard</TooltipContent>
+</Tooltip>
 ```
 
 **GlobalTooltip** (attribute-based): Use for simple text tooltips without wrapping. Add

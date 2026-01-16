@@ -7,8 +7,23 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import type { ReactNode } from "react";
 
 import { CarmentaSidecar } from "@/components/carmenta-assistant/carmenta-sidecar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+/**
+ * Wrapper that provides TooltipProvider like app/layout.tsx does.
+ * Required for any component that uses Radix Tooltip.
+ */
+function TestWrapper({ children }: { children: ReactNode }) {
+    return <TooltipProvider>{children}</TooltipProvider>;
+}
+
+/** Render with providers that app/layout.tsx provides */
+function renderWithProviders(ui: ReactNode) {
+    return render(ui, { wrapper: TestWrapper });
+}
 
 // Mock useMediaQuery to always return desktop (true)
 vi.mock("@/hooks/use-media-query", () => ({
@@ -64,7 +79,7 @@ describe("CarmentaSidecar", () => {
 
     describe("basic rendering", () => {
         it("renders on desktop when open", () => {
-            render(
+            renderWithProviders(
                 <CarmentaSidecar
                     open={true}
                     onOpenChange={() => {}}
@@ -77,7 +92,7 @@ describe("CarmentaSidecar", () => {
         });
 
         it("renders custom title and description", () => {
-            render(
+            renderWithProviders(
                 <CarmentaSidecar
                     open={true}
                     onOpenChange={() => {}}
@@ -108,7 +123,7 @@ describe("CarmentaSidecar", () => {
             mockMessages = [{ id: "1", role: "user", content: "Hello" }];
 
             // This render would throw without TooltipProvider
-            render(
+            renderWithProviders(
                 <CarmentaSidecar
                     open={true}
                     onOpenChange={() => {}}
@@ -123,7 +138,7 @@ describe("CarmentaSidecar", () => {
         it("clears messages when clear button clicked", () => {
             mockMessages = [{ id: "1", role: "user", content: "Hello" }];
 
-            render(
+            renderWithProviders(
                 <CarmentaSidecar
                     open={true}
                     onOpenChange={() => {}}
@@ -142,7 +157,7 @@ describe("CarmentaSidecar", () => {
         it("calls onOpenChange when close button clicked", () => {
             const onOpenChange = vi.fn();
 
-            render(
+            renderWithProviders(
                 <CarmentaSidecar
                     open={true}
                     onOpenChange={onOpenChange}

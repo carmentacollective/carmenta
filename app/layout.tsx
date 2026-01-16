@@ -13,6 +13,7 @@ import { PostHogProvider } from "@/components/analytics/posthog-provider";
 import { FloatingEmojiProvider } from "@/components/delight/floating-emoji";
 import { Toaster } from "sonner";
 import { GlobalTooltip } from "@/components/ui/global-tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { CarmentaModalProvider, CarmentaModal } from "@/components/carmenta-modal";
 import "./globals.css";
 
@@ -155,19 +156,21 @@ export default function RootLayout({
                             </head>
                             <body className="bg-background min-h-screen font-sans antialiased">
                                 <ThemeProvider>
-                                    <FloatingEmojiProvider>
-                                        <CarmentaModalProvider>
-                                            <PWARegistration />
-                                            <InstallPrompt />
-                                            <SwipeNavigationProvider />
-                                            <WcoTitlebar />
-                                            <StructuredData />
-                                            <Toaster />
-                                            <GlobalTooltip />
-                                            <CarmentaModal />
-                                            {children}
-                                        </CarmentaModalProvider>
-                                    </FloatingEmojiProvider>
+                                    <TooltipProvider>
+                                        <FloatingEmojiProvider>
+                                            <CarmentaModalProvider>
+                                                <PWARegistration />
+                                                <InstallPrompt />
+                                                <SwipeNavigationProvider />
+                                                <WcoTitlebar />
+                                                <StructuredData />
+                                                <Toaster />
+                                                <GlobalTooltip />
+                                                <CarmentaModal />
+                                                {children}
+                                            </CarmentaModalProvider>
+                                        </FloatingEmojiProvider>
+                                    </TooltipProvider>
                                 </ThemeProvider>
                             </body>
                         </html>
