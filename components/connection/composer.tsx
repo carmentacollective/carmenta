@@ -625,6 +625,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             triggerHaptic,
             checkMessage,
             isMobile,
+            addPreUploadedFiles,
         ]
     );
 
