@@ -33,12 +33,7 @@ import type { UIMessage } from "@ai-sdk/react";
 
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     Sheet,
     SheetContent,
@@ -396,7 +391,7 @@ function SidecarInner({
     };
 
     return (
-        <TooltipProvider>
+        <>
             {/* Header */}
             <header className="border-foreground/[0.08] flex shrink-0 items-center justify-between border-b px-4 py-3">
                 <div className="flex items-center gap-2.5">
@@ -463,7 +458,7 @@ function SidecarInner({
                     auxiliaryContent={auxiliaryContent}
                 />
             </div>
-        </TooltipProvider>
+        </>
     );
 }
 
