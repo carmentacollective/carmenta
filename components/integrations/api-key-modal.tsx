@@ -186,8 +186,15 @@ export function ApiKeyModal({
 
                     {/* Error Message */}
                     {state.error && (
-                        <div className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
-                            {state.error}
+                        <div className="flex items-center justify-between gap-3 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+                            <span>{state.error}</span>
+                            <button
+                                type="submit"
+                                disabled={isPending || !apiKey.trim()}
+                                className="shrink-0 rounded-md bg-red-500/20 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-red-500/30 disabled:opacity-50"
+                            >
+                                Retry
+                            </button>
                         </div>
                     )}
 

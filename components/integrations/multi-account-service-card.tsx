@@ -110,7 +110,7 @@ export function MultiAccountServiceCard({
         if (statusMessage?.type === "success" && onClearStatusMessage) {
             const timer = setTimeout(() => {
                 onClearStatusMessage();
-            }, 3000);
+            }, 5000);
             return () => clearTimeout(timer);
         }
     }, [statusMessage, onClearStatusMessage]);

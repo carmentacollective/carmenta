@@ -668,6 +668,27 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                 description:
                     "Your changes are still here—try again or press Escape to cancel.",
                 duration: 6000,
+                action: {
+                    label: "Retry",
+                    onClick: async () => {
+                        try {
+                            await editMessageAndRegenerate(
+                                message.id,
+                                editContent.trim()
+                            );
+                            // Exit edit mode on success
+                            setIsEditing(false);
+                            setEditModeMinWidth(null);
+                        } catch (retryErr) {
+                            // Show new error toast on retry failure
+                            logger.error({ error: retryErr }, "Retry failed");
+                            toast.error("Retry failed", {
+                                description: "Still couldn't save your edit.",
+                                duration: 4000,
+                            });
+                        }
+                    },
+                },
             });
         } finally {
             setIsSubmitting(false);
