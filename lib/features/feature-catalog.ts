@@ -503,8 +503,8 @@ export const FEATURES: Feature[] = [
                 text: "Let's work on my project at ~/src/my-app",
             },
         },
-        available: true,
-        display: { homepage: true, connectPage: true },
+        available: false,
+        display: { homepage: true, connectPage: false },
         priority: 7,
     },
     {
