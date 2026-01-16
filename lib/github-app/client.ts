@@ -54,7 +54,7 @@ function sanitizeBody(body: string): string {
  */
 function sanitizeSearchQuery(query: string): string {
     return query
-        .replace(/["\\\-:]/g, " ") // Remove special search operators
+        .replace(/["\\:]/g, " ") // Remove special search operators (keep hyphens - common in tech terms)
         .substring(0, MAX_SEARCH_QUERY_LENGTH)
         .trim();
 }
@@ -154,7 +154,7 @@ export async function searchIssues(
                 const octokit = await getOctokit();
                 const result = await withRetry(async () => {
                     const { data } = await octokit.search.issuesAndPullRequests({
-                        q: `${sanitizedQuery} repo:${REPO_OWNER}/${REPO_NAME} is:issue`,
+                        q: `${sanitizedQuery} repo:${REPO_OWNER}/${REPO_NAME} is:issue is:open`,
                         per_page: params.maxResults ?? 5,
                         sort: "updated",
                     });
