@@ -81,6 +81,7 @@ export function ModelSelectorTrigger({
                 aria-label="Model settings"
                 data-tooltip-id="tip"
                 data-tooltip-content="Choose how we think"
+                data-highlight="model-selector"
             >
                 {/* showLabel mode: sparkles (+ optional label), otherwise provider icon */}
                 {showLabel ? (

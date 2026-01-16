@@ -245,6 +245,7 @@ export const ReasoningDisplay = memo(function ReasoningDisplay({
                     isNested ? "hover:bg-foreground/5 px-4 py-2.5 text-left" : "gap-1.5"
                 )}
                 data-testid="reasoning-trigger"
+                data-highlight="thinking-toggle"
             >
                 <BrainIcon
                     className={cn(

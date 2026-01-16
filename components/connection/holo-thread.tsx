@@ -64,6 +64,8 @@ import { DragDropOverlay } from "./drag-drop-overlay";
 import { ExpandableText } from "@/components/ui/expandable-text";
 import { CollapsibleStreamingContent } from "./collapsible-streaming-content";
 import { Composer } from "./composer";
+import { FeatureTipWhisper } from "./feature-tip";
+import { useFeatureTip } from "@/lib/hooks/use-feature-tip";
 
 export interface HoloThreadProps {
     /**
@@ -340,8 +342,13 @@ interface ThreadWelcomeProps {
  * Welcome screen shown when thread is empty.
  * Features personalized Sparks for quick conversation starters.
  * Beautiful exit animation when user sends their first message.
+ *
+ * Feature tips appear above sparks to introduce capabilities.
+ * Tips use variable reward psychology - not every session shows one.
  */
 function ThreadWelcome({ onPrefill }: ThreadWelcomeProps) {
+    const { tip, dismiss, engage } = useFeatureTip();
+
     return (
         <motion.div
             className="landscape-compact-welcome flex h-full w-full flex-1 flex-col items-center justify-center gap-8"
@@ -358,6 +365,21 @@ function ThreadWelcome({ onPrefill }: ThreadWelcomeProps) {
             }}
         >
             <Greeting />
+
+            {/* Feature tip - appears above sparks when available */}
+            <FeatureTipWhisper
+                feature={tip}
+                onComplete={(state) => {
+                    if (state === "dismissed") {
+                        dismiss();
+                    } else {
+                        engage();
+                    }
+                }}
+                onPrefill={(text) => onPrefill(text, false)}
+                className="max-w-md"
+            />
+
             <Sparks onPrefill={onPrefill} />
         </motion.div>
     );

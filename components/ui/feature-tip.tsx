@@ -46,7 +46,7 @@ export function FeatureTip({ className }: FeatureTipProps) {
     }, []);
 
     const handleCtaClick = useCallback(() => {
-        if (tip?.cta?.action === "settings") {
+        if (tip?.engagement?.action.type === "open-panel") {
             setSettingsOpen(true);
             setIsDismissed(true); // Dismiss tip after opening settings
         }
@@ -121,33 +121,35 @@ export function FeatureTip({ className }: FeatureTipProps) {
                                 </div>
                             )}
 
-                            {/* CTA button - only show for available features */}
-                            {tip.cta && tip.available && (
+                            {/* CTA button - only show for available features with engagement */}
+                            {tip.engagement && tip.available && (
                                 <div className="mt-3">
-                                    {tip.cta.action === "link" && tip.cta.href && (
+                                    {tip.engagement.action.type === "navigate" && (
                                         <Link
-                                            href={tip.cta.href}
+                                            href={tip.engagement.action.href}
                                             target={
-                                                tip.cta.external ? "_blank" : undefined
+                                                tip.engagement.action.external
+                                                    ? "_blank"
+                                                    : undefined
                                             }
                                             rel={
-                                                tip.cta.external
+                                                tip.engagement.action.external
                                                     ? "noopener noreferrer"
                                                     : undefined
                                             }
                                             className="btn-glass-interactive text-foreground/80 hover:text-foreground inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
                                         >
-                                            {tip.cta.label}
+                                            {tip.engagement.label}
                                             <ArrowRightIcon className="h-3.5 w-3.5" />
                                         </Link>
                                     )}
-                                    {tip.cta.action === "settings" && (
+                                    {tip.engagement.action.type === "open-panel" && (
                                         <button
                                             type="button"
                                             onClick={handleCtaClick}
                                             className="btn-glass-interactive text-foreground/80 hover:text-foreground inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
                                         >
-                                            {tip.cta.label}
+                                            {tip.engagement.label}
                                             <ArrowRightIcon className="h-3.5 w-3.5" />
                                         </button>
                                     )}

@@ -110,6 +110,7 @@ export function StarButton({
                 label || (isStarred ? "Remove from starred" : "Pin to top of list")
             }
             aria-label={label || (isStarred ? "Unstar connection" : "Star connection")}
+            data-highlight="star-button"
             aria-pressed={isStarred}
         >
             {/* Sparkle burst on starring */}

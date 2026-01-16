@@ -191,7 +191,7 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
     }, []);
 
     const handleCtaClick = useCallback(() => {
-        if (tip?.cta?.action === "settings") {
+        if (tip?.engagement?.action.type === "open-panel") {
             setSettingsOpen(true);
             setIsDismissed(true);
             markSessionDismissed();
@@ -329,35 +329,36 @@ export function OracleWhisper({ className }: OracleWhisperProps) {
                                         </span>
                                     )}
 
-                                    {tip.cta && tip.available && (
+                                    {tip.engagement && tip.available && (
                                         <>
-                                            {tip.cta.action === "link" &&
-                                                tip.cta.href && (
-                                                    <Link
-                                                        href={tip.cta.href}
-                                                        target={
-                                                            tip.cta.external
-                                                                ? "_blank"
-                                                                : undefined
-                                                        }
-                                                        rel={
-                                                            tip.cta.external
-                                                                ? "noopener noreferrer"
-                                                                : undefined
-                                                        }
-                                                        className="group/cta bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all"
-                                                    >
-                                                        {tip.cta.label}
-                                                        <ArrowRightIcon className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />
-                                                    </Link>
-                                                )}
-                                            {tip.cta.action === "settings" && (
+                                            {tip.engagement.action.type ===
+                                                "navigate" && (
+                                                <Link
+                                                    href={tip.engagement.action.href}
+                                                    target={
+                                                        tip.engagement.action.external
+                                                            ? "_blank"
+                                                            : undefined
+                                                    }
+                                                    rel={
+                                                        tip.engagement.action.external
+                                                            ? "noopener noreferrer"
+                                                            : undefined
+                                                    }
+                                                    className="group/cta bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all"
+                                                >
+                                                    {tip.engagement.label}
+                                                    <ArrowRightIcon className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />
+                                                </Link>
+                                            )}
+                                            {tip.engagement.action.type ===
+                                                "open-panel" && (
                                                 <button
                                                     type="button"
                                                     onClick={handleCtaClick}
                                                     className="group/cta bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all"
                                                 >
-                                                    {tip.cta.label}
+                                                    {tip.engagement.label}
                                                     <ArrowRightIcon className="h-3 w-3 transition-transform group-hover/cta:translate-x-0.5" />
                                                 </button>
                                             )}
