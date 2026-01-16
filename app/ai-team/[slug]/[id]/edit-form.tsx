@@ -48,9 +48,9 @@ interface EditAutomationFormProps {
 export function EditAutomationForm({ job }: EditAutomationFormProps) {
     const router = useRouter();
 
-    const [saving, setSaving] = useState(false);
-    const [deleting, setDeleting] = useState(false);
-    const [triggering, setTriggering] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isTriggering, setIsTriggering] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [infoMessage, setInfoMessage] = useState<string | null>(null);
@@ -88,7 +88,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
     };
 
     const handleSave = async () => {
-        setSaving(true);
+        setIsSaving(true);
         setError(null);
 
         try {
@@ -121,13 +121,13 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
             });
             setError(error instanceof Error ? error.message : "Failed to save changes");
         } finally {
-            setSaving(false);
+            setIsSaving(false);
         }
     };
 
     const handleDelete = async () => {
         setShowDeleteConfirm(false);
-        setDeleting(true);
+        setIsDeleting(true);
         setError(null);
 
         try {
@@ -154,7 +154,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                 error instanceof Error ? error.message : "Failed to delete automation"
             );
         } finally {
-            setDeleting(false);
+            setIsDeleting(false);
         }
     };
 
@@ -216,7 +216,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
     };
 
     const handleRunNow = async () => {
-        setTriggering(true);
+        setIsTriggering(true);
         setError(null);
         setInfoMessage(null);
 
@@ -255,7 +255,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                 error instanceof Error ? error.message : "Couldn't start the automation"
             );
         } finally {
-            setTriggering(false);
+            setIsTriggering(false);
         }
     };
 
@@ -403,11 +403,11 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                     <div className="border-foreground/10 flex items-center justify-between border-t pt-6">
                         <button
                             onClick={() => setShowDeleteConfirm(true)}
-                            disabled={deleting}
+                            disabled={isDeleting}
                             className="flex items-center gap-2 rounded-xl px-4 py-2 text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                         >
                             <TrashIcon className="h-4 w-4" />
-                            {deleting ? "Deleting..." : "Delete"}
+                            {isDeleting ? "Deleting..." : "Delete"}
                         </button>
 
                         <div className="flex items-center gap-3">
@@ -419,7 +419,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                             </button>
                             <button
                                 onClick={handleRunNow}
-                                disabled={triggering || saving || hasChanges}
+                                disabled={isTriggering || isSaving || hasChanges}
                                 title={
                                     hasChanges
                                         ? "Save changes first"
@@ -427,20 +427,20 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
                                 }
                                 className="border-foreground/10 text-foreground hover:bg-foreground/5 flex items-center gap-2 rounded-xl border px-4 py-2 font-medium transition-colors disabled:opacity-50"
                             >
-                                {triggering ? (
+                                {isTriggering ? (
                                     <SparkleIcon className="h-4 w-4 animate-pulse" />
                                 ) : (
                                     <PlayIcon className="h-4 w-4" />
                                 )}
-                                {triggering ? "Starting..." : "Try it"}
+                                {isTriggering ? "Starting..." : "Try it"}
                             </button>
                             <button
                                 onClick={handleSave}
-                                disabled={saving || !hasChanges}
+                                disabled={isSaving || !hasChanges}
                                 className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-xl px-6 py-2 font-medium transition-colors disabled:opacity-50"
                             >
                                 <FloppyDiskIcon className="h-4 w-4" />
-                                {saving ? "Saving..." : "Save Changes"}
+                                {isSaving ? "Saving..." : "Save Changes"}
                             </button>
                         </div>
                     </div>

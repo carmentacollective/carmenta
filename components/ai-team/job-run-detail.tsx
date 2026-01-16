@@ -75,7 +75,7 @@ export function JobRunDetail({
     jobEncodedId,
 }: JobRunDetailProps) {
     const [data, setData] = useState<RunDetailData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [developerMode, setDeveloperMode] = useState(false);
 
@@ -111,7 +111,7 @@ export function JobRunDetail({
                 });
                 setError("Failed to load run details");
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         }
 
@@ -139,7 +139,7 @@ export function JobRunDetail({
         return `${days}d ago`;
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center py-24">
                 <div className="flex flex-col items-center gap-4">
