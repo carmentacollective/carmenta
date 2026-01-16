@@ -29,7 +29,7 @@ import { encodeConnectionId } from "@/lib/sqids";
  */
 export default function ConnectionsPage() {
     const [connections, setConnections] = useState<PublicConnection[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         async function loadConnections() {
@@ -39,7 +39,7 @@ export default function ConnectionsPage() {
             } catch (error) {
                 console.error("Failed to load connections:", error);
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         }
 
@@ -96,7 +96,7 @@ export default function ConnectionsPage() {
                 </div>
 
                 {/* Stats */}
-                {!loading && (
+                {!isLoading && (
                     <p className="text-muted-foreground text-sm">
                         {connections.length} connection
                         {connections.length !== 1 ? "s" : ""}
@@ -104,7 +104,7 @@ export default function ConnectionsPage() {
                 )}
 
                 {/* Loading */}
-                {loading && (
+                {isLoading && (
                     <Card>
                         <CardContent className="py-12">
                             <div className="flex flex-col items-center justify-center text-center">
@@ -118,7 +118,7 @@ export default function ConnectionsPage() {
                 )}
 
                 {/* Empty state */}
-                {!loading && connections.length === 0 && (
+                {!isLoading && connections.length === 0 && (
                     <Card>
                         <CardContent className="py-12">
                             <div className="flex flex-col items-center justify-center text-center">
@@ -139,7 +139,7 @@ export default function ConnectionsPage() {
                 )}
 
                 {/* Connection list */}
-                {!loading && connections.length > 0 && (
+                {!isLoading && connections.length > 0 && (
                     <div className="space-y-2">
                         {connections.map((connection) => (
                             <Link

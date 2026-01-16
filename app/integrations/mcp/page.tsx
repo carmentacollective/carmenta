@@ -122,7 +122,7 @@ interface McpTestResult {
 
 interface ServerListProps {
     servers: McpServerSummary[];
-    loading: boolean;
+    isLoading: boolean;
     onReconnect?: (server: McpServerSummary) => void;
     onTest?: (server: McpServerSummary) => void;
     onDelete?: (server: McpServerSummary) => void;
@@ -134,7 +134,7 @@ interface ServerListProps {
 
 function ServerList({
     servers,
-    loading,
+    isLoading,
     onReconnect,
     onTest,
     onDelete,
@@ -172,7 +172,7 @@ function ServerList({
         );
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div
                 className={cn(
@@ -401,7 +401,7 @@ function McpConfigContent({
     onChangesComplete: () => void;
 }) {
     const [servers, setServers] = useState<McpServerSummary[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [reconnectingServers, setReconnectingServers] = useState<Set<number>>(
         new Set()
     );
@@ -444,7 +444,7 @@ function McpConfigContent({
                 tags: { component: "mcp-config-page", action: "load_servers" },
             });
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     }, []);
 
@@ -816,7 +816,7 @@ function McpConfigContent({
                 </div>
                 <ServerList
                     servers={servers}
-                    loading={loading}
+                    isLoading={isLoading}
                     onReconnect={handleReconnect}
                     onTest={handleTest}
                     onDelete={handleDelete}

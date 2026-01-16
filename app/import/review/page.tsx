@@ -108,7 +108,7 @@ const CATEGORY_CONFIG: Record<
 export default function ImportReviewPage() {
     const [extractions, setExtractions] = useState<Extraction[]>([]);
     const [stats, setStats] = useState<ExtractionStats | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState("");
@@ -139,7 +139,7 @@ export default function ImportReviewPage() {
                 duration: 6000,
             });
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     }, []);
 
@@ -312,7 +312,7 @@ export default function ImportReviewPage() {
         }
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <StandardPageLayout>
                 <div className="flex items-center justify-center py-12">
