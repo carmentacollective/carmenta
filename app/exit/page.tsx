@@ -54,14 +54,14 @@ export default function ExitPage() {
                     />
                     <h1 className="text-foreground/90 text-2xl font-semibold tracking-tight">
                         {error
-                            ? "Something went wrong"
+                            ? "Something went sideways"
                             : isExiting
                               ? "Until next time"
                               : "Exiting..."}
                     </h1>
                     <p className="text-muted-foreground mt-2 text-sm">
                         {error
-                            ? "Couldn't sign you out. The bots are on it. 🤖"
+                            ? "Couldn't sign you out. The robots have been notified."
                             : "We'll remember where we left off"}
                     </p>
                     {error && (
@@ -85,13 +85,13 @@ export default function ExitPage() {
                                 disabled={isExiting}
                                 className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
                             >
-                                Try Again
+                                Try again
                             </button>
                             <button
                                 onClick={() => router.push("/")}
                                 className="text-foreground/70 hover:text-foreground text-sm font-medium"
                             >
-                                Return home
+                                Go home
                             </button>
                         </div>
                     )}

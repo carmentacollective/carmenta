@@ -70,7 +70,7 @@ export default function OfflinePage() {
                                 href="/"
                                 className="border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-ring inline-flex items-center justify-center rounded-lg border px-6 py-3 font-medium shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                             >
-                                Go Home
+                                Go home
                             </Link>
                         </div>
 

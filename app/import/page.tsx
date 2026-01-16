@@ -793,7 +793,7 @@ export default function ImportPage() {
                                         variant="default"
                                         onClick={handleRetryFromError}
                                     >
-                                        {parsedData ? "Back to Preview" : "Try Again"}
+                                        {parsedData ? "Back to Preview" : "Try again"}
                                     </Button>
                                     {parsedData && (
                                         <Button variant="outline" onClick={handleReset}>
