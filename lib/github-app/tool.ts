@@ -139,12 +139,14 @@ export function createGitHubTool(context: GitHubToolContext) {
     const { userId, isAdmin } = context;
 
     // Build description based on permissions
+    // NOTE: This description must clearly distinguish from future user GitHub integrations
+    // that operate on the USER's repos. This tool is ONLY for Carmenta's internal repo.
     const adminNote = isAdmin
         ? " You have admin access: can also add reactions, labels, close issues, and more."
         : "";
 
     return tool({
-        description: `Interact with GitHub as Carmenta. Create issues to track bugs or feature requests, search existing issues.${adminNote}`,
+        description: `Report bugs, feedback, or feature requests ABOUT CARMENTA ITSELF. This files issues in Carmenta's own repository as carmenta-bot. Use when users want to report problems with Carmenta, suggest features, or give feedback. NOT for accessing user's GitHub repos - that's a separate integration.${adminNote}`,
 
         inputSchema: githubToolSchema,
 

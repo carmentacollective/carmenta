@@ -71,15 +71,17 @@ Use `createGitHubTool` to add GitHub capabilities to an AI conversation:
 import { createGitHubTool } from "@/lib/github-app";
 
 // Create tool with user context
-const githubTool = createGitHubTool({
+const carmentaGitHub = createGitHubTool({
   userId: user.id,
   isAdmin: user.publicMetadata?.role === "admin",
 });
 
 // Add to conversation tools
+// IMPORTANT: Use "carmentaGitHub" to distinguish from future user GitHub integration
 const tools = {
   ...builtInTools,
-  github: githubTool,
+  carmentaGitHub, // Carmenta's repo operations
+  // github: userGitHubTool,  // Future: user's repo operations
 };
 ```
 
