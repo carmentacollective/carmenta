@@ -563,6 +563,7 @@ export function ImportWidget({
 
             if (data.jobId) {
                 setDiscoveryJobId(data.jobId);
+                setState("success"); // Transition from "extracting" to prevent double-render
                 setDiscoveryState("processing");
             } else {
                 // No extractions found
@@ -582,6 +583,7 @@ export function ImportWidget({
                         voice: 0,
                     },
                 });
+                setState("success");
                 setDiscoveryState("complete");
             }
         } catch (err) {
@@ -945,8 +947,8 @@ export function ImportWidget({
                                             Knowledge extraction mode
                                         </p>
                                         <p className="text-muted-foreground text-xs">
-                                            We&apos;ll extract insights without
-                                            importing conversations
+                                            We&apos;ll extract insights and add them to
+                                            your knowledge base
                                         </p>
                                     </div>
                                 </div>

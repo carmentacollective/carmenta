@@ -75,6 +75,23 @@ export function DiscoveryProgress({
                     data.errorMessage ||
                         "Discovery failed. Some conversations may not have been processed."
                 );
+                // Call onComplete with zero stats to allow user to continue
+                onComplete({
+                    total: 0,
+                    pending: 0,
+                    approved: 0,
+                    rejected: 0,
+                    edited: 0,
+                    byCategory: {
+                        identity: 0,
+                        person: 0,
+                        project: 0,
+                        preference: 0,
+                        decision: 0,
+                        expertise: 0,
+                        voice: 0,
+                    },
+                });
                 return;
             }
 
