@@ -40,6 +40,32 @@ async function deleteImportedData() {
         return;
     }
 
+    // Confirmation prompt before deletion
+    console.log(
+        "\n⚠️  This will PERMANENTLY DELETE all imported conversations and their messages."
+    );
+    console.log("This action cannot be undone.\n");
+
+    const readline = await import("readline");
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+        rl.question('Type "DELETE" to confirm: ', (answer) => {
+            rl.close();
+            resolve(answer.trim() === "DELETE");
+        });
+    });
+
+    if (!confirmed) {
+        console.log("\n❌ Canceled. No data was deleted.");
+        return;
+    }
+
+    console.log("\n🗑️  Proceeding with deletion...\n");
+
     const connectionIds = imported.map((c) => c.id);
 
     // Delete pending extractions for these connections (if table exists)

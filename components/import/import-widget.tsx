@@ -203,6 +203,11 @@ export function ImportWidget({
     const abortControllerRef = useRef<AbortController | null>(null);
 
     // Discovery state
+    // Note: For knowledge-only mode, state machine works differently:
+    // 1. state="extracting" while calling API
+    // 2. state="success" + discoveryState="processing" during extraction (prevents loading spinner + discovery UI overlap)
+    // 3. discoveryState="complete" when extraction finishes
+    // This allows both state="success" and discoveryState="processing" to be true simultaneously.
     const [discoveryState, setDiscoveryState] = useState<DiscoveryState>("idle");
     const [discoveryJobId, setDiscoveryJobId] = useState<string | null>(null);
     const [extractionStats, setExtractionStats] = useState<ExtractionStats | null>(
@@ -543,6 +548,9 @@ export function ImportWidget({
         setState("extracting");
         setError(null);
 
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
         try {
             // For knowledge-only mode, we send conversations directly to extraction
             // without creating permanent connections
@@ -553,6 +561,7 @@ export function ImportWidget({
                     conversations: filteredConversations,
                     provider: selectedProvider,
                 }),
+                signal: abortController.signal,
             });
 
             const data = await response.json();
@@ -587,6 +596,11 @@ export function ImportWidget({
                 setDiscoveryState("complete");
             }
         } catch (err) {
+            // Ignore abort errors (user canceled)
+            if (err instanceof Error && err.name === "AbortError") {
+                return;
+            }
+
             const message =
                 err instanceof Error ? err.message : "Knowledge extraction failed";
             setError(message);
@@ -595,6 +609,8 @@ export function ImportWidget({
             Sentry.captureException(err, {
                 tags: { component: "import-widget-extract", mode: "knowledge-only" },
             });
+        } finally {
+            abortControllerRef.current = null;
         }
     }, [filteredConversations, selectedProvider]);
 
@@ -652,6 +668,12 @@ export function ImportWidget({
     const handleDiscoveryComplete = useCallback((stats: ExtractionStats) => {
         setExtractionStats(stats);
         setDiscoveryState("complete");
+    }, []);
+
+    const handleDiscoveryError = useCallback((errorMessage: string) => {
+        setError(errorMessage);
+        setDiscoveryState("idle");
+        setState("error");
     }, []);
 
     const handleKeepEverything = useCallback(async () => {
@@ -1408,6 +1430,7 @@ export function ImportWidget({
                             jobId={discoveryJobId}
                             totalConversations={importResult.connectionsCreated}
                             onComplete={handleDiscoveryComplete}
+                            onError={handleDiscoveryError}
                         />
                     )}
 
@@ -1480,6 +1503,7 @@ export function ImportWidget({
                             jobId={discoveryJobId}
                             totalConversations={filteredConversations.length}
                             onComplete={handleDiscoveryComplete}
+                            onError={handleDiscoveryError}
                         />
                     </>
                 )}

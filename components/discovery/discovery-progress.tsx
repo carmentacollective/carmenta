@@ -14,6 +14,7 @@ interface DiscoveryProgressProps {
     jobId: string;
     totalConversations: number;
     onComplete: (stats: ExtractionStats) => void;
+    onError?: (error: string) => void;
 }
 
 const MAX_CONSECUTIVE_ERRORS = 5;
@@ -29,8 +30,9 @@ export function DiscoveryProgress({
     jobId,
     totalConversations,
     onComplete,
+    onError,
 }: DiscoveryProgressProps) {
-    const [stats, setStats] = useState<ExtractionStats | null>(null);
+    const [_stats, setStats] = useState<ExtractionStats | null>(null);
     const [processedCount, setProcessedCount] = useState(0);
     const [extractions, setExtractions] = useState<PendingExtraction[]>([]);
     const [isComplete, setIsComplete] = useState(false);
@@ -71,27 +73,34 @@ export function DiscoveryProgress({
             // Handle failed extraction jobs
             if (data.jobStatus === "failed") {
                 hasCalledComplete.current = true;
-                setPollingError(
+                const errorMessage =
                     data.errorMessage ||
-                        "Discovery failed. Some conversations may not have been processed."
-                );
-                // Call onComplete with zero stats to allow user to continue
-                onComplete({
-                    total: 0,
-                    pending: 0,
-                    approved: 0,
-                    rejected: 0,
-                    edited: 0,
-                    byCategory: {
-                        identity: 0,
-                        person: 0,
-                        project: 0,
-                        preference: 0,
-                        decision: 0,
-                        expertise: 0,
-                        voice: 0,
-                    },
-                });
+                    "Discovery failed. Some conversations may not have been processed.";
+
+                // Call onError to let parent handle the error state with recovery options
+                if (onError) {
+                    onError(errorMessage);
+                } else {
+                    // Fallback: show error inline and allow user to proceed
+                    setPollingError(errorMessage);
+                    // Call onComplete with zero stats to allow user to continue
+                    onComplete({
+                        total: 0,
+                        pending: 0,
+                        approved: 0,
+                        rejected: 0,
+                        edited: 0,
+                        byCategory: {
+                            identity: 0,
+                            person: 0,
+                            project: 0,
+                            preference: 0,
+                            decision: 0,
+                            expertise: 0,
+                            voice: 0,
+                        },
+                    });
+                }
                 return;
             }
 
@@ -125,16 +134,15 @@ export function DiscoveryProgress({
                 );
             }
         }
-    }, [jobId, totalConversations, onComplete]);
+    }, [jobId, totalConversations, onComplete, onError]);
 
     useEffect(() => {
-        // Initial poll on mount (via setTimeout to avoid synchronous setState in effect)
+        // Initial poll on mount (via queueMicrotask to avoid synchronous setState in effect)
         // Then poll every 2 seconds
-        const timeout = setTimeout(pollProgress, 0);
+        queueMicrotask(pollProgress);
         const interval = setInterval(pollProgress, 2000);
 
         return () => {
-            clearTimeout(timeout);
             clearInterval(interval);
         };
     }, [pollProgress]);
