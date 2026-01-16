@@ -93,6 +93,7 @@ export function MessageActions({
                         <button
                             onClick={onEdit}
                             aria-label="Edit message"
+                            data-highlight="edit-button"
                             className={cn(
                                 "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-all",
                                 "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",

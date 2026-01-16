@@ -205,6 +205,13 @@ export async function POST(request: NextRequest) {
             return validationErrorResponse({ tipId: "required" }, "tipId is required");
         }
 
+        // Validate tipId exists in feature catalog
+        const allTips = getConnectPageFeatures();
+        const validTipIds = new Set(allTips.map((f) => f.id));
+        if (!validTipIds.has(tipId)) {
+            return validationErrorResponse({ tipId: "unknown" }, "Unknown tip ID");
+        }
+
         if (!state || !["shown", "dismissed", "engaged"].includes(state)) {
             return validationErrorResponse(
                 { state: "invalid" },
@@ -242,12 +249,17 @@ export async function POST(request: NextRequest) {
             const view = existingView[0];
 
             if (state === "shown") {
-                // Just increment show count
+                // Increment show count and reset state if previously dismissed
+                // (allows dismissed tips to re-enter weighted selection after timeout)
                 await db
                     .update(featureTipViews)
                     .set({
+                        state: "shown",
                         shownCount: view.shownCount + 1,
                         lastShownAt: now,
+                        // Reset stateChangedAt if transitioning from dismissed back to shown
+                        stateChangedAt:
+                            view.state === "dismissed" ? now : view.stateChangedAt,
                     })
                     .where(eq(featureTipViews.id, view.id));
             } else {

@@ -358,8 +358,8 @@ export const FEATURES: Feature[] = [
                 duration: 2000,
             },
         },
-        available: true,
-        display: { homepage: false, connectPage: true },
+        available: false,
+        display: { homepage: false, connectPage: false },
         priority: 6,
     },
     {
