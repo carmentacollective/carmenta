@@ -94,6 +94,10 @@ export async function createConnection(
             // Preserve original timestamps from imports (otherwise defaultNow)
             ...(importData?.createdAt && { createdAt: importData.createdAt }),
             ...(importData?.updatedAt && { updatedAt: importData.updatedAt }),
+            // Use updatedAt (or createdAt) for lastActivityAt so imports show correct date
+            ...(importData?.updatedAt && { lastActivityAt: importData.updatedAt }),
+            ...(!importData?.updatedAt &&
+                importData?.createdAt && { lastActivityAt: importData.createdAt }),
         })
         .returning();
 

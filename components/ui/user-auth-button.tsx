@@ -258,35 +258,35 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/connections"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <ClockClockwiseIcon className="text-foreground/60 relative h-4 w-4" />
                                           <span className="relative">
-                                              Conversations
+                                              Our connections
                                           </span>
                                       </Link>
 
                                       <Link
                                           href="/knowledge-base"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <BookOpenIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">
-                                              Knowledge Base
-                                          </span>
+                                          <span className="relative">What we know</span>
                                       </Link>
 
                                       <Link
                                           href="/import"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <DownloadSimpleIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">Import</span>
+                                          <span className="relative">
+                                              Bring history
+                                          </span>
                                       </Link>
 
                                       {/* Extend */}
@@ -295,7 +295,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/integrations"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <PlugIcon className="text-foreground/60 relative h-4 w-4" />
@@ -305,11 +305,11 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/integrations/mcp"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <PlugsIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">MCP Servers</span>
+                                          <span className="relative">MCP servers</span>
                                       </Link>
 
                                       {/* Settings */}
@@ -320,17 +320,17 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                               openUserProfile();
                                               setIsOpen(false);
                                           }}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <UserIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">Account</span>
+                                          <span className="relative">Your account</span>
                                       </button>
 
                                       <Link
                                           href="/communication"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <ChatTeardropIcon className="text-foreground/60 relative h-4 w-4" />
@@ -510,11 +510,11 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/exit"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <SignOutIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">Exit</span>
+                                          <span className="relative">Sign out</span>
                                       </Link>
                                   </div>
                               </div>
