@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { toast } from "sonner";
 import {
     UploadIcon,
     FileZipIcon,
@@ -344,12 +345,18 @@ export default function ImportPage() {
                     `${currentProvider.name} export parsed successfully`
                 );
             } catch (err) {
-                // If aborted, don't show error - user clicked Cancel
+                // If aborted, reset to idle and show cancellation feedback
                 if (err instanceof Error && err.name === "AbortError") {
                     logger.info(
                         { provider: selectedProvider },
                         "Parse cancelled by user"
                     );
+                    setState("idle");
+                    clearFileInput();
+                    toast.info("Import cancelled", {
+                        description: "You can start over whenever you're ready.",
+                        duration: 4000,
+                    });
                     return;
                 }
 
