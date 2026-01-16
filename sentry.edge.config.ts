@@ -1,14 +1,8 @@
 /**
- * Sentry Server Configuration
+ * Sentry Edge Configuration
  *
- * Intentionally minimal - using Sentry's defaults which include:
- * - vercelAIIntegration (LLM tracing for Vercel AI SDK)
- * - consoleIntegration (breadcrumbs from console calls)
- * - All standard Node.js integrations
- *
- * We previously had custom config (enabled: false in dev, explicit integrations,
- * custom onRequestError) that may have contributed to Turbopack hanging in an
- * infinite error loop. Stripped to vanilla to match official docs exactly.
+ * Initializes Sentry for edge runtime (middleware, edge API routes).
+ * Kept minimal - edge runtime has limited API surface.
  *
  * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
  */
@@ -28,6 +22,6 @@ Sentry.init({
 
     // Tag for filtering in Sentry dashboard
     initialScope: {
-        tags: { component: "server" },
+        tags: { component: "edge" },
     },
 });

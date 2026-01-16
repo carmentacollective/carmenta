@@ -89,15 +89,14 @@ async function executeGenerate(
 ): Promise<SubagentResult<ImageArtistResult>> {
     const { prompt, style, aspectRatio } = params;
 
-    try {
-        const agent = createImageArtistAgent();
+    const agent = createImageArtistAgent();
 
-        // Build the generation prompt with context
-        const styleContext = style ? `\nStyle preference: ${style}` : "";
-        const aspectContext = aspectRatio ? `\nAspect ratio: ${aspectRatio}` : "";
+    // Build the generation prompt with context
+    const styleContext = style ? `\nStyle preference: ${style}` : "";
+    const aspectContext = aspectRatio ? `\nAspect ratio: ${aspectRatio}` : "";
 
-        const result = await agent.generate({
-            prompt: `Generate an image for this request:
+    const result = await agent.generate({
+        prompt: `Generate an image for this request:
 
 <user-request>${prompt}</user-request>${styleContext}${aspectContext}
 
@@ -106,122 +105,99 @@ Process:
 2. Expand the prompt with appropriate details
 3. Generate the image using the optimal model
 4. Call completeGeneration with the results`,
-            abortSignal: context.abortSignal,
-        });
+        abortSignal: context.abortSignal,
+    });
 
-        const stepsUsed = result.steps.length;
+    const stepsUsed = result.steps.length;
 
-        // Check for explicit completion by finding completeGeneration tool result
-        // The tool result contains the actual ImageArtistResult with images
-        const completeToolResult = result.steps
-            .flatMap((step) => step.toolResults ?? [])
-            .find(
-                (tr) =>
-                    tr.toolName === "completeGeneration" &&
-                    tr.output &&
-                    typeof tr.output === "object"
-            );
-
-        const completedExplicitly = !!completeToolResult;
-
-        // Detect step exhaustion
-        const exhaustion = detectStepExhaustion(
-            stepsUsed,
-            MAX_GENERATION_STEPS,
-            completedExplicitly
+    // Check for explicit completion by finding completeGeneration tool result
+    // The tool result contains the actual ImageArtistResult with images
+    const completeToolResult = result.steps
+        .flatMap((step) => step.toolResults ?? [])
+        .find(
+            (tr) =>
+                tr.toolName === "completeGeneration" &&
+                tr.output &&
+                typeof tr.output === "object"
         );
 
-        if (exhaustion.exhausted) {
-            logger.warn(
-                { userId: context.userId, stepsUsed },
-                "🎨 Image Artist hit step limit without completing"
-            );
+    const completedExplicitly = !!completeToolResult;
 
-            Sentry.captureMessage("Image Artist exhausted steps", {
-                level: "warning",
-                tags: {
-                    component: "image-artist",
-                    action: "generate",
-                    quality: "degraded",
-                },
-                extra: {
-                    userId: context.userId,
-                    stepsUsed,
-                    maxSteps: MAX_GENERATION_STEPS,
-                },
-            });
+    // Detect step exhaustion
+    const exhaustion = detectStepExhaustion(
+        stepsUsed,
+        MAX_GENERATION_STEPS,
+        completedExplicitly
+    );
 
-            return degradedResult<ImageArtistResult>(
-                {
-                    generated: false,
-                    images: [],
-                    expandedPrompt: prompt,
-                    originalPrompt: prompt,
-                    model: "unknown",
-                    taskType: "default",
-                    aspectRatio: aspectRatio ?? "1:1",
-                    durationMs: 0,
-                },
-                exhaustion.message ?? "Step limit reached",
-                { stepsUsed }
-            );
-        }
+    if (exhaustion.exhausted) {
+        logger.warn(
+            { userId: context.userId, stepsUsed },
+            "🎨 Image Artist hit step limit without completing"
+        );
 
-        // Extract result from completeGeneration tool output
-        // The tool returns ImageArtistResult with actual images (retrieved from pendingImages)
-        const generationResult: ImageArtistResult =
-            completeToolResult?.output &&
-            typeof completeToolResult.output === "object" &&
-            "generated" in completeToolResult.output
-                ? (completeToolResult.output as ImageArtistResult)
-                : {
-                      generated: false,
-                      images: [],
-                      expandedPrompt: prompt,
-                      originalPrompt: prompt,
-                      model: "unknown",
-                      taskType: "default",
-                      aspectRatio: aspectRatio ?? "1:1",
-                      durationMs: 0,
-                  };
-
-        logger.info(
-            {
-                userId: context.userId,
-                generated: generationResult.generated,
-                model: generationResult.model,
-                imageCount: generationResult.images.length,
-                stepsUsed,
+        Sentry.captureMessage("Image Artist exhausted steps", {
+            level: "warning",
+            tags: {
+                component: "image-artist",
+                action: "generate",
+                quality: "degraded",
             },
-            generationResult.generated
-                ? "✅ Image generation complete"
-                : "⏭️ Image generation failed"
-        );
-
-        return successResult(generationResult, { stepsUsed });
-    } catch (error) {
-        logger.error(
-            {
-                error,
-                userId: context.userId,
-                promptLength: prompt.length,
-            },
-            "🎨 Image Artist failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "image-artist", action: "generate" },
             extra: {
                 userId: context.userId,
-                promptLength: prompt.length,
+                stepsUsed,
+                maxSteps: MAX_GENERATION_STEPS,
             },
         });
 
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Generation failed"
+        return degradedResult<ImageArtistResult>(
+            {
+                generated: false,
+                images: [],
+                expandedPrompt: prompt,
+                originalPrompt: prompt,
+                model: "unknown",
+                taskType: "default",
+                aspectRatio: aspectRatio ?? "1:1",
+                durationMs: 0,
+            },
+            exhaustion.message ?? "Step limit reached",
+            { stepsUsed }
         );
     }
+
+    // Extract result from completeGeneration tool output
+    // The tool returns ImageArtistResult with actual images (retrieved from pendingImages)
+    const generationResult: ImageArtistResult =
+        completeToolResult?.output &&
+        typeof completeToolResult.output === "object" &&
+        "generated" in completeToolResult.output
+            ? (completeToolResult.output as ImageArtistResult)
+            : {
+                  generated: false,
+                  images: [],
+                  expandedPrompt: prompt,
+                  originalPrompt: prompt,
+                  model: "unknown",
+                  taskType: "default",
+                  aspectRatio: aspectRatio ?? "1:1",
+                  durationMs: 0,
+              };
+
+    logger.info(
+        {
+            userId: context.userId,
+            generated: generationResult.generated,
+            model: generationResult.model,
+            imageCount: generationResult.images.length,
+            stepsUsed,
+        },
+        generationResult.generated
+            ? "✅ Image generation complete"
+            : "⏭️ Image generation failed"
+    );
+
+    return successResult(generationResult, { stepsUsed });
 }
 
 /**

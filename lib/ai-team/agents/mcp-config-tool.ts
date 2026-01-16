@@ -15,7 +15,6 @@
  */
 
 import { tool } from "ai";
-import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -203,53 +202,36 @@ interface ListData {
 async function executeList(
     context: SubagentContext
 ): Promise<SubagentResult<ListData>> {
-    try {
-        // Pass explicit userEmail - don't rely on Clerk session in agent context
-        const services = await getServicesWithStatus(context.userEmail);
+    // Pass explicit userEmail - don't rely on Clerk session in agent context
+    const services = await getServicesWithStatus(context.userEmail);
 
-        const data: ListData = {
-            connected: services.connected.map((s) => ({
-                serviceId: s.service.id,
-                serviceName: s.service.name,
-                status: s.status,
-                accountId: s.accountId,
-                accountDisplayName: s.accountDisplayName,
-                isDefault: s.isDefault,
-            })),
-            available: services.available.map((s) => ({
-                id: s.id,
-                name: s.name,
-                description: s.description,
-                authMethod: s.authMethod,
-            })),
-        };
+    const data: ListData = {
+        connected: services.connected.map((s) => ({
+            serviceId: s.service.id,
+            serviceName: s.service.name,
+            status: s.status,
+            accountId: s.accountId,
+            accountDisplayName: s.accountDisplayName,
+            isDefault: s.isDefault,
+        })),
+        available: services.available.map((s) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            authMethod: s.authMethod,
+        })),
+    };
 
-        logger.info(
-            {
-                userEmail: context.userEmail,
-                connectedCount: data.connected.length,
-                availableCount: data.available.length,
-            },
-            "🔧 Listed integrations"
-        );
+    logger.info(
+        {
+            userEmail: context.userEmail,
+            connectedCount: data.connected.length,
+            availableCount: data.available.length,
+        },
+        "🔧 Listed integrations"
+    );
 
-        return successResult(data);
-    } catch (error) {
-        logger.error(
-            { error, userEmail: context.userEmail },
-            "🔧 Failed to list integrations"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "mcp-config", action: "list" },
-            extra: { userEmail: context.userEmail },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to list integrations"
-        );
-    }
+    return successResult(data);
 }
 
 /**
@@ -271,60 +253,43 @@ async function executeTest(
 ): Promise<SubagentResult<TestData>> {
     const { serviceId, accountId } = params;
 
-    try {
-        // Check if service is connected
-        const connected = await getConnectedServices(context.userEmail);
+    // Check if service is connected
+    const connected = await getConnectedServices(context.userEmail);
 
-        if (!connected.includes(serviceId)) {
-            logger.warn(
-                { userEmail: context.userEmail, serviceId },
-                "🔧 Service not connected for test"
-            );
-
-            return successResult<TestData>({
-                success: false,
-                serviceId,
-                accountId,
-                error: `Service '${serviceId}' is not connected. Use the integrations page to connect it first.`,
-            });
-        }
-
-        // Dynamic import to avoid circular deps
-        const { testIntegration } = await import("@/lib/actions/integrations");
-        const result = await testIntegration(serviceId, accountId);
-
-        logger.info(
-            {
-                userEmail: context.userEmail,
-                serviceId,
-                accountId,
-                success: result.success,
-            },
-            result.success ? "✅ Integration test passed" : "❌ Integration test failed"
+    if (!connected.includes(serviceId)) {
+        logger.warn(
+            { userEmail: context.userEmail, serviceId },
+            "🔧 Service not connected for test"
         );
 
         return successResult<TestData>({
-            success: result.success,
+            success: false,
             serviceId,
             accountId,
-            error: result.error,
+            error: `Service '${serviceId}' is not connected. Use the integrations page to connect it first.`,
         });
-    } catch (error) {
-        logger.error(
-            { error, userEmail: context.userEmail, serviceId, accountId },
-            "🔧 Integration test failed with exception"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "mcp-config", action: "test" },
-            extra: { userEmail: context.userEmail, serviceId, accountId },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Test failed"
-        );
     }
+
+    // Dynamic import to avoid circular deps
+    const { testIntegration } = await import("@/lib/actions/integrations");
+    const result = await testIntegration(serviceId, accountId);
+
+    logger.info(
+        {
+            userEmail: context.userEmail,
+            serviceId,
+            accountId,
+            success: result.success,
+        },
+        result.success ? "✅ Integration test passed" : "❌ Integration test failed"
+    );
+
+    return successResult<TestData>({
+        success: result.success,
+        serviceId,
+        accountId,
+        error: result.error,
+    });
 }
 
 /**
@@ -347,70 +312,53 @@ async function executeGuide(
 ): Promise<SubagentResult<GuideData>> {
     const { serviceId } = params;
 
-    try {
-        // Get service definition
-        const { getServiceById } = await import("@/lib/integrations/services");
-        const service = getServiceById(serviceId);
+    // Get service definition
+    const { getServiceById } = await import("@/lib/integrations/services");
+    const service = getServiceById(serviceId);
 
-        if (!service) {
-            logger.warn(
-                { userEmail: context.userEmail, serviceId },
-                "🔧 Unknown service requested for guide"
-            );
+    if (!service) {
+        logger.warn(
+            { userEmail: context.userEmail, serviceId },
+            "🔧 Unknown service requested for guide"
+        );
 
-            return errorResult(
-                "VALIDATION",
-                `Unknown service: '${serviceId}'. Use action='list' to see available services.`
-            );
-        }
+        return errorResult(
+            "VALIDATION",
+            `Unknown service: '${serviceId}'. Use action='list' to see available services.`
+        );
+    }
 
-        const isOAuth = service.authMethod === "oauth";
+    const isOAuth = service.authMethod === "oauth";
 
-        const instructions = isOAuth
-            ? `To connect ${service.name}:
+    const instructions = isOAuth
+        ? `To connect ${service.name}:
 1. Navigate to the integrations page
 2. Click on ${service.name}
 3. We'll redirect you to ${service.name} to authorize access
 4. Grant the requested permissions
 5. You'll be redirected back once connected`
-            : `To connect ${service.name}:
+        : `To connect ${service.name}:
 1. Navigate to the integrations page
 2. Click on ${service.name}
 3. Enter your API key (find this in your ${service.name} account settings)
 4. Click Connect
 5. We'll test the connection automatically`;
 
-        logger.info(
-            {
-                userEmail: context.userEmail,
-                serviceId,
-            },
-            "📖 Generated setup guide"
-        );
-
-        return successResult<GuideData>({
+    logger.info(
+        {
+            userEmail: context.userEmail,
             serviceId,
-            name: service.name,
-            authMethod: service.authMethod,
-            setupUrl: `/integrations`,
-            instructions,
-        });
-    } catch (error) {
-        logger.error(
-            { error, userEmail: context.userEmail, serviceId },
-            "🔧 Failed to generate setup guide"
-        );
+        },
+        "📖 Generated setup guide"
+    );
 
-        Sentry.captureException(error, {
-            tags: { component: "mcp-config", action: "guide" },
-            extra: { userEmail: context.userEmail, serviceId },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to generate guide"
-        );
-    }
+    return successResult<GuideData>({
+        serviceId,
+        name: service.name,
+        authMethod: service.authMethod,
+        setupUrl: `/integrations`,
+        instructions,
+    });
 }
 
 /**
@@ -456,147 +404,129 @@ async function executeCreate(
 ): Promise<SubagentResult<CreateData>> {
     const { identifier, displayName, url, headers } = params;
 
-    try {
-        // Import the db function and test utility
-        const { createMcpServer, updateMcpServer } =
-            await import("@/lib/db/mcp-servers");
-        const { testMcpConnection } = await import("@/lib/mcp/client");
+    // Import the db function and test utility
+    const { createMcpServer, updateMcpServer } = await import("@/lib/db/mcp-servers");
+    const { testMcpConnection } = await import("@/lib/mcp/client");
 
-        // Parse auth configuration from headers
-        const { authType, token, authHeaderName } = parseAuthHeaders(headers);
+    // Parse auth configuration from headers
+    const { authType, token, authHeaderName } = parseAuthHeaders(headers);
 
-        // Create the server
-        const server = await createMcpServer({
+    // Create the server
+    const server = await createMcpServer({
+        userEmail: context.userEmail,
+        identifier,
+        displayName: displayName || identifier,
+        url,
+        transport: "http",
+        authType,
+        credentials: token ? { token } : undefined,
+        authHeaderName,
+    });
+
+    logger.info(
+        {
             userEmail: context.userEmail,
+            serverId: server.id,
             identifier,
-            displayName: displayName || identifier,
             url,
-            transport: "http",
-            authType,
-            credentials: token ? { token } : undefined,
-            authHeaderName,
-        });
+        },
+        "🔧 Created MCP server configuration"
+    );
 
-        logger.info(
-            {
-                userEmail: context.userEmail,
-                serverId: server.id,
-                identifier,
-                url,
-            },
-            "🔧 Created MCP server configuration"
-        );
+    // Test the connection to verify it works and discover tools
+    const testResult = await testMcpConnection({
+        url,
+        transport: "http",
+        authType,
+        token,
+        headerName: authHeaderName,
+    });
 
-        // Test the connection to verify it works and discover tools
-        const testResult = await testMcpConnection({
-            url,
-            transport: "http",
-            authType,
-            token,
-            headerName: authHeaderName,
-        });
-
-        // Update server status based on test
-        // Wrapped in try/catch - server creation succeeded, don't fail if status update fails
-        try {
-            if (testResult.success) {
-                await updateMcpServer(server.id, {
-                    status: "connected",
-                    serverManifest: {
-                        name: displayName || identifier,
-                        toolCount: testResult.tools?.length ?? 0,
-                        tools: testResult.tools?.map((t) => t.name) ?? [],
-                    },
-                });
-            } else {
-                await updateMcpServer(server.id, {
-                    status: "error",
-                    errorMessage: testResult.error,
-                });
-            }
-        } catch (updateErr) {
-            logger.error(
-                { updateErr, serverId: server.id, identifier },
-                "Failed to update server status after connection test"
-            );
-        }
-
-        // Generate a delightful message based on the result
-        const name = displayName || identifier;
-        let message: string;
-
-        if (testResult.success && testResult.tools?.length) {
-            const toolCount = testResult.tools.length;
-            const topTools = testResult.tools.slice(0, 3).map((t) => t.name);
-            const moreText = toolCount > 3 ? ` and ${toolCount - 3} more` : "";
-
-            message =
-                `${name} is connected and ready to help! ` +
-                `We found ${toolCount} tool${toolCount === 1 ? "" : "s"}: ${topTools.join(", ")}${moreText}. ` +
-                `Try asking me to use ${topTools[0]} to see it in action.`;
-        } else if (testResult.success) {
-            message =
-                `${name} is connected! ` +
-                `The server responded but didn't expose any tools yet. ` +
-                `Check the server configuration if you expected tools.`;
+    // Update server status based on test
+    // Graceful degradation: server creation succeeded, don't fail if status update fails
+    try {
+        if (testResult.success) {
+            await updateMcpServer(server.id, {
+                status: "connected",
+                serverManifest: {
+                    name: displayName || identifier,
+                    toolCount: testResult.tools?.length ?? 0,
+                    tools: testResult.tools?.map((t) => t.name) ?? [],
+                },
+            });
         } else {
-            message =
-                `${name} has been added, but we couldn't connect to verify it. ` +
-                `Error: ${testResult.error || "Connection failed"}. ` +
-                `Check the URL and authentication settings, then try the Verify button on the MCP page.`;
+            await updateMcpServer(server.id, {
+                status: "error",
+                errorMessage: testResult.error,
+            });
         }
-
-        logger.info(
-            {
-                userEmail: context.userEmail,
-                serverId: server.id,
-                identifier,
-                connectionSuccess: testResult.success,
-                toolCount: testResult.tools?.length,
-            },
-            testResult.success
-                ? "✅ MCP server connected and verified"
-                : "⚠️ MCP server added but connection failed"
-        );
-
-        // Build tool names summary (names only, limited count) to prevent context overflow
-        const toolNames = testResult.tools
-            ?.slice(0, MAX_TOOLS_IN_SUMMARY)
-            .map((t) => t.name);
-
-        return successResult<CreateData>({
-            success: true,
-            server: {
-                id: server.id,
-                identifier: server.identifier,
-                displayName: server.displayName,
-                url: server.url,
-                status: testResult.success ? "connected" : "error",
-            },
-            connectionTest: {
-                success: testResult.success,
-                toolCount: testResult.tools?.length,
-                toolNames,
-                error: testResult.error,
-            },
-            message,
-        });
-    } catch (error) {
+    } catch (updateErr) {
         logger.error(
-            { error, userEmail: context.userEmail, identifier, url },
-            "🔧 Failed to create MCP server"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "mcp-config", action: "create" },
-            extra: { userEmail: context.userEmail, identifier, url },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to create MCP server"
+            { updateErr, serverId: server.id, identifier },
+            "Failed to update server status after connection test"
         );
     }
+
+    // Generate a delightful message based on the result
+    const name = displayName || identifier;
+    let message: string;
+
+    if (testResult.success && testResult.tools?.length) {
+        const toolCount = testResult.tools.length;
+        const topTools = testResult.tools.slice(0, 3).map((t) => t.name);
+        const moreText = toolCount > 3 ? ` and ${toolCount - 3} more` : "";
+
+        message =
+            `${name} is connected and ready to help! ` +
+            `We found ${toolCount} tool${toolCount === 1 ? "" : "s"}: ${topTools.join(", ")}${moreText}. ` +
+            `Try asking me to use ${topTools[0]} to see it in action.`;
+    } else if (testResult.success) {
+        message =
+            `${name} is connected! ` +
+            `The server responded but didn't expose any tools yet. ` +
+            `Check the server configuration if you expected tools.`;
+    } else {
+        message =
+            `${name} has been added, but we couldn't connect to verify it. ` +
+            `Error: ${testResult.error || "Connection failed"}. ` +
+            `Check the URL and authentication settings, then try the Verify button on the MCP page.`;
+    }
+
+    logger.info(
+        {
+            userEmail: context.userEmail,
+            serverId: server.id,
+            identifier,
+            connectionSuccess: testResult.success,
+            toolCount: testResult.tools?.length,
+        },
+        testResult.success
+            ? "✅ MCP server connected and verified"
+            : "⚠️ MCP server added but connection failed"
+    );
+
+    // Build tool names summary (names only, limited count) to prevent context overflow
+    const toolNames = testResult.tools
+        ?.slice(0, MAX_TOOLS_IN_SUMMARY)
+        .map((t) => t.name);
+
+    return successResult<CreateData>({
+        success: true,
+        server: {
+            id: server.id,
+            identifier: server.identifier,
+            displayName: server.displayName,
+            url: server.url,
+            status: testResult.success ? "connected" : "error",
+        },
+        connectionTest: {
+            success: testResult.success,
+            toolCount: testResult.tools?.length,
+            toolNames,
+            error: testResult.error,
+        },
+        message,
+    });
 }
 
 /**
@@ -627,83 +557,66 @@ async function executeUpdate(
 ): Promise<SubagentResult<UpdateData>> {
     const { identifier, displayName, url, headers } = params;
 
-    try {
-        // Import the db functions
-        const { getMcpServerByIdentifier, updateMcpServer } =
-            await import("@/lib/db/mcp-servers");
+    // Import the db functions
+    const { getMcpServerByIdentifier, updateMcpServer } =
+        await import("@/lib/db/mcp-servers");
 
-        // Find the existing server
-        const existing = await getMcpServerByIdentifier(context.userEmail, identifier);
-        if (!existing) {
-            return errorResult(
-                "VALIDATION",
-                `MCP server '${identifier}' not found. Use action='list' to see available servers, or action='create' to add a new one.`
-            );
-        }
-
-        // Build update data
-        const updateData: {
-            displayName?: string;
-            url?: string;
-            authType?: "none" | "bearer" | "header";
-            credentials?: { token: string };
-            authHeaderName?: string;
-        } = {};
-
-        if (displayName) updateData.displayName = displayName;
-        if (url) updateData.url = url;
-
-        // Parse auth configuration from headers if provided
-        if (headers) {
-            const { authType, token, authHeaderName } = parseAuthHeaders(headers);
-            updateData.authType = authType;
-            if (token) updateData.credentials = { token };
-            if (authHeaderName) updateData.authHeaderName = authHeaderName;
-        }
-
-        // Update the server
-        const server = await updateMcpServer(existing.id, updateData);
-
-        if (!server) {
-            return errorResult("PERMANENT", "Failed to update MCP server");
-        }
-
-        logger.info(
-            {
-                userEmail: context.userEmail,
-                serverId: server.id,
-                identifier,
-                url: url || server.url,
-            },
-            "🔧 Updated MCP server configuration"
-        );
-
-        return successResult<UpdateData>({
-            success: true,
-            server: {
-                id: server.id,
-                identifier: server.identifier,
-                displayName: server.displayName,
-                url: server.url,
-                status: server.status,
-            },
-        });
-    } catch (error) {
-        logger.error(
-            { error, userEmail: context.userEmail, identifier, url },
-            "🔧 Failed to update MCP server"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "mcp-config", action: "update" },
-            extra: { userEmail: context.userEmail, identifier, url },
-        });
-
+    // Find the existing server
+    const existing = await getMcpServerByIdentifier(context.userEmail, identifier);
+    if (!existing) {
         return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to update MCP server"
+            "VALIDATION",
+            `MCP server '${identifier}' not found. Use action='list' to see available servers, or action='create' to add a new one.`
         );
     }
+
+    // Build update data
+    const updateData: {
+        displayName?: string;
+        url?: string;
+        authType?: "none" | "bearer" | "header";
+        credentials?: { token: string };
+        authHeaderName?: string;
+    } = {};
+
+    if (displayName) updateData.displayName = displayName;
+    if (url) updateData.url = url;
+
+    // Parse auth configuration from headers if provided
+    if (headers) {
+        const { authType, token, authHeaderName } = parseAuthHeaders(headers);
+        updateData.authType = authType;
+        if (token) updateData.credentials = { token };
+        if (authHeaderName) updateData.authHeaderName = authHeaderName;
+    }
+
+    // Update the server
+    const server = await updateMcpServer(existing.id, updateData);
+
+    if (!server) {
+        return errorResult("PERMANENT", "Failed to update MCP server");
+    }
+
+    logger.info(
+        {
+            userEmail: context.userEmail,
+            serverId: server.id,
+            identifier,
+            url: url || server.url,
+        },
+        "🔧 Updated MCP server configuration"
+    );
+
+    return successResult<UpdateData>({
+        success: true,
+        server: {
+            id: server.id,
+            identifier: server.identifier,
+            displayName: server.displayName,
+            url: server.url,
+            status: server.status,
+        },
+    });
 }
 
 /**
@@ -723,55 +636,38 @@ async function executeDelete(
 ): Promise<SubagentResult<DeleteData>> {
     const { identifier } = params;
 
-    try {
-        // Import the db functions
-        const { getMcpServerByIdentifier, deleteMcpServer } =
-            await import("@/lib/db/mcp-servers");
+    // Import the db functions
+    const { getMcpServerByIdentifier, deleteMcpServer } =
+        await import("@/lib/db/mcp-servers");
 
-        // Find the existing server
-        const existing = await getMcpServerByIdentifier(context.userEmail, identifier);
-        if (!existing) {
-            return errorResult(
-                "VALIDATION",
-                `MCP server '${identifier}' not found. Use action='list' to see available servers.`
-            );
-        }
-
-        // Delete the server
-        const deleted = await deleteMcpServer(existing.id);
-
-        if (!deleted) {
-            return errorResult("PERMANENT", "Failed to delete MCP server");
-        }
-
-        logger.info(
-            {
-                userEmail: context.userEmail,
-                identifier,
-            },
-            "🔧 Deleted MCP server configuration"
-        );
-
-        return successResult<DeleteData>({
-            success: true,
-            identifier,
-        });
-    } catch (error) {
-        logger.error(
-            { error, userEmail: context.userEmail, identifier },
-            "🔧 Failed to delete MCP server"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "mcp-config", action: "delete" },
-            extra: { userEmail: context.userEmail, identifier },
-        });
-
+    // Find the existing server
+    const existing = await getMcpServerByIdentifier(context.userEmail, identifier);
+    if (!existing) {
         return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to delete MCP server"
+            "VALIDATION",
+            `MCP server '${identifier}' not found. Use action='list' to see available servers.`
         );
     }
+
+    // Delete the server
+    const deleted = await deleteMcpServer(existing.id);
+
+    if (!deleted) {
+        return errorResult("PERMANENT", "Failed to delete MCP server");
+    }
+
+    logger.info(
+        {
+            userEmail: context.userEmail,
+            identifier,
+        },
+        "🔧 Deleted MCP server configuration"
+    );
+
+    return successResult<DeleteData>({
+        success: true,
+        identifier,
+    });
 }
 
 /**

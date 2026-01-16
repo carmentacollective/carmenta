@@ -290,14 +290,11 @@ export async function POST(request: Request) {
                     // Merge the stream (READY_TO_HIRE marker is an HTML comment, won't render)
                     writer.merge(result.toUIMessageStream({ sendReasoning: false }));
                 } catch (streamError) {
+                    // Re-throw to outer catch which handles Sentry capture + error response
                     logger.error(
                         { error: streamError, userId },
                         "Stream execution failed"
                     );
-                    Sentry.captureException(streamError, {
-                        tags: { route: "/api/ai-team/hire", action: "stream" },
-                        extra: { userId, userEmail },
-                    });
                     throw streamError;
                 }
             },

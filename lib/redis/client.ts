@@ -5,6 +5,7 @@
  * Gracefully degrades when Redis is unavailable.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { createClient, type RedisClientType } from "redis";
 
 import { logger } from "@/lib/logger";
@@ -40,6 +41,10 @@ export async function getRedisClient(): Promise<RedisClientType | null> {
             return client as RedisClientType;
         } catch (error) {
             logger.error({ error }, "Failed to connect to Redis");
+            Sentry.captureException(error, {
+                level: "warning", // Graceful degradation - app continues without cache
+                tags: { component: "redis", operation: "connect" },
+            });
             return null;
         } finally {
             redisConnecting = null;

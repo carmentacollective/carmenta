@@ -9,8 +9,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-    // Performance monitoring - capture 100% of transactions in dev, 10% in prod
-    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+    // 100% trace sampling - we want full observability, not cost optimization
+    // DO NOT reduce this. Errors are always 100% but traces need this too.
+    tracesSampleRate: 1.0,
 
     // Session replay for debugging user issues
     replaysSessionSampleRate: 0.1,
@@ -41,18 +42,35 @@ Sentry.init({
         }),
     ],
 
-    // Filter out noisy errors
-    ignoreErrors: [
-        // Browser extensions
-        /^chrome-extension:\/\//,
-        /^moz-extension:\/\//,
-        // Network errors that are usually transient
-        "Network request failed",
-        "Failed to fetch",
-        "Load failed",
-        // User-cancelled navigation
-        "AbortError",
-    ],
+    // Smart error filtering - filter by CONTEXT, not message strings
+    // "Failed to fetch" from extensions is noise; from our API is critical
+    beforeSend(event, hint) {
+        const error = hint.originalException;
+
+        // Filter browser extension errors by stack trace origin
+        // Missing frames → not an extension error → pass through (intentional)
+        const frames = event.exception?.values?.[0]?.stacktrace?.frames || [];
+        const isExtensionError = frames.some(
+            (frame) =>
+                frame.filename?.startsWith("chrome-extension://") ||
+                frame.filename?.startsWith("moz-extension://") ||
+                frame.filename?.startsWith("safari-extension://") ||
+                frame.filename?.startsWith("safari-web-extension://")
+        );
+        if (isExtensionError) return null;
+
+        // Filter user-cancelled requests (not errors)
+        if (error instanceof Error && error.name === "AbortError") {
+            return null;
+        }
+
+        // Filter ResizeObserver loop errors (browser quirk, not actionable)
+        if (error instanceof Error && error.message?.includes("ResizeObserver loop")) {
+            return null;
+        }
+
+        return event;
+    },
 
     // Add tags for filtering in Sentry dashboard
     initialScope: {

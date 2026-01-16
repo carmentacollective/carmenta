@@ -9,7 +9,6 @@
  */
 
 import { tool } from "ai";
-import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -92,62 +91,43 @@ async function executeSend(
 
     const source = sourceMap[reason?.toLowerCase() ?? ""] ?? "alert";
 
-    try {
-        const result = await sendNotification({
-            userEmail: context.userEmail,
-            content: message,
-            source,
-        });
+    const result = await sendNotification({
+        userEmail: context.userEmail,
+        content: message,
+        source,
+    });
 
-        if (!result.success) {
-            logger.warn(
-                {
-                    userEmail: context.userEmail,
-                    error: result.error,
-                },
-                "📱 SMS failed - user may not have verified phone"
-            );
-
-            return errorResult(
-                "VALIDATION",
-                result.error ??
-                    "No verified phone number on file. They'll need to add one in settings."
-            );
-        }
-
-        logger.info(
+    if (!result.success) {
+        logger.warn(
             {
                 userEmail: context.userEmail,
-                messageId: result.messageId,
-                quoMessageId: result.quoMessageId,
-                source,
+                error: result.error,
             },
-            "📱 SMS sent"
+            "📱 SMS failed - user may not have verified phone"
         );
-
-        return successResult<SendData>({
-            sent: true,
-            messageId: result.messageId,
-            quoMessageId: result.quoMessageId,
-        });
-    } catch (error) {
-        logger.error(
-            { error, userEmail: context.userEmail },
-            "📱 SMS failed unexpectedly"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "smsUser", action: "send" },
-            extra: { userEmail: context.userEmail, messageLength: message.length },
-        });
 
         return errorResult(
-            "PERMANENT",
-            error instanceof Error
-                ? `SMS couldn't go through: ${error.message}`
-                : "SMS couldn't go through. The robots have been notified. 🤖"
+            "VALIDATION",
+            result.error ??
+                "No verified phone number on file. They'll need to add one in settings."
         );
     }
+
+    logger.info(
+        {
+            userEmail: context.userEmail,
+            messageId: result.messageId,
+            quoMessageId: result.quoMessageId,
+            source,
+        },
+        "📱 SMS sent"
+    );
+
+    return successResult<SendData>({
+        sent: true,
+        messageId: result.messageId,
+        quoMessageId: result.quoMessageId,
+    });
 }
 
 /**
