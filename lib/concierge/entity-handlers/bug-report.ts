@@ -56,17 +56,20 @@ We'll look into this.`,
             span?.setAttribute("keywords", keywords.join(","));
 
             // 1. Search for similar existing issues (failure doesn't block)
+            // Skip search if no keywords - empty query would match unrelated issues
             let existingIssues: GitHubIssue[] = [];
-            const searchResult = await searchIssues({ query: keywords.join(" ") });
+            if (keywords.length > 0) {
+                const searchResult = await searchIssues({ query: keywords.join(" ") });
 
-            if (searchResult.success) {
-                existingIssues = searchResult.data;
-                span?.setAttribute("existing_issues", existingIssues.length);
-            } else {
-                logger.warn(
-                    { error: searchResult.error },
-                    "Issue search failed, proceeding to create"
-                );
+                if (searchResult.success) {
+                    existingIssues = searchResult.data;
+                    span?.setAttribute("existing_issues", existingIssues.length);
+                } else {
+                    logger.warn(
+                        { error: searchResult.error },
+                        "Issue search failed, proceeding to create"
+                    );
+                }
             }
 
             // 2. If duplicate found, add signal and acknowledge warmly
