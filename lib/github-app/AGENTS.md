@@ -12,12 +12,13 @@ chat. Issues are created using GitHub App authentication, appearing as
 
 ```
 lib/github-app/
-├── index.ts        # Public exports (clean barrel)
-├── client.ts       # Auth + API operations with retry logic
-├── errors.ts       # Custom error types (GitHubAuthError, etc.)
-├── templates.ts    # Issue body formatting
-├── types.ts        # TypeScript interfaces
-└── AGENTS.md       # This file
+├── index.ts         # Public exports (clean barrel)
+├── client.ts        # Auth + API operations with retry logic
+├── issue-creator.ts # Intelligent issue creation with LLM classification
+├── errors.ts        # Custom error types (GitHubAuthError, etc.)
+├── templates.ts     # Issue body formatting
+├── types.ts         # TypeScript interfaces
+└── AGENTS.md        # This file
 ```
 
 Follows the `lib/sms/` pattern:
@@ -39,6 +40,46 @@ Uses GitHub App installation tokens:
 Tokens are fetched fresh each call (no caching) for serverless reliability.
 
 ## Usage
+
+### Intelligent Issue Creation (Recommended)
+
+Use `createIntelligentIssue` for automatic classification, duplicate detection, and
+smart filtering. The LLM (Haiku) decides whether the issue is worth filing:
+
+```typescript
+import { createIntelligentIssue } from "@/lib/github-app";
+
+// User-reported bug
+const result = await createIntelligentIssue({
+  userMessage: "Voice input stops after 5 seconds every time",
+  source: "user_report",
+});
+
+// Agent error (auto-files with stack trace)
+const result = await createIntelligentIssue({
+  userMessage: "Failed to process search",
+  errorDetails: "TypeError: Cannot read property...",
+  source: "agent_error",
+  sourceAgent: "librarian",
+});
+
+// Result can be: created, found_duplicate, declined, or failed
+if (result.action === "created") {
+  console.log(`Created #${result.issueNumber}: ${result.title}`);
+} else if (result.action === "declined") {
+  console.log(`Not filed: ${result.message}`);
+}
+```
+
+The classifier filters out:
+
+- Vague complaints ("this is slow sometimes")
+- User questions ("how do I upload?")
+- Transient errors
+
+### Low-Level API
+
+For cases where you've already classified the issue:
 
 ```typescript
 import {
