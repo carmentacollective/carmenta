@@ -54,6 +54,11 @@ Never give time estimates for software work. Focus on what needs to be done, not
 
 Use `pnpm` for all package management and script execution. Never use `npm` or `bun`.
 
+## Hosting Platform
+
+Carmenta is deployed on **Render**, not Vercel. Environment variables are managed in the
+Render dashboard. Do not reference Vercel for deployment or env var configuration.
+
 ## Git Workflow
 
 Commit format: `emoji Type: description` (e.g., `✨ Add elegant 404 not-found page`).

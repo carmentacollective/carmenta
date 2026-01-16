@@ -21,8 +21,8 @@ import type {
 const logger = baseLogger.child({ module: "github-app" });
 
 // Repository configuration - Carmenta's own repo
-const REPO_OWNER = "nicksullivan";
-const REPO_NAME = "carmenta-git";
+const REPO_OWNER = "carmentacollective";
+const REPO_NAME = "carmenta";
 
 // Input sanitization constants
 const MAX_TITLE_LENGTH = 256;
