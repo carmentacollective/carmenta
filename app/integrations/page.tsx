@@ -39,7 +39,7 @@ import { analytics } from "@/lib/analytics/events";
 function IntegrationsContent() {
     const searchParams = useSearchParams();
     const [services, setServices] = useState<GroupedService[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
     // OAuth flow recovery - detects abandoned OAuth attempts
     const {
@@ -90,7 +90,7 @@ function IntegrationsContent() {
                 tags: { component: "integrations-page", action: "load_services" },
             });
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     }, []);
 
@@ -541,7 +541,7 @@ function IntegrationsContent() {
                 </div>
             )}
 
-            {loading ? (
+            {isLoading ? (
                 <div className="flex items-center justify-center py-24">
                     <div className="flex flex-col items-center gap-4">
                         <SparkleIcon className="text-primary h-8 w-8 animate-pulse" />

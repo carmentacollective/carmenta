@@ -162,7 +162,7 @@ function AITeamContent({
     const [automations, setAutomations] = useState<Automation[]>([]);
     const [activities, setActivities] = useState<ActivityItem[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [togglingJobs, setTogglingJobs] = useState<Set<string>>(new Set());
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [viewingActivity, setViewingActivity] = useState<ActivityItem | null>(null);
@@ -419,7 +419,7 @@ function AITeamContent({
                     tags: { component: "ai-team-page", action: "load_data" },
                 });
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         };
 
@@ -543,7 +543,7 @@ function AITeamContent({
                 </div>
             )}
 
-            {loading ? (
+            {isLoading ? (
                 <div className="flex items-center justify-center py-24">
                     <div className="flex flex-col items-center gap-4">
                         <SparkleIcon className="text-primary h-8 w-8 animate-pulse" />
