@@ -17,10 +17,18 @@ import {
     Check,
     CircleNotch,
     Warning,
+    UploadIcon,
+    CaretDownIcon,
 } from "@phosphor-icons/react";
 
 import { KnowledgeViewer } from "./index";
 import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
+import { ImportWidget } from "@/components/import/import-widget";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { updateKBDocument, type KBDocument, type KBFolder } from "@/lib/kb/actions";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
@@ -39,6 +47,7 @@ export function KBPageContent({
 }: KBPageContentProps) {
     const router = useRouter();
     const [sheetOpen, setSheetOpen] = useState(false);
+    const [importOpen, setImportOpen] = useState(false);
 
     // About You editing state
     const [aboutContent, setAboutContent] = useState(identityDocument?.content ?? "");
@@ -71,6 +80,12 @@ export function KBPageContent({
     // Refresh the page when Carmenta makes changes
     const handleChangesComplete = useCallback(() => {
         router.refresh();
+    }, [router]);
+
+    // Handle knowledge import completion
+    const handleImportSuccess = useCallback(() => {
+        router.refresh();
+        setImportOpen(false);
     }, [router]);
 
     // Save About You content
@@ -221,6 +236,45 @@ export function KBPageContent({
                         <KnowledgeViewer initialFolders={memoriesFolders} />
                     )}
                 </section>
+
+                {/* Import Knowledge Section */}
+                <Collapsible open={importOpen} onOpenChange={setImportOpen}>
+                    <section className="glass-card overflow-hidden rounded-xl">
+                        <CollapsibleTrigger asChild>
+                            <button className="hover:bg-foreground/5 flex w-full items-center justify-between px-6 py-4 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <UploadIcon className="text-foreground/50 h-5 w-5" />
+                                    <div className="text-left">
+                                        <h2 className="text-foreground text-base font-medium">
+                                            Import Knowledge
+                                        </h2>
+                                        <p className="text-foreground/50 text-sm">
+                                            Extract insights from ChatGPT or Claude
+                                            history
+                                        </p>
+                                    </div>
+                                </div>
+                                <CaretDownIcon
+                                    className={cn(
+                                        "text-foreground/30 h-5 w-5 transition-transform duration-200",
+                                        importOpen && "rotate-180"
+                                    )}
+                                />
+                            </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div className="border-foreground/5 border-t px-6 py-4">
+                                <ImportWidget
+                                    mode="knowledge-only"
+                                    compact
+                                    showStepper={false}
+                                    onSuccess={handleImportSuccess}
+                                    onCancel={() => setImportOpen(false)}
+                                />
+                            </div>
+                        </CollapsibleContent>
+                    </section>
+                </Collapsible>
             </div>
 
             {/* Carmenta Sheet */}

@@ -131,7 +131,7 @@ export function DiscoveryInvitation({
                         </div>
 
                         <p className="text-muted-foreground mt-4 text-xs">
-                            You can always run discovery later from Settings
+                            You can always run discovery later
                         </p>
                     </div>
                 </CardContent>

@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
     ChatsCircleIcon,
     StarIcon,
     MagnifyingGlassIcon,
     ArrowRightIcon,
+    UploadIcon,
+    CaretDownIcon,
 } from "@phosphor-icons/react";
 
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,33 +21,48 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ImportWidget } from "@/components/import/import-widget";
 import { getRecentConnections, type PublicConnection } from "@/lib/actions/connections";
-import { encodeConnectionId } from "@/lib/sqids";
 
 /**
  * Connections page - view all past connections
  *
- * Phase 1 implementation: Basic list with recent connections.
- * Future: Search, filters, infinite scroll, export.
+ * Features:
+ * - List of recent connections
+ * - Embedded import widget (collapsible) for bringing in history
+ * - Search (coming soon)
  */
 export default function ConnectionsPage() {
     const [connections, setConnections] = useState<PublicConnection[]>([]);
     const [loading, setLoading] = useState(true);
+    const [importOpen, setImportOpen] = useState(false);
+
+    const loadConnections = useCallback(async () => {
+        try {
+            const recent = await getRecentConnections(50);
+            setConnections(recent);
+        } catch (error) {
+            console.error("Failed to load connections:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        async function loadConnections() {
-            try {
-                const recent = await getRecentConnections(50);
-                setConnections(recent);
-            } catch (error) {
-                console.error("Failed to load connections:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-
         loadConnections();
-    }, []);
+    }, [loadConnections]);
+
+    const handleImportSuccess = useCallback(() => {
+        // Refresh connections list after import
+        loadConnections();
+        // Close the import widget
+        setImportOpen(false);
+    }, [loadConnections]);
 
     const formatDate = (date: Date) => {
         const now = new Date();
@@ -108,7 +126,7 @@ export default function ConnectionsPage() {
                     <Card>
                         <CardContent className="py-12">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <div className="bg-muted h-8 w-8 animate-pulse rounded-full" />
+                                <LoadingSpinner size={32} />
                                 <p className="text-muted-foreground mt-4">
                                     Loading connections...
                                 </p>
@@ -128,11 +146,17 @@ export default function ConnectionsPage() {
                                 />
                                 <p className="mt-4 font-medium">No connections yet</p>
                                 <p className="text-muted-foreground mt-1 text-sm">
-                                    Start a connection—we&apos;ll remember everything.
+                                    Start a connection or import your history from other
+                                    AI tools.
                                 </p>
-                                <Button asChild className="mt-6">
-                                    <Link href="/">Start a Connection</Link>
-                                </Button>
+                                <div className="mt-6 flex gap-3">
+                                    <Button asChild variant="outline">
+                                        <Link href="/">Start a Connection</Link>
+                                    </Button>
+                                    <Button onClick={() => setImportOpen(true)}>
+                                        Import History
+                                    </Button>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -169,22 +193,45 @@ export default function ConnectionsPage() {
                     </div>
                 )}
 
-                {/* Import CTA */}
-                <Card className="border-dashed">
-                    <CardHeader>
-                        <CardTitle className="text-base">
-                            Have history from other AI tools?
-                        </CardTitle>
-                        <CardDescription>
-                            Import your conversations from ChatGPT, Claude, and more.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button asChild variant="outline">
-                            <Link href="/import">Import Data</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
+                {/* Import Section - Collapsible */}
+                <Collapsible open={importOpen} onOpenChange={setImportOpen}>
+                    <Card className="border-dashed">
+                        <CollapsibleTrigger asChild>
+                            <CardHeader className="hover:bg-muted/30 cursor-pointer transition-colors">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <UploadIcon className="text-muted-foreground h-5 w-5" />
+                                        <div>
+                                            <CardTitle className="text-base">
+                                                Import from ChatGPT or Claude
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Bring your conversation history into
+                                                Carmenta
+                                            </CardDescription>
+                                        </div>
+                                    </div>
+                                    <CaretDownIcon
+                                        className={`text-muted-foreground h-5 w-5 transition-transform duration-200 ${
+                                            importOpen ? "rotate-180" : ""
+                                        }`}
+                                    />
+                                </div>
+                            </CardHeader>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <CardContent className="pt-0">
+                                <ImportWidget
+                                    mode="full"
+                                    compact
+                                    showStepper={false}
+                                    onSuccess={handleImportSuccess}
+                                    onCancel={() => setImportOpen(false)}
+                                />
+                            </CardContent>
+                        </CollapsibleContent>
+                    </Card>
+                </Collapsible>
             </div>
         </StandardPageLayout>
     );
