@@ -46,14 +46,8 @@ export {
     getSuggestionLabels,
 } from "./templates";
 
-// Intelligent issue creation (with LLM classification)
-export {
-    createIntelligentIssue,
-    type IssueCategory,
-    type IssueCreatorInput,
-    type IssueCreatorResult,
-    type IssueSource,
-} from "./issue-creator";
+// Tool for AI conversations (permission-gated)
+export { createGitHubTool, type GitHubToolContext } from "./tool";
 
 // Types
 export type {

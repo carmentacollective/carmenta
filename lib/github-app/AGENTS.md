@@ -1,24 +1,25 @@
 # GitHub App
 
-Carmenta's GitHub App integration for issue management in the carmenta-git repository.
+Carmenta's GitHub App integration - general-purpose GitHub operations as
+`carmenta-bot[bot]`.
 
 ## Purpose
 
-This module enables users to file bug reports, feedback, and suggestions from Carmenta
-chat. Issues are created using GitHub App authentication, appearing as
-`carmenta-app[bot]` rather than any individual user.
+This module enables GitHub operations from Carmenta chat, appearing as
+`carmenta-bot[bot]` rather than any individual user. Supports issues today, extensible
+to PRs, comments, labels, and any GitHub operation.
 
 ## Architecture
 
 ```
 lib/github-app/
-├── index.ts         # Public exports (clean barrel)
-├── client.ts        # Auth + API operations with retry logic
-├── issue-creator.ts # Intelligent issue creation with LLM classification
-├── errors.ts        # Custom error types (GitHubAuthError, etc.)
-├── templates.ts     # Issue body formatting
-├── types.ts         # TypeScript interfaces
-└── AGENTS.md        # This file
+├── index.ts     # Public exports (clean barrel)
+├── tool.ts      # Permission-gated tool for AI conversations
+├── client.ts    # Auth + low-level API operations
+├── errors.ts    # Custom error types (GitHubAuthError, etc.)
+├── templates.ts # Issue body formatting
+├── types.ts     # TypeScript interfaces
+└── AGENTS.md    # This file
 ```
 
 Follows the `lib/sms/` pattern:
@@ -29,57 +30,74 @@ Follows the `lib/sms/` pattern:
 - Sentry spans for observability
 - Pino logging with context
 
-## Authentication
+## Permission Model
 
-Uses GitHub App installation tokens:
+Operations are permission-gated based on user role:
 
-1. `GITHUB_APP_ID` - App identifier
-2. `GITHUB_APP_PRIVATE_KEY` - Base64-encoded private key
-3. `GITHUB_APP_INSTALLATION_ID` - Installation on carmenta-git repo
+**Public (anyone):**
 
-Tokens are fetched fresh each call (no caching) for serverless reliability.
+- `create_issue` - File bug reports, feature requests, feedback
+- `search_issues` - Find existing issues
+
+**Admin only:**
+
+- `add_reaction` - React to issues/PRs
+- `add_label` - Manage labels
+- `close_issue` / `reopen_issue` - Change issue state
+- `add_comment` - Comment on issues
+- `create_pr` / `merge_pr` / `approve_pr` - PR operations (future)
+- `push_commit` - Push changes (future)
+
+Admin status is determined by `user.publicMetadata.role === "admin"` from Clerk.
 
 ## Usage
 
-### Intelligent Issue Creation (Recommended)
+### AI Tool (Recommended)
 
-Use `createIntelligentIssue` for automatic classification, duplicate detection, and
-smart filtering. The LLM (Haiku) decides whether the issue is worth filing:
+Use `createGitHubTool` to add GitHub capabilities to an AI conversation:
 
 ```typescript
-import { createIntelligentIssue } from "@/lib/github-app";
+import { createGitHubTool } from "@/lib/github-app";
 
-// User-reported bug
-const result = await createIntelligentIssue({
-  userMessage: "Voice input stops after 5 seconds every time",
-  source: "user_report",
+// Create tool with user context
+const githubTool = createGitHubTool({
+  userId: user.id,
+  isAdmin: user.publicMetadata?.role === "admin",
 });
 
-// Agent error (auto-files with stack trace)
-const result = await createIntelligentIssue({
-  userMessage: "Failed to process search",
-  errorDetails: "TypeError: Cannot read property...",
-  source: "agent_error",
-  sourceAgent: "librarian",
-});
-
-// Result can be: created, found_duplicate, declined, or failed
-if (result.action === "created") {
-  console.log(`Created #${result.issueNumber}: ${result.title}`);
-} else if (result.action === "declined") {
-  console.log(`Not filed: ${result.message}`);
-}
+// Add to conversation tools
+const tools = {
+  ...builtInTools,
+  github: githubTool,
+};
 ```
 
-The classifier filters out:
+The LLM can then invoke operations:
 
-- Vague complaints ("this is slow sometimes")
-- User questions ("how do I upload?")
-- Transient errors
+```typescript
+// User says: "file a bug - the voice input cuts off after 5 seconds"
+// LLM invokes:
+{
+  operation: "create_issue",
+  title: "Bug: Voice input cuts off after 5 seconds",
+  body: "The voice input stops recording...",
+  category: "bug"
+}
+
+// Admin user says: "close issue 42"
+// LLM invokes:
+{
+  operation: "close_issue",
+  issueNumber: 42
+}
+
+// Non-admin trying admin operation:
+// Returns: { success: false, error: "requires admin permissions" }
+```
 
 ### Low-Level API
 
-For cases where you've already classified the issue:
+For direct programmatic access:
 
 ```typescript
 import {
@@ -99,7 +117,7 @@ if (!isGitHubAppConfigured()) {
 // Search for duplicates
 const searchResult = await searchIssues({ query: "voice input" });
 
-// Create issue if no duplicate
+// Create issue
 const result = await createIssue({
   title: "Bug: Voice input cuts off",
   body: formatBugReport({
@@ -109,17 +127,21 @@ const result = await createIssue({
   }),
   labels: getBugLabels(),
 });
-
-if (result.success) {
-  console.log(`Created issue #${result.data.number}`);
-} else {
-  console.error(result.error);
-}
 ```
+
+## Authentication
+
+Uses GitHub App installation tokens:
+
+1. `GITHUB_APP_ID` - App identifier
+2. `GITHUB_APP_PRIVATE_KEY` - Base64-encoded private key
+3. `GITHUB_APP_INSTALLATION_ID` - Installation on carmenta repo
+
+Tokens are fetched fresh each call (no caching) for serverless reliability.
 
 ## Error Handling
 
-All public functions return `GitHubResult<T>`:
+All functions return `GitHubResult<T>`:
 
 ```typescript
 type GitHubResult<T> =
@@ -134,7 +156,8 @@ succeed on retry.
 
 - Input sanitization for titles, bodies, and search queries
 - Private key never logged (excluded from logging config)
-- Rate limiting handled via `@upstash/ratelimit` in entity handlers
+- Permission checks before admin operations
+- Rate limiting can be added at the tool level
 
 ## Environment Variables
 
@@ -146,7 +169,16 @@ GITHUB_APP_INSTALLATION_ID=789
 
 All optional at import time, validated with `assertEnv()` when used.
 
+## Extending Operations
+
+To add a new operation:
+
+1. Add to `PUBLIC_OPERATIONS` or `ADMIN_OPERATIONS` in `tool.ts`
+2. Add relevant schema fields to `githubToolSchema`
+3. Implement handler in `executeOperation` switch statement
+4. Add any needed low-level functions to `client.ts`
+
 ## Related
 
-- `lib/concierge/entity-handlers/` - Uses this client for @carmenta interactions
-- `docs/plans/github-app-integration.md` - Full implementation plan
+- `lib/concierge/entity-handlers/` - Uses this for @carmenta interactions
+- `lib/tools/built-in.ts` - Pattern for tool definitions
