@@ -11,12 +11,18 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { CaretRightIcon, CopyIcon, CheckIcon } from "@phosphor-icons/react";
+import {
+    CaretRightIcon,
+    CopyIcon,
+    CheckIcon,
+    WarningCircleIcon,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { glass, border, spacing } from "@/lib/design-tokens";
 import { ToolDebugPanel } from "@/components/tools/shared/tool-debug-panel";
+import { useToolTiming } from "@/components/tools/shared/use-tool-timing";
 import { type ToolStatus as ToolStatusType } from "@/lib/tools/tool-config";
 import { getMcpServerName, formatMcpError } from "@/lib/tools/mcp-error-messages";
 import {
@@ -24,7 +30,6 @@ import {
     formatActionName,
     type ResultSummary,
 } from "@/lib/tools/mcp-result-summary";
-import { WarningCircleIcon } from "@phosphor-icons/react";
 import { logger } from "@/lib/client-logger";
 
 interface McpToolResultProps {
@@ -51,39 +56,20 @@ export function McpToolResult({
     const action = typeof input?.action === "string" ? input.action : "operation";
 
     const [expanded, setExpanded] = useState(false);
-    const [timing, setTiming] = useState<{ startedAt?: number; completedAt?: number }>(
-        {}
-    );
+    const timing = useToolTiming(status);
     const prevStatusRef = useRef<ToolStatusType | null>(null);
 
-    // Track timing across status transitions
+    // Auto-expand on error (separate from timing hook)
+    // Using queueMicrotask to avoid synchronous setState in effect (linter rule)
     useEffect(() => {
         const prevStatus = prevStatusRef.current;
 
-        if (status === "running" && prevStatus !== "running") {
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronizing timing with external status prop transition
-            setTiming({ startedAt: Date.now() });
-        }
-
-        if (status === "completed" && prevStatus !== "completed") {
-            setTiming((prev) => {
-                const now = Date.now();
-                return { ...prev, completedAt: now };
-            });
-        }
-
-        // Auto-expand on error
         if (status === "error" && prevStatus !== "error") {
-            setExpanded(true);
+            queueMicrotask(() => setExpanded(true));
         }
 
         prevStatusRef.current = status;
     }, [status]);
-
-    const durationMs =
-        timing.startedAt && timing.completedAt
-            ? timing.completedAt - timing.startedAt
-            : undefined;
 
     // Extract server name
     const serverName = getMcpServerName(toolName);
@@ -108,7 +94,7 @@ export function McpToolResult({
                 serverName={serverName}
                 description={description}
                 status={status}
-                duration={durationMs}
+                duration={timing.durationMs}
                 expanded={expanded}
                 expandable={hasExpandedContent}
                 onToggle={() => setExpanded(!expanded)}

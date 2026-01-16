@@ -18,15 +18,7 @@ import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
 import type { GroupedAccount } from "@/lib/actions/integration-utils";
-
-/**
- * Status message shown inline in the card
- */
-export interface StatusMessage {
-    type: "success" | "error";
-    text: string;
-    accountId?: string;
-}
+import type { StatusMessage } from "./types";
 
 /**
  * Props for the multi-account service card

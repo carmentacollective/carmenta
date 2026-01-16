@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDeveloperMode } from "@/hooks/use-developer-mode";
 import Link from "next/link";
 import {
     ArrowLeft,
@@ -77,21 +78,11 @@ export function JobRunDetail({
     const [data, setData] = useState<RunDetailData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [developerMode, setDeveloperMode] = useState(false);
+    const [developerMode, setDeveloperMode] = useDeveloperMode();
 
-    // Load developer mode preference
-    useEffect(() => {
-        const saved = localStorage.getItem("carmenta:developer-mode");
-        if (saved === "true") {
-            setDeveloperMode(true);
-        }
-    }, []);
-
-    // Save developer mode preference
+    // Toggle developer mode preference (hook handles persistence)
     const toggleDeveloperMode = () => {
-        const newValue = !developerMode;
-        setDeveloperMode(newValue);
-        localStorage.setItem("carmenta:developer-mode", String(newValue));
+        setDeveloperMode(!developerMode);
     };
 
     useEffect(() => {
