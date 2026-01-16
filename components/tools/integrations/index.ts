@@ -13,6 +13,7 @@ export { GiphyToolResult } from "./giphy";
 export { GoogleCalendarContactsToolResult } from "./google-calendar-contacts";
 export { ImgflipToolResult } from "./imgflip";
 export { LimitlessToolResult } from "./limitless";
+export { LinkedInToolResult } from "./linkedin";
 export { NotionToolResult } from "./notion";
 export { QuoToolResult } from "./quo";
 export { SlackToolResult } from "./slack";

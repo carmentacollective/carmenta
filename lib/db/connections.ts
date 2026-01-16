@@ -215,6 +215,111 @@ export async function getRecentConnections(
 }
 
 /**
+ * Connection with message statistics for history page display.
+ */
+export interface ConnectionWithStats extends Connection {
+    messageCount: number;
+    firstMessagePreview: string | null;
+}
+
+/**
+ * Gets connections with message count and first message preview.
+ * Used by the /connections history page for rich card display.
+ *
+ * @param userId - User ID
+ * @param limit - Max connections to return (default 50)
+ * @returns Connections with message stats, ordered by last activity
+ */
+export async function getConnectionsWithStats(
+    userId: string,
+    limit: number = 50
+): Promise<ConnectionWithStats[]> {
+    // Use raw SQL for the subqueries since Drizzle doesn't have great support for this
+    const result = await db.execute<{
+        id: number;
+        user_id: string;
+        title: string | null;
+        title_edited: boolean;
+        slug: string;
+        status: "active" | "background" | "archived";
+        streaming_status: "idle" | "streaming" | "completed" | "failed";
+        active_stream_id: string | null;
+        model_id: string | null;
+        concierge_model_id: string | null;
+        concierge_temperature: string | null;
+        concierge_explanation: string | null;
+        concierge_reasoning: ConciergeReasoningConfig | null;
+        last_activity_at: string;
+        is_starred: boolean;
+        starred_at: string | null;
+        project_path: string | null;
+        code_session_id: string | null;
+        source: "carmenta" | "openai" | "anthropic";
+        external_id: string | null;
+        imported_at: string | null;
+        custom_gpt_id: string | null;
+        created_at: string;
+        updated_at: string;
+        message_count: number;
+        first_message_preview: string | null;
+    }>(sql`
+        SELECT
+            c.*,
+            COALESCE(
+                (SELECT COUNT(*) FROM messages m WHERE m.connection_id = c.id),
+                0
+            )::int as message_count,
+            (
+                SELECT mp.content
+                FROM messages m
+                JOIN message_parts mp ON mp.message_id = m.id
+                WHERE m.connection_id = c.id
+                AND m.role = 'user'
+                ORDER BY m.created_at ASC
+                LIMIT 1
+            ) as first_message_preview
+        FROM connections c
+        WHERE c.user_id = ${userId}
+        ORDER BY c.last_activity_at DESC
+        LIMIT ${limit}
+    `);
+
+    // Map the raw result to our typed interface
+    return result.map((row) => ({
+        id: row.id as number,
+        userId: row.user_id as string,
+        title: row.title as string | null,
+        titleEdited: row.title_edited as boolean,
+        slug: row.slug as string,
+        status: row.status as "active" | "background" | "archived",
+        streamingStatus: row.streaming_status as
+            | "idle"
+            | "streaming"
+            | "completed"
+            | "failed",
+        activeStreamId: row.active_stream_id as string | null,
+        modelId: row.model_id as string | null,
+        conciergeModelId: row.concierge_model_id as string | null,
+        conciergeTemperature: row.concierge_temperature as string | null,
+        conciergeExplanation: row.concierge_explanation as string | null,
+        conciergeReasoning: row.concierge_reasoning as ConciergeReasoningConfig | null,
+        lastActivityAt: new Date(row.last_activity_at as string),
+        isStarred: row.is_starred as boolean,
+        starredAt: row.starred_at ? new Date(row.starred_at as string) : null,
+        projectPath: row.project_path as string | null,
+        codeSessionId: row.code_session_id as string | null,
+        source: row.source as "carmenta" | "openai" | "anthropic",
+        externalId: row.external_id as string | null,
+        importedAt: row.imported_at ? new Date(row.imported_at as string) : null,
+        customGptId: row.custom_gpt_id as string | null,
+        createdAt: new Date(row.created_at as string),
+        updatedAt: new Date(row.updated_at as string),
+        messageCount: row.message_count as number,
+        firstMessagePreview: row.first_message_preview as string | null,
+    }));
+}
+
+/**
  * Updates connection metadata
  *
  * If title is updated, the slug is automatically regenerated.

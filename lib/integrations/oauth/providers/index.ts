@@ -7,13 +7,14 @@
 
 import { logger } from "@/lib/logger";
 import type { OAuthProviderConfig } from "../types";
-import { notionProvider } from "./notion";
-import { slackProvider } from "./slack";
 import { clickupProvider } from "./clickup";
 import { dropboxProvider } from "./dropbox";
 import { googleCalendarContactsProvider } from "./google-calendar-contacts";
 import { googleInternalProvider } from "./google-internal";
 import { googleWorkspaceFilesProvider } from "./google-workspace-files";
+import { linkedinProvider } from "./linkedin";
+import { notionProvider } from "./notion";
+import { slackProvider } from "./slack";
 import { spotifyProvider } from "./spotify";
 import { twitterProvider } from "./twitter";
 
@@ -27,6 +28,7 @@ const providers: Record<string, OAuthProviderConfig> = {
     "google-calendar-contacts": googleCalendarContactsProvider,
     "google-internal": googleInternalProvider,
     "google-workspace-files": googleWorkspaceFilesProvider,
+    linkedin: linkedinProvider,
     notion: notionProvider,
     slack: slackProvider,
     spotify: spotifyProvider,
@@ -133,6 +135,8 @@ export {
     GOOGLE_SHEETS_API_BASE,
     GOOGLE_SLIDES_API_BASE,
 } from "./google-workspace-files";
+export { linkedinProvider } from "./linkedin";
+export { LINKEDIN_API_BASE } from "./linkedin";
 export { notionProvider } from "./notion";
 export { NOTION_API_BASE, NOTION_API_VERSION } from "./notion";
 export { slackProvider } from "./slack";

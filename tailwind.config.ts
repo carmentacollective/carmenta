@@ -136,6 +136,10 @@ const config: Config = {
                     "50%": { transform: "scale(1.3)" },
                     "100%": { transform: "scale(1)" },
                 },
+                "star-fade-out": {
+                    "0%": { transform: "scale(1)", opacity: "1" },
+                    "100%": { transform: "scale(0.8)", opacity: "0.5" },
+                },
                 // Easter egg: floating emoji rising effect (iMessage-style)
                 "float-up": {
                     "0%": {
@@ -160,6 +164,7 @@ const config: Config = {
                 float: "float 6s ease-in-out infinite",
                 "pulse-glow": "pulse-glow 3s ease-in-out infinite",
                 "star-pop": "star-pop 0.3s ease-out",
+                "star-fade-out": "star-fade-out 0.3s ease-out",
                 // Easter eggs
                 "float-up": "float-up 3s ease-out forwards",
                 wiggle: "wiggle 0.5s ease-in-out",

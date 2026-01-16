@@ -14,6 +14,7 @@ import { redirect } from "next/navigation";
 import {
     createConnection as dbCreateConnection,
     getRecentConnections as dbGetRecentConnections,
+    getConnectionsWithStats as dbGetConnectionsWithStats,
     getConnectionWithMessages,
     updateConnection as dbUpdateConnection,
     archiveConnection as dbArchiveConnection,
@@ -40,6 +41,14 @@ export interface CreateConnectionResult {
 }
 
 /**
+ * Connection source - where this connection originated from.
+ * - carmenta: Native connection created in Carmenta
+ * - openai: Imported from ChatGPT export
+ * - anthropic: Imported from Claude export
+ */
+export type ConnectionSource = "carmenta" | "openai" | "anthropic";
+
+/**
  * Public-facing Connection type with string ID (Sqid) for UI consumption.
  * This is the connection type used by client components.
  */
@@ -58,6 +67,14 @@ export interface PublicConnection {
     updatedAt: Date;
     /** Project path for code mode. When set, uses Claude Agent SDK. */
     projectPath: string | null;
+    /** Where this connection originated from (carmenta, openai, anthropic) */
+    source: ConnectionSource;
+    /** When this connection was imported (null for native Carmenta connections) */
+    importedAt: Date | null;
+    /** Message count for display (only populated for history page, optional) */
+    messageCount?: number;
+    /** First user message preview (only populated for history page, optional) */
+    firstMessagePreview?: string | null;
 }
 
 /**
@@ -72,12 +89,18 @@ export interface PersistedConciergeData {
 }
 
 /**
- * Maps a DB connection to a public connection with encoded string ID
+ * Maps a DB connection to a public connection with encoded string ID.
+ * Optionally includes message count and first message preview when provided.
  */
-function toPublicConnection(connection: Connection): PublicConnection {
+function toPublicConnection(
+    connection: Connection,
+    extras?: { messageCount?: number; firstMessagePreview?: string | null }
+): PublicConnection {
     return {
         ...connection,
         id: encodeConnectionId(connection.id),
+        messageCount: extras?.messageCount,
+        firstMessagePreview: extras?.firstMessagePreview,
     };
 }
 
@@ -197,7 +220,30 @@ export async function getRecentConnections(
     }
 
     const connections = await dbGetRecentConnections(dbUser.id, limit, status);
-    return connections.map(toPublicConnection);
+    return connections.map((c) => toPublicConnection(c));
+}
+
+/**
+ * Gets connections with message stats for the history page.
+ * Returns connections with message count and first message preview.
+ * @returns PublicConnection[] with encoded Sqid IDs and stats
+ */
+export async function getConnectionsWithStats(
+    limit: number = 50
+): Promise<PublicConnection[]> {
+    const dbUser = await getDbUser();
+
+    if (!dbUser) {
+        return [];
+    }
+
+    const connections = await dbGetConnectionsWithStats(dbUser.id, limit);
+    return connections.map((c) =>
+        toPublicConnection(c, {
+            messageCount: c.messageCount,
+            firstMessagePreview: c.firstMessagePreview,
+        })
+    );
 }
 
 /**
@@ -367,7 +413,7 @@ export async function getStarredConnections(
     }
 
     const connections = await dbGetStarredConnections(dbUser.id, limit);
-    return connections.map(toPublicConnection);
+    return connections.map((c) => toPublicConnection(c));
 }
 
 /**
@@ -385,7 +431,7 @@ export async function getRecentUnstarredConnections(
     }
 
     const connections = await dbGetRecentUnstarredConnections(dbUser.id, limit, status);
-    return connections.map(toPublicConnection);
+    return connections.map((c) => toPublicConnection(c));
 }
 
 /**

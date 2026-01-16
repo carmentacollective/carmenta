@@ -7,8 +7,8 @@ import { MODELS } from "@/lib/model-config";
 
 describe("ModelSelectorModal", () => {
     const defaultProps = {
-        isOpen: true,
-        onClose: vi.fn(),
+        open: true,
+        onOpenChange: vi.fn(),
         overrides: DEFAULT_OVERRIDES,
         onChange: vi.fn(),
     };
@@ -19,15 +19,15 @@ describe("ModelSelectorModal", () => {
     });
 
     describe("modal display", () => {
-        it("renders when isOpen is true", () => {
+        it("renders when open is true", () => {
             render(<ModelSelectorModal {...defaultProps} />);
 
             // Dialog should be present (Radix uses role="dialog")
             expect(screen.getByRole("dialog")).toBeInTheDocument();
         });
 
-        it("does not render when isOpen is false", () => {
-            render(<ModelSelectorModal {...defaultProps} isOpen={false} />);
+        it("does not render when open is false", () => {
+            render(<ModelSelectorModal {...defaultProps} open={false} />);
 
             // Dialog should not be present
             expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -54,28 +54,32 @@ describe("ModelSelectorModal", () => {
     });
 
     describe("closing behavior", () => {
-        it("calls onClose when close button is clicked", () => {
-            const onClose = vi.fn();
-            render(<ModelSelectorModal {...defaultProps} onClose={onClose} />);
+        it("calls onOpenChange(false) when close button is clicked", () => {
+            const onOpenChange = vi.fn();
+            render(
+                <ModelSelectorModal {...defaultProps} onOpenChange={onOpenChange} />
+            );
 
             // shadcn Dialog close button has aria-label="Close"
             const closeButton = screen.getByRole("button", { name: /close/i });
             expect(closeButton).toBeInTheDocument();
             fireEvent.click(closeButton);
 
-            expect(onClose).toHaveBeenCalled();
+            expect(onOpenChange).toHaveBeenCalledWith(false);
         });
 
         // Note: Backdrop click and Escape key handling are Radix Dialog's responsibility
         // We trust the library to handle these correctly
 
-        it("calls onClose when Escape is pressed", () => {
-            const onClose = vi.fn();
-            render(<ModelSelectorModal {...defaultProps} onClose={onClose} />);
+        it("calls onOpenChange(false) when Escape is pressed", () => {
+            const onOpenChange = vi.fn();
+            render(
+                <ModelSelectorModal {...defaultProps} onOpenChange={onOpenChange} />
+            );
 
             fireEvent.keyDown(document, { key: "Escape" });
 
-            expect(onClose).toHaveBeenCalled();
+            expect(onOpenChange).toHaveBeenCalledWith(false);
         });
     });
 
@@ -142,12 +146,12 @@ describe("ModelSelectorModal", () => {
             { timeout: 10000 },
             () => {
                 const onChange = vi.fn();
-                const onClose = vi.fn();
+                const onOpenChange = vi.fn();
                 render(
                     <ModelSelectorModal
                         {...defaultProps}
                         onChange={onChange}
-                        onClose={onClose}
+                        onOpenChange={onOpenChange}
                         overrides={{
                             modelId: "anthropic/claude-opus-4.5",
                             temperature: 0.7,
@@ -168,7 +172,7 @@ describe("ModelSelectorModal", () => {
                     temperature: null,
                     reasoning: null,
                 });
-                expect(onClose).toHaveBeenCalled();
+                expect(onOpenChange).toHaveBeenCalledWith(false);
             }
         );
     });
