@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -36,6 +36,7 @@ import {
 import { logger } from "@/lib/client-logger";
 import type { PublicJob } from "@/lib/actions/jobs";
 import { generateJobSlug } from "@/lib/sqids";
+import { useDeveloperMode } from "@/hooks/use-developer-mode";
 
 interface EditAutomationFormProps {
     job: PublicJob;
@@ -54,7 +55,7 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [infoMessage, setInfoMessage] = useState<string | null>(null);
-    const [developerMode, setDeveloperMode] = useState(false);
+    const [developerMode] = useDeveloperMode();
     const [viewingRun, setViewingRun] = useState<{ id: string } | null>(null);
     const [notesExpanded, setNotesExpanded] = useState(false);
 
@@ -66,16 +67,6 @@ export function EditAutomationForm({ job }: EditAutomationFormProps) {
         job.scheduleDisplayText
     );
     const [timezone, setTimezone] = useState(job.timezone);
-
-    // Load developer mode preference from localStorage
-    useEffect(() => {
-        try {
-            const stored = localStorage.getItem("carmenta:developer-mode");
-            setDeveloperMode(stored === "true");
-        } catch {
-            // localStorage unavailable (private browsing, disabled, etc.)
-        }
-    }, []);
 
     const handleScheduleChange = (schedule: {
         cron: string;

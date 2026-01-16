@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import {
     Check,
@@ -12,20 +12,13 @@ import {
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/lib/integrations/services";
 import type { IntegrationStatus } from "@/lib/integrations/types";
+import type { StatusMessage } from "./types";
 
 /**
  * Unified integration state for UI display.
  * Maps the database status to what users actually care about.
  */
 export type IntegrationState = "connected" | "needs_attention" | "available";
-
-/**
- * Inline status message shown in the card
- */
-export interface StatusMessage {
-    type: "success" | "error";
-    text: string;
-}
 
 /**
  * Props for unified integration display

@@ -34,12 +34,20 @@ vi.mock("next/link", () => ({
     ),
 }));
 
-// Mock localStorage
+// Mock localStorage with actual storage behavior
+// (useDeveloperMode hook re-reads from localStorage on storage events)
+const localStorageStore: Record<string, string> = {};
 const localStorageMock = {
-    getItem: vi.fn(),
-    setItem: vi.fn(),
-    removeItem: vi.fn(),
-    clear: vi.fn(),
+    getItem: vi.fn((key: string) => localStorageStore[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+        localStorageStore[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+        delete localStorageStore[key];
+    }),
+    clear: vi.fn(() => {
+        Object.keys(localStorageStore).forEach((key) => delete localStorageStore[key]);
+    }),
 };
 Object.defineProperty(window, "localStorage", { value: localStorageMock });
 
@@ -79,8 +87,10 @@ describe("JobRunDetail", () => {
 
     beforeEach(() => {
         mockFetch.mockReset();
-        localStorageMock.getItem.mockReset();
-        localStorageMock.setItem.mockReset();
+        localStorageMock.getItem.mockClear();
+        localStorageMock.setItem.mockClear();
+        // Clear localStorage store between tests
+        Object.keys(localStorageStore).forEach((key) => delete localStorageStore[key]);
     });
 
     afterEach(() => {
@@ -208,7 +218,7 @@ describe("JobRunDetail", () => {
         });
 
         it("loads developer mode from localStorage", async () => {
-            localStorageMock.getItem.mockReturnValue("true");
+            localStorageStore["carmenta:developer-mode"] = "true";
 
             render(<JobRunDetail {...defaultProps} />);
 
@@ -218,7 +228,7 @@ describe("JobRunDetail", () => {
         });
 
         it("toggles developer mode on click", async () => {
-            localStorageMock.getItem.mockReturnValue(null);
+            // Start with no value (default cleared in beforeEach)
 
             render(<JobRunDetail {...defaultProps} />);
 
@@ -245,7 +255,7 @@ describe("JobRunDetail", () => {
         });
 
         it("shows token usage in developer mode", async () => {
-            localStorageMock.getItem.mockReturnValue("true");
+            localStorageStore["carmenta:developer-mode"] = "true";
 
             render(<JobRunDetail {...defaultProps} />);
 
@@ -288,7 +298,7 @@ describe("JobRunDetail", () => {
         });
 
         it("shows stack trace in developer mode", async () => {
-            localStorageMock.getItem.mockReturnValue("true");
+            localStorageStore["carmenta:developer-mode"] = "true";
 
             mockFetch.mockResolvedValue({
                 ok: true,
@@ -367,7 +377,7 @@ describe("JobRunDetail", () => {
 
     describe("External Links", () => {
         it("shows external links in developer mode", async () => {
-            localStorageMock.getItem.mockReturnValue("true");
+            localStorageStore["carmenta:developer-mode"] = "true";
 
             mockFetch.mockResolvedValue({
                 ok: true,

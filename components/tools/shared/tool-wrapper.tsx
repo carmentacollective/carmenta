@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ToolStatusBadge } from "./tool-status-badge";
 import { ToolDebugPanel } from "./tool-debug-panel";
+import { useToolTiming } from "./use-tool-timing";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import {
     type ToolStatus,
@@ -45,60 +46,6 @@ interface ToolWrapperProps {
      */
     variant?: "standard" | "compact";
     className?: string;
-}
-
-interface ToolTiming {
-    startedAt?: number;
-    completedAt?: number;
-    durationMs?: number;
-}
-
-/**
- * Custom hook to track timing across status transitions.
- *
- * Uses state-only approach: captures start time when status becomes "running"
- * and calculates duration when status becomes "completed".
- *
- * The timing state is set via setTimeout(0) to defer the setState call,
- * avoiding the "set-state-in-effect" lint warning while still responding
- * to status changes in the same tick.
- */
-function useToolTiming(status: ToolStatus): ToolTiming {
-    const [timing, setTiming] = useState<ToolTiming>({});
-    const prevStatusRef = useRef<ToolStatus | null>(null);
-
-    useEffect(() => {
-        const prevStatus = prevStatusRef.current;
-
-        // Transition to running: capture start time
-        if (status === "running" && prevStatus !== "running") {
-            // Defer to next microtask to avoid "set-state-in-effect" warning
-            setTimeout(() => {
-                setTiming({ startedAt: Date.now() });
-            }, 0);
-        }
-
-        // Transition to completed: calculate duration
-        if (status === "completed" && prevStatus !== "completed") {
-            setTimeout(() => {
-                setTiming((prev) => {
-                    const now = Date.now();
-                    const durationMs = prev.startedAt
-                        ? now - prev.startedAt
-                        : undefined;
-                    return {
-                        ...prev,
-                        completedAt: now,
-                        durationMs,
-                    };
-                });
-            }, 0);
-        }
-
-        prevStatusRef.current = status;
-    }, [status]);
-
-    return timing;
 }
 
 /**

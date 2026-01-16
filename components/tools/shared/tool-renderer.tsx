@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { glass, border, spacing } from "@/lib/design-tokens";
 import { ToolStatus } from "./tool-status";
 import { ToolDebugPanel } from "./tool-debug-panel";
+import { useToolTiming } from "./use-tool-timing";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import {
     type ToolStatus as ToolStatusType,
@@ -32,41 +33,6 @@ interface ToolRendererProps {
     children?: React.ReactNode;
     /** Additional class names */
     className?: string;
-}
-
-interface ToolTiming {
-    startedAt?: number;
-    completedAt?: number;
-    durationMs?: number;
-}
-
-/**
- * Track timing across status transitions.
- */
-function useToolTiming(status: ToolStatusType): ToolTiming {
-    const [timing, setTiming] = useState<ToolTiming>({});
-    const prevStatusRef = useRef<ToolStatusType | null>(null);
-
-    useEffect(() => {
-        const prevStatus = prevStatusRef.current;
-
-        if (status === "running" && prevStatus !== "running") {
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronizing timing state with external status prop
-            setTiming({ startedAt: Date.now() });
-        }
-
-        if (status === "completed" && prevStatus !== "completed") {
-            setTiming((prev) => {
-                const now = Date.now();
-                const durationMs = prev.startedAt ? now - prev.startedAt : undefined;
-                return { ...prev, completedAt: now, durationMs };
-            });
-        }
-
-        prevStatusRef.current = status;
-    }, [status]);
-
-    return timing;
 }
 
 /**
@@ -102,6 +68,7 @@ export function ToolRenderer({
     const prevStatusRef = useRef<ToolStatusType | null>(null);
 
     // Auto-expand on error (configurable per tool, default true)
+    // Using queueMicrotask to avoid synchronous setState in effect (linter rule)
     useEffect(() => {
         const prevStatus = prevStatusRef.current;
         const shouldAutoExpand = config.autoExpandOnError !== false;
@@ -109,8 +76,7 @@ export function ToolRenderer({
         // Expand on error: either transition to error OR initial render with error
         if (status === "error" && shouldAutoExpand) {
             if (prevStatus === null || prevStatus !== "error") {
-                // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronizing UI state with external error status
-                setExpanded(true);
+                queueMicrotask(() => setExpanded(true));
             }
         }
 

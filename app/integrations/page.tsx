@@ -16,8 +16,11 @@ import {
 import * as Sentry from "@sentry/nextjs";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
-import { MultiAccountServiceCard, ApiKeyModal } from "@/components/integrations";
-import type { StatusMessage } from "@/components/integrations/multi-account-service-card";
+import {
+    MultiAccountServiceCard,
+    ApiKeyModal,
+    type StatusMessage,
+} from "@/components/integrations";
 import {
     getGroupedServices,
     connectApiKeyService,
