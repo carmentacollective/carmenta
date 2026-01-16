@@ -120,10 +120,14 @@ describe("ConnectionChooser Integration", () => {
         createdAt: Date;
         updatedAt: Date;
         projectPath?: string | null;
+        source?: "carmenta" | "openai" | "anthropic";
+        importedAt?: Date | null;
     }): PublicConnection => ({
         ...conn,
         id: encodeConnectionId(conn.id),
         projectPath: conn.projectPath ?? null,
+        source: conn.source ?? "carmenta",
+        importedAt: conn.importedAt ?? null,
     });
 
     beforeEach(async () => {
