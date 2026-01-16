@@ -1,13 +1,24 @@
 # GitHub App
 
-Carmenta's GitHub App integration - general-purpose GitHub operations as
-`carmenta-bot[bot]`.
+Carmenta's GitHub App for internal operations as `carmenta-bot[bot]`.
+
+## Not a User Integration
+
+This module is **Carmenta's own GitHub App** - it uses Carmenta's credentials to act on
+Carmenta's repo. When users connect their GitHub accounts (future
+`lib/integrations/adapters/github.ts`), that's a separate user integration using OAuth.
+
+| Aspect      | This Module         | Future User Integration               |
+| ----------- | ------------------- | ------------------------------------- |
+| Location    | `lib/github-app/`   | `lib/integrations/adapters/github.ts` |
+| Credentials | Carmenta's App      | User's OAuth token                    |
+| Actor       | `carmenta-bot[bot]` | User's GitHub account                 |
+| Repos       | Carmenta's repo     | User's repos                          |
 
 ## Purpose
 
-This module enables GitHub operations from Carmenta chat, appearing as
-`carmenta-bot[bot]` rather than any individual user. Supports issues today, extensible
-to PRs, comments, labels, and any GitHub operation.
+This module enables Carmenta to perform GitHub operations on its own repo - filing bug
+reports, managing issues, eventually PRs. All actions appear as `carmenta-bot[bot]`.
 
 ## Architecture
 
