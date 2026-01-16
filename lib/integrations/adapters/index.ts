@@ -29,6 +29,7 @@ export { GoogleDriveAdapter } from "./google-drive";
 export { GoogleCalendarContactsAdapter } from "./google-calendar-contacts";
 export { GoogleWorkspaceFilesAdapter } from "./google-workspace-files";
 export { LimitlessAdapter } from "./limitless";
+export { LinkedInAdapter } from "./linkedin";
 export { NotionAdapter } from "./notion";
 export { QuoAdapter } from "./quo";
 export { SlackAdapter } from "./slack";
