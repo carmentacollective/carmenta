@@ -109,26 +109,3 @@ export function useHighlightElement(): UseHighlightElementReturn {
         clearHighlight,
     };
 }
-
-/**
- * Global CSS to inject for highlight animations.
- * Call this once at app initialization or include in global styles.
- */
-export const HIGHLIGHT_STYLES = `
-@keyframes highlight-pulse {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
-    }
-    50% {
-        box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.4);
-    }
-}
-
-.highlight-pulse {
-    animation: highlight-pulse 0.6s ease-in-out 3;
-    outline: 2px solid rgba(139, 92, 246, 0.6);
-    outline-offset: 2px;
-    z-index: 50;
-    position: relative;
-}
-`;
