@@ -655,7 +655,11 @@ export function ImportWidget({
     const handleKeepEverything = useCallback(async () => {
         if (!extractionStats?.pending) {
             if (onSuccess) {
-                onSuccess(mode === "knowledge-only" ? extractionStats! : importResult!);
+                const result =
+                    mode === "knowledge-only" ? extractionStats : importResult;
+                if (result) {
+                    onSuccess(result);
+                }
             } else {
                 router.push("/");
             }
@@ -679,7 +683,11 @@ export function ImportWidget({
 
             logger.info({}, "All extractions approved");
             if (onSuccess) {
-                onSuccess(mode === "knowledge-only" ? extractionStats! : importResult!);
+                const result =
+                    mode === "knowledge-only" ? extractionStats : importResult;
+                if (result) {
+                    onSuccess(result);
+                }
             } else {
                 router.push("/");
             }
@@ -740,7 +748,6 @@ export function ImportWidget({
     };
 
     // Mode-specific labels
-    const actionLabel = mode === "knowledge-only" ? "Extract Knowledge" : "Import";
     const actioningLabel =
         mode === "knowledge-only" ? "Extracting knowledge..." : "Importing...";
 
@@ -1325,7 +1332,7 @@ export function ImportWidget({
                                 </>
                             ) : (
                                 <>
-                                    {actionLabel}{" "}
+                                    Import{" "}
                                     {hasActiveFilters
                                         ? `${filteredConversations.length.toLocaleString()} Conversations`
                                         : "All"}

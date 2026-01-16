@@ -46,7 +46,7 @@ async function getDbUser() {
 const messageSchema = z.object({
     role: z.enum(["user", "assistant", "system", "tool"]),
     content: z.string(),
-    createdAt: z.string(),
+    createdAt: z.string().nullable(), // Some exports have null timestamps
 });
 
 const conversationSchema = z.object({
@@ -111,7 +111,12 @@ export async function POST(request: NextRequest) {
         }
 
         // Import conversations (creates connections)
-        // TODO: Add knowledgeOnly flag to mark these for cleanup after extraction
+        // TODO (see issue #804): Add knowledgeOnly flag to connections schema to mark
+        // these as temporary. For now, connections remain after extraction completes.
+        // Proper fix requires:
+        // 1. Migration adding `knowledgeOnly: boolean` to connections table
+        // 2. Filter knowledgeOnly connections from /connections page
+        // 3. Optional: Cleanup job to delete knowledgeOnly connections after N days
         const importResult = await commitImport(
             conversations as Parameters<typeof commitImport>[0],
             provider,
