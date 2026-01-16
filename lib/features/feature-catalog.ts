@@ -231,12 +231,16 @@ export const FEATURES: Feature[] = [
         headline: "Your AI team.",
         tagline:
             "A Digital Chief of Staff tracks commitments and anticipates what's coming. Daily briefings arrive before you ask. Research happens while you sleep. One person becomes ten.",
-        tipTitle: "We Work While You Sleep",
+        tipTitle: "Your AI Team",
         tipDescription:
-            "Daily briefings, commitment tracking, proactive research. We anticipate what you need before you ask.",
-        available: false,
-        display: { homepage: true, connectPage: false }, // Vision content, not yet available
-        priority: 5,
+            "We orchestrate specialized agents—Image Artist, Librarian, and more. Ask for anything and we route it to the right expert.",
+        engagement: {
+            label: "Meet the team",
+            action: { type: "navigate", href: "/ai-team" },
+        },
+        available: true,
+        display: { homepage: true, connectPage: true },
+        priority: 8,
     },
     {
         id: "self-improving",
@@ -427,6 +431,129 @@ export const FEATURES: Feature[] = [
         available: true,
         display: { homepage: true, connectPage: true },
         priority: 8,
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // NEWLY DOCUMENTED FEATURES (confirmed built via codebase audit)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    {
+        id: "image-generation",
+        headline: "Images from imagination.",
+        tagline:
+            "Describe what you see in your mind. Our Image Artist transforms words into visuals—photos, diagrams, logos, art. Multiple models, intelligent routing.",
+        tipTitle: "Images From Words",
+        tipDescription:
+            "Describe what you want to see. We generate images using the best model for your request—photos, diagrams, logos, and more.",
+        engagement: {
+            label: "Create an image",
+            action: {
+                type: "prefill",
+                text: "Create a minimalist logo for a meditation app called 'Stillwater'",
+            },
+        },
+        available: true,
+        display: { homepage: true, connectPage: true },
+        priority: 9,
+    },
+    {
+        id: "voice-input",
+        headline: "Speak your mind.",
+        tagline:
+            "Voice-first, because speaking is faster than typing. Real-time transcription captures your thoughts at the speed you think them.",
+        tipTitle: "Just Say It",
+        tipDescription:
+            "Tap the microphone and speak. We transcribe in real-time—no typing, no friction, just flow.",
+        engagement: {
+            label: "Try voice",
+            action: { type: "highlight", element: "attachment-button", duration: 2000 },
+        },
+        available: true,
+        display: { homepage: true, connectPage: true },
+        priority: 8,
+    },
+    {
+        id: "scheduled-jobs",
+        headline: "Work that runs on schedule.",
+        tagline:
+            "Set it and forget it. Schedule recurring tasks—daily briefings, weekly reports, ongoing research. We work while you sleep.",
+        tipTitle: "Schedule Anything",
+        tipDescription:
+            "Set up recurring tasks that run on your schedule. Daily briefings, weekly digests, ongoing research—we handle it.",
+        engagement: {
+            label: "Create a job",
+            action: { type: "navigate", href: "/ai-team" },
+        },
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 7,
+    },
+    {
+        id: "code-mode",
+        headline: "Your codebase, conversational.",
+        tagline:
+            "Point us at a project and we read, write, and execute code together. Full filesystem access, git awareness, real development.",
+        tipTitle: "Code Together",
+        tipDescription:
+            "Connect a project folder and we work on code together—reading files, writing changes, running commands.",
+        engagement: {
+            label: "Start coding",
+            action: {
+                type: "prefill",
+                text: "Let's work on my project at ~/src/my-app",
+            },
+        },
+        available: true,
+        display: { homepage: true, connectPage: true },
+        priority: 7,
+    },
+    {
+        id: "mcp-servers",
+        headline: "Your tools, our hands.",
+        tagline:
+            "Connect custom MCP servers and we gain new capabilities. Your internal APIs, private tools, specialized services—all accessible in conversation.",
+        tipTitle: "Connect Your Tools",
+        tipDescription:
+            "Add custom MCP servers to give us access to your internal APIs and specialized tools.",
+        engagement: {
+            label: "Add a server",
+            action: { type: "navigate", href: "/integrations/mcp" },
+        },
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 6,
+    },
+    {
+        id: "import-history",
+        headline: "Bring your history.",
+        tagline:
+            "Import your ChatGPT or Claude conversation history. Your past insights, preserved and searchable.",
+        tipTitle: "Import Your Past",
+        tipDescription:
+            "Bring your ChatGPT or Claude history with you. We import your conversations so nothing gets left behind.",
+        engagement: {
+            label: "Import now",
+            action: { type: "navigate", href: "/import" },
+        },
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 6,
+    },
+    {
+        id: "mobile-pwa",
+        headline: "Native feel, anywhere.",
+        tagline:
+            "Install Carmenta on your phone or desktop. Offline support, push notifications, share from any app. A true app experience.",
+        tipTitle: "Install the App",
+        tipDescription:
+            "Add Carmenta to your home screen for a native app experience—offline support, push notifications, instant access.",
+        engagement: {
+            label: "Learn how",
+            action: { type: "navigate", href: "/home" },
+        },
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 5,
     },
 ];
 
