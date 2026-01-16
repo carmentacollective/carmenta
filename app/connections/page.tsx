@@ -15,7 +15,6 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
     ChatsCircle,
     MagnifyingGlass,
@@ -43,6 +42,7 @@ import {
 import { StarButton } from "@/components/connection/star-button";
 import { SourceBadge } from "@/components/connection/source-badge";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/client-logger";
 
 /** Group connections by time period */
 type TimeGroup = "today" | "yesterday" | "thisWeek" | "thisMonth" | "older";
@@ -150,8 +150,6 @@ function ConnectionCard({
     onConfirmDelete: (e: React.MouseEvent) => void;
     onCancelDelete: () => void;
 }) {
-    const router = useRouter();
-
     // Delete confirmation view
     if (isConfirmingDelete) {
         return (
@@ -279,7 +277,7 @@ export default function ConnectionsPage() {
                 const recent = await getConnectionsWithStats(100);
                 setConnections(recent);
             } catch (error) {
-                console.error("Failed to load connections:", error);
+                logger.error({ error }, "Failed to load connections");
             } finally {
                 setLoading(false);
             }
@@ -337,7 +335,7 @@ export default function ConnectionsPage() {
                             : c
                     )
                 );
-                console.error("Failed to toggle star:", error);
+                logger.error({ error, connectionId: id }, "Failed to toggle star");
             }
         },
         [connections]
@@ -358,7 +356,7 @@ export default function ConnectionsPage() {
             setConnections((prev) => prev.filter((c) => c.id !== id));
             setConfirmingDeleteId(null);
         } catch (error) {
-            console.error("Failed to delete connection:", error);
+            logger.error({ error, connectionId: id }, "Failed to delete connection");
         } finally {
             setDeletingId(null);
         }
