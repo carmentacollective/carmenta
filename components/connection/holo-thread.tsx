@@ -668,6 +668,17 @@ function UserMessage({ message, isLast }: { message: UIMessage; isLast: boolean 
                 description:
                     "Your changes are still here—try again or press Escape to cancel.",
                 duration: 6000,
+                action: {
+                    label: "Retry",
+                    onClick: () => {
+                        // Re-trigger save (will be captured by closure)
+                        editMessageAndRegenerate(message.id, editContent.trim()).catch(
+                            () => {
+                                // Error will be handled by next attempt
+                            }
+                        );
+                    },
+                },
             });
         } finally {
             setIsSubmitting(false);

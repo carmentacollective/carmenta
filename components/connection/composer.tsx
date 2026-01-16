@@ -598,7 +598,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     { error: error instanceof Error ? error.message : String(error) },
                     "Failed to send message"
                 );
-                setInput(userText); // Restore text for retry (files stay cleared)
+                // Restore text for retry
+                setInput(userText);
+                // Restore files for retry (only if there were files attached)
+                if (lastSentFilesRef.current?.length) {
+                    addPreUploadedFiles(lastSentFilesRef.current);
+                }
             } finally {
                 isSubmittingRef.current = false;
             }
