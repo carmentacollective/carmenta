@@ -41,18 +41,32 @@ Sentry.init({
         }),
     ],
 
-    // Filter out noisy errors
-    ignoreErrors: [
-        // Browser extensions
-        /^chrome-extension:\/\//,
-        /^moz-extension:\/\//,
-        // Network errors that are usually transient
-        "Network request failed",
-        "Failed to fetch",
-        "Load failed",
-        // User-cancelled navigation
-        "AbortError",
-    ],
+    // Smart error filtering - filter by CONTEXT, not message strings
+    // "Failed to fetch" from extensions is noise; from our API is critical
+    beforeSend(event, hint) {
+        const error = hint.originalException;
+
+        // Filter browser extension errors
+        const frames = event.exception?.values?.[0]?.stacktrace?.frames || [];
+        const isExtensionError = frames.some(
+            (frame) =>
+                frame.filename?.startsWith("chrome-extension://") ||
+                frame.filename?.startsWith("moz-extension://")
+        );
+        if (isExtensionError) return null;
+
+        // Filter user-cancelled requests (not errors)
+        if (error instanceof Error && error.name === "AbortError") {
+            return null;
+        }
+
+        // Filter ResizeObserver loop errors (browser quirk, not actionable)
+        if (error instanceof Error && error.message?.includes("ResizeObserver loop")) {
+            return null;
+        }
+
+        return event;
+    },
 
     // Add tags for filtering in Sentry dashboard
     initialScope: {
