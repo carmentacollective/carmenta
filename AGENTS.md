@@ -82,6 +82,18 @@ across multiple repos and branches in parallel—"dev server is running" is usel
 without context. Say "Dev server running at http://localhost:3001" not "server is
 running".
 
+## Error Handling Policy
+
+**Let errors throw.** Don't add try-catch unless it serves one of two purposes:
+
+1. **API Routes** - Return structured JSON via `serverErrorResponse()`
+2. **Graceful Degradation** - Return fallbacks when failure is acceptable
+
+Everything else: error boundaries, SDK hooks, and wrappers (`safeInvoke`) handle capture
+automatically. Adding try-catch creates noise and double-reporting.
+
+See `knowledge/components/error-handling.md` for full rationale.
+
 ## Context Management
 
 When compacting, preserve operational state: current branch, worktree location,

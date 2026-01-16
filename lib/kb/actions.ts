@@ -87,96 +87,90 @@ export interface KBFolder {
 export async function getKBFolders(): Promise<KBFolder[]> {
     const userId = await getDbUserId();
 
-    try {
-        const allDocs = await kb.listAll(userId);
+    const allDocs = await kb.listAll(userId);
 
-        // Build tree structure from flat document list
-        const rootFolders = new Map<string, KBFolder>();
+    // Build tree structure from flat document list
+    const rootFolders = new Map<string, KBFolder>();
 
-        for (const doc of allDocs) {
-            // Skip malformed documents
-            if (!doc.path || doc.path.trim() === "") {
-                logger.warn(
-                    { docId: doc.id, docName: doc.name },
-                    "KB document has empty path, skipping"
-                );
-                continue;
-            }
-
-            const segments = doc.path.split(".");
-            const rootName = segments[0];
-
-            // Get or create root folder
-            if (!rootFolders.has(rootName)) {
-                rootFolders.set(rootName, {
-                    id: rootName,
-                    name: rootName,
-                    path: rootName,
-                    documents: [],
-                    children: [],
-                });
-            }
-            const rootFolder = rootFolders.get(rootName)!;
-
-            const kbDoc: KBDocument = {
-                id: doc.id,
-                path: doc.path,
-                name: doc.name,
-                content: doc.content,
-                description: doc.description,
-                promptLabel: doc.promptLabel,
-                editable: doc.editable,
-                updatedAt: doc.updatedAt,
-            };
-
-            if (segments.length === 1) {
-                // Single segment path (rare) - treat as document in root
-                rootFolder.documents.push(kbDoc);
-            } else if (segments.length === 2) {
-                // Direct child: profile.identity → add to root folder
-                rootFolder.documents.push(kbDoc);
-            } else {
-                // 3+ segments: navigate/create full folder path, add document at leaf
-                // profile.people.family.sarah → profile > people > family > sarah (doc)
-                let currentFolder = rootFolder;
-                for (let i = 1; i < segments.length - 1; i++) {
-                    const subfolderPath = segments.slice(0, i + 1).join(".");
-                    let subfolder = currentFolder.children.find(
-                        (c) => c.path === subfolderPath
-                    );
-                    if (!subfolder) {
-                        subfolder = {
-                            id: subfolderPath,
-                            name: segments[i],
-                            path: subfolderPath,
-                            documents: [],
-                            children: [],
-                        };
-                        currentFolder.children.push(subfolder);
-                    }
-                    currentFolder = subfolder;
-                }
-                currentFolder.documents.push(kbDoc);
-            }
+    for (const doc of allDocs) {
+        // Skip malformed documents
+        if (!doc.path || doc.path.trim() === "") {
+            logger.warn(
+                { docId: doc.id, docName: doc.name },
+                "KB document has empty path, skipping"
+            );
+            continue;
         }
 
-        // Sort everything alphabetically
-        const sortFolder = (folder: KBFolder): KBFolder => ({
-            ...folder,
-            documents: folder.documents.sort((a, b) => a.name.localeCompare(b.name)),
-            children: folder.children
-                .map(sortFolder)
-                .sort((a, b) => a.name.localeCompare(b.name)),
-        });
+        const segments = doc.path.split(".");
+        const rootName = segments[0];
 
-        return Array.from(rootFolders.values())
-            .map(sortFolder)
-            .sort((a, b) => a.name.localeCompare(b.name));
-    } catch (error) {
-        // Log for local debugging; SDK auto-captures re-thrown errors
-        logger.error({ error, userId }, "Failed to fetch KB folders");
-        throw error;
+        // Get or create root folder
+        if (!rootFolders.has(rootName)) {
+            rootFolders.set(rootName, {
+                id: rootName,
+                name: rootName,
+                path: rootName,
+                documents: [],
+                children: [],
+            });
+        }
+        const rootFolder = rootFolders.get(rootName)!;
+
+        const kbDoc: KBDocument = {
+            id: doc.id,
+            path: doc.path,
+            name: doc.name,
+            content: doc.content,
+            description: doc.description,
+            promptLabel: doc.promptLabel,
+            editable: doc.editable,
+            updatedAt: doc.updatedAt,
+        };
+
+        if (segments.length === 1) {
+            // Single segment path (rare) - treat as document in root
+            rootFolder.documents.push(kbDoc);
+        } else if (segments.length === 2) {
+            // Direct child: profile.identity → add to root folder
+            rootFolder.documents.push(kbDoc);
+        } else {
+            // 3+ segments: navigate/create full folder path, add document at leaf
+            // profile.people.family.sarah → profile > people > family > sarah (doc)
+            let currentFolder = rootFolder;
+            for (let i = 1; i < segments.length - 1; i++) {
+                const subfolderPath = segments.slice(0, i + 1).join(".");
+                let subfolder = currentFolder.children.find(
+                    (c) => c.path === subfolderPath
+                );
+                if (!subfolder) {
+                    subfolder = {
+                        id: subfolderPath,
+                        name: segments[i],
+                        path: subfolderPath,
+                        documents: [],
+                        children: [],
+                    };
+                    currentFolder.children.push(subfolder);
+                }
+                currentFolder = subfolder;
+            }
+            currentFolder.documents.push(kbDoc);
+        }
     }
+
+    // Sort everything alphabetically
+    const sortFolder = (folder: KBFolder): KBFolder => ({
+        ...folder,
+        documents: folder.documents.sort((a, b) => a.name.localeCompare(b.name)),
+        children: folder.children
+            .map(sortFolder)
+            .sort((a, b) => a.name.localeCompare(b.name)),
+    });
+
+    return Array.from(rootFolders.values())
+        .map(sortFolder)
+        .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**
@@ -228,29 +222,23 @@ export async function updateKBDocument(
 ): Promise<KBDocument> {
     const userId = await getDbUserId();
 
-    try {
-        const updated = await kb.update(userId, path, { content });
-        if (!updated) {
-            throw new Error(`Document not found: ${path}`);
-        }
-
-        logger.info({ userId, path }, "📝 KB document updated");
-
-        return {
-            id: updated.id,
-            path: updated.path,
-            name: updated.name,
-            content: updated.content,
-            description: updated.description,
-            promptLabel: updated.promptLabel,
-            editable: updated.editable,
-            updatedAt: updated.updatedAt,
-        };
-    } catch (error) {
-        // Log for local debugging; SDK auto-captures re-thrown errors
-        logger.error({ error, userId, path }, "Failed to update KB document");
-        throw error;
+    const updated = await kb.update(userId, path, { content });
+    if (!updated) {
+        throw new Error(`Document not found: ${path}`);
     }
+
+    logger.info({ userId, path }, "📝 KB document updated");
+
+    return {
+        id: updated.id,
+        path: updated.path,
+        name: updated.name,
+        content: updated.content,
+        description: updated.description,
+        promptLabel: updated.promptLabel,
+        editable: updated.editable,
+        updatedAt: updated.updatedAt,
+    };
 }
 
 // ============================================================================
@@ -342,28 +330,22 @@ export async function searchKB(
         return [];
     }
 
-    try {
-        const results = await kb.search(userId, query);
+    const results = await kb.search(userId, query);
 
-        logger.info({ userId, query, resultCount: results.length }, "🔍 KB search");
+    logger.info({ userId, query, resultCount: results.length }, "🔍 KB search");
 
-        return results.map((doc) => ({
-            id: doc.id,
-            path: doc.path,
-            name: doc.name,
-            content: doc.content,
-            description: doc.description,
-            promptLabel: doc.promptLabel,
-            editable: doc.editable,
-            updatedAt: doc.updatedAt,
-            rank: doc.rank,
-            snippet: doc.snippet,
-        }));
-    } catch (error) {
-        // Log for local debugging; SDK auto-captures re-thrown errors
-        logger.error({ error, userId, query }, "KB search failed");
-        throw error;
-    }
+    return results.map((doc) => ({
+        id: doc.id,
+        path: doc.path,
+        name: doc.name,
+        content: doc.content,
+        description: doc.description,
+        promptLabel: doc.promptLabel,
+        editable: doc.editable,
+        updatedAt: doc.updatedAt,
+        rank: doc.rank,
+        snippet: doc.snippet,
+    }));
 }
 
 // ============================================================================

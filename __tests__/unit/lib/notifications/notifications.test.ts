@@ -269,11 +269,23 @@ describe("Push Notification Tool", () => {
             });
         });
 
-        it("handles network errors as TEMPORARY failures", async () => {
+        it("handles timeout errors as TEMPORARY failures", async () => {
             mockIsPushConfigured.mockReturnValue(true);
-            mockSendPushNotification.mockRejectedValue(new Error("ECONNREFUSED"));
+            // Real service returns structured errors, never throws
+            // Test timeout scenario (different from ECONNREFUSED in previous test)
+            mockSendPushNotification.mockResolvedValue({
+                success: false,
+                error: "Connection timed out",
+                totalSubscriptions: 2,
+                devicesNotified: 0,
+                deviceTypesNotified: [],
+                deviceTypesFailed: ["ios", "mac"],
+                failureReasons: ["network_error"],
+                results: [],
+                sentAt: new Date().toISOString(),
+            });
 
-            const user = await createTestUser("network-error@test.com");
+            const user = await createTestUser("timeout-error@test.com");
             const context = createTestContext(user.email, user.id);
             const tool = createPushNotificationTool(context);
 

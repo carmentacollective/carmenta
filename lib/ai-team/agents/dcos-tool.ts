@@ -14,7 +14,6 @@
  */
 
 import { tool } from "ai";
-import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { eq, and, desc, ilike } from "drizzle-orm";
 
@@ -269,41 +268,27 @@ function buildExecutionSummary(
 async function executeList(
     context: SubagentContext
 ): Promise<SubagentResult<{ automations: AutomationSummary[]; total: number }>> {
-    try {
-        const jobs = await db.query.scheduledJobs.findMany({
-            where: eq(scheduledJobs.userId, context.userId),
-            orderBy: [desc(scheduledJobs.createdAt)],
-        });
+    const jobs = await db.query.scheduledJobs.findMany({
+        where: eq(scheduledJobs.userId, context.userId),
+        orderBy: [desc(scheduledJobs.createdAt)],
+    });
 
-        const automations: AutomationSummary[] = jobs.map((job) => ({
-            id: encodeJobId(job.seqId),
-            name: job.name,
-            isActive: job.isActive,
-            schedule: job.scheduleDisplayText,
-            timezone: job.timezone,
-            lastRunAt: job.lastRunAt,
-            nextRunAt: job.nextRunAt,
-        }));
+    const automations: AutomationSummary[] = jobs.map((job) => ({
+        id: encodeJobId(job.seqId),
+        name: job.name,
+        isActive: job.isActive,
+        schedule: job.scheduleDisplayText,
+        timezone: job.timezone,
+        lastRunAt: job.lastRunAt,
+        nextRunAt: job.nextRunAt,
+    }));
 
-        logger.info(
-            { userId: context.userId, count: automations.length },
-            "📋 DCOS list completed"
-        );
+    logger.info(
+        { userId: context.userId, count: automations.length },
+        "📋 DCOS list completed"
+    );
 
-        return successResult({ automations, total: automations.length });
-    } catch (error) {
-        logger.error({ error, userId: context.userId }, "📋 DCOS list failed");
-
-        Sentry.captureException(error, {
-            tags: { component: "dcos", action: "list" },
-            extra: { userId: context.userId },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to list automations"
-        );
-    }
+    return successResult({ automations, total: automations.length });
 }
 
 /**
@@ -313,83 +298,61 @@ async function executeGet(
     params: { id?: string; name?: string },
     context: SubagentContext
 ): Promise<SubagentResult<{ automation: AutomationDetail | null; found: boolean }>> {
-    try {
-        let job;
+    let job;
 
-        if (params.id) {
-            // Look up by encoded ID
-            if (!isValidJobId(params.id)) {
-                return errorResult("VALIDATION", `Invalid job ID format: ${params.id}`);
-            }
-
-            const seqId = decodeJobId(params.id);
-            if (seqId === null) {
-                return errorResult(
-                    "VALIDATION",
-                    `Failed to decode job ID: ${params.id}`
-                );
-            }
-
-            job = await db.query.scheduledJobs.findFirst({
-                where: and(
-                    eq(scheduledJobs.seqId, seqId),
-                    eq(scheduledJobs.userId, context.userId)
-                ),
-            });
-        } else if (params.name) {
-            // Look up by name (case-insensitive partial match)
-            // Escape SQL wildcards and backslashes for LIKE pattern safety
-            const escapedName = params.name
-                .replace(/\\/g, "\\\\")
-                .replace(/[%_]/g, "\\$&");
-            job = await db.query.scheduledJobs.findFirst({
-                where: and(
-                    ilike(scheduledJobs.name, `%${escapedName}%`),
-                    eq(scheduledJobs.userId, context.userId)
-                ),
-            });
-        } else {
-            return errorResult("VALIDATION", "Either id or name is required for get");
+    if (params.id) {
+        // Look up by encoded ID
+        if (!isValidJobId(params.id)) {
+            return errorResult("VALIDATION", `Invalid job ID format: ${params.id}`);
         }
 
-        if (!job) {
-            return successResult({ automation: null, found: false });
+        const seqId = decodeJobId(params.id);
+        if (seqId === null) {
+            return errorResult("VALIDATION", `Failed to decode job ID: ${params.id}`);
         }
 
-        const automation: AutomationDetail = {
-            id: encodeJobId(job.seqId),
-            name: job.name,
-            prompt: job.prompt,
-            isActive: job.isActive,
-            schedule: job.scheduleDisplayText,
-            timezone: job.timezone,
-            lastRunAt: job.lastRunAt,
-            nextRunAt: job.nextRunAt,
-            createdAt: job.createdAt,
-        };
-
-        logger.info(
-            { userId: context.userId, jobId: job.id, name: job.name },
-            "📋 DCOS get completed"
-        );
-
-        return successResult({ automation, found: true });
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, id: params.id, name: params.name },
-            "📋 DCOS get failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "dcos", action: "get" },
-            extra: { userId: context.userId, ...params },
+        job = await db.query.scheduledJobs.findFirst({
+            where: and(
+                eq(scheduledJobs.seqId, seqId),
+                eq(scheduledJobs.userId, context.userId)
+            ),
         });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to get automation"
-        );
+    } else if (params.name) {
+        // Look up by name (case-insensitive partial match)
+        // Escape SQL wildcards and backslashes for LIKE pattern safety
+        const escapedName = params.name.replace(/\\/g, "\\\\").replace(/[%_]/g, "\\$&");
+        job = await db.query.scheduledJobs.findFirst({
+            where: and(
+                ilike(scheduledJobs.name, `%${escapedName}%`),
+                eq(scheduledJobs.userId, context.userId)
+            ),
+        });
+    } else {
+        return errorResult("VALIDATION", "Either id or name is required for get");
     }
+
+    if (!job) {
+        return successResult({ automation: null, found: false });
+    }
+
+    const automation: AutomationDetail = {
+        id: encodeJobId(job.seqId),
+        name: job.name,
+        prompt: job.prompt,
+        isActive: job.isActive,
+        schedule: job.scheduleDisplayText,
+        timezone: job.timezone,
+        lastRunAt: job.lastRunAt,
+        nextRunAt: job.nextRunAt,
+        createdAt: job.createdAt,
+    };
+
+    logger.info(
+        { userId: context.userId, jobId: job.id, name: job.name },
+        "📋 DCOS get completed"
+    );
+
+    return successResult({ automation, found: true });
 }
 
 /**
@@ -399,94 +362,77 @@ async function executeUpdate(
     params: { id: string; prompt?: string; name?: string; integrations?: string[] },
     context: SubagentContext
 ): Promise<SubagentResult<{ updated: boolean; automation: AutomationDetail | null }>> {
-    try {
-        // Validate ID
-        if (!isValidJobId(params.id)) {
-            return errorResult("VALIDATION", `Invalid job ID format: ${params.id}`);
-        }
+    // Validate ID
+    if (!isValidJobId(params.id)) {
+        return errorResult("VALIDATION", `Invalid job ID format: ${params.id}`);
+    }
 
-        const seqId = decodeJobId(params.id);
-        if (seqId === null) {
-            return errorResult("VALIDATION", `Failed to decode job ID: ${params.id}`);
-        }
+    const seqId = decodeJobId(params.id);
+    if (seqId === null) {
+        return errorResult("VALIDATION", `Failed to decode job ID: ${params.id}`);
+    }
 
-        // Find the job first
-        // Note: validateParams already ensures at least one update field is present
-        const existingJob = await db.query.scheduledJobs.findFirst({
-            where: and(
+    // Find the job first
+    // Note: validateParams already ensures at least one update field is present
+    const existingJob = await db.query.scheduledJobs.findFirst({
+        where: and(
+            eq(scheduledJobs.seqId, seqId),
+            eq(scheduledJobs.userId, context.userId)
+        ),
+    });
+
+    if (!existingJob) {
+        return successResult({ updated: false, automation: null });
+    }
+
+    // Build update object
+    const updates: Partial<{
+        prompt: string;
+        name: string;
+    }> = {};
+
+    if (params.prompt !== undefined) updates.prompt = params.prompt;
+    if (params.name !== undefined) updates.name = params.name;
+
+    // Perform update
+    const [updatedJob] = await db
+        .update(scheduledJobs)
+        .set(updates)
+        .where(
+            and(
                 eq(scheduledJobs.seqId, seqId),
                 eq(scheduledJobs.userId, context.userId)
-            ),
-        });
-
-        if (!existingJob) {
-            return successResult({ updated: false, automation: null });
-        }
-
-        // Build update object
-        const updates: Partial<{
-            prompt: string;
-            name: string;
-        }> = {};
-
-        if (params.prompt !== undefined) updates.prompt = params.prompt;
-        if (params.name !== undefined) updates.name = params.name;
-
-        // Perform update
-        const [updatedJob] = await db
-            .update(scheduledJobs)
-            .set(updates)
-            .where(
-                and(
-                    eq(scheduledJobs.seqId, seqId),
-                    eq(scheduledJobs.userId, context.userId)
-                )
             )
-            .returning();
+        )
+        .returning();
 
-        if (!updatedJob) {
-            return successResult({ updated: false, automation: null });
-        }
-
-        const automation: AutomationDetail = {
-            id: encodeJobId(updatedJob.seqId),
-            name: updatedJob.name,
-            prompt: updatedJob.prompt,
-            isActive: updatedJob.isActive,
-            schedule: updatedJob.scheduleDisplayText,
-            timezone: updatedJob.timezone,
-            lastRunAt: updatedJob.lastRunAt,
-            nextRunAt: updatedJob.nextRunAt,
-            createdAt: updatedJob.createdAt,
-        };
-
-        logger.info(
-            {
-                userId: context.userId,
-                jobId: updatedJob.id,
-                name: updatedJob.name,
-                fieldsUpdated: Object.keys(updates),
-            },
-            "✅ DCOS update completed"
-        );
-
-        return successResult({ updated: true, automation });
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, id: params.id },
-            "📋 DCOS update failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "dcos", action: "update" },
-            extra: { userId: context.userId, id: params.id },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to update automation"
-        );
+    if (!updatedJob) {
+        return successResult({ updated: false, automation: null });
     }
+
+    const automation: AutomationDetail = {
+        id: encodeJobId(updatedJob.seqId),
+        name: updatedJob.name,
+        prompt: updatedJob.prompt,
+        isActive: updatedJob.isActive,
+        schedule: updatedJob.scheduleDisplayText,
+        timezone: updatedJob.timezone,
+        lastRunAt: updatedJob.lastRunAt,
+        nextRunAt: updatedJob.nextRunAt,
+        createdAt: updatedJob.createdAt,
+    };
+
+    logger.info(
+        {
+            userId: context.userId,
+            jobId: updatedJob.id,
+            name: updatedJob.name,
+            fieldsUpdated: Object.keys(updates),
+        },
+        "✅ DCOS update completed"
+    );
+
+    return successResult({ updated: true, automation });
 }
 
 /**
@@ -496,71 +442,54 @@ async function executeRuns(
     params: { id: string; limit?: number },
     context: SubagentContext
 ): Promise<SubagentResult<{ runs: RunSummary[]; total: number }>> {
-    try {
-        // Validate ID
-        if (!isValidJobId(params.id)) {
-            return errorResult("VALIDATION", `Invalid job ID format: ${params.id}`);
-        }
-
-        const seqId = decodeJobId(params.id);
-        if (seqId === null) {
-            return errorResult("VALIDATION", `Failed to decode job ID: ${params.id}`);
-        }
-
-        // Find the job first to get internal ID
-        const job = await db.query.scheduledJobs.findFirst({
-            where: and(
-                eq(scheduledJobs.seqId, seqId),
-                eq(scheduledJobs.userId, context.userId)
-            ),
-        });
-
-        if (!job) {
-            return errorResult("VALIDATION", `Automation not found: ${params.id}`);
-        }
-
-        // Get runs with bounds checking
-        // Clamp to [1, MAX_RUNS_LIMIT] - negative values would remove LIMIT in Postgres
-        const limit = Math.min(Math.max(params.limit ?? 10, 1), MAX_RUNS_LIMIT);
-        const runs = await db.query.jobRuns.findMany({
-            where: eq(jobRuns.jobId, job.id),
-            orderBy: [desc(jobRuns.createdAt)],
-            limit,
-        });
-
-        const runSummaries: RunSummary[] = runs.map((run) => ({
-            id: run.id,
-            status: run.status,
-            summary: run.summary,
-            startedAt: run.startedAt,
-            completedAt: run.completedAt,
-            durationMs: run.durationMs,
-            toolCallsExecuted: run.toolCallsExecuted,
-            notificationsSent: run.notificationsSent,
-        }));
-
-        logger.info(
-            { userId: context.userId, jobId: job.id, runCount: runSummaries.length },
-            "📋 DCOS runs completed"
-        );
-
-        return successResult({ runs: runSummaries, total: runSummaries.length });
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, id: params.id },
-            "📋 DCOS runs failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "dcos", action: "runs" },
-            extra: { userId: context.userId, id: params.id },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to get run history"
-        );
+    // Validate ID
+    if (!isValidJobId(params.id)) {
+        return errorResult("VALIDATION", `Invalid job ID format: ${params.id}`);
     }
+
+    const seqId = decodeJobId(params.id);
+    if (seqId === null) {
+        return errorResult("VALIDATION", `Failed to decode job ID: ${params.id}`);
+    }
+
+    // Find the job first to get internal ID
+    const job = await db.query.scheduledJobs.findFirst({
+        where: and(
+            eq(scheduledJobs.seqId, seqId),
+            eq(scheduledJobs.userId, context.userId)
+        ),
+    });
+
+    if (!job) {
+        return errorResult("VALIDATION", `Automation not found: ${params.id}`);
+    }
+
+    // Get runs with bounds checking
+    // Clamp to [1, MAX_RUNS_LIMIT] - negative values would remove LIMIT in Postgres
+    const limit = Math.min(Math.max(params.limit ?? 10, 1), MAX_RUNS_LIMIT);
+    const runs = await db.query.jobRuns.findMany({
+        where: eq(jobRuns.jobId, job.id),
+        orderBy: [desc(jobRuns.createdAt)],
+        limit,
+    });
+
+    const runSummaries: RunSummary[] = runs.map((run) => ({
+        id: run.id,
+        status: run.status,
+        summary: run.summary,
+        startedAt: run.startedAt,
+        completedAt: run.completedAt,
+        durationMs: run.durationMs,
+        toolCallsExecuted: run.toolCallsExecuted,
+        notificationsSent: run.notificationsSent,
+    }));
+
+    logger.info(
+        { userId: context.userId, jobId: job.id, runCount: runSummaries.length },
+        "📋 DCOS runs completed"
+    );
+
+    return successResult({ runs: runSummaries, total: runSummaries.length });
 }
 
 /**
@@ -570,72 +499,55 @@ async function executeRun(
     params: { runId: string },
     context: SubagentContext
 ): Promise<SubagentResult<{ run: RunDetail | null; found: boolean }>> {
-    try {
-        // Get the run with its job for authorization
-        const run = await db.query.jobRuns.findFirst({
-            where: eq(jobRuns.id, params.runId),
-            with: {
-                job: true,
-            },
-        });
+    // Get the run with its job for authorization
+    const run = await db.query.jobRuns.findFirst({
+        where: eq(jobRuns.id, params.runId),
+        with: {
+            job: true,
+        },
+    });
 
-        if (!run) {
-            return successResult({ run: null, found: false });
-        }
-
-        // Authorization check - user must own the job
-        if (run.job.userId !== context.userId) {
-            return successResult({ run: null, found: false });
-        }
-
-        // Build compact summary instead of returning full trace
-        // This prevents context overflow when the AI processes run details
-        const executionSummary = buildExecutionSummary(
-            run.executionTrace as {
-                steps?: Array<{ toolCalls?: Array<{ toolName: string }> }>;
-                finalText?: string;
-            } | null,
-            run.errorDetails as { failedStep?: number } | null
-        );
-
-        const runDetail: RunDetail = {
-            id: run.id,
-            status: run.status,
-            summary: run.summary,
-            startedAt: run.startedAt,
-            completedAt: run.completedAt,
-            durationMs: run.durationMs,
-            toolCallsExecuted: run.toolCallsExecuted,
-            notificationsSent: run.notificationsSent,
-            error: run.error,
-            executionSummary,
-            errorDetails: run.errorDetails,
-            modelId: run.modelId,
-            sentryTraceId: run.sentryTraceId,
-        };
-
-        logger.info(
-            { userId: context.userId, runId: params.runId, status: run.status },
-            "📋 DCOS run completed"
-        );
-
-        return successResult({ run: runDetail, found: true });
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, runId: params.runId },
-            "📋 DCOS run failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "dcos", action: "run" },
-            extra: { userId: context.userId, runId: params.runId },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Failed to get run details"
-        );
+    if (!run) {
+        return successResult({ run: null, found: false });
     }
+
+    // Authorization check - user must own the job
+    if (run.job.userId !== context.userId) {
+        return successResult({ run: null, found: false });
+    }
+
+    // Build compact summary instead of returning full trace
+    // This prevents context overflow when the AI processes run details
+    const executionSummary = buildExecutionSummary(
+        run.executionTrace as {
+            steps?: Array<{ toolCalls?: Array<{ toolName: string }> }>;
+            finalText?: string;
+        } | null,
+        run.errorDetails as { failedStep?: number } | null
+    );
+
+    const runDetail: RunDetail = {
+        id: run.id,
+        status: run.status,
+        summary: run.summary,
+        startedAt: run.startedAt,
+        completedAt: run.completedAt,
+        durationMs: run.durationMs,
+        toolCallsExecuted: run.toolCallsExecuted,
+        notificationsSent: run.notificationsSent,
+        error: run.error,
+        executionSummary,
+        errorDetails: run.errorDetails,
+        modelId: run.modelId,
+        sentryTraceId: run.sentryTraceId,
+    };
+
+    logger.info(
+        { userId: context.userId, runId: params.runId, status: run.status },
+        "📋 DCOS run completed"
+    );
+
+    return successResult({ run: runDetail, found: true });
 }
 
 // ============================================================================
