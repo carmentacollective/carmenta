@@ -266,7 +266,7 @@ function ConnectionCard({
 
 export default function ConnectionsPage() {
     const [connections, setConnections] = useState<PublicConnection[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -279,7 +279,7 @@ export default function ConnectionsPage() {
             } catch (error) {
                 logger.error({ error }, "Failed to load connections");
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         }
 
@@ -393,7 +393,7 @@ export default function ConnectionsPage() {
                 </div>
 
                 {/* Stats */}
-                {!loading && connections.length > 0 && (
+                {!isLoading && connections.length > 0 && (
                     <p className="text-muted-foreground text-sm">
                         {connections.length} connection
                         {connections.length !== 1 ? "s" : ""}
@@ -402,7 +402,7 @@ export default function ConnectionsPage() {
                 )}
 
                 {/* Loading */}
-                {loading && (
+                {isLoading && (
                     <Card>
                         <CardContent className="py-12">
                             <div className="flex flex-col items-center justify-center text-center">
@@ -416,7 +416,7 @@ export default function ConnectionsPage() {
                 )}
 
                 {/* Empty state */}
-                {!loading && connections.length === 0 && (
+                {!isLoading && connections.length === 0 && (
                     <Card>
                         <CardContent className="py-12">
                             <div className="flex flex-col items-center justify-center text-center">
@@ -437,7 +437,7 @@ export default function ConnectionsPage() {
                 )}
 
                 {/* Connection list grouped by time */}
-                {!loading && connections.length > 0 && (
+                {!isLoading && connections.length > 0 && (
                     <div className="space-y-6">
                         {groupedConnections.map((group) => (
                             <div key={group.group}>

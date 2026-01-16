@@ -6,22 +6,34 @@ import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import { logger } from "@/lib/client-logger";
 import { getServiceById } from "@/lib/integrations/services";
-import { SparkleIcon } from "@phosphor-icons/react";
+import { SparkleIcon, WarningIcon } from "@phosphor-icons/react";
 import { HolographicBackground } from "@/components/ui/holographic-background";
+
+/** Timeout before showing "taking longer" message (10 seconds) */
+const REDIRECT_TIMEOUT_MS = 10_000;
 
 export default function ConnectServicePage() {
     const params = useParams();
     const service = (params?.service as string) ?? "";
     const [error, setError] = useState<string | null>(null);
+    const [isTakingLong, setIsTakingLong] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
+        let timeoutId: NodeJS.Timeout | null = null;
 
         const initiateConnection = () => {
             try {
                 logger.info({ service }, "Redirecting to OAuth authorize");
 
                 if (cancelled) return;
+
+                // Start timeout to show "taking longer" message
+                timeoutId = setTimeout(() => {
+                    if (!cancelled) {
+                        setIsTakingLong(true);
+                    }
+                }, REDIRECT_TIMEOUT_MS);
 
                 // Redirect directly to OAuth authorize endpoint
                 // This replaces the old Nango flow that required a POST to /api/connect
@@ -53,6 +65,9 @@ export default function ConnectServicePage() {
         // Cleanup function to prevent state updates after unmount
         return () => {
             cancelled = true;
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
         };
     }, [service]);
 
@@ -96,15 +111,47 @@ export default function ConnectServicePage() {
             <HolographicBackground />
             <div className="z-content relative flex min-h-screen items-center justify-center">
                 <div className="glass-card mx-auto max-w-md p-8 text-center">
-                    <div className="mb-4 flex justify-center">
-                        <SparkleIcon className="text-primary h-12 w-12 animate-pulse" />
-                    </div>
-                    <h1 className="text-foreground mb-2 text-2xl font-semibold">
-                        Connecting {serviceName}...
-                    </h1>
-                    <p className="text-foreground/70">
-                        We're redirecting you to authorize access. Just a moment!
-                    </p>
+                    {isTakingLong ? (
+                        <>
+                            <div className="mb-4 flex justify-center">
+                                <WarningIcon className="h-12 w-12 text-amber-500" />
+                            </div>
+                            <h1 className="text-foreground mb-2 text-2xl font-semibold">
+                                Taking longer than expected
+                            </h1>
+                            <p className="text-foreground/70 mb-6">
+                                The redirect didn't happen. Your browser may have
+                                blocked it, or there's a network issue.
+                            </p>
+                            <div className="flex justify-center gap-4">
+                                <Link
+                                    href="/integrations"
+                                    className="border-border bg-background text-foreground/80 hover:bg-accent rounded-lg border px-4 py-2 text-sm font-medium"
+                                >
+                                    Back
+                                </Link>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm font-medium"
+                                >
+                                    Try again
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="mb-4 flex justify-center">
+                                <SparkleIcon className="text-primary h-12 w-12 animate-pulse" />
+                            </div>
+                            <h1 className="text-foreground mb-2 text-2xl font-semibold">
+                                Connecting {serviceName}...
+                            </h1>
+                            <p className="text-foreground/70">
+                                We're redirecting you to authorize access. Just a
+                                moment!
+                            </p>
+                        </>
+                    )}
                 </div>
             </div>
         </>

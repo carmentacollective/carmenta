@@ -266,6 +266,26 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         ],
     },
 
+    // LinkedIn - OAuth (in-house)
+    {
+        id: "linkedin",
+        name: "LinkedIn",
+        description: "Share posts and access your LinkedIn profile",
+        logo: "/logos/linkedin.svg",
+        authMethod: "oauth",
+        status: "beta",
+        oauthProviderId: "linkedin",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://learn.microsoft.com/en-us/linkedin/",
+        capabilities: ["get_profile", "create_post", "get_organization"],
+        suggestKeywords: [
+            "linkedin",
+            "post to linkedin",
+            "share on linkedin",
+            "linkedin profile",
+        ],
+    },
+
     // Notion - OAuth (in-house)
     {
         id: "notion",

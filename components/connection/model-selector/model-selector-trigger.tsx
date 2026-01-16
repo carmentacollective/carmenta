@@ -118,8 +118,8 @@ export function ModelSelectorTrigger({
 
             {/* Modal */}
             <ModelSelectorModal
-                isOpen={settingsOpen}
-                onClose={() => setSettingsOpen(false)}
+                open={settingsOpen}
+                onOpenChange={setSettingsOpen}
                 overrides={overrides}
                 onChange={onChange}
             />
