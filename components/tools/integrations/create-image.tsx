@@ -17,6 +17,7 @@ import { ArrowsOutIcon, XIcon } from "@phosphor-icons/react";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
+import { generateImageFilename } from "@/lib/sqids";
 import { ImageGenerationLoader } from "@/components/ui/image-generation-loader";
 import { CopyImageButton } from "@/components/ui/copy-image-button";
 import { DownloadImageButton } from "@/components/ui/download-image-button";
@@ -398,6 +399,7 @@ function ImageCard({
                         <CopyImageButton src={src} ariaLabel="Copy image" size="sm" />
                         <DownloadImageButton
                             src={src}
+                            filename={generateImageFilename(prompt)}
                             mimeType={mimeType}
                             ariaLabel="Download image"
                             size="sm"
@@ -489,6 +491,7 @@ function ImageCard({
                             />
                             <DownloadImageButton
                                 src={src}
+                                filename={generateImageFilename(prompt)}
                                 mimeType={mimeType}
                                 ariaLabel="Download image"
                                 variant="glass"
