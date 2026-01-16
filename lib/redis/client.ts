@@ -42,7 +42,7 @@ export async function getRedisClient(): Promise<RedisClientType | null> {
         } catch (error) {
             logger.error({ error }, "Failed to connect to Redis");
             Sentry.captureException(error, {
-                level: "error",
+                level: "warning", // Graceful degradation - app continues without cache
                 tags: { component: "redis", operation: "connect" },
             });
             return null;
