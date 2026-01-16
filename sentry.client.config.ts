@@ -47,12 +47,15 @@ Sentry.init({
     beforeSend(event, hint) {
         const error = hint.originalException;
 
-        // Filter browser extension errors
+        // Filter browser extension errors by stack trace origin
+        // Missing frames → not an extension error → pass through (intentional)
         const frames = event.exception?.values?.[0]?.stacktrace?.frames || [];
         const isExtensionError = frames.some(
             (frame) =>
                 frame.filename?.startsWith("chrome-extension://") ||
-                frame.filename?.startsWith("moz-extension://")
+                frame.filename?.startsWith("moz-extension://") ||
+                frame.filename?.startsWith("safari-extension://") ||
+                frame.filename?.startsWith("safari-web-extension://")
         );
         if (isExtensionError) return null;
 
