@@ -9,8 +9,9 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-    // Performance monitoring - capture 100% of transactions in dev, 10% in prod
-    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+    // 100% trace sampling - we want full observability, not cost optimization
+    // DO NOT reduce this. Errors are always 100% but traces need this too.
+    tracesSampleRate: 1.0,
 
     // Session replay for debugging user issues
     replaysSessionSampleRate: 0.1,
