@@ -121,36 +121,52 @@ Don't make users organize. Make things findable.
 #### Layout
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ ◀ Back to Chat        All Connections              [Export All] │
-├─────────────────────────────────────────────────────────────────┤
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ 🔍 Search connections...                              [⌘K] │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│ Filters: [All] [Starred ⭐] [This week] [This month]            │
-│                                                                 │
-│ Showing 47 connections                                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ TODAY                                                           │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ ⭐ Building auth flow for Carmenta           2 hours ago    │ │
-│ │    "Let's implement OAuth with Google..."                   │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │    API rate limiting discussion               5 hours ago   │ │
-│ │    "We need to add rate limiting to..."                     │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│ YESTERDAY                                                       │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │    Debugging the connection switcher          Yesterday     │ │
-│ │    "The header title isn't updating when..."                │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│ [Load more...]                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│ ◀ Back to Chat           All Connections                  [Export All] │
+├────────────────────────────────────────────────────────────────────────┤
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │ 🔍 Search connections...                                     [⌘K] │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│                                                                        │
+│ Filters: [All] [⭐ Starred] [ChatGPT] [Claude] [This week]             │
+│                                                                        │
+│ Showing 47 connections (12 imported)                                   │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│ TODAY                                                                  │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │ ⭐ Building auth flow for Carmenta               2 hours ago  [☆🗑]│ │
+│ │    "Let's implement OAuth with Google..."         47 messages      │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │    API rate limiting discussion       [ChatGPT]   5 hours ago [☆🗑]│ │
+│ │    "We need to add rate limiting..."              23 messages      │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│                                                                        │
+│ YESTERDAY                                                              │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │    Understanding React hooks          [ChatGPT]   Yesterday   [☆🗑]│ │
+│ │    "Can you explain useEffect..."                 89 messages      │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │    Debugging the connection switcher              Yesterday   [☆🗑]│ │
+│ │    "The header title isn't updating when..."      12 messages      │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│                                                                        │
+│ THIS WEEK                                                              │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │ ⭐ Python async patterns              [Claude]    3 days ago  [☆🗑]│ │
+│ │    "How do I use asyncio with..."                156 messages      │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│                                                                        │
+│ [Load more...]                                                         │
+└────────────────────────────────────────────────────────────────────────┘
+
+Legend:
+- [ChatGPT] = Green badge for OpenAI imports
+- [Claude]  = Orange badge for Anthropic imports
+- [☆🗑]     = Hover actions (star toggle, delete) - appear on row hover
+- ⭐        = Already starred (filled star)
 ```
 
 #### Features
@@ -165,16 +181,53 @@ Don't make users organize. Make things findable.
 **Filters**
 
 - Quick filters: All, Starred, Date ranges
+- **Source filter**: Native, Imported (ChatGPT), Imported (Claude)
 - Combine filters with search
 - Clear all with one click
 
 **Connection Cards**
 
-- Title (with star indicator)
-- First line preview from latest message
-- Relative timestamp
-- Hover: show actions (open, star/unstar, delete)
-- Click: navigate to connection
+The connections page has more room than the dropdown, so we display richer information:
+
+| Element         | Display                                          | Notes                                  |
+| --------------- | ------------------------------------------------ | -------------------------------------- |
+| Title           | Main text, truncated with ellipsis               | "Untitled Connection" if null          |
+| Star indicator  | Yellow star before title (if starred)            | Clickable to toggle                    |
+| Source badge    | "ChatGPT" or "Claude" chip (imports only)        | Uses OpenAI/Anthropic brand colors     |
+| Timestamp       | Relative time (e.g., "2h ago", "Yesterday")      | Primary sort indicator                 |
+| Message count   | "23 messages" - shows conversation depth         | Helps identify substantial connections |
+| First message   | Preview of first user message (muted, truncated) | Context at a glance                    |
+| Model indicator | Small chip showing model used (optional)         | e.g., "Claude" or "GPT-4"              |
+| Hover actions   | Star toggle, Delete button                       | Linear-style quick actions             |
+
+**Import Source Display**
+
+We already track `source` in the database (`carmenta`, `openai`, `anthropic`). Display
+this clearly:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ ⭐ Understanding React hooks            ChatGPT    Yesterday  │
+│    "Can you explain useEffect..."        23 messages           │
+└────────────────────────────────────────────────────────────────┘
+```
+
+Source badges:
+
+- `openai` → "ChatGPT" chip with green/teal background (OpenAI brand)
+- `anthropic` → "Claude" chip with orange/terracotta background (Anthropic brand)
+- `carmenta` → No badge (native connections are the default)
+
+This answers the question "where did this come from?" at a glance.
+
+**Actions**
+
+Unlike the dropdown (which has limited space), the full page should expose all actions:
+
+- **Star/Unstar**: Click star icon, immediate visual feedback
+- **Delete**: Click trash icon → inline confirmation (like connection-chooser)
+- **Future: Archive**: Move to archive without deleting
+- **Future: Bulk select**: Checkbox for multi-connection operations
 
 **Pagination**
 
@@ -321,32 +374,80 @@ Use SWR pattern like LobeChat:
 - Optimistic updates for star/unstar
 - Cache invalidation on connection create/delete
 
+## Connection Chooser Sync
+
+The connection chooser (header dropdown) and connections page should share patterns:
+
+### Features in Chooser NOT in Page (Gap)
+
+| Feature             | Chooser | Page | Action                       |
+| ------------------- | ------- | ---- | ---------------------------- |
+| Delete button       | ✓       | ✗    | Add to page                  |
+| Star toggle         | ✓       | ✗    | Add to page                  |
+| Search              | ✓       | ✗    | Add to page (Phase 2)        |
+| Streaming indicator | ✓       | N/A  | Not relevant on history page |
+| Fresh badge         | ✓       | N/A  | Not relevant on history page |
+
+### Features Page SHOULD Have (More Room)
+
+| Feature         | Chooser | Page | Why                             |
+| --------------- | ------- | ---- | ------------------------------- |
+| Message count   | ✗       | ✓    | More room, helps identify depth |
+| Message preview | ✗       | ✓    | More room for context           |
+| Source badge    | ✗       | ✓    | Import indicator                |
+| Time grouping   | ✗       | ✓    | Better organization             |
+| Bulk actions    | ✗       | ✓    | Page-level management           |
+
+### Data Model Changes
+
+Extend `PublicConnection` type to include source for UI display:
+
+```typescript
+export interface PublicConnection {
+  // ... existing fields
+  source: "carmenta" | "openai" | "anthropic";
+  importedAt: Date | null;
+  messageCount?: number; // Optional, for history page
+}
+```
+
+The database already stores `source`, `externalId`, `importedAt`, and `customGptId` - we
+just need to expose them in the public type and fetch them in `getRecentConnections`.
+
 ## Implementation Phases
 
-### Phase 1: Foundation
+### Phase 1: Rich Cards & Actions ← **Current Priority**
 
-- [ ] Create `/connections` page route
-- [ ] Connection list with infinite scroll
-- [ ] Basic filters (All, Starred)
-- [ ] Total count display
-- [ ] Link from connection-chooser dropdown ("View all X connections")
+Bring the page up to parity with the connection chooser, plus import indicators:
 
-### Phase 2: Search & Export
+- [ ] Add `source` and `importedAt` to PublicConnection type
+- [ ] Update `getRecentConnections` to fetch source data
+- [ ] Add source badge component (ChatGPT green, Claude orange)
+- [ ] Add star toggle to connection cards
+- [ ] Add delete button with inline confirmation
+- [ ] Add message count display
+- [ ] Add first message preview line
+- [ ] Time grouping (Today, Yesterday, This Week, This Month, Older)
 
+### Phase 2: Search & Filters
+
+- [ ] Real search (not placeholder)
 - [ ] Title search with debounce
+- [ ] Source filter (Native, ChatGPT, Claude)
+- [ ] Starred filter
 - [ ] Search results highlighting
-- [ ] JSON export (respects current filters)
-- [ ] Export all vs. filtered toggle
 
 ### Phase 3: Import Integration
 
 - [ ] Surface existing ChatGPT import on this page
 - [ ] Add Claude/Anthropic parser (mirror ChatGPT pattern)
 - [ ] Complete import commit step (currently preview-only)
-- [ ] Show imported connections in list
+- [ ] Show imported connections in list with source badge
 
-### Phase 4: Polish
+### Phase 4: Export & Polish
 
+- [ ] JSON export (respects current filters)
+- [ ] Export all vs. filtered toggle
 - [ ] Keyboard navigation (j/k, enter)
 - [ ] Bulk operations (multi-select, bulk delete)
 - [ ] Full-text message search (requires index)
@@ -367,10 +468,51 @@ Use SWR pattern like LobeChat:
 
 ## Sources
 
+### Open Source Competitors
+
 - [Open WebUI](https://github.com/open-webui/open-webui) - Search syntax, folder system
 - [LibreChat](https://github.com/danny-avila/LibreChat) - Tags, export formats,
   branching
 - [LobeChat](https://github.com/lobehub/lobe-chat) - State patterns, PDF export
-- [ChatGPT Export](https://help.openai.com/en/articles/7260999-how-do-i-export-my-chatgpt-history-and-data)
 - [chatgpt-exporter](https://github.com/pionxzh/chatgpt-exporter) - JSON structure
+
+### UX Research (January 2026)
+
+- [IntuitionLabs AI UI Comparison 2025](https://intuitionlabs.ai/articles/conversational-ai-ui-comparison-2025) -
+  ChatGPT, Claude, Gemini comparison
+- [PatternFly Chatbot Conversation History](https://www.patternfly.org/patternfly-ai/chatbot/chatbot-conversation-history/) -
+  UI patterns for conversation history
+- [AI-Toolbox ChatGPT Sidebar Redesign](https://www.ai-toolbox.co/chatgpt-management-and-productivity/chatgpt-sidebar-redesign-guide) -
+  Floating sidebar, pinned chats
+- [Linear Delete/Archive UX](https://linear.app/docs/delete-archive-issues) - Inline
+  confirmation, undo patterns
+- [Notion Hover Actions](https://www.notion.com/help/views-groups-filters-and-properties) -
+  Customizable quick actions
+
+### Platform Documentation
+
+- [ChatGPT Export](https://help.openai.com/en/articles/7260999-how-do-i-export-my-chatgpt-history-and-data)
 - Clara's feedback on permanence anxiety (internal)
+
+### Key Patterns from Research
+
+**ChatGPT Sidebar (2025 Redesign)**
+
+- Floating mode that overlays content without disrupting layout
+- Infinite scroll flyout for older conversations
+- Pinned GPTs section below conversations
+- Soft dismiss behavior - fades when not needed
+
+**Claude Projects**
+
+- Projects as folders/workspaces for topic organization
+- Cross-conversation search within projects
+- Per-project custom instructions
+- 200K token context advantage
+
+**Notion/Linear Hover Actions**
+
+- Actions appear on hover, not cluttering default view
+- Customizable quick actions per view
+- Inline confirmation for destructive actions
+- 30-day soft delete with easy recovery
