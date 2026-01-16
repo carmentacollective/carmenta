@@ -10,12 +10,12 @@ import { logger } from "@/lib/logger";
 import { errorResult, type SubagentResult, type SubagentContext } from "./types";
 
 /**
- * Default timeout for subagent invocations (60 seconds)
+ * Default timeout for subagent invocations (3 minutes)
  *
- * Most subagents should complete well within this. Researcher may need longer
- * for deep web fetches - callers can override via context.timeoutMs.
+ * This is a "stop if obviously hung" safety net, not a tight deadline.
+ * Callers can override via context.timeoutMs for slower operations.
  */
-const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_TIMEOUT_MS = 180_000;
 
 /**
  * Error thrown when a subagent exceeds its timeout
