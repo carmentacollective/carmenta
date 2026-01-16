@@ -728,7 +728,7 @@ function McpConfigContent({
             }
         } catch (error) {
             logger.error({ error }, "Failed to add server");
-            setAddError("Something went wrong. Try again?");
+            setAddError("Something went sideways. Try again?");
             Sentry.captureException(error, {
                 tags: { component: "mcp-config-page", action: "add_server" },
             });

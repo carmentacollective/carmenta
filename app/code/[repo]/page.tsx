@@ -49,7 +49,8 @@ export default function CodeProjectPage() {
             const data = await response.json();
             setSessions(data.sessions);
         } catch (err) {
-            const message = err instanceof Error ? err.message : "Something went wrong";
+            const message =
+                err instanceof Error ? err.message : "Something went sideways";
             setError(message);
             logger.error({ error: err, repo }, "Failed to fetch code sessions");
         } finally {

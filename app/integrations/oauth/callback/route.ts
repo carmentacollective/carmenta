@@ -247,7 +247,7 @@ export async function GET(request: NextRequest) {
             userMessage = `Couldn't reach ${state.provider} right now. Try again in a moment?`;
         } else if (!error.message || error.message.includes("Unknown")) {
             // Unknown error - our problem
-            userMessage = `Something went wrong connecting to ${state.provider}. The robots have been notified. 🤖`;
+            userMessage = `Something went sideways connecting to ${state.provider}. The robots have been notified.`;
         }
 
         // Use appUrl for error redirect to ensure correct domain

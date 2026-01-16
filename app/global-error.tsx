@@ -129,7 +129,7 @@ export default function GlobalError({
                                 href="/"
                                 className="border-foreground/20 text-foreground/70 hover:bg-foreground/5 rounded-lg border px-5 py-2.5 transition-colors"
                             >
-                                Go Home
+                                Go home
                             </a>
                             <button
                                 onClick={reset}
