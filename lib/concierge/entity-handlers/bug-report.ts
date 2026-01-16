@@ -50,7 +50,10 @@ We'll look into this.`,
                 details.title ||
                 details.description?.substring(0, 100) ||
                 "Bug report from chat";
-            const keywords = details.keywords || extractKeywords(title);
+            const keywords =
+                details.keywords && details.keywords.length > 0
+                    ? details.keywords
+                    : extractKeywords(title);
 
             span?.setAttribute("title", title);
             span?.setAttribute("keywords", keywords.join(","));
