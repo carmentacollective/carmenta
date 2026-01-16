@@ -29,8 +29,8 @@ const FEATURES = getHomepageFeatures().map((f: Feature) => ({
     subheading: f.tagline,
     available: f.available,
     link:
-        f.cta?.action === "link" && f.cta.external
-            ? { text: f.cta.label, href: f.cta.href! }
+        f.engagement?.action.type === "navigate" && f.engagement.action.external
+            ? { text: f.engagement.label, href: f.engagement.action.href }
             : undefined,
 }));
 

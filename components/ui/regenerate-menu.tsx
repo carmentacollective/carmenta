@@ -124,7 +124,11 @@ export function RegenerateMenu({
     const showDropdown = onRegenerateWithModel !== undefined;
 
     return (
-        <div ref={menuRef} className={cn("relative inline-flex", className)}>
+        <div
+            ref={menuRef}
+            className={cn("relative inline-flex", className)}
+            data-highlight="regenerate-button"
+        >
             {/* Main regenerate button */}
             <motion.button
                 onClick={handleRegenerate}

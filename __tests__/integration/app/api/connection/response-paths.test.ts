@@ -349,6 +349,8 @@ describe("Connection API Response Paths", () => {
             imageUrl: "https://example.com/avatar.jpg",
             preferences: null,
             lastSignedInAt: new Date(),
+            sessionCount: 5,
+            lastSessionDate: "2024-01-15",
             createdAt: new Date(),
             updatedAt: new Date(),
         });
