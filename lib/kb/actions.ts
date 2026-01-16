@@ -8,7 +8,6 @@
  * the KB without exposing API endpoints.
  */
 
-import * as Sentry from "@sentry/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { kb, PROFILE_PATHS } from "./index";
@@ -174,11 +173,8 @@ export async function getKBFolders(): Promise<KBFolder[]> {
             .map(sortFolder)
             .sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
+        // Log for local debugging; SDK auto-captures re-thrown errors
         logger.error({ error, userId }, "Failed to fetch KB folders");
-        Sentry.captureException(error, {
-            tags: { action: "kb_get_folders", component: "kb-actions" },
-            extra: { userId },
-        });
         throw error;
     }
 }
@@ -251,11 +247,8 @@ export async function updateKBDocument(
             updatedAt: updated.updatedAt,
         };
     } catch (error) {
+        // Log for local debugging; SDK auto-captures re-thrown errors
         logger.error({ error, userId, path }, "Failed to update KB document");
-        Sentry.captureException(error, {
-            tags: { action: "kb_update", component: "kb-actions" },
-            extra: { userId, path },
-        });
         throw error;
     }
 }
@@ -367,11 +360,8 @@ export async function searchKB(
             snippet: doc.snippet,
         }));
     } catch (error) {
+        // Log for local debugging; SDK auto-captures re-thrown errors
         logger.error({ error, userId, query }, "KB search failed");
-        Sentry.captureException(error, {
-            tags: { action: "kb_search", component: "kb-actions" },
-            extra: { userId, query },
-        });
         throw error;
     }
 }
