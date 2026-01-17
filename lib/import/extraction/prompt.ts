@@ -55,14 +55,14 @@ Authority: Did they state this as fact, not hypothetically? "I prefer X" is fact
 - Extract primarily from USER messages
 - Include assistant confirmations ONLY if user explicitly validated ("yes, that's right")
 - Note temporal context—when was this said?
-- Generate a suggested KB path following the conventions:
-  - profile.identity for core identity
-  - knowledge.preferences.{topic} for preferences
-  - knowledge.people.{Name} for people (PascalCase)
-  - knowledge.projects.{slug} for projects (kebab-case)
-  - knowledge.decisions.{topic} for decisions
-  - knowledge.expertise.{area} for expertise
-  - knowledge.voice.{aspect} for voice/personality (e.g., knowledge.voice.tone, knowledge.voice.persona)
+- Generate a suggested KB path following the conventions (Title Case with spaces):
+  - Profile.Identity for core identity
+  - Knowledge.Preferences.{Topic} for preferences
+  - Knowledge.People.{Name} for people
+  - Knowledge.Projects.{Project Name} for projects
+  - Knowledge.Decisions.{Topic} for decisions
+  - Knowledge.Expertise.{Area} for expertise
+  - Knowledge.Voice.{Aspect} for voice/personality (e.g., Knowledge.Voice.Tone, Knowledge.Voice.Persona)
 
 SKIP these entirely:
 - Requests for help ("write a function", "debug this", "explain how to")

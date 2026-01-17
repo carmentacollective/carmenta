@@ -60,7 +60,7 @@ export const readDocumentTool = tool({
         path: z
             .string()
             .describe(
-                "Document path in dot notation (e.g., 'profile.identity', 'knowledge.people.Sarah')"
+                "Document path in dot notation (e.g., 'Profile.Identity', 'Knowledge.People.Sarah')"
             ),
     }),
     execute: async ({ userId, path }): Promise<ReadDocumentOutput> => {
@@ -96,7 +96,7 @@ export const createDocumentTool = tool({
         path: z
             .string()
             .describe(
-                "Document path in dot notation. Follow conventions: 'profile.identity' for core identity facts, 'knowledge.people.{Name}' for people, 'knowledge.preferences.{category}' for preferences, 'knowledge.projects.{name}' for projects, 'knowledge.decisions.{topic}' for decisions."
+                "Document path in dot notation with Title Case. Follow conventions: 'Profile.Identity' for core identity facts, 'Knowledge.People.{Name}' for people, 'Knowledge.Preferences.{Category}' for preferences, 'Knowledge.Projects.{Project Name}' for projects, 'Knowledge.Decisions.{Topic}' for decisions."
             ),
         name: z
             .string()

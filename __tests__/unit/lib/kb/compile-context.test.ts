@@ -363,7 +363,7 @@ describe("getProfileSummary", () => {
 
         expect(summary.documents).toHaveLength(1);
         expect(summary.documents[0]).toMatchObject({
-            path: "/profile/identity",
+            path: "/Profile/Identity",
             name: "Who I Am",
             contentLength: 17, // "Test content here".length
             promptLabel: "about",
@@ -379,9 +379,9 @@ describe("getProfileSummary", () => {
 
         const paths = summary.documents.map((d) => d.path).sort();
         expect(paths).toEqual([
-            "/profile/character",
-            "/profile/identity",
-            "/profile/preferences",
+            "/Profile/Character",
+            "/Profile/Identity",
+            "/Profile/Preferences",
         ]);
     });
 });

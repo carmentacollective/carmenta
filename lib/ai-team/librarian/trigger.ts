@@ -134,11 +134,11 @@ ${memory}
 The user has imported their data from ${config.source === "chatgpt" ? "ChatGPT" : "Claude"}. Their memory and preferences from that platform are included below. Analyze this imported data and incorporate it into the knowledge base.
 
 Guidelines:
-- Custom instructions/preferences about AI responses → knowledge.preferences.ai-interaction
-- Facts about the user's identity (name, role, location) → profile.identity
-- Project-specific context → knowledge.projects.{project-name}
-- Preferences (coding style, tools, etc.) → knowledge.preferences.{category}
-- People mentioned → knowledge.people.{name}
+- Custom instructions/preferences about AI responses → Knowledge.Preferences.AI Interaction
+- Facts about the user's identity (name, role, location) → Profile.Identity
+- Project-specific context → Knowledge.Projects.{Project Name}
+- Preferences (coding style, tools, etc.) → Knowledge.Preferences.{Category}
+- People mentioned → Knowledge.People.{Name}
 
 Check existing KB first - merge with existing content rather than duplicating.
 </import-context>

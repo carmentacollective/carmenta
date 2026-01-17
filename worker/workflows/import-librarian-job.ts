@@ -2,7 +2,7 @@
  * Import Librarian Job Workflow
  *
  * Orchestrates knowledge extraction from imported conversations.
- * Processes conversations in batches with progress updates.
+ * Processes one conversation at a time with immediate progress updates.
  *
  * Durable execution - survives server restarts and handles retries.
  */
@@ -13,7 +13,7 @@ import type * as activities from "../activities/import-librarian";
 // Proxy activities with retry configuration
 const {
     loadImportLibrarianContext,
-    processConversationBatch,
+    processConversation,
     updateJobProgress,
     finalizeImportLibrarianJob,
 } = proxyActivities<typeof activities>({
@@ -23,8 +23,6 @@ const {
         backoffCoefficient: 2,
     },
 });
-
-const BATCH_SIZE = 10;
 
 export interface ImportLibrarianJobInput {
     jobId: string;
@@ -43,9 +41,8 @@ export interface ImportLibrarianJobResult {
  * Main import librarian workflow
  *
  * 1. Load context (user, connections to process)
- * 2. Process conversations in batches
- * 3. Update progress after each batch
- * 4. Finalize job status
+ * 2. Process each conversation with immediate progress update
+ * 3. Finalize job status
  */
 export async function importLibrarianJobWorkflow(
     input: ImportLibrarianJobInput
@@ -70,19 +67,24 @@ export async function importLibrarianJobWorkflow(
             };
         }
 
-        // Step 2: Process in batches
-        for (let i = 0; i < context.connectionIds.length; i += BATCH_SIZE) {
-            const batch = context.connectionIds.slice(i, i + BATCH_SIZE);
+        // Step 2: Process each conversation
+        for (const connectionId of context.connectionIds) {
+            try {
+                const result = await processConversation(context, connectionId);
 
-            // Process batch
-            const result = await processConversationBatch(context, batch);
+                if (result.processed) {
+                    totalProcessed++;
+                    totalExtracted += result.extractedCount;
+                }
 
-            totalProcessed += result.processedCount;
-            totalExtracted += result.extractedCount;
-            allErrors.push(...result.errors);
-
-            // Update progress
-            await updateJobProgress(jobId, totalProcessed, totalExtracted);
+                // Update progress after each conversation
+                await updateJobProgress(jobId, totalProcessed, totalExtracted);
+            } catch (error) {
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
+                allErrors.push(`Connection ${connectionId}: ${errorMessage}`);
+                // Continue with next conversation
+            }
         }
 
         // Step 3: Finalize as success

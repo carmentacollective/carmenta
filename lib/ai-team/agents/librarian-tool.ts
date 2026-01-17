@@ -276,7 +276,7 @@ function describeOperations(): SubagentDescription {
                         name: "path",
                         type: "string",
                         description:
-                            "Document path (e.g., 'profile.identity', 'knowledge.people.Sarah')",
+                            "Document path (e.g., 'Profile.Identity', 'Knowledge.People.Sarah')",
                         required: true,
                     },
                 ],
@@ -289,7 +289,7 @@ function describeOperations(): SubagentDescription {
                         name: "path",
                         type: "string",
                         description:
-                            "Document path (e.g., 'knowledge.projects.Carmenta')",
+                            "Document path (e.g., 'Knowledge.Projects.Carmenta')",
                         required: true,
                     },
                     {

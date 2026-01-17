@@ -91,7 +91,7 @@ export const DISCOVERY_ITEMS: DiscoveryItem[] = [
         category: "profile",
         required: true,
         order: 1,
-        storesTo: { type: "kb", path: "profile.identity" },
+        storesTo: { type: "kb", path: "Profile.Identity" },
         inputType: "conversation",
     },
     {
@@ -102,7 +102,7 @@ export const DISCOVERY_ITEMS: DiscoveryItem[] = [
         required: false,
         order: 2,
         condition: { requiresCompleted: ["profile_identity"] },
-        storesTo: { type: "kb", path: "profile.preferences" },
+        storesTo: { type: "kb", path: "Profile.Preferences" },
         inputType: "conversation",
     },
     {

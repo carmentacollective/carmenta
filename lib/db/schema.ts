@@ -2210,6 +2210,9 @@ export const extractionJobs = pgTable(
         /** Error message if failed */
         errorMessage: text("error_message"),
 
+        /** User guidance notes - accumulated context for the librarian */
+        userGuidance: jsonb("user_guidance").$type<string[]>().default([]),
+
         /** When processing started */
         startedAt: timestamp("started_at", { withTimezone: true }),
 

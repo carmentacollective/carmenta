@@ -379,6 +379,8 @@ export async function startImportLibrarianWorkflow(params: {
 
 /**
  * Run import librarian workflow activities inline (eager mode)
+ *
+ * Processes each conversation one at a time with immediate progress updates.
  */
 async function runEagerImportLibrarianWorkflow(params: {
     jobId: string;
@@ -387,31 +389,42 @@ async function runEagerImportLibrarianWorkflow(params: {
 }): Promise<void> {
     const { jobId } = params;
 
+    logger.info(
+        { jobId, connectionIds: params.connectionIds?.length },
+        "🚀 Starting eager import librarian workflow"
+    );
+
     // Dynamic import to avoid loading worker deps at startup
     const activities = await import("../../worker/activities/import-librarian");
 
-    const BATCH_SIZE = 10;
-    let totalProcessed = 0;
-    let totalExtracted = 0;
-
     try {
         // Step 1: Load context
+        logger.info({ jobId }, "📋 Loading context...");
         const context = await activities.loadImportLibrarianContext(params);
+        logger.info(
+            { jobId, connectionCount: context.connectionIds.length },
+            "📋 Context loaded"
+        );
 
         if (context.connectionIds.length === 0) {
+            logger.info({ jobId }, "⏭️ No connections to process, finalizing");
             await activities.finalizeImportLibrarianJob(jobId, true);
             return;
         }
 
-        // Step 2: Process in batches
-        for (let i = 0; i < context.connectionIds.length; i += BATCH_SIZE) {
-            const batch = context.connectionIds.slice(i, i + BATCH_SIZE);
+        // Step 2: Process each conversation one at a time
+        let totalProcessed = 0;
+        let totalExtracted = 0;
 
-            const result = await activities.processConversationBatch(context, batch);
+        for (const connectionId of context.connectionIds) {
+            const result = await activities.processConversation(context, connectionId);
 
-            totalProcessed += result.processedCount;
-            totalExtracted += result.extractedCount;
+            if (result.processed) {
+                totalProcessed++;
+                totalExtracted += result.extractedCount;
+            }
 
+            // Update progress immediately after each conversation
             await activities.updateJobProgress(jobId, totalProcessed, totalExtracted);
         }
 
@@ -420,7 +433,7 @@ async function runEagerImportLibrarianWorkflow(params: {
 
         logger.info(
             { jobId, totalProcessed, totalExtracted },
-            "Eager import librarian workflow completed"
+            "✅ Eager import librarian workflow completed"
         );
     } catch (error) {
         // Mark as failed

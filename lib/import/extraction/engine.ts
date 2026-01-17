@@ -443,6 +443,7 @@ export async function processExtractionJob(jobId: string): Promise<void> {
  * Get job status
  *
  * Requires userId to prevent IDOR - users can only query their own jobs.
+ * Returns data directly from the job table - simple and reliable.
  */
 export async function getJobStatus(
     jobId: string,

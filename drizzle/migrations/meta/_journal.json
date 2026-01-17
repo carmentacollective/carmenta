@@ -148,6 +148,20 @@
       "when": 1768600319516,
       "tag": "0032_feature-tips-system",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1768682452285,
+      "tag": "0033_superb_exiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1768750000000,
+      "tag": "0034_kb-paths-to-title-case",
+      "breakpoints": true
     }
   ]
 }
