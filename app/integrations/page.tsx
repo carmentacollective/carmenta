@@ -564,57 +564,55 @@ function IntegrationsContent() {
             ) : (
                 <section>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {services.map((groupedService) => (
-                            <MultiAccountServiceCard
-                                key={groupedService.service.id}
-                                service={groupedService.service}
-                                accounts={groupedService.accounts}
-                                aggregateStatus={groupedService.aggregateStatus}
-                                onConnect={() =>
-                                    handleConnectClick(groupedService.service)
-                                }
-                                onReconnect={(accountId) =>
-                                    handleReconnect(groupedService.service, accountId)
-                                }
-                                onTest={(accountId) =>
-                                    handleTest(groupedService.service.id, accountId)
-                                }
-                                onDisconnect={(accountId) =>
-                                    handleDisconnect(
-                                        groupedService.service.id,
-                                        accountId
-                                    )
-                                }
-                                onSetDefault={(accountId) =>
-                                    handleSetDefault(
-                                        groupedService.service.id,
-                                        accountId
-                                    )
-                                }
-                                isConnecting={connectingServices.has(
-                                    groupedService.service.id
-                                )}
-                                testingAccounts={
-                                    testingAccounts.get(groupedService.service.id) ??
-                                    new Set()
-                                }
-                                reconnectingAccounts={
-                                    reconnectingAccounts.get(
-                                        groupedService.service.id
-                                    ) ?? new Set()
-                                }
-                                statusMessage={statusMessages.get(
-                                    groupedService.service.id
-                                )}
-                                onClearStatusMessage={() => {
-                                    setStatusMessages((prev) => {
-                                        const next = new Map(prev);
-                                        next.delete(groupedService.service.id);
-                                        return next;
-                                    });
-                                }}
-                            />
-                        ))}
+                        {services.map((groupedService) => {
+                            // Extract Map lookups to avoid Terser minification bug
+                            // that incorrectly mangles inline .get() calls in JSX
+                            const serviceId = groupedService.service.id;
+                            const serviceTestingAccounts =
+                                testingAccounts.get(serviceId) ?? new Set<string>();
+                            const serviceReconnectingAccounts =
+                                reconnectingAccounts.get(serviceId) ??
+                                new Set<string>();
+                            const serviceStatusMessage = statusMessages.get(serviceId);
+
+                            return (
+                                <MultiAccountServiceCard
+                                    key={serviceId}
+                                    service={groupedService.service}
+                                    accounts={groupedService.accounts}
+                                    aggregateStatus={groupedService.aggregateStatus}
+                                    onConnect={() =>
+                                        handleConnectClick(groupedService.service)
+                                    }
+                                    onReconnect={(accountId) =>
+                                        handleReconnect(
+                                            groupedService.service,
+                                            accountId
+                                        )
+                                    }
+                                    onTest={(accountId) =>
+                                        handleTest(serviceId, accountId)
+                                    }
+                                    onDisconnect={(accountId) =>
+                                        handleDisconnect(serviceId, accountId)
+                                    }
+                                    onSetDefault={(accountId) =>
+                                        handleSetDefault(serviceId, accountId)
+                                    }
+                                    isConnecting={connectingServices.has(serviceId)}
+                                    testingAccounts={serviceTestingAccounts}
+                                    reconnectingAccounts={serviceReconnectingAccounts}
+                                    statusMessage={serviceStatusMessage}
+                                    onClearStatusMessage={() => {
+                                        setStatusMessages((prev) => {
+                                            const next = new Map(prev);
+                                            next.delete(serviceId);
+                                            return next;
+                                        });
+                                    }}
+                                />
+                            );
+                        })}
                     </div>
                 </section>
             )}

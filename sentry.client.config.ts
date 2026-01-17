@@ -6,6 +6,34 @@
  */
 import * as Sentry from "@sentry/nextjs";
 
+// Belt-and-suspenders: Install global error handler IMMEDIATELY
+// Some errors (especially during React hydration) can fire before Sentry
+// fully initializes or before React error boundaries mount.
+// This catches those edge cases.
+if (typeof window !== "undefined") {
+    const originalOnError = window.onerror;
+    window.onerror = (message, source, lineno, colno, error) => {
+        // Always try to capture to Sentry, even if init hasn't completed
+        try {
+            Sentry.captureException(error || new Error(String(message)), {
+                tags: {
+                    errorSource: "global_onerror_fallback",
+                    caughtEarly: "true",
+                },
+                extra: { source, lineno, colno },
+            });
+        } catch {
+            // Sentry not ready yet - at least we tried
+        }
+
+        // Call original handler if it exists
+        if (originalOnError) {
+            return originalOnError(message, source, lineno, colno, error);
+        }
+        return false;
+    };
+}
+
 Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
