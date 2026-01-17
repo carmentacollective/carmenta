@@ -366,6 +366,15 @@ export interface ConciergeResult {
      * so the UI can show "Using Opus as requested" or similar feedback.
      */
     explicitOverrides?: ExplicitOverrides;
+
+    /**
+     * Entity intent detected for @carmenta mentions.
+     *
+     * When the user mentions @carmenta, the concierge detects their intent
+     * (bug report, feedback, suggestion, help). This routes to entity handlers
+     * instead of the normal LLM flow.
+     */
+    entityIntent?: import("./entity-handlers/types").EntityIntent;
 }
 
 /**

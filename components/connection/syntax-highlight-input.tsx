@@ -46,7 +46,12 @@ const AI_TEAM = [
     { id: "librarian", name: "Librarian", icon: "📚" },
     { id: "image-artist", name: "Image Artist", icon: "🎨" },
     { id: "researcher", name: "Researcher", icon: "🔬" },
-    { id: "carmenta", name: "Carmenta", icon: "/logos/icon-transparent.png" },
+    {
+        id: "carmenta",
+        name: "Carmenta",
+        icon: "/logos/icon-transparent.png",
+        description: "Report bugs, share feedback",
+    },
 ];
 
 const TOOLS = [

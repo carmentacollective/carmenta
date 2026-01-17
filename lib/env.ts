@@ -87,6 +87,13 @@ export const env = createEnv({
         VAPID_PRIVATE_KEY: z.string().min(1).optional(),
         // Email for VAPID subject (mailto: URL)
         VAPID_SUBJECT_EMAIL: z.string().email().optional(),
+        // GitHub App for bug reports and issue management
+        // Create at: github.com/settings/apps/new
+        GITHUB_APP_ID: z.string().min(1).optional(),
+        // Base64-encoded private key from GitHub App
+        GITHUB_APP_PRIVATE_KEY: z.string().min(1).optional(),
+        // Installation ID (from installing app on carmenta-git repo)
+        GITHUB_APP_INSTALLATION_ID: z.string().min(1).optional(),
     },
     client: {
         // App URL for generating integration URLs
@@ -158,6 +165,9 @@ export const env = createEnv({
         VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
         VAPID_SUBJECT_EMAIL: process.env.VAPID_SUBJECT_EMAIL,
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        GITHUB_APP_ID: process.env.GITHUB_APP_ID,
+        GITHUB_APP_PRIVATE_KEY: process.env.GITHUB_APP_PRIVATE_KEY,
+        GITHUB_APP_INSTALLATION_ID: process.env.GITHUB_APP_INSTALLATION_ID,
     },
 
     /**
