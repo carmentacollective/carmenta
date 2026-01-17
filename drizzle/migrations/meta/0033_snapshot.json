@@ -1,5 +1,5 @@
 {
-  "id": "d4353b3e-ab0c-4b14-a7a7-291b7de1bca7",
+  "id": "edda4a30-9387-4922-921f-3fd01a92ffcb",
   "prevId": "ac383a22-df90-41cc-8778-c9ea6c5932ae",
   "version": "7",
   "dialect": "postgresql",
@@ -54,12 +54,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'idle'"
-        },
-        "active_stream_id": {
-          "name": "active_stream_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "model_id": {
           "name": "model_id",
@@ -598,13 +592,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "user_guidance": {
-          "name": "user_guidance",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'[]'::jsonb"
         },
         "started_at": {
           "name": "started_at",
@@ -1503,12 +1490,6 @@
         },
         "temporal_workflow_id": {
           "name": "temporal_workflow_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "active_stream_id": {
-          "name": "active_stream_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false

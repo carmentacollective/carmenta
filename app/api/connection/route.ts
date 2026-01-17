@@ -32,7 +32,6 @@ import {
     upsertMessage,
     upsertToolPart,
     updateStreamingStatus,
-    updateActiveStreamId,
     updateConnection,
     type UIMessageLike,
 } from "@/lib/db";
@@ -68,7 +67,6 @@ import { triggerLibrarian } from "@/lib/ai-team/librarian/trigger";
 import { type DiscoveryItem } from "@/lib/discovery";
 import { detectDepthSelection, preExecuteResearch } from "@/lib/research/auto-trigger";
 import { writeStatus, STATUS_MESSAGES } from "@/lib/streaming";
-import { getStreamContext } from "@/lib/streaming/stream-context";
 import {
     isBackgroundModeEnabled,
     startBackgroundResponse,
@@ -452,9 +450,9 @@ export async function POST(req: Request) {
         // ================================================================
         // BACKGROUND MODE: Dispatch to Temporal for durable execution
         // ================================================================
-        // When concierge detects a long-running task, dispatch to Temporal
-        // which writes to the same resumable stream. Work survives browser
-        // close, deploys, and connection drops.
+        // When concierge detects a long-running task, dispatch to Temporal.
+        // Work survives browser close, deploys, and connection drops.
+        // Client polls for completion via useBackgroundMode hook.
         //
         // Gracefully disabled if Temporal isn't configured - runs inline instead.
         const temporalConfigured = isBackgroundModeEnabled();
@@ -479,23 +477,6 @@ export async function POST(req: Request) {
                     temperature: concierge.temperature,
                     reasoning: concierge.reasoning,
                 });
-
-                // Save stream ID AFTER workflow starts successfully
-                // If this fails, the workflow is already running - log but continue
-                try {
-                    await updateActiveStreamId(connectionId!, streamId);
-                } catch (dbError) {
-                    // Workflow is running but DB write failed - log and continue
-                    // Client gets streamId in headers, workflow will write to Redis
-                    logger.error(
-                        { connectionId, streamId, error: dbError },
-                        "Failed to save stream ID after Temporal dispatch - workflow running"
-                    );
-                    Sentry.captureException(dbError, {
-                        tags: { component: "connection", action: "stream_id_write" },
-                        extra: { connectionId, streamId, workflowRunning: true },
-                    });
-                }
 
                 temporalDispatchSucceeded = true;
 
@@ -582,7 +563,7 @@ export async function POST(req: Request) {
                 }
 
                 // Return immediately with background status message
-                // Client will connect to the resumable stream to follow progress
+                // Client will poll for completion via useBackgroundMode hook
                 const stream = createUIMessageStream({
                     execute: ({ writer }) => {
                         writeStatus(
@@ -1155,9 +1136,8 @@ export async function POST(req: Request) {
                     };
                     await upsertMessage(currentConnectionId!, uiMessage);
 
-                    // Mark streaming complete and clear resumable stream ID
+                    // Mark streaming complete
                     await updateStreamingStatus(currentConnectionId!, "completed");
-                    await updateActiveStreamId(currentConnectionId!, null);
 
                     // Title Evolution: For existing connections, evaluate if title should update
                     // New connections get their title from concierge at creation time
@@ -1369,9 +1349,6 @@ export async function POST(req: Request) {
                     await updateStreamingStatus(currentConnectionId!, "failed").catch(
                         () => {}
                     );
-                    await updateActiveStreamId(currentConnectionId!, null).catch(
-                        () => {}
-                    );
                 }
             },
         });
@@ -1484,51 +1461,7 @@ export async function POST(req: Request) {
             },
         });
 
-        // Wrap in resumable stream context if Redis is available
-        // Gracefully falls back to regular streaming if Redis is unavailable
-        const streamContext = getStreamContext();
-
-        if (streamContext) {
-            try {
-                // Generate stream ID and create resumable stream in Redis FIRST
-                const streamId = nanoid();
-                const resumableStream = await streamContext.createNewResumableStream(
-                    streamId,
-                    () => stream.pipeThrough(new JsonToSseTransformStream())
-                );
-
-                // Try to write the ID to DB (non-blocking - stream is already usable)
-                // If this fails, the stream will still work but won't be resumable on reconnect
-                updateActiveStreamId(currentConnectionId!, streamId).catch((error) => {
-                    logger.error(
-                        { error, connectionId: currentConnectionId, streamId },
-                        "Failed to save stream ID to database - stream will work but not be resumable"
-                    );
-                });
-
-                logger.debug(
-                    { connectionId: currentConnectionId, streamId },
-                    "Created resumable stream"
-                );
-
-                // Return resumable stream with all headers
-                // Stream is already consumed, so we MUST return it here
-                return new Response(resumableStream, {
-                    headers: {
-                        ...Object.fromEntries(headers.entries()),
-                        ...UI_MESSAGE_STREAM_HEADERS,
-                    },
-                });
-            } catch (error) {
-                logger.error(
-                    { error },
-                    "Failed to create resumable stream, falling back"
-                );
-                // Fall through to non-resumable response
-            }
-        }
-
-        // Fallback: Return non-resumable stream (Redis unavailable or error)
+        // Return UI message stream response
         return createUIMessageStreamResponse({
             stream,
             headers,
@@ -1537,7 +1470,6 @@ export async function POST(req: Request) {
         // Mark conversation as failed if one was created
         if (connectionId) {
             await updateStreamingStatus(connectionId, "failed").catch(() => {});
-            await updateActiveStreamId(connectionId, null).catch(() => {});
         }
 
         return serverErrorResponse(error, {

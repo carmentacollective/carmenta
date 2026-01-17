@@ -22,11 +22,7 @@ import type { ReactNode } from "react";
 import {
     ThemeProvider,
     useThemeVariant,
-    getCurrentHoliday,
-    resolveToCssTheme,
-    HOLIDAYS,
     type ThemeVariant,
-    type HolidayConfig,
 } from "@/lib/theme/theme-context";
 
 describe("ThemeProvider and useThemeVariant", () => {
@@ -79,17 +75,37 @@ describe("ThemeProvider and useThemeVariant", () => {
             expect(result.current.themeVariant).toBe("carmenta");
         });
 
-        it("migrates old 'christmas' theme to 'holiday'", () => {
-            // Simulate user with old "christmas" stored
+        it("migrates deprecated 'christmas' theme to 'carmenta'", () => {
             localStorage.setItem("carmenta-theme-variant", "christmas");
 
             const { result } = renderHook(() => useThemeVariant(), {
                 wrapper: createWrapper(),
             });
 
-            // Should migrate to "holiday"
-            expect(result.current.themeVariant).toBe("holiday");
-            expect(localStorage.getItem("carmenta-theme-variant")).toBe("holiday");
+            expect(result.current.themeVariant).toBe("carmenta");
+            expect(localStorage.getItem("carmenta-theme-variant")).toBe("carmenta");
+        });
+
+        it("migrates deprecated 'holiday' theme to 'carmenta'", () => {
+            localStorage.setItem("carmenta-theme-variant", "holiday");
+
+            const { result } = renderHook(() => useThemeVariant(), {
+                wrapper: createWrapper(),
+            });
+
+            expect(result.current.themeVariant).toBe("carmenta");
+            expect(localStorage.getItem("carmenta-theme-variant")).toBe("carmenta");
+        });
+
+        it("migrates arbitrary invalid theme values to 'carmenta'", () => {
+            localStorage.setItem("carmenta-theme-variant", "nonexistent-theme");
+
+            const { result } = renderHook(() => useThemeVariant(), {
+                wrapper: createWrapper(),
+            });
+
+            expect(result.current.themeVariant).toBe("carmenta");
+            expect(localStorage.getItem("carmenta-theme-variant")).toBe("carmenta");
         });
     });
 
@@ -142,7 +158,6 @@ describe("ThemeProvider and useThemeVariant", () => {
             "arctic-clarity",
             "forest-wisdom",
             "monochrome",
-            "holiday",
         ];
 
         it.each(themes)("supports %s theme variant", (theme) => {
@@ -156,143 +171,7 @@ describe("ThemeProvider and useThemeVariant", () => {
 
             expect(result.current.themeVariant).toBe(theme);
             expect(localStorage.getItem("carmenta-theme-variant")).toBe(theme);
-            // For "holiday", data-theme should be the resolved CSS theme (e.g., "christmas")
-            // For others, data-theme matches the variant
-            const expectedDataTheme =
-                theme === "holiday" ? resolveToCssTheme(theme) : theme;
-            expect(document.documentElement.getAttribute("data-theme")).toBe(
-                expectedDataTheme
-            );
-        });
-    });
-});
-
-describe("Holiday theme resolution", () => {
-    describe("getCurrentHoliday", () => {
-        beforeEach(() => {
-            vi.useFakeTimers();
-        });
-
-        afterEach(() => {
-            vi.useRealTimers();
-        });
-
-        it("returns Christmas during Christmas period (Dec 1 - Jan 6)", () => {
-            // Test middle of Christmas period
-            vi.setSystemTime(new Date("2024-12-25T12:00:00Z"));
-
-            const holiday = getCurrentHoliday();
-
-            expect(holiday.cssTheme).toBe("christmas");
-            expect(holiday.label).toBe("Christmas");
-        });
-
-        it("returns Christmas on Dec 1 (start boundary)", () => {
-            vi.setSystemTime(new Date(2024, 11, 1, 12, 0, 0)); // Dec 1, 2024 12:00 local
-
-            const holiday = getCurrentHoliday();
-
-            expect(holiday.cssTheme).toBe("christmas");
-        });
-
-        it("returns Christmas on Jan 6 (end boundary)", () => {
-            vi.setSystemTime(new Date(2025, 0, 6, 23, 59, 59)); // Jan 6, 2025 23:59 local
-
-            const holiday = getCurrentHoliday();
-
-            expect(holiday.cssTheme).toBe("christmas");
-        });
-
-        it("returns Christmas on Dec 31 (year-spanning range)", () => {
-            vi.setSystemTime(new Date(2024, 11, 31, 23, 59, 59)); // Dec 31, 2024 23:59 local
-
-            const holiday = getCurrentHoliday();
-
-            expect(holiday.cssTheme).toBe("christmas");
-        });
-
-        it("returns Christmas on Jan 1 (year-spanning range)", () => {
-            vi.setSystemTime(new Date(2025, 0, 1, 0, 0, 0)); // Jan 1, 2025 00:00 local
-
-            const holiday = getCurrentHoliday();
-
-            expect(holiday.cssTheme).toBe("christmas");
-        });
-
-        it("returns default holiday outside Christmas period", () => {
-            // Mid-summer, definitely not a holiday
-            vi.setSystemTime(new Date(2024, 6, 15, 12, 0, 0)); // July 15, 2024 local
-
-            const holiday = getCurrentHoliday();
-
-            expect(holiday.cssTheme).toBe("carmenta");
-            expect(holiday.label).toBe("Seasonal");
-        });
-
-        it("returns default holiday on Nov 30 (day before Christmas)", () => {
-            vi.setSystemTime(new Date(2024, 10, 30, 23, 59, 59)); // Nov 30, 2024 local
-
-            const holiday = getCurrentHoliday();
-
-            expect(holiday.cssTheme).toBe("carmenta");
-        });
-
-        it("returns default holiday on Jan 7 (day after Christmas)", () => {
-            vi.setSystemTime(new Date(2025, 0, 7, 0, 0, 0)); // Jan 7, 2025 local
-
-            const holiday = getCurrentHoliday();
-
-            expect(holiday.cssTheme).toBe("carmenta");
-        });
-    });
-
-    describe("resolveToCssTheme", () => {
-        beforeEach(() => {
-            vi.useFakeTimers();
-        });
-
-        afterEach(() => {
-            vi.useRealTimers();
-        });
-
-        it("resolves 'holiday' to Christmas during Christmas period", () => {
-            vi.setSystemTime(new Date("2024-12-25T12:00:00Z"));
-
-            expect(resolveToCssTheme("holiday")).toBe("christmas");
-        });
-
-        it("resolves 'holiday' to Carmenta outside holiday period", () => {
-            vi.setSystemTime(new Date("2024-07-15T12:00:00Z"));
-
-            expect(resolveToCssTheme("holiday")).toBe("carmenta");
-        });
-
-        it("passes through non-holiday themes unchanged", () => {
-            expect(resolveToCssTheme("carmenta")).toBe("carmenta");
-            expect(resolveToCssTheme("warm-earth")).toBe("warm-earth");
-            expect(resolveToCssTheme("arctic-clarity")).toBe("arctic-clarity");
-            expect(resolveToCssTheme("forest-wisdom")).toBe("forest-wisdom");
-            expect(resolveToCssTheme("monochrome")).toBe("monochrome");
-        });
-    });
-
-    describe("HOLIDAYS configuration", () => {
-        it("has Christmas holiday configured", () => {
-            const christmas = HOLIDAYS.find((h) => h.cssTheme === "christmas");
-
-            expect(christmas).toBeDefined();
-            expect(christmas?.label).toBe("Christmas");
-            expect(christmas?.startMonth).toBe(12);
-            expect(christmas?.startDay).toBe(1);
-            expect(christmas?.endMonth).toBe(1);
-            expect(christmas?.endDay).toBe(6);
-        });
-
-        it("Christmas config has valid colors", () => {
-            const christmas = HOLIDAYS.find((h) => h.cssTheme === "christmas");
-
-            expect(christmas?.colors).toHaveLength(3);
-            expect(christmas?.colors[0]).toMatch(/^hsl\(/);
+            expect(document.documentElement.getAttribute("data-theme")).toBe(theme);
         });
     });
 });

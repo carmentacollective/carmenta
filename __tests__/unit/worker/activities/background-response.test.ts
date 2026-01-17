@@ -26,10 +26,6 @@ vi.mock("@/lib/model-config", () => ({
     getFallbackChain: vi.fn(() => []),
 }));
 
-vi.mock("@/lib/streaming/stream-context", () => ({
-    getBackgroundStreamContext: vi.fn(),
-}));
-
 vi.mock("@/lib/logger", () => ({
     logger: {
         child: vi.fn(() => ({

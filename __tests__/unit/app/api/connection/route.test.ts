@@ -137,11 +137,6 @@ vi.mock("@/lib/research/auto-trigger", () => ({
     preExecuteResearch: vi.fn(),
 }));
 
-// Mock streaming context (resumable streams)
-vi.mock("@/lib/streaming/stream-context", () => ({
-    getStreamContext: vi.fn().mockReturnValue(null),
-}));
-
 // Import after mocks are set up
 import { POST } from "@/app/api/connection/route";
 import { currentUser } from "@clerk/nextjs/server";
@@ -154,7 +149,6 @@ import {
     upsertMessage,
     upsertToolPart,
     updateStreamingStatus,
-    updateActiveStreamId,
     updateConnection,
 } from "@/lib/db";
 import {
@@ -227,7 +221,6 @@ describe("POST /api/connection", () => {
                         : `connection-${publicId}`,
                     status: "active" as const,
                     streamingStatus: "idle" as const,
-                    activeStreamId: null,
                     modelId: null,
                     // Concierge data for persistence (temperature is string for numeric column)
                     conciergeModelId: conciergeData?.modelId ?? null,
@@ -254,7 +247,6 @@ describe("POST /api/connection", () => {
 
         vi.mocked(upsertMessage).mockResolvedValue(undefined);
         vi.mocked(updateStreamingStatus).mockResolvedValue(undefined);
-        vi.mocked(updateActiveStreamId).mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -922,7 +914,6 @@ describe("POST /api/connection", () => {
                 slug: "original-title",
                 status: "active",
                 streamingStatus: "idle",
-                activeStreamId: null,
                 modelId: null,
                 conciergeModelId: null,
                 conciergeTemperature: null,
@@ -989,7 +980,6 @@ describe("POST /api/connection", () => {
                 slug: "manual-title",
                 status: "active",
                 streamingStatus: "idle",
-                activeStreamId: null,
                 modelId: null,
                 conciergeModelId: null,
                 conciergeTemperature: null,

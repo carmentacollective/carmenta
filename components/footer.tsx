@@ -14,11 +14,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import {
-    getCurrentHoliday,
-    useThemeVariant,
-    type ThemeVariant,
-} from "@/lib/theme/theme-context";
+import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 import { cn } from "@/lib/utils";
 
 // Track whether we're on the client
@@ -52,15 +48,6 @@ function ThemePopover() {
     const [isOpen, setIsOpen] = useState(false);
     const [committedTheme, setCommittedTheme] = useState(themeVariant);
 
-    // Get current holiday for the holiday swatch
-    const currentHoliday = getCurrentHoliday();
-    const holidaySwatch = {
-        value: "holiday" as ThemeVariant,
-        label: currentHoliday.label,
-        color: currentHoliday.colors[0],
-    };
-    const allSwatches = [...THEME_SWATCHES, holidaySwatch];
-
     // Close on Escape key
     useEffect(() => {
         if (!isOpen) return;
@@ -77,8 +64,8 @@ function ThemePopover() {
 
     // Get current theme color for the trigger button
     const currentColor =
-        allSwatches.find((s) => s.value === themeVariant)?.color ??
-        allSwatches[0].color;
+        THEME_SWATCHES.find((s) => s.value === themeVariant)?.color ??
+        THEME_SWATCHES[0].color;
 
     // Show placeholder during SSR
     if (!isClient) {
@@ -178,7 +165,7 @@ function ThemePopover() {
                                             setThemeVariant(committedTheme);
                                         }}
                                     >
-                                        {allSwatches.map((swatch) => {
+                                        {THEME_SWATCHES.map((swatch) => {
                                             const isCommitted =
                                                 committedTheme === swatch.value;
                                             return (

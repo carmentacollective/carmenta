@@ -61,7 +61,6 @@ export interface ConnectionWithMessages {
     slug: string;
     status: "active" | "background" | "archived";
     streamingStatus: "idle" | "streaming" | "completed" | "failed";
-    activeStreamId: string | null;
     modelId: string | null;
     // Concierge data for UI display on page refresh
     conciergeModelId: string | null;

@@ -2,11 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
-import {
-    useThemeVariant,
-    resolveToCssTheme,
-    type CssThemeVariant,
-} from "@/lib/theme/theme-context";
+import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 
 /**
  * Seeded pseudo-random for SSR/hydration consistency.
@@ -36,7 +32,7 @@ const STARS = Array.from({ length: 30 }, () => ({
  * Theme-specific blob colors.
  * Each blob gets a base color; hue-rotate animation creates the cycling effect.
  */
-const BLOB_COLORS: Record<CssThemeVariant, { light: string[]; dark: string[] }> = {
+const BLOB_COLORS: Record<ThemeVariant, { light: string[]; dark: string[] }> = {
     carmenta: {
         light: [
             "rgba(255, 200, 175, 0.5)", // Peach (was pink)
@@ -127,43 +123,24 @@ const BLOB_COLORS: Record<CssThemeVariant, { light: string[]; dark: string[] }> 
             "rgba(125, 130, 145, 0.35)",
         ],
     },
-    christmas: {
-        light: [
-            "rgba(120, 180, 140, 0.5)",
-            "rgba(80, 160, 110, 0.5)",
-            "rgba(100, 190, 130, 0.5)",
-            "rgba(140, 200, 160, 0.5)",
-            "rgba(90, 170, 120, 0.5)",
-            "rgba(110, 185, 135, 0.5)",
-        ],
-        dark: [
-            "rgba(45, 90, 65, 0.4)",
-            "rgba(55, 100, 75, 0.4)",
-            "rgba(50, 95, 70, 0.4)",
-            "rgba(60, 110, 80, 0.4)",
-            "rgba(40, 85, 60, 0.4)",
-            "rgba(65, 115, 85, 0.4)",
-        ],
-    },
 };
 
 /**
  * Theme background colors
  */
-const BACKGROUNDS: Record<CssThemeVariant, { light: string; dark: string }> = {
+const BACKGROUNDS: Record<ThemeVariant, { light: string; dark: string }> = {
     carmenta: { light: "#F8F4F8", dark: "#0D0818" },
     "warm-earth": { light: "#F8F4F8", dark: "#100C0A" },
     "arctic-clarity": { light: "#F8F4F8", dark: "#090E14" },
     "forest-wisdom": { light: "#F8F4F8", dark: "#0A100D" },
     monochrome: { light: "#F8F4F8", dark: "#0A0B0D" },
-    christmas: { light: "#F8F4F8", dark: "#234230" },
 };
 
 /**
  * Warm presence gradient colors
  */
 const WARM_PRESENCE: Record<
-    CssThemeVariant,
+    ThemeVariant,
     { light: { inner: string; outer: string }; dark: { inner: string; outer: string } }
 > = {
     carmenta: {
@@ -207,13 +184,6 @@ const WARM_PRESENCE: Record<
             outer: "rgba(120, 125, 140, 0.12)",
         },
     },
-    christmas: {
-        light: {
-            inner: "rgba(140, 200, 160, 0.4)",
-            outer: "rgba(180, 220, 190, 0.25)",
-        },
-        dark: { inner: "rgba(70, 130, 90, 0.30)", outer: "rgba(50, 100, 70, 0.18)" },
-    },
 };
 
 /**
@@ -244,7 +214,6 @@ export function HolographicBackground({
 }: HolographicBackgroundProps) {
     const { resolvedTheme } = useTheme();
     const { themeVariant } = useThemeVariant();
-    const cssTheme = resolveToCssTheme(themeVariant);
     const isDark = resolvedTheme === "dark";
 
     const warmPresenceRef = useRef<HTMLDivElement>(null);
@@ -300,9 +269,9 @@ export function HolographicBackground({
     }, []);
 
     // Theme colors
-    const bg = BACKGROUNDS[cssTheme] || BACKGROUNDS.carmenta;
-    const blobColors = BLOB_COLORS[cssTheme] || BLOB_COLORS.carmenta;
-    const presence = WARM_PRESENCE[cssTheme] || WARM_PRESENCE.carmenta;
+    const bg = BACKGROUNDS[themeVariant] || BACKGROUNDS.carmenta;
+    const blobColors = BLOB_COLORS[themeVariant] || BLOB_COLORS.carmenta;
+    const presence = WARM_PRESENCE[themeVariant] || WARM_PRESENCE.carmenta;
     const colors = isDark ? blobColors.dark : blobColors.light;
     const presenceColors = isDark ? presence.dark : presence.light;
 

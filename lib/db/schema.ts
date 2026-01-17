@@ -292,13 +292,6 @@ export const connections = pgTable(
             .notNull()
             .default("idle"),
 
-        /**
-         * Active resumable stream ID for connection recovery
-         * Set when streaming starts, cleared when streaming completes or fails.
-         * Used by resumable-stream package to resume interrupted streams.
-         */
-        activeStreamId: text("active_stream_id"),
-
         /** Model used for this connection (e.g., "anthropic/claude-sonnet-4.5") */
         modelId: varchar("model_id", { length: 255 }),
 
@@ -1651,9 +1644,6 @@ export const jobRuns = pgTable(
 
         /** Temporal workflow ID for debugging */
         temporalWorkflowId: text("temporal_workflow_id"),
-
-        /** Active resumable stream ID for live progress viewing */
-        activeStreamId: text("active_stream_id"),
 
         /** Full execution trace with tool calls and outputs */
         executionTrace: jsonb("execution_trace").$type<JobExecutionTrace>(),
