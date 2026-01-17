@@ -44,19 +44,19 @@ async function getDbUser() {
 function categoryToPathPrefix(category: ExtractionCategory): string {
     switch (category) {
         case "identity":
-            return "profile.identity";
+            return "Profile.Identity";
         case "preference":
-            return "knowledge.preferences";
+            return "Knowledge.Preferences";
         case "person":
-            return "knowledge.people";
+            return "Knowledge.People";
         case "project":
-            return "knowledge.projects";
+            return "Knowledge.Projects";
         case "decision":
-            return "knowledge.decisions";
+            return "Knowledge.Decisions";
         case "expertise":
-            return "knowledge.expertise";
+            return "Knowledge.Expertise";
         case "voice":
-            return "knowledge.voice";
+            return "Knowledge.Voice";
     }
 }
 

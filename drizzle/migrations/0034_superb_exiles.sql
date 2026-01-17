@@ -1,0 +1,1 @@
+ALTER TABLE "extraction_jobs" ADD COLUMN "user_guidance" jsonb DEFAULT '[]'::jsonb;

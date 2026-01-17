@@ -270,7 +270,7 @@ export async function getConnectionsWithStats(
                 0
             )::int as message_count,
             (
-                SELECT mp.content
+                SELECT mp.text_content
                 FROM messages m
                 JOIN message_parts mp ON mp.message_id = m.id
                 WHERE m.connection_id = c.id

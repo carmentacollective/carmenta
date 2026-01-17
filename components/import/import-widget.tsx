@@ -44,11 +44,8 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-    DiscoveryInvitation,
-    DiscoveryProgress,
-    DiscoveryComplete,
-} from "@/components/discovery";
+import { DiscoveryInvitation, DiscoveryComplete } from "@/components/discovery";
+import { LiveKnowledgeBuilder } from "@/components/import/live-knowledge-builder";
 import { ImportStepper, type ImportStep } from "@/components/import/import-stepper";
 import { logger } from "@/lib/client-logger";
 import { cn } from "@/lib/utils";
@@ -619,7 +616,15 @@ export function ImportWidget({
     // ========================================================================
 
     const handleBeginDiscovery = useCallback(async () => {
-        if (!importResult?.connectionIds.length) return;
+        if (!importResult) return;
+
+        // Use newly created connections, or existing ones if all were duplicates
+        const connectionIds =
+            importResult.connectionIds.length > 0
+                ? importResult.connectionIds
+                : importResult.existingConnectionIds;
+
+        if (!connectionIds.length) return;
 
         setDiscoveryState("starting");
 
@@ -628,7 +633,7 @@ export function ImportWidget({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    connectionIds: importResult.connectionIds,
+                    connectionIds,
                 }),
             });
 
@@ -1424,22 +1429,26 @@ export function ImportWidget({
                         />
                     )}
 
-                    {/* Phase 2: Discovery Progress */}
+                    {/* Phase 2: Live Knowledge Builder - builds KB in real-time */}
                     {discoveryState === "processing" && discoveryJobId && (
-                        <DiscoveryProgress
+                        <LiveKnowledgeBuilder
                             jobId={discoveryJobId}
-                            totalConversations={importResult.connectionsCreated}
-                            onComplete={handleDiscoveryComplete}
-                            onError={handleDiscoveryError}
-                        />
-                    )}
-
-                    {/* Phase 3: Discovery Complete */}
-                    {discoveryState === "complete" && extractionStats && (
-                        <DiscoveryComplete
-                            stats={extractionStats}
-                            onKeepEverything={handleKeepEverything}
-                            isApproving={isApprovingAll}
+                            totalConversations={
+                                importResult.connectionsCreated ||
+                                importResult.existingConnectionIds.length
+                            }
+                            onComplete={() => {
+                                // New flow: KB is built directly, no extraction stats
+                                // Just mark as done and let user continue
+                                setDiscoveryState("idle");
+                                if (onSuccess) {
+                                    onSuccess(importResult);
+                                }
+                            }}
+                            onError={(errorMsg) => {
+                                setDiscoveryState("idle");
+                                setError(errorMsg);
+                            }}
                         />
                     )}
 
@@ -1452,38 +1461,134 @@ export function ImportWidget({
                                         className="h-12 w-12 text-green-600"
                                         weight="duotone"
                                     />
-                                    <p className="mt-4 text-xl font-medium">
-                                        All here now
-                                    </p>
-                                    <p className="text-muted-foreground mt-2">
-                                        {importResult.connectionsCreated.toLocaleString()}{" "}
-                                        connections with{" "}
-                                        {importResult.messagesImported.toLocaleString()}{" "}
-                                        messages
-                                        {importResult.skippedDuplicates > 0 && (
-                                            <span className="mt-1 block">
-                                                (Already had{" "}
-                                                {importResult.skippedDuplicates} of
-                                                these)
-                                            </span>
-                                        )}
-                                    </p>
-                                    <div className="mt-6 flex gap-3">
-                                        <Button variant="outline" onClick={handleReset}>
-                                            Import More
-                                        </Button>
-                                        {onSuccess ? (
-                                            <Button
-                                                onClick={() => onSuccess(importResult)}
-                                            >
-                                                Done
-                                            </Button>
-                                        ) : (
-                                            <Button onClick={() => router.push("/")}>
-                                                Start connecting
-                                            </Button>
-                                        )}
-                                    </div>
+
+                                    {/* All duplicates - offer to re-run extraction */}
+                                    {importResult.connectionsCreated === 0 &&
+                                    importResult.skippedDuplicates > 0 ? (
+                                        <>
+                                            <p className="mt-4 text-xl font-medium">
+                                                Already have these
+                                            </p>
+                                            <p className="text-muted-foreground mt-2">
+                                                All{" "}
+                                                {importResult.skippedDuplicates.toLocaleString()}{" "}
+                                                conversations were already imported
+                                            </p>
+
+                                            {/* Primary CTA: Build Knowledge Base from existing */}
+                                            <div className="mt-6 w-full max-w-xs">
+                                                <Button
+                                                    onClick={() =>
+                                                        setDiscoveryState("invited")
+                                                    }
+                                                    className="w-full gap-2"
+                                                    size="lg"
+                                                >
+                                                    <BrainIcon className="h-4 w-4" />
+                                                    Build Knowledge Base
+                                                </Button>
+                                                <p className="text-muted-foreground mt-2 text-xs">
+                                                    Re-analyze these conversations for
+                                                    insights
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-4 flex gap-3">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleReset}
+                                                >
+                                                    Import Different File
+                                                </Button>
+                                                {onSuccess ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            onSuccess(importResult)
+                                                        }
+                                                    >
+                                                        Skip for now
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => router.push("/")}
+                                                    >
+                                                        Skip for now
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="mt-4 text-xl font-medium">
+                                                All here now
+                                            </p>
+                                            <p className="text-muted-foreground mt-2">
+                                                {importResult.connectionsCreated.toLocaleString()}{" "}
+                                                connections with{" "}
+                                                {importResult.messagesImported.toLocaleString()}{" "}
+                                                messages
+                                                {importResult.skippedDuplicates > 0 && (
+                                                    <span className="mt-1 block">
+                                                        (Already had{" "}
+                                                        {importResult.skippedDuplicates}{" "}
+                                                        of these)
+                                                    </span>
+                                                )}
+                                            </p>
+
+                                            {/* Primary CTA: Build Knowledge Base */}
+                                            <div className="mt-6 w-full max-w-xs">
+                                                <Button
+                                                    onClick={() =>
+                                                        setDiscoveryState("invited")
+                                                    }
+                                                    className="w-full gap-2"
+                                                    size="lg"
+                                                >
+                                                    <BrainIcon className="h-4 w-4" />
+                                                    Build Knowledge Base
+                                                </Button>
+                                                <p className="text-muted-foreground mt-2 text-xs">
+                                                    We'll learn about you from these
+                                                    conversations
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-4 flex gap-3">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleReset}
+                                                >
+                                                    Import More
+                                                </Button>
+                                                {onSuccess ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            onSuccess(importResult)
+                                                        }
+                                                    >
+                                                        Skip for now
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => router.push("/")}
+                                                    >
+                                                        Skip for now
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -1499,26 +1604,18 @@ export function ImportWidget({
                         {showStepper && (
                             <ImportStepper currentStep={currentStep} className="mb-8" />
                         )}
-                        <DiscoveryProgress
+                        <LiveKnowledgeBuilder
                             jobId={discoveryJobId}
                             totalConversations={filteredConversations.length}
-                            onComplete={handleDiscoveryComplete}
-                            onError={handleDiscoveryError}
-                        />
-                    </>
-                )}
-
-            {discoveryState === "complete" &&
-                extractionStats &&
-                mode === "knowledge-only" && (
-                    <>
-                        {showStepper && (
-                            <ImportStepper currentStep={currentStep} className="mb-8" />
-                        )}
-                        <DiscoveryComplete
-                            stats={extractionStats}
-                            onKeepEverything={handleKeepEverything}
-                            isApproving={isApprovingAll}
+                            onComplete={() => {
+                                setDiscoveryState("idle");
+                                // Navigate to KB view on completion
+                                router.push("/kb");
+                            }}
+                            onError={(errorMsg) => {
+                                setDiscoveryState("idle");
+                                setError(errorMsg);
+                            }}
                         />
                     </>
                 )}

@@ -824,10 +824,10 @@ describe("KB Search Operations", () => {
 describe("PROFILE_PATHS Constant", () => {
     it("defines expected profile structure", () => {
         expect(PROFILE_PATHS).toEqual({
-            root: "profile",
-            character: "profile.character",
-            identity: "profile.identity",
-            preferences: "profile.preferences",
+            root: "Profile",
+            character: "Profile.Character",
+            identity: "Profile.Identity",
+            preferences: "Profile.Preferences",
         });
     });
 });

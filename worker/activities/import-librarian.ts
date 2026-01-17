@@ -1,10 +1,13 @@
 /**
- * Import Librarian Activities - Process imported conversations to learn about the user
+ * Import Librarian Activities - Process imported conversations to build the knowledge base
  *
  * Activities handle:
  * - Loading unprocessed imported conversations
- * - LLM calls to extract knowledge (same logic as real-time Librarian)
- * - Database updates for progress and pending extractions
+ * - Calling the real-time Librarian agent to build KB directly
+ * - Database updates for progress tracking
+ *
+ * The Librarian agent writes directly to the knowledge base - no pending
+ * extractions or approval workflow needed.
  */
 
 import { and, eq, notInArray, inArray } from "drizzle-orm";
@@ -16,17 +19,11 @@ import {
     messageParts,
     extractionJobs,
     extractionProcessedConnections,
-    pendingExtractions,
     users,
 } from "../../lib/db/schema";
 import { logger } from "../../lib/logger";
 import { captureActivityError } from "../lib/activity-sentry";
-import { generateObject } from "ai";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { z } from "zod";
-import { extractionSystemPrompt } from "../../lib/import/extraction/prompt";
-
-const IMPORT_LIBRARIAN_MODEL = "anthropic/claude-sonnet-4.5";
+import { createLibrarianAgent } from "../../lib/ai-team/librarian";
 
 /**
  * Import librarian job input from workflow
@@ -134,98 +131,85 @@ export async function loadImportLibrarianContext(
 }
 
 /**
- * Process a batch of conversations through the LLM
+ * Get user guidance notes for this job
  */
-export async function processConversationBatch(
+async function getUserGuidance(jobId: string): Promise<string[]> {
+    const job = await db.query.extractionJobs.findFirst({
+        where: eq(extractionJobs.id, jobId),
+        columns: { userGuidance: true },
+    });
+    return (job?.userGuidance as string[]) ?? [];
+}
+
+/**
+ * Process a single conversation through the Librarian agent
+ *
+ * The agent writes directly to the knowledge base - no pending extractions.
+ * Progress updates are handled by the calling workflow.
+ */
+export async function processConversation(
     context: ImportLibrarianContext,
-    batchConnectionIds: number[]
-): Promise<BatchResult> {
+    connectionId: number
+): Promise<{ processed: boolean; extractedCount: number }> {
     const { jobId, userId } = context;
     const activityLogger = logger.child({
         jobId,
-        activity: "processConversationBatch",
-        batchSize: batchConnectionIds.length,
+        activity: "processConversation",
+        connectionId,
     });
 
-    let processedCount = 0;
-    let extractedCount = 0;
-    const errors: string[] = [];
-
     try {
-        for (const connectionId of batchConnectionIds) {
-            try {
-                // Get user messages for this conversation
-                const userMessages = await getConnectionUserMessages(connectionId);
+        // Get connection title for context
+        const connection = await db.query.connections.findFirst({
+            where: eq(connections.id, connectionId),
+            columns: { title: true },
+        });
 
-                if (userMessages.length === 0) {
-                    // Mark as processed but with no extractions
-                    await db.insert(extractionProcessedConnections).values({
-                        userId,
-                        connectionId,
-                        jobId,
-                        extractionCount: 0,
-                    });
-                    processedCount++;
-                    continue;
-                }
+        // Get user messages for this conversation
+        const userMessages = await getConnectionUserMessages(connectionId);
 
-                // Call LLM to extract facts
-                const result = await extractFromConversation(userMessages);
-
-                // Save extractions in a transaction
-                await db.transaction(async (tx) => {
-                    // Mark connection as processed
-                    await tx.insert(extractionProcessedConnections).values({
-                        userId,
-                        connectionId,
-                        jobId,
-                        extractionCount: result.facts.length,
-                    });
-
-                    // Insert extractions
-                    if (result.facts.length > 0) {
-                        await tx.insert(pendingExtractions).values(
-                            result.facts.map((fact) => ({
-                                userId,
-                                connectionId,
-                                category: fact.category,
-                                content: fact.content,
-                                summary: fact.summary,
-                                confidence: fact.confidence,
-                                sourceTimestamp: fact.sourceTimestamp
-                                    ? new Date(fact.sourceTimestamp)
-                                    : null,
-                            }))
-                        );
-                    }
-                });
-
-                extractedCount += result.facts.length;
-                processedCount++;
-
-                activityLogger.debug(
-                    { connectionId, factsExtracted: result.facts.length },
-                    "Processed conversation"
-                );
-            } catch (error) {
-                const errorMessage =
-                    error instanceof Error ? error.message : String(error);
-                errors.push(`Connection ${connectionId}: ${errorMessage}`);
-                activityLogger.error(
-                    { connectionId, error: errorMessage },
-                    "Failed to process conversation"
-                );
-                // Continue with next conversation
-            }
+        if (userMessages.length === 0) {
+            // Mark as processed but with no extractions
+            await db.insert(extractionProcessedConnections).values({
+                userId,
+                connectionId,
+                jobId,
+                extractionCount: 0,
+            });
+            return { processed: true, extractedCount: 0 };
         }
 
-        return { processedCount, extractedCount, errors };
+        // Get user guidance for this job
+        const userGuidance = await getUserGuidance(jobId);
+
+        // Call the real-time Librarian agent
+        const result = await processWithLibrarian(
+            userId,
+            userMessages,
+            connection?.title,
+            userGuidance
+        );
+
+        // Mark connection as processed
+        await db.insert(extractionProcessedConnections).values({
+            userId,
+            connectionId,
+            jobId,
+            extractionCount: result.stepsUsed,
+        });
+
+        activityLogger.debug(
+            { stepsUsed: result.stepsUsed },
+            "Processed conversation with Librarian"
+        );
+
+        return { processed: true, extractedCount: result.stepsUsed };
     } catch (error) {
         captureActivityError(error, {
-            activityName: "processConversationBatch",
+            activityName: "processConversation",
             jobId,
             userId,
-            batchSize: batchConnectionIds.length,
+            connectionId,
         });
         throw error;
     }
@@ -344,47 +328,61 @@ async function getConnectionUserMessages(
 }
 
 /**
- * Schema for extraction output
+ * Process a conversation with the Librarian agent
+ *
+ * The agent analyzes the conversation and writes directly to the KB
+ * using its tools (createDocument, updateDocument, appendToDocument, etc.)
  */
-const extractionSchema = z.object({
-    facts: z.array(
-        z.object({
-            category: z.enum([
-                "identity",
-                "preference",
-                "person",
-                "project",
-                "decision",
-                "expertise",
-                "voice",
-            ]),
-            content: z.string(),
-            summary: z.string(),
-            confidence: z.number(),
-            sourceTimestamp: z.string().optional(),
-        })
-    ),
-});
-
-/**
- * Extract facts from conversation using LLM
- */
-async function extractFromConversation(
-    userMessages: Array<{ id: string; createdAt: Date; content: string }>
-): Promise<z.infer<typeof extractionSchema>> {
-    const openrouter = createOpenRouter({
-        apiKey: process.env.OPENROUTER_API_KEY,
-    });
+async function processWithLibrarian(
+    userId: string,
+    userMessages: Array<{ id: string; createdAt: Date; content: string }>,
+    conversationTitle?: string | null,
+    userGuidance?: string[]
+): Promise<{ processed: boolean; stepsUsed: number; summary: string }> {
+    const agent = createLibrarianAgent();
 
     const conversationText = userMessages
         .map((m) => `[${m.createdAt.toISOString()}]\n${m.content}`)
         .join("\n\n---\n\n");
 
-    const result = await generateObject({
-        model: openrouter(IMPORT_LIBRARIAN_MODEL),
-        schema: extractionSchema,
-        prompt: `${extractionSystemPrompt}\n\n<conversation>\n${conversationText}\n</conversation>`,
+    // Build guidance section if user has provided any
+    const guidanceSection =
+        userGuidance && userGuidance.length > 0
+            ? `<user-guidance>
+The user has provided the following guidance for processing their imported conversations:
+${userGuidance.map((g) => `• ${g}`).join("\n")}
+
+Honor this guidance when deciding what to extract and how to organize it.
+</user-guidance>
+
+`
+            : "";
+
+    const titleContext = conversationTitle
+        ? `<conversation-topic>${conversationTitle}</conversation-topic>\n\n`
+        : "";
+
+    const result = await agent.generate({
+        prompt: `<user-id>${userId}</user-id>
+
+<import-context>
+This is an imported conversation from the user's ChatGPT or Claude history. Analyze it for worth-preserving knowledge and add anything valuable to the knowledge base.
+</import-context>
+
+${guidanceSection}${titleContext}<conversation>
+${conversationText}
+</conversation>
+
+Analyze this conversation and extract any worth-preserving knowledge to the knowledge base.
+
+Start by listing the current knowledge base to understand what already exists. Then create, update, or append to documents as appropriate.
+
+Focus on durable information: facts about the user, decisions made, people mentioned, preferences expressed, projects discussed, or explicit "remember this" requests. Skip transient task help, general knowledge questions, and greetings.`,
     });
 
-    return result.object;
+    return {
+        processed: true,
+        stepsUsed: result.steps.length,
+        summary: result.text ?? "",
+    };
 }
