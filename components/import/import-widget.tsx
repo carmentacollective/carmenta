@@ -1445,6 +1445,10 @@ export function ImportWidget({
                                     onSuccess(importResult);
                                 }
                             }}
+                            onError={(errorMsg) => {
+                                setDiscoveryState("idle");
+                                setError(errorMsg);
+                            }}
                         />
                     )}
 
@@ -1607,6 +1611,10 @@ export function ImportWidget({
                                 setDiscoveryState("idle");
                                 // Navigate to KB view on completion
                                 router.push("/kb");
+                            }}
+                            onError={(errorMsg) => {
+                                setDiscoveryState("idle");
+                                setError(errorMsg);
                             }}
                         />
                     </>

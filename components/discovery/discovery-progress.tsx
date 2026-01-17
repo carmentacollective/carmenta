@@ -132,8 +132,15 @@ export function DiscoveryProgress({
                 }
 
                 const data = await response.json();
-                if (data.errors?.length > 0) {
-                    toast.error(data.errors[0]);
+
+                // Revert optimistic update if API returned failure
+                if (!data.success || data.errors?.length > 0) {
+                    setActionedIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(extractionId);
+                        return next;
+                    });
+                    toast.error(data.errors?.[0] || "Failed to save your decision");
                 }
             } catch (err) {
                 // Revert optimistic update on error
@@ -315,6 +322,18 @@ export function DiscoveryProgress({
                         return next;
                     });
                     toast.error("Failed to save edit");
+                    return;
+                }
+
+                const data = await response.json();
+                // Revert optimistic update if API returned failure
+                if (!data.success || data.errors?.length > 0) {
+                    setActionedIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(extractionId);
+                        return next;
+                    });
+                    toast.error(data.errors?.[0] || "Failed to save edit");
                 }
             } catch (err) {
                 setActionedIds((prev) => {

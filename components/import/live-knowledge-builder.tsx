@@ -39,6 +39,7 @@ interface LiveKnowledgeBuilderProps {
     jobId: string;
     totalConversations: number;
     onComplete?: () => void;
+    onError?: (message: string) => void;
 }
 
 /**
@@ -90,7 +91,9 @@ function buildTree(docs: KBDocument[]): TreeNode[] {
 
             if (isLast) {
                 current[part].document = doc;
-                current[part].isFolder = false;
+                // Only mark as non-folder if there are no children
+                const hasChildren = Object.keys(current[part].children).length > 0;
+                current[part].isFolder = hasChildren;
             }
 
             current = current[part].children;
@@ -122,6 +125,7 @@ export function LiveKnowledgeBuilder({
     jobId,
     totalConversations,
     onComplete,
+    onError,
 }: LiveKnowledgeBuilderProps) {
     const [documents, setDocuments] = useState<KBDocument[]>([]);
     const [guidance, setGuidance] = useState<string[]>([]);
@@ -154,6 +158,10 @@ export function LiveKnowledgeBuilder({
 
                 if (data.status === "completed") {
                     onComplete?.();
+                } else if (data.status === "failed") {
+                    const errorMsg =
+                        data.errorMessage || "Import job failed unexpectedly";
+                    onError?.(errorMsg);
                 }
             } catch (err) {
                 // Ignore polling errors
