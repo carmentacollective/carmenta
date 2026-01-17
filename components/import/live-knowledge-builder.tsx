@@ -475,14 +475,7 @@ export function LiveKnowledgeBuilder({
                         {selectedDoc ? (
                             <div className="space-y-4">
                                 <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                        <h3 className="font-medium">
-                                            {selectedDoc.name}
-                                        </h3>
-                                        <p className="text-muted-foreground text-xs">
-                                            {selectedDoc.path}
-                                        </p>
-                                    </div>
+                                    <h3 className="font-medium">{selectedDoc.name}</h3>
                                     <Button
                                         variant="ghost"
                                         size="icon"
