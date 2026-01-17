@@ -565,8 +565,9 @@ function IntegrationsContent() {
                 <section>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {services.map((groupedService) => {
-                            // Extract Map lookups to avoid Terser minification bug
-                            // that incorrectly mangles inline .get() calls in JSX
+                            // Extract Map lookups to avoid Terser v5.x minification bug
+                            // that incorrectly mangles inline .get() calls in JSX props
+                            // https://github.com/terser/terser/issues/1245
                             const serviceId = groupedService.service.id;
                             const serviceTestingAccounts =
                                 testingAccounts.get(serviceId) ?? new Set<string>();
