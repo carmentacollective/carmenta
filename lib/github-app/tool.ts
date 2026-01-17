@@ -92,9 +92,9 @@ const githubToolSchema = z.object({
             "Issue number (for add_reaction, add_label, close_issue, add_comment)"
         ),
     reaction: z
-        .enum(["+1", "-1", "heart", "hooray", "confused", "rocket", "eyes"])
+        .enum(["+1", "heart"])
         .optional()
-        .describe("Reaction type (for add_reaction)"),
+        .describe("Reaction type (for add_reaction) - currently supports +1 and heart"),
     labels: z
         .array(z.string())
         .optional()
@@ -329,14 +329,6 @@ async function executeOperation(
             }
 
             const reaction = input.reaction || "+1";
-            // Only +1 and heart are currently supported by our client
-            if (reaction !== "+1" && reaction !== "heart") {
-                return {
-                    success: false,
-                    error: "Only +1 and heart reactions are currently supported",
-                };
-            }
-
             const result = await addReaction(input.issueNumber, reaction);
 
             if (!result.success) {
