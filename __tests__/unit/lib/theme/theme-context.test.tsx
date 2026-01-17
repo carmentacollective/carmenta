@@ -96,6 +96,17 @@ describe("ThemeProvider and useThemeVariant", () => {
             expect(result.current.themeVariant).toBe("carmenta");
             expect(localStorage.getItem("carmenta-theme-variant")).toBe("carmenta");
         });
+
+        it("migrates arbitrary invalid theme values to 'carmenta'", () => {
+            localStorage.setItem("carmenta-theme-variant", "nonexistent-theme");
+
+            const { result } = renderHook(() => useThemeVariant(), {
+                wrapper: createWrapper(),
+            });
+
+            expect(result.current.themeVariant).toBe("carmenta");
+            expect(localStorage.getItem("carmenta-theme-variant")).toBe("carmenta");
+        });
     });
 
     describe("setThemeVariant", () => {

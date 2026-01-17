@@ -11,12 +11,14 @@ import {
 } from "react";
 
 // Theme variant types - what users select and what gets stored
-export type ThemeVariant =
-    | "carmenta"
-    | "warm-earth"
-    | "arctic-clarity"
-    | "forest-wisdom"
-    | "monochrome";
+const VALID_THEMES = [
+    "carmenta",
+    "warm-earth",
+    "arctic-clarity",
+    "forest-wisdom",
+    "monochrome",
+] as const;
+export type ThemeVariant = (typeof VALID_THEMES)[number];
 
 const STORAGE_KEY = "carmenta-theme-variant";
 const DEFAULT_THEME: ThemeVariant = "carmenta";
@@ -103,13 +105,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
 // Type guard for valid themes
 function isValidTheme(value: string): value is ThemeVariant {
-    return [
-        "carmenta",
-        "warm-earth",
-        "arctic-clarity",
-        "forest-wisdom",
-        "monochrome",
-    ].includes(value);
+    return VALID_THEMES.includes(value as ThemeVariant);
 }
 
 // Re-export useTheme from next-themes for light/dark mode
