@@ -440,8 +440,6 @@ vi.mock("./lib/db/index", async () => {
         upsertMessage: connectionsModule.upsertMessage,
         loadMessages: connectionsModule.loadMessages,
         updateStreamingStatus: connectionsModule.updateStreamingStatus,
-        updateActiveStreamId: connectionsModule.updateActiveStreamId,
-        getActiveStreamId: connectionsModule.getActiveStreamId,
         markAsBackground: connectionsModule.markAsBackground,
         findInterruptedConnections: connectionsModule.findInterruptedConnections,
         mapConnectionMessagesToUI: connectionsModule.mapConnectionMessagesToUI,

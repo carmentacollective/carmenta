@@ -39,6 +39,7 @@ import { CodeModeActivity } from "./code-mode-activity";
 import { CodeModeMessage } from "./code-mode-message";
 import { ReasoningDisplay } from "./reasoning-display";
 import { ConciergeDisplay } from "./concierge-display";
+import { BackgroundModeBanner } from "./background-mode-banner";
 import {
     useChatContext,
     useModelOverrides,
@@ -85,7 +86,8 @@ export function HoloThread({ hideWelcome = false }: HoloThreadProps) {
 
 function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
     const router = useRouter();
-    const { messages, isLoading, setInput, append } = useChatContext();
+    const { messages, isLoading, setInput, append, isBackgroundMode } =
+        useChatContext();
     const { addFiles, addPreUploadedFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
     const { isCodeMode } = useCodeMode();
@@ -299,6 +301,13 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
                                     />
                                 );
                             })}
+
+                            {/* Background mode banner - shows when processing in background */}
+                            <AnimatePresence>
+                                {isBackgroundMode && (
+                                    <BackgroundModeBanner className="my-4" />
+                                )}
+                            </AnimatePresence>
 
                             {/* Pending assistant response - shows immediately after user sends */}
                             {needsPendingRegular && (

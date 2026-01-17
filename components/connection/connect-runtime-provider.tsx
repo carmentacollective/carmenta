@@ -191,6 +191,8 @@ interface ChatContextType {
     handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
     /** Handle form submission */
     handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    /** Whether background mode is active (long-running task) */
+    isBackgroundMode: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -661,14 +663,8 @@ function createFetchWrapper(
             "🚀 API request starting"
         );
         if (isCodeMode && url.includes("/api/connection")) {
-            // Main POST endpoint: /api/connection → /api/code
-            // Stream resume: /api/connection/[id]/stream → /api/code/session/[id]/stream
-            if (url.includes("/stream")) {
-                // Stream endpoint has different path structure
-                url = url.replace("/api/connection/", "/api/code/session/");
-            } else {
-                url = url.replace("/api/connection", "/api/code");
-            }
+            // Route code mode to code API: /api/connection → /api/code
+            url = url.replace("/api/connection", "/api/code");
             logger.info({ newUrl: url }, "🔀 Routed to code API");
         }
 
@@ -1219,8 +1215,6 @@ function ConnectRuntimeProviderInner({
         id: effectiveChatId,
         messages: initialAIMessages,
         transport,
-        // Enable stream resumption for existing connections (not new ones)
-        resume: !!activeConnectionId,
         onError: (err) => {
             // Pass actual Error object so Sentry gets full stack trace
             logger.error({ error: err }, "Chat error");
@@ -1661,6 +1655,7 @@ function ConnectRuntimeProviderInner({
             setInput,
             handleInputChange,
             handleSubmit,
+            isBackgroundMode,
         }),
         [
             messages,
@@ -1677,6 +1672,7 @@ function ConnectRuntimeProviderInner({
             input,
             handleInputChange,
             handleSubmit,
+            isBackgroundMode,
         ]
     );
 

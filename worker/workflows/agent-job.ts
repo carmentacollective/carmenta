@@ -80,9 +80,7 @@ const {
     createJobRun,
     generateJobStreamId,
     executeStreamingAITeamMember,
-    updateJobRunStreamId,
     finalizeJobRun,
-    clearJobRunStreamId,
 } = proxyActivities<typeof activities>({
     startToCloseTimeout: "10 minutes", // Longer timeout for tool-using agents
     retry: {
@@ -113,16 +111,14 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
     // Create run record immediately so UI can show "running" state
     const runId = await createJobRun(jobId);
 
-    // Generate streamId and save to DB BEFORE execution
-    // This allows users to "tap in" as soon as the job starts
+    // Generate streamId for logging correlation
     const streamId = await generateJobStreamId(jobId);
-    await updateJobRunStreamId(runId, streamId);
 
     try {
-        // Execute streaming AI Team member - streams to Redis under streamId
+        // Execute streaming AI Team member
         const result = await executeStreamingAITeamMember(context, streamId);
 
-        // Finalize with results (this clears streamId too)
+        // Finalize with results
         await finalizeJobRun(runId, jobId, context.userId, result);
 
         return {
@@ -167,10 +163,11 @@ export async function agentJobWorkflow(input: AgentJobInput): Promise<AgentJobRe
         try {
             await finalizeJobRun(runId, jobId, context.userId, failedResult);
         } catch (finalizationError) {
-            // Finalization failed - activity will capture error in Sentry
-            // Clear stream ID to prevent UI showing stale "in progress" state
-            await clearJobRunStreamId(runId).catch(() => {
-                // Double failure - logged in activity, workflow continues with original error
+            // Log explicitly - activity capture may not fire for workflow-caught errors
+            console.warn("Failed to finalize failed job run", {
+                runId,
+                jobId,
+                error: String(finalizationError),
             });
         }
 
