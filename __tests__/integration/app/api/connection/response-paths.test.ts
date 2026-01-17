@@ -107,7 +107,6 @@ vi.mock("@/lib/db", () => ({
     getConnection: vi.fn(),
     upsertMessage: vi.fn(),
     updateStreamingStatus: vi.fn(),
-    updateActiveStreamId: vi.fn(),
     updateConnection: vi.fn(),
 }));
 
@@ -138,11 +137,6 @@ vi.mock("@/lib/temporal/client", () => ({
     startBackgroundResponse: vi.fn(),
 }));
 
-// Mock stream context (resumable streams)
-vi.mock("@/lib/streaming/stream-context", () => ({
-    getStreamContext: vi.fn().mockReturnValue(null),
-}));
-
 // Import after mocks are set up
 import { POST } from "@/app/api/connection/route";
 import { currentUser } from "@clerk/nextjs/server";
@@ -152,7 +146,6 @@ import {
     createConnection,
     upsertMessage,
     updateStreamingStatus,
-    updateActiveStreamId,
 } from "@/lib/db";
 import {
     isBackgroundModeEnabled,
@@ -367,7 +360,6 @@ describe("Connection API Response Paths", () => {
                     slug: `test-connection-${publicId}`,
                     status: "active" as const,
                     streamingStatus: "idle" as const,
-                    activeStreamId: null,
                     modelId: null,
                     conciergeModelId: conciergeData?.modelId ?? null,
                     conciergeTemperature:
@@ -392,7 +384,6 @@ describe("Connection API Response Paths", () => {
 
         vi.mocked(upsertMessage).mockResolvedValue(undefined);
         vi.mocked(updateStreamingStatus).mockResolvedValue(undefined);
-        vi.mocked(updateActiveStreamId).mockResolvedValue(undefined);
     });
 
     afterEach(() => {

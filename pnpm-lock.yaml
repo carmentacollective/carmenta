@@ -200,9 +200,6 @@ importers:
       require-in-the-middle:
         specifier: ^8.0.1
         version: 8.0.1
-      resumable-stream:
-        specifier: ^2.2.10
-        version: 2.2.10
       rich-textarea:
         specifier: ^0.27.0
         version: 0.27.0(react@19.2.3)
@@ -6496,9 +6493,6 @@ packages:
   restore-cursor@5.1.0:
     resolution: {integrity: sha512-oMA2dcrw6u0YfxJQXm342bFKX/E4sG9rbTzO9ptUcR/e8A33cHuvStiYOwH7fszkZlZ1z/ta9AAoPk2F4qIOHA==}
     engines: {node: '>=18'}
-
-  resumable-stream@2.2.10:
-    resolution: {integrity: sha512-pSJtiDVkPgirq4x+e+gu67IEkUVYGu1cPgW5AnTHCfYGRfIUjS3d4pj7VGveXmYWb9hy6yIMFTM4YzK7rqj14A==}
 
   rettime@0.7.0:
     resolution: {integrity: sha512-LPRKoHnLKd/r3dVxcwO7vhCW+orkOGj9ViueosEBK6ie89CijnfRlhaDhHq/3Hxu4CkWQtxwlBG0mzTQY6uQjw==}
@@ -14193,8 +14187,6 @@ snapshots:
     dependencies:
       onetime: 7.0.0
       signal-exit: 4.1.0
-
-  resumable-stream@2.2.10: {}
 
   rettime@0.7.0:
     optional: true

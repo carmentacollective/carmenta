@@ -66,8 +66,6 @@ export {
     upsertToolPart,
     loadMessages,
     updateStreamingStatus,
-    updateActiveStreamId,
-    getActiveStreamId,
     markAsBackground,
     findInterruptedConnections,
     mapConnectionMessagesToUI,

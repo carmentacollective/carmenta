@@ -18,7 +18,6 @@ import * as Sentry from "@sentry/nextjs";
 import { toast } from "sonner";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
-import { JobProgressViewer } from "@/components/ai-team/job-progress-viewer";
 import { LabelToggle } from "@/components/ui/label-toggle";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import {
@@ -44,7 +43,6 @@ interface ActivityItem {
     status: "completed" | "failed" | "running";
     completedAt: Date | null;
     notificationCount: number;
-    activeStreamId: string | null;
 }
 
 /**
@@ -165,7 +163,6 @@ function AITeamContent({
     const [isLoading, setIsLoading] = useState(true);
     const [togglingJobs, setTogglingJobs] = useState<Set<string>>(new Set());
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [viewingActivity, setViewingActivity] = useState<ActivityItem | null>(null);
     const [activityFilter, setActivityFilter] = useState<string | null>(null);
     const [expandedActivities, setExpandedActivities] = useState<Set<string>>(
         new Set()
@@ -385,7 +382,6 @@ function AITeamContent({
                                 ? new Date(run.completedAt)
                                 : null,
                             notificationCount: run.notificationsSent ?? 0,
-                            activeStreamId: run.activeStreamId ?? null,
                         });
                     }
                     for (const notification of job.notifications ?? []) {
@@ -706,21 +702,6 @@ function AITeamContent({
                                                     </div>
                                                 </div>
                                                 <div className="flex shrink-0 items-center gap-2">
-                                                    {activity.status === "running" &&
-                                                        activity.activeStreamId && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    setViewingActivity(
-                                                                        activity
-                                                                    );
-                                                                }}
-                                                                className="text-primary hover:bg-primary/10 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors"
-                                                            >
-                                                                <BroadcastIcon className="h-3 w-3" />
-                                                                Tap In
-                                                            </button>
-                                                        )}
                                                     <span className="text-foreground/50 text-xs whitespace-nowrap">
                                                         {activity.status === "running"
                                                             ? "Running"
@@ -795,16 +776,6 @@ function AITeamContent({
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* Job Progress Viewer Modal */}
-            {viewingActivity && (
-                <JobProgressViewer
-                    jobId={viewingActivity.jobId}
-                    runId={viewingActivity.id}
-                    jobName={viewingActivity.jobName}
-                    onClose={() => setViewingActivity(null)}
-                />
             )}
 
             {/* Carmenta Sidecar for contextual AI Team help + hire mode */}

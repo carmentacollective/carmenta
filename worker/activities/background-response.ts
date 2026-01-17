@@ -2,9 +2,9 @@
  * Background Response Activities
  *
  * Temporal activities for running LLM generation in the background.
- * Ported from Inngest function - same 4-step pattern:
+ * 4-step pattern:
  * 1. Load connection context
- * 2. Generate response (stream to Redis)
+ * 2. Generate response
  * 3. Save response to DB
  * 4. Update connection status
  *
@@ -16,7 +16,6 @@ import * as Sentry from "@sentry/node";
 import {
     convertToModelMessages,
     createUIMessageStream,
-    JsonToSseTransformStream,
     stepCountIs,
     streamText,
 } from "ai";
@@ -36,7 +35,6 @@ import {
 } from "../../lib/db";
 import { logger } from "../../lib/logger";
 import { getFallbackChain, getModel } from "../../lib/model-config";
-import { getBackgroundStreamContext } from "../../lib/streaming/stream-context";
 
 // Worker-local imports (avoid ESM dependencies)
 import { buildWorkerSystemMessages } from "../lib/system-prompt";
@@ -128,10 +126,9 @@ export async function loadConnectionContext(
 }
 
 /**
- * Activity 2: Generate LLM response with streaming to Redis
+ * Activity 2: Generate LLM response
  *
- * This is the main activity - runs the LLM call and streams
- * chunks to Redis for real-time client consumption.
+ * Runs the LLM call and captures the complete response.
  */
 export async function generateBackgroundResponse(
     input: BackgroundResponseInput,
@@ -148,11 +145,6 @@ export async function generateBackgroundResponse(
 
     try {
         const gateway = getGatewayClient();
-        const streamContext = getBackgroundStreamContext();
-
-        if (!streamContext) {
-            throw new Error("Redis not configured - cannot run background tasks");
-        }
 
         // Build system messages for the worker
         // Uses simplified worker-local prompt to avoid ESM dependency issues
@@ -224,18 +216,9 @@ export async function generateBackgroundResponse(
             },
         });
 
-        // Pipe through resumable stream to Redis
-        const resumableStream = await streamContext.createNewResumableStream(
-            streamId,
-            () => stream.pipeThrough(new JsonToSseTransformStream())
-        );
-
-        if (!resumableStream) {
-            throw new Error("Failed to create resumable stream");
-        }
-
         // Consume the stream to completion
-        const reader = resumableStream.getReader();
+        // This ensures onFinish fires with the complete response
+        const reader = stream.getReader();
         while (true) {
             const { done } = await reader.read();
             if (done) break;

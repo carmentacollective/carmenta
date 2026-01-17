@@ -9,7 +9,7 @@
  * Errors are captured in Sentry BEFORE Temporal wraps them in ActivityFailure.
  */
 
-import { createUIMessageStream, JsonToSseTransformStream } from "ai";
+import { createUIMessageStream } from "ai";
 import { eq, count, and, desc, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -21,7 +21,6 @@ import {
     type AITeamMemberResult,
     type AITeamJobContext,
 } from "../../lib/agents/ai-team-member";
-import { getBackgroundStreamContext } from "../../lib/streaming/stream-context";
 import { logger } from "../../lib/logger";
 import { captureActivityError } from "../lib/activity-sentry";
 
@@ -140,13 +139,12 @@ export async function generateJobStreamId(jobId: string): Promise<string> {
 }
 
 /**
- * Execute job using the AI Team member with streaming to Redis.
+ * Execute job using the AI Team member.
  *
- * This is the streaming execution path that allows users to "tap in"
- * and watch the agent work in real-time.
+ * Runs the AI Team member and captures results for persistence.
  *
  * @param context - Job context with prompt, user info, job context
- * @param streamId - Pre-generated stream ID (already saved to DB)
+ * @param streamId - Stream ID for log correlation across execution
  */
 export async function executeStreamingAITeamMember(
     context: FullJobContext,
@@ -159,13 +157,6 @@ export async function executeStreamingAITeamMember(
     });
 
     try {
-        // Infrastructure setup - let Temporal retry these if they fail
-        const streamContext = getBackgroundStreamContext();
-
-        if (!streamContext) {
-            throw new Error("Redis not configured - cannot run streaming job");
-        }
-
         activityLogger.info({}, "🚀 Starting streaming employee execution");
 
         let employeeResult: AITeamMemberResult | null = null;
@@ -186,18 +177,8 @@ export async function executeStreamingAITeamMember(
             },
         });
 
-        // Pipe through resumable stream to Redis - let Temporal retry if this fails
-        const resumableStream = await streamContext.createNewResumableStream(
-            streamId,
-            () => stream.pipeThrough(new JsonToSseTransformStream())
-        );
-
-        if (!resumableStream) {
-            throw new Error("Failed to create resumable stream");
-        }
-
         // Consume the stream to completion
-        const reader = resumableStream.getReader();
+        const reader = stream.getReader();
         while (true) {
             const { done } = await reader.read();
             if (done) break;
@@ -309,26 +290,6 @@ export async function createJobRun(jobId: string): Promise<string> {
 }
 
 /**
- * Update job run with stream ID for live progress viewing.
- */
-export async function updateJobRunStreamId(
-    runId: string,
-    streamId: string
-): Promise<void> {
-    await db
-        .update(jobRuns)
-        .set({ activeStreamId: streamId })
-        .where(eq(jobRuns.id, runId));
-}
-
-/**
- * Clear job run stream ID when execution completes.
- */
-export async function clearJobRunStreamId(runId: string): Promise<void> {
-    await db.update(jobRuns).set({ activeStreamId: null }).where(eq(jobRuns.id, runId));
-}
-
-/**
  * Update job run with final results including observability data.
  */
 export async function finalizeJobRun(
@@ -384,7 +345,6 @@ export async function finalizeJobRun(
                 toolCallsExecuted: result.toolCallsExecuted,
                 notificationsSent: result.notifications.length,
                 completedAt: new Date(),
-                activeStreamId: null,
                 // Observability fields
                 executionTrace: result.executionTrace,
                 errorDetails: result.errorDetails,
