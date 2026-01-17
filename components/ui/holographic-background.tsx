@@ -2,11 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
-import {
-    useThemeVariant,
-    resolveToCssTheme,
-    type CssThemeVariant,
-} from "@/lib/theme/theme-context";
+import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 
 // Track whether we're on the client to avoid hydration mismatch
 const subscribe = () => () => {};
@@ -65,7 +61,7 @@ const DARK_BACKGROUND = "#0D0818"; // Deep cosmic indigo - consciousness depths
  * Each theme has distinct light and dark mode colors.
  */
 const THEME_PALETTES: Record<
-    CssThemeVariant,
+    ThemeVariant,
     { light: readonly ColorPalette[]; dark: readonly ColorPalette[]; darkBg: string }
 > = {
     carmenta: {
@@ -165,30 +161,6 @@ const THEME_PALETTES: Record<
         ],
         darkBg: "#0A0B0D", // Pure void with cyan whisper
     },
-    christmas: {
-        light: [
-            { r: 120, g: 180, b: 140 }, // Fresh Pine
-            { r: 80, g: 160, b: 110 }, // Evergreen
-            { r: 100, g: 190, b: 130 }, // Spring Green
-            { r: 140, g: 200, b: 160 }, // Mint Leaf
-            { r: 90, g: 170, b: 120 }, // Forest Glade
-            { r: 110, g: 185, b: 135 }, // Sage Meadow
-            { r: 130, g: 195, b: 150 }, // Soft Fern
-            { r: 100, g: 175, b: 125 }, // Woodland
-        ],
-        dark: [
-            // Pure greens only - no reds that mix to brown
-            { r: 45, g: 90, b: 65 }, // Deep Forest
-            { r: 55, g: 100, b: 75 }, // Night Pine
-            { r: 50, g: 95, b: 70 }, // Shadowed Sage
-            { r: 60, g: 110, b: 80 }, // Emerald Depths
-            { r: 40, g: 85, b: 60 }, // Forest Floor
-            { r: 65, g: 115, b: 85 }, // Mossy Glade
-            { r: 48, g: 92, b: 68 }, // Twilight Green
-            { r: 58, g: 105, b: 78 }, // Evergreen Shadow
-        ],
-        darkBg: "#234230", // Sage Evening - matches theme background
-    },
 };
 
 const BLOB_COUNT = 8; // Reduced from 12 for performance
@@ -201,7 +173,7 @@ const LIGHT_BACKGROUND = "#F8F4F8";
  * These create the radial gradient that follows the cursor.
  */
 const WARM_PRESENCE_COLORS: Record<
-    CssThemeVariant,
+    ThemeVariant,
     { light: { inner: string; outer: string }; dark: { inner: string; outer: string } }
 > = {
     carmenta: {
@@ -243,16 +215,6 @@ const WARM_PRESENCE_COLORS: Record<
         dark: {
             inner: "rgba(140, 145, 160, 0.25)",
             outer: "rgba(120, 125, 140, 0.12)",
-        },
-    },
-    christmas: {
-        light: {
-            inner: "rgba(140, 200, 160, 0.4)",
-            outer: "rgba(180, 220, 190, 0.25)",
-        },
-        dark: {
-            inner: "rgba(70, 130, 90, 0.30)",
-            outer: "rgba(50, 100, 70, 0.18)",
         },
     },
 };
@@ -348,8 +310,6 @@ export function HolographicBackground({
     const { resolvedTheme } = useTheme();
     const { themeVariant } = useThemeVariant();
 
-    // Resolve "holiday" to actual CSS theme (e.g., "christmas")
-    const cssTheme = resolveToCssTheme(themeVariant);
     const holoCanvasRef = useRef<HTMLCanvasElement>(null);
     const shimmerCanvasRef = useRef<HTMLCanvasElement>(null);
     const watermarkRef = useRef<HTMLImageElement>(null);
@@ -386,7 +346,7 @@ export function HolographicBackground({
     // Update theme colors when theme or theme variant changes
     useEffect(() => {
         const isDark = resolvedTheme === "dark";
-        const palette = THEME_PALETTES[cssTheme] || THEME_PALETTES.carmenta;
+        const palette = THEME_PALETTES[themeVariant] || THEME_PALETTES.carmenta;
 
         if (isDark) {
             themeColorsRef.current = {
@@ -399,7 +359,7 @@ export function HolographicBackground({
                 colors: lightColorPalette || palette.light,
             };
         }
-    }, [resolvedTheme, cssTheme, lightColorPalette, darkColorPalette]);
+    }, [resolvedTheme, themeVariant, lightColorPalette, darkColorPalette]);
 
     useEffect(() => {
         const holoCanvas = holoCanvasRef.current;
@@ -702,12 +662,12 @@ export function HolographicBackground({
     const isDark = isClient && resolvedTheme === "dark";
 
     // Get current theme background for canvas fallback (prevents flash on resize)
-    const palette = THEME_PALETTES[cssTheme] || THEME_PALETTES.carmenta;
+    const palette = THEME_PALETTES[themeVariant] || THEME_PALETTES.carmenta;
     const canvasBgColor = isDark ? palette.darkBg : LIGHT_BACKGROUND;
 
     // Theme-aware warm presence colors
     const presenceColors =
-        WARM_PRESENCE_COLORS[cssTheme] || WARM_PRESENCE_COLORS.carmenta;
+        WARM_PRESENCE_COLORS[themeVariant] || WARM_PRESENCE_COLORS.carmenta;
     const { inner: presenceInner, outer: presenceOuter } = isDark
         ? presenceColors.dark
         : presenceColors.light;
