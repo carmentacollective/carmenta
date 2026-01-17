@@ -27,11 +27,7 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 import { glassOrbPreset } from "@/lib/design-tokens";
-import {
-    useThemeVariant,
-    getCurrentHoliday,
-    type ThemeVariant,
-} from "@/lib/theme/theme-context";
+import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 
 // Track whether we're on the client
@@ -67,7 +63,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
     const {
         isSubscribed,
         canSubscribe,
-        unavailableReason,
         isLoading: isPushLoading,
         subscribe: subscribeToPush,
         unsubscribe: unsubscribeFromPush,
@@ -144,7 +139,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
     // Theme variants with primary color for swatch preview
     // Colors derived from --primary HSL values in globals.css (light mode)
-    const currentHoliday = getCurrentHoliday();
     const themeVariants: Array<{
         value: ThemeVariant;
         label: string;
@@ -180,12 +174,6 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
             label: "Monochrome",
             description: "Minimal, precise",
             color: "hsl(0 0% 35%)",
-        },
-        {
-            value: "holiday",
-            label: currentHoliday.label,
-            description: currentHoliday.description,
-            color: currentHoliday.colors[0], // Primary color from current holiday
         },
     ];
 
@@ -258,7 +246,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/connections"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <ClockClockwiseIcon className="text-foreground/60 relative h-4 w-4" />
@@ -270,7 +258,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/knowledge-base"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <BookOpenIcon className="text-foreground/60 relative h-4 w-4" />
@@ -280,7 +268,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/import"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <DownloadSimpleIcon className="text-foreground/60 relative h-4 w-4" />
@@ -295,7 +283,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/integrations"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <PlugIcon className="text-foreground/60 relative h-4 w-4" />
@@ -305,7 +293,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/integrations/mcp"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <PlugsIcon className="text-foreground/60 relative h-4 w-4" />
@@ -320,7 +308,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                               openUserProfile();
                                               setIsOpen(false);
                                           }}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <UserIcon className="text-foreground/60 relative h-4 w-4" />
@@ -330,13 +318,11 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                       <Link
                                           href="/communication"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <ChatTeardropIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative">
-                                              Communication
-                                          </span>
+                                          <span className="relative">How we talk</span>
                                       </Link>
 
                                       {/* Appearance section - compact redesign */}
@@ -443,8 +429,8 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                           </div>
                                       )}
 
-                                      {/* Notifications toggle */}
-                                      {isClient && (
+                                      {/* Notifications toggle - only show when PWA is available */}
+                                      {isClient && canSubscribe && (
                                           <div className="border-foreground/10 border-t px-4 py-3">
                                               <div className="flex items-center justify-between">
                                                   <div className="flex items-center gap-2">
@@ -458,59 +444,41 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
                                                       </span>
                                                   </div>
 
-                                                  {canSubscribe ? (
-                                                      <button
-                                                          onClick={async () => {
-                                                              if (isSubscribed) {
-                                                                  await unsubscribeFromPush();
-                                                              } else {
-                                                                  await subscribeToPush();
-                                                              }
-                                                          }}
-                                                          disabled={isPushLoading}
-                                                          className={cn(
-                                                              "relative h-6 w-11 rounded-full transition-colors",
-                                                              isSubscribed
-                                                                  ? "bg-primary"
-                                                                  : "bg-foreground/20",
-                                                              isPushLoading &&
-                                                                  "cursor-wait opacity-50"
-                                                          )}
-                                                      >
-                                                          <span
-                                                              className={cn(
-                                                                  "bg-background absolute top-0.5 h-5 w-5 rounded-full shadow transition-transform",
-                                                                  isSubscribed
-                                                                      ? "translate-x-[22px]"
-                                                                      : "translate-x-0.5"
-                                                              )}
-                                                          />
-                                                      </button>
-                                                  ) : (
-                                                      <span
-                                                          className="text-foreground/40 cursor-help text-xs"
-                                                          data-tooltip-id="tip"
-                                                          data-tooltip-content={
-                                                              unavailableReason ?? ""
+                                                  <button
+                                                      onClick={async () => {
+                                                          if (isSubscribed) {
+                                                              await unsubscribeFromPush();
+                                                          } else {
+                                                              await subscribeToPush();
                                                           }
-                                                      >
-                                                          Unavailable
-                                                      </span>
-                                                  )}
+                                                      }}
+                                                      disabled={isPushLoading}
+                                                      className={cn(
+                                                          "relative h-6 w-11 rounded-full transition-colors",
+                                                          isSubscribed
+                                                              ? "bg-primary"
+                                                              : "bg-foreground/20",
+                                                          isPushLoading &&
+                                                              "cursor-wait opacity-50"
+                                                      )}
+                                                  >
+                                                      <span
+                                                          className={cn(
+                                                              "bg-background absolute top-0.5 h-5 w-5 rounded-full shadow transition-transform",
+                                                              isSubscribed
+                                                                  ? "translate-x-[22px]"
+                                                                  : "translate-x-0.5"
+                                                          )}
+                                                      />
+                                                  </button>
                                               </div>
-
-                                              {!canSubscribe && unavailableReason && (
-                                                  <p className="text-foreground/50 mt-2 text-xs">
-                                                      {unavailableReason}
-                                                  </p>
-                                              )}
                                           </div>
                                       )}
 
                                       <Link
                                           href="/exit"
                                           onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full flex-row-reverse items-center justify-end gap-3 px-4 py-2.5 text-right text-sm transition-all"
+                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
                                       >
                                           <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                           <SignOutIcon className="text-foreground/60 relative h-4 w-4" />

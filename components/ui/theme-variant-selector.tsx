@@ -1,11 +1,7 @@
 "use client";
 
 import { CheckIcon, PaletteIcon } from "@phosphor-icons/react";
-import {
-    useThemeVariant,
-    getCurrentHoliday,
-    type ThemeVariant,
-} from "@/lib/theme/theme-context";
+import { useThemeVariant, type ThemeVariant } from "@/lib/theme/theme-context";
 import { cn } from "@/lib/utils";
 import * as Popover from "@radix-ui/react-popover";
 
@@ -16,8 +12,8 @@ interface ThemeConfig {
     colors: [string, string, string]; // [primary, secondary, accent]
 }
 
-// Static theme configurations
-const STATIC_THEMES: ThemeConfig[] = [
+// Theme configurations
+const THEMES: ThemeConfig[] = [
     {
         value: "carmenta",
         label: "Carmenta",
@@ -50,28 +46,10 @@ const STATIC_THEMES: ThemeConfig[] = [
     },
 ];
 
-/**
- * Build themes list with dynamic Holiday option based on current date.
- * The Holiday option shows the currently active seasonal theme's info.
- */
-function getThemes(): ThemeConfig[] {
-    const currentHoliday = getCurrentHoliday();
-
-    const holidayTheme: ThemeConfig = {
-        value: "holiday",
-        label: `Holiday: ${currentHoliday.label}`,
-        description: currentHoliday.description,
-        colors: currentHoliday.colors,
-    };
-
-    return [...STATIC_THEMES, holidayTheme];
-}
-
 export function ThemeVariantSelector() {
     const { themeVariant, setThemeVariant } = useThemeVariant();
 
-    const themes = getThemes();
-    const currentTheme = themes.find((t) => t.value === themeVariant);
+    const currentTheme = THEMES.find((t) => t.value === themeVariant);
 
     return (
         <Popover.Root>
@@ -92,7 +70,7 @@ export function ThemeVariantSelector() {
                     align="end"
                 >
                     <div className="space-y-1">
-                        {themes.map((theme) => (
+                        {THEMES.map((theme) => (
                             <button
                                 key={theme.value}
                                 onClick={() => setThemeVariant(theme.value)}
