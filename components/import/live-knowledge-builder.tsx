@@ -20,6 +20,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { SimpleComposer } from "@/components/chat";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -492,10 +493,8 @@ export function LiveKnowledgeBuilder({
                                     </Button>
                                 </div>
 
-                                <div className="bg-muted/50 rounded-md p-3">
-                                    <p className="text-sm whitespace-pre-wrap">
-                                        {selectedDoc.content}
-                                    </p>
+                                <div className="bg-muted/50 prose prose-sm dark:prose-invert max-w-none rounded-md p-3 text-sm">
+                                    <MarkdownRenderer content={selectedDoc.content} />
                                 </div>
 
                                 <div className="space-y-2">
