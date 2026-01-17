@@ -27,6 +27,7 @@ import {
     GoogleWorkspaceFilesToolResult,
     ImgflipToolResult,
     LimitlessToolResult,
+    LinkedInToolResult,
     NotionToolResult,
     QuoToolResult,
     SlackToolResult,
@@ -324,6 +325,18 @@ export function ToolPartRenderer({ part }: ToolPartRendererProps) {
                     input={input}
                     output={output}
                     error={getToolError(part, output, "Limitless request failed")}
+                />
+            );
+
+        case "linkedin":
+            return (
+                <LinkedInToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "LinkedIn request failed")}
                 />
             );
 

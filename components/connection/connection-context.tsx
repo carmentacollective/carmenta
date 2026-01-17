@@ -224,6 +224,8 @@ export function ConnectionProvider({
                 updatedAt: now,
                 lastActivityAt: now,
                 projectPath: partialConnection.projectPath ?? null,
+                source: partialConnection.source ?? "carmenta",
+                importedAt: partialConnection.importedAt ?? null,
             };
 
             setConnections((prev) => {

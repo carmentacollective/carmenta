@@ -81,6 +81,7 @@ export function ModelSelectorTrigger({
                 aria-label="Model settings"
                 data-tooltip-id="tip"
                 data-tooltip-content="Choose how we think"
+                data-highlight="model-selector"
             >
                 {/* showLabel mode: sparkles (+ optional label), otherwise provider icon */}
                 {showLabel ? (
@@ -118,8 +119,8 @@ export function ModelSelectorTrigger({
 
             {/* Modal */}
             <ModelSelectorModal
-                isOpen={settingsOpen}
-                onClose={() => setSettingsOpen(false)}
+                open={settingsOpen}
+                onOpenChange={setSettingsOpen}
                 overrides={overrides}
                 onChange={onChange}
             />

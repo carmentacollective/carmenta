@@ -286,14 +286,8 @@ Focus on durable information: facts about the user, decisions made, people menti
                     await runLibrarian();
                 }
             } catch (error) {
+                // Let error bubble up - Sentry auto-captures via SDK
                 logger.error({ error, conversationId }, "Librarian trigger failed");
-                Sentry.captureException(error, {
-                    tags: {
-                        component: "ai-team",
-                        trigger: "librarian",
-                    },
-                    extra: { conversationId, userId },
-                });
                 throw error;
             }
         }

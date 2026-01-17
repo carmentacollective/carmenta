@@ -34,6 +34,8 @@ const createMockConnection = (
     updatedAt: new Date("2024-01-01"),
     lastActivityAt: new Date("2024-01-01"),
     projectPath: null,
+    source: "carmenta",
+    importedAt: null,
     ...overrides,
 });
 

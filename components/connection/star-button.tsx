@@ -39,9 +39,11 @@ export function StarButton({
     const padding = size === "sm" ? "p-1.5" : "p-2";
     const { trigger: triggerHaptic } = useHapticFeedback();
 
-    // Track sparkle animation state
+    // Track animation states
     const [showSparkle, setShowSparkle] = useState(false);
+    const [showFadeOut, setShowFadeOut] = useState(false);
     const sparkleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Trigger sparkle when starring (called from onClick)
     const triggerSparkle = () => {
@@ -52,11 +54,23 @@ export function StarButton({
         sparkleTimeoutRef.current = setTimeout(() => setShowSparkle(false), 600);
     };
 
-    // Cleanup timeout on unmount
+    // Trigger fade-out when unstarring (called from onClick)
+    const triggerFadeOut = () => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+        }
+        setShowFadeOut(true);
+        fadeTimeoutRef.current = setTimeout(() => setShowFadeOut(false), 300);
+    };
+
+    // Cleanup timeouts on unmount
     useEffect(() => {
         return () => {
             if (sparkleTimeoutRef.current) {
                 clearTimeout(sparkleTimeoutRef.current);
+            }
+            if (fadeTimeoutRef.current) {
+                clearTimeout(fadeTimeoutRef.current);
             }
         };
     }, []);
@@ -65,13 +79,15 @@ export function StarButton({
         <button
             onClick={(e) => {
                 e.stopPropagation();
-                // Trigger sparkle only when starring (not unstarring)
+                // Trigger animations based on action
                 if (!isStarred) {
+                    // Starring: sparkle burst
                     triggerSparkle();
-                    triggerHaptic();
                 } else {
-                    triggerHaptic();
+                    // Unstarring: subtle fade-out
+                    triggerFadeOut();
                 }
+                triggerHaptic();
                 onToggle();
             }}
             className={cn(
@@ -94,6 +110,7 @@ export function StarButton({
                 label || (isStarred ? "Remove from starred" : "Pin to top of list")
             }
             aria-label={label || (isStarred ? "Unstar connection" : "Star connection")}
+            data-highlight="star-button"
             aria-pressed={isStarred}
         >
             {/* Sparkle burst on starring */}
@@ -121,7 +138,9 @@ export function StarButton({
                         ? "text-amber-400"
                         : "text-foreground/30 hover:text-foreground/50",
                     // Pop animation on starring
-                    showSparkle && "animate-star-pop"
+                    showSparkle && "animate-star-pop",
+                    // Fade-out animation on unstarring
+                    showFadeOut && "animate-star-fade-out"
                 )}
             />
         </button>

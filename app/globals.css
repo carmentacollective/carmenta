@@ -2636,4 +2636,36 @@
             }
         }
     }
+
+    /*
+     * Feature Tip Highlight Animation
+     *
+     * Used to draw attention to UI elements when users click tip CTAs.
+     * The highlight-pulse class is applied via useHighlightElement hook.
+     */
+    @keyframes highlight-pulse {
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+        }
+        50% {
+            box-shadow: 0 0 0 8px hsl(var(--primary) / 0.4);
+        }
+    }
+
+    .highlight-pulse {
+        animation: highlight-pulse 0.6s ease-in-out 3;
+        outline: 2px solid hsl(var(--primary) / 0.6);
+        outline-offset: 2px;
+        z-index: 50;
+        position: relative;
+    }
+
+    /* Reduced motion: simplified highlight */
+    @media (prefers-reduced-motion: reduce) {
+        .highlight-pulse {
+            animation: none;
+            outline-width: 3px;
+        }
+    }
 }

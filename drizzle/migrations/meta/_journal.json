@@ -141,6 +141,13 @@
       "when": 1768420111756,
       "tag": "0031_funny_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1768600319516,
+      "tag": "0032_feature-tips-system",
+      "breakpoints": true
     }
   ]
 }

@@ -1,154 +1,211 @@
 # Error Handling
 
-Error tracking, reporting, and recovery - catching problems before users notice them,
-understanding what went wrong when they do, and building resilience into the system.
+How errors flow through the system, where they're caught, and when to intervene.
 
-## Why This Exists
+## The Policy
 
-Things break. APIs fail. Models hallucinate. Edge cases surprise you. The question isn't
-whether errors will happen - it's whether you'll know about them, understand them, and
-fix them quickly.
+**Let errors throw.** Don't add try-catch unless it serves one of two purposes:
 
-Good error handling is invisible when it works. Errors get caught, logged, and often
-recovered from automatically. When errors do surface, we get helpful messages, not stack
-traces. And developers get the context they need to fix issues fast.
+1. **API Routes** - Return structured JSON via `serverErrorResponse()`
+2. **Graceful Degradation** - Return fallbacks when failure is acceptable
 
-## Core Functions
-
-### Error Capture
-
-Catch and record errors across the system:
-
-- Uncaught exceptions and crashes
-- API failures and timeouts
-- Validation errors
-- AI-specific errors (model failures, content policy violations)
-
-### Error Context
-
-Capture the context needed to debug:
-
-- User and session information
-- Request data and state
-- Stack traces and source maps
-- Breadcrumbs (recent user actions)
-- Environment information
-
-### Error Reporting
-
-Surface errors to the right people:
-
-- Real-time alerts for critical errors
-- Aggregation and deduplication
-- Trend detection (new errors, regressions)
-- Assignment and tracking
-
-### Error Recovery
-
-Handle errors gracefully:
-
-- Retry logic for transient failures
-- Fallback behaviors when services are unavailable
-- Graceful degradation
-- User-friendly error messages
-
-## Technology Choice: Sentry
-
-We use Sentry for error tracking. Decision rationale:
-
-- **Best-in-class error tracking**: Source maps, stack traces, breadcrumbs
-- **Next.js integration**: First-party SDK with automatic instrumentation
-- **Performance monitoring**: Traces and spans integrated with errors
-- **Unified with LLM observability**: Single platform for errors + AI tracing (see
-  observability.md)
-- **Separates concerns**: PostHog for product analytics, Sentry for errors
-
-Sentry captures exceptions with rich context. See `typescript-coding-standards.mdc` for
-usage patterns: `Sentry.captureException` with tags and extra data, breadcrumbs for
-state changes, spans for performance monitoring.
-
-## Implementation (M1)
-
-### Error Boundaries
-
-We use Next.js App Router error boundaries at two levels:
-
-- **`app/global-error.tsx`**: Catches errors in the root layout. Last line of defense.
-  Renders a full-page error UI with retry button.
-- **`app/error.tsx`**: Catches errors in route segments. Shows inline error with retry
-  and home link options.
-
-Both boundaries:
-
-- Report to Sentry with `Sentry.captureException`
-- Include error digest for correlation
-- Show user-friendly messages (no stack traces)
-- Provide retry functionality
-
-### API Error Handling
-
-API routes wrap logic in try-catch and report to Sentry:
-
-```typescript
-try {
-  // ... route logic
-} catch (error) {
-  logger.error({ error }, "Request failed");
-  Sentry.captureException(error, {
-    tags: { component: "api", route: "chat" },
-  });
-  return new Response(JSON.stringify({ error: "User-friendly message" }), {
-    status: 500,
-  });
-}
-```
-
-### Configuration
-
-- **Production**: Sentry enabled by default
-- **Development**: Disabled unless `SENTRY_ENABLED=true` in `.env.local`
-- **Sampling**: 100% in dev, 10% in production (adjustable)
-- **Session replay**: Enabled for debugging user issues
-
-## Integration Points
-
-- **All components**: Every component should integrate error handling
-- **Observability**: Errors correlate with Sentry traces for debugging
-- **Analytics**: Error events as part of user journey (separate from PostHog)
-- **Interface**: User-facing error states and messages
-- **Scheduled Agents**: Alert on scheduled job failures
-
-## Success Criteria
-
-- Errors are captured with enough context to debug
-- Critical errors alert the team immediately
-- Error trends are visible and tracked
-- We see helpful messages, not technical errors
-- Recovery happens automatically when possible
+Everything else: error boundaries, SDK hooks, and wrappers handle capture automatically.
 
 ---
 
-## Decisions Made
+## Why This Policy
 
-- **Error boundaries**: Route-level (`error.tsx`) + global (`global-error.tsx`). No
-  component-level boundaries yet - add as needed for complex components.
-- **User communication**: Inline error UI with retry button. No toasts yet.
-- **Error detail level**: Generic user-friendly messages. Technical details only in
-  Sentry.
+### What Catches Errors Automatically
 
-## Open Questions
+| Context           | Caught By                               | What Happens                              |
+| ----------------- | --------------------------------------- | ----------------------------------------- |
+| React Components  | `app/error.tsx`, `app/global-error.tsx` | User sees error UI, Sentry captures       |
+| Server Components | `onRequestError` hook                   | Sentry captures, error propagates         |
+| Server Actions    | `onRequestError` hook                   | Sentry captures, caller gets rejection    |
+| Middleware        | `onRequestError` hook                   | Sentry captures                           |
+| AI Agent Tools    | `safeInvoke()` wrapper                  | Sentry captures, returns structured error |
 
-### Architecture
+### When Try-Catch Adds Value
 
-- **Retry strategies**: What's our retry policy for different failure types?
-- **Fallback behaviors**: What do we show/do when components fail?
+**API Routes** - Clients need JSON, not raw 500s:
 
-### Product Decisions
+```typescript
+// ✅ KEEP - Returns structured response
+try {
+  const data = await doThing();
+  return NextResponse.json(data);
+} catch (error) {
+  return serverErrorResponse(error, { context: "doThing" });
+}
+```
 
-- **Recovery options**: Beyond retry, what actions can users take? Report button?
+**Graceful Degradation** - Feature fails but app continues:
 
-### Technical Specifications Needed
+```typescript
+// ✅ KEEP - Returns fallback, doesn't crash
+export async function getRedisClient() {
+  try {
+    return await connectRedis();
+  } catch (error) {
+    Sentry.captureException(error, { level: "warning" });
+    return null; // App works without cache
+  }
+}
+```
 
-- Error classification taxonomy
-- Retry and fallback patterns for LLM failures
-- Alert routing and escalation rules
+### When Try-Catch Is Noise
+
+**AI Agent Tools** - Wrapper handles everything:
+
+```typescript
+// ❌ REMOVE - safeInvoke already does this
+try {
+  const result = await kb.search(query);
+  return successResult(result);
+} catch (error) {
+  logger.error({ error }, "Search failed");
+  Sentry.captureException(error);
+  return errorResult("PERMANENT", error.message);
+}
+
+// ✅ CORRECT - Let it throw, wrapper catches
+const result = await kb.search(query);
+return successResult(result);
+```
+
+**Server Actions** - SDK catches thrown errors:
+
+```typescript
+// ❌ REMOVE - SDK captures via onRequestError
+try {
+  await db.update(data);
+} catch (error) {
+  logger.error({ error }, "Update failed");
+  throw error;
+}
+
+// ✅ CORRECT - Just do the operation
+await db.update(data);
+```
+
+**Server Actions with Typed Results** - Like API routes, need manual capture:
+
+```typescript
+// ✅ KEEP - Returns structured response for client display
+// onRequestError only captures thrown errors, not caught ones
+try {
+  await connectService(serviceId);
+  return { success: true };
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: { component: "action", action: "connect_service" },
+  });
+  return { success: false, error: "Couldn't connect - check your credentials" };
+}
+```
+
+When a server action returns typed results (`{ success, error }`), it must capture
+manually because the error is caught, not thrown.
+
+---
+
+## Architecture
+
+### Error Boundaries
+
+```
+app/
+├── global-error.tsx    # Root boundary (catches layout errors)
+└── error.tsx           # Route boundary (catches page errors)
+```
+
+Both boundaries:
+
+- Capture to Sentry with context
+- Auto-refresh once (handles deployment transitions)
+- Show error UI if error persists
+
+### SDK Configuration
+
+```
+project-root/
+├── instrumentation.ts       # Registers server + edge SDK, exports onRequestError
+├── sentry.server.config.ts  # Server runtime config
+├── sentry.edge.config.ts    # Edge runtime config
+└── sentry.client.config.ts  # Browser config with beforeSend filtering
+```
+
+Key settings:
+
+- `tracesSampleRate: 1.0` - Full trace visibility (DO NOT reduce)
+- `enabled: process.env.NODE_ENV === "production"` - No dev noise
+- `beforeSend` filters by stack trace origin, not error message
+
+### Wrapper Functions
+
+**`serverErrorResponse()`** - API routes:
+
+```typescript
+// lib/api/responses.ts
+export function serverErrorResponse(error: unknown, context?: object) {
+  logger.error({ error, ...context }, "API error");
+  Sentry.captureException(error, { extra: context });
+  return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+}
+```
+
+**`safeInvoke()`** - AI agent tools:
+
+```typescript
+// lib/ai-team/dcos/utils.ts
+// Wraps tool execution with timeout + error normalization + Sentry spans
+// Tools can just throw - wrapper converts to SubagentResult
+```
+
+---
+
+## Legitimate Capture Sites
+
+After cleanup, manual `Sentry.captureException` should only exist in:
+
+| Location                        | Why Manual Capture                  |
+| ------------------------------- | ----------------------------------- |
+| `app/error.tsx`                 | Next.js intercepts for recovery UI  |
+| `app/global-error.tsx`          | Next.js intercepts for recovery UI  |
+| `lib/api/responses.ts`          | Catch for structured JSON response  |
+| `lib/ai-team/dcos/utils.ts`     | Wrapper for all agent tools         |
+| `worker/lib/activity-sentry.ts` | Temporal wraps errors, losing stack |
+| Graceful degradation sites      | Intentional fallback behavior       |
+
+Everything else should let errors throw to boundaries.
+
+---
+
+## The Test
+
+Before adding try-catch, ask:
+
+1. **Does this need a user-friendly JSON response?** → Use `serverErrorResponse()`
+2. **Does this intentionally return a fallback?** → Keep, add Sentry capture
+3. **Is there a wrapper that already handles this?** → Remove try-catch
+4. **Will an error boundary catch this?** → Remove try-catch
+
+If you can't answer "why won't automatic capture catch this?" - you don't need
+try-catch.
+
+---
+
+## Graceful Degradation Sites
+
+These are intentional - failure returns fallback instead of crashing:
+
+| File                     | Function                   | Fallback             | Rationale                       |
+| ------------------------ | -------------------------- | -------------------- | ------------------------------- |
+| `lib/redis/client.ts`    | `getRedisClient()`         | `null`               | App works without cache         |
+| `lib/title/generator.ts` | `generateTitle()`          | Default title        | Don't block connection creation |
+| `lib/title/evolution.ts` | `evaluateTitleEvolution()` | `{ action: "keep" }` | Keep current title              |
+| `lib/concierge/index.ts` | `runConcierge()`           | `CONCIERGE_DEFAULTS` | Don't block chat                |
+| `lib/sparks/actions.ts`  | `getSparkData()`           | Empty arrays         | Sparks are optional             |
+| `lib/storage/upload.ts`  | Spreadsheet parsing        | Skip extraction      | File still uploads              |
+
+These KEEP their try-catch because the fallback behavior is intentional design.

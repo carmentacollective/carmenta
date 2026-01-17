@@ -327,6 +327,27 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             fast: ["Quick recall!", "Found that fast"],
         },
     },
+    linkedin: {
+        displayName: "LinkedIn",
+        icon: "/logos/linkedin.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            if (action === "get_profile") return "fetching profile";
+            if (action === "create_post") return "posting";
+            if (action === "get_organization") return "looking up org";
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Working with LinkedIn...",
+            completed: "LinkedIn ready",
+            error: "Had trouble with LinkedIn. Our monitoring caught it. 🤖",
+        },
+        delightMessages: {
+            completed: ["Posted", "Profile checked", "Done"],
+            fast: ["Quick!", "Done"],
+        },
+    },
     // Service integrations (alphabetical order)
     calculate: {
         displayName: "Calculator",

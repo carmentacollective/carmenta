@@ -67,6 +67,9 @@ export const env = createEnv({
         // In-house OAuth credentials - Twitter/X
         TWITTER_CLIENT_ID: z.string().min(1).optional(),
         TWITTER_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - LinkedIn
+        LINKEDIN_CLIENT_ID: z.string().min(1).optional(),
+        LINKEDIN_CLIENT_SECRET: z.string().min(1).optional(),
         // Braintrust API key for evals and production tracing
         BRAINTRUST_API_KEY: z.string().min(1).optional(),
         // Deepgram API key for real-time voice transcription
@@ -145,6 +148,8 @@ export const env = createEnv({
         SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
         TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID,
         TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET,
+        LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
+        LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
         BRAINTRUST_API_KEY: process.env.BRAINTRUST_API_KEY,
         DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY,
         DATABASE_URL: process.env.DATABASE_URL,

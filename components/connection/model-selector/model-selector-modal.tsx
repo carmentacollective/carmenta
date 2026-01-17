@@ -118,9 +118,9 @@ const REASONING_SLIDER_PRESETS = REASONING_PRESETS.filter((p) => p.id !== "auto"
 
 interface ModelSelectorModalProps {
     /** Whether the modal is open */
-    isOpen: boolean;
-    /** Callback to close the modal */
-    onClose: () => void;
+    open: boolean;
+    /** Callback when open state changes (Radix pattern) */
+    onOpenChange: (open: boolean) => void;
     /** Current override values */
     overrides: ModelOverrides;
     /** Callback when overrides change */
@@ -128,8 +128,8 @@ interface ModelSelectorModalProps {
 }
 
 export function ModelSelectorModal({
-    isOpen,
-    onClose,
+    open,
+    onOpenChange,
     overrides,
     onChange,
 }: ModelSelectorModalProps) {
@@ -192,7 +192,7 @@ export function ModelSelectorModal({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col gap-0 overflow-hidden p-0">
                 {/* Hidden title and description for accessibility */}
                 <DialogTitle className="sr-only">Select Model</DialogTitle>
@@ -387,7 +387,7 @@ export function ModelSelectorModal({
                                     temperature: null,
                                     reasoning: null,
                                 });
-                                onClose();
+                                onOpenChange(false);
                             }}
                             className="text-muted-foreground hover:text-primary hover:bg-primary/10 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-all"
                         >

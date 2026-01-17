@@ -191,7 +191,31 @@ export function isValidJobId(id: string): boolean {
 }
 
 /**
- * Slugify a string for URLs.
+ * Generate a filename for a downloaded image based on prompt.
+ *
+ * Format: `carmenta-image-{slug}` where slug is derived from prompt.
+ * Falls back to `carmenta-image` when prompt is empty or special-chars only.
+ *
+ * @param prompt - The image generation prompt
+ * @returns Filename without extension (e.g., "carmenta-image-sunset-over-mountains")
+ *
+ * @example
+ * generateImageFilename("A sunset over mountains")
+ * // => "carmenta-image-sunset-over-mountains"
+ *
+ * generateImageFilename("✨🎨")
+ * // => "carmenta-image"
+ *
+ * generateImageFilename("")
+ * // => "carmenta-image"
+ */
+export function generateImageFilename(prompt: string | null | undefined): string {
+    const slug = slugify(prompt ?? "", 40);
+    return slug ? `carmenta-image-${slug}` : "carmenta-image";
+}
+
+/**
+ * Slugify a string for URLs or filenames.
  *
  * - Converts to lowercase
  * - Removes emojis and special characters
@@ -201,9 +225,10 @@ export function isValidJobId(id: string): boolean {
  * - Limits length for clean URLs
  *
  * @param text - Text to slugify
+ * @param maxLength - Maximum length (default: 60)
  * @returns URL-safe slug
  */
-function slugify(text: string): string {
+export function slugify(text: string, maxLength = 60): string {
     return (
         text
             .toLowerCase()
@@ -219,8 +244,8 @@ function slugify(text: string): string {
             .replace(/-+/g, "-")
             // Trim hyphens from start and end
             .replace(/^-|-$/g, "")
-            // Limit length to 60 chars for clean, readable URLs
-            .slice(0, 60)
+            // Limit length for clean, readable URLs/filenames
+            .slice(0, maxLength)
             // Trim trailing hyphen if we cut mid-word
             .replace(/-$/, "")
     );

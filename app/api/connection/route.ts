@@ -642,9 +642,12 @@ export async function POST(req: Request) {
 
         // Create Image Artist agent tool
         // Uses task-based model routing from 195-image eval results
+        // Extended timeout (5 min) because image generation can be slow,
+        // especially Imagen Ultra which can take 90+ seconds
         const imageArtistTool = createImageArtistTool({
             userId: dbUser.id,
             userEmail: userEmail!,
+            timeoutMs: 300_000,
         });
 
         // Create SMS tool for Carmenta to text the user

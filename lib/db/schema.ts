@@ -201,6 +201,19 @@ export const users = pgTable(
         imageUrl: varchar("image_url", { length: 2048 }),
         preferences: jsonb("preferences").$type<UserPreferences>().default({}),
         lastSignedInAt: timestamp("last_signed_in_at", { withTimezone: true }),
+
+        /**
+         * Session count for feature tips gating.
+         * Incremented daily on first activity. Used to determine when to start
+         * showing tips (session 4+) and tip display frequency.
+         */
+        sessionCount: integer("session_count").notNull().default(0),
+
+        /**
+         * Last session date for session count tracking.
+         * Stored as date string (YYYY-MM-DD) to track daily unique sessions.
+         */
+        lastSessionDate: varchar("last_session_date", { length: 10 }),
         createdAt: timestamp("created_at", { withTimezone: true })
             .notNull()
             .defaultNow(),
@@ -2378,3 +2391,100 @@ export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one })
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+// ============================================================================
+// FEATURE TIP VIEWS (Feature Discovery System)
+// ============================================================================
+
+/**
+ * Feature tip interaction state
+ * - shown: Tip was displayed, user didn't interact (navigated away, started typing)
+ * - dismissed: User explicitly clicked X
+ * - engaged: User clicked CTA (feature was discovered)
+ */
+export const featureTipStateEnum = pgEnum("feature_tip_state", [
+    "shown",
+    "dismissed",
+    "engaged",
+]);
+
+/**
+ * Feature Tip Views - tracks which tips users have seen
+ *
+ * Used for weighted tip selection algorithm:
+ * - Unseen tips get highest weight
+ * - Shown-but-not-dismissed tips get moderate weight
+ * - Dismissed tips excluded for 30 days
+ * - Engaged tips excluded permanently
+ *
+ * Design decisions:
+ * - One row per user-tip pair (not per impression)
+ * - shown_count tracks repeat views for weighting
+ * - state_changed_at enables 30-day dismiss timeout
+ */
+export const featureTipViews = pgTable(
+    "feature_tip_views",
+    {
+        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+
+        /** User who saw the tip */
+        userId: uuid("user_id")
+            .references(() => users.id, { onDelete: "cascade" })
+            .notNull(),
+
+        /** Feature ID from feature-catalog.ts (e.g., "multi-model") */
+        tipId: varchar("tip_id", { length: 100 }).notNull(),
+
+        /** When the tip was first shown to this user */
+        firstShownAt: timestamp("first_shown_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** When the tip was most recently shown */
+        lastShownAt: timestamp("last_shown_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        /** How many times this tip has been shown to this user */
+        shownCount: integer("shown_count").notNull().default(1),
+
+        /** Current interaction state */
+        state: featureTipStateEnum("state").notNull().default("shown"),
+
+        /** When the state was last changed (for dismiss timeout calculation) */
+        stateChangedAt: timestamp("state_changed_at", { withTimezone: true }),
+
+        createdAt: timestamp("created_at", { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+
+        updatedAt: timestamp("updated_at", { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdate(() => new Date()),
+    },
+    (table) => [
+        /** Primary lookup: user's tip views for selection algorithm */
+        index("feature_tip_views_user_idx").on(table.userId),
+        /** Unique constraint: one row per user-tip pair */
+        uniqueIndex("feature_tip_views_user_tip_idx").on(table.userId, table.tipId),
+        /** Find dismissed tips for timeout check */
+        index("feature_tip_views_state_changed_idx").on(
+            table.state,
+            table.stateChangedAt
+        ),
+    ]
+);
+
+/**
+ * Relations for feature tip views
+ */
+export const featureTipViewsRelations = relations(featureTipViews, ({ one }) => ({
+    user: one(users, {
+        fields: [featureTipViews.userId],
+        references: [users.id],
+    }),
+}));
+
+export type FeatureTipView = typeof featureTipViews.$inferSelect;
+export type NewFeatureTipView = typeof featureTipViews.$inferInsert;

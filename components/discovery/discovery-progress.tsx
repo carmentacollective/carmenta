@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { ArrowRightIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { KBSidebar } from "@/components/knowledge-viewer/kb-sidebar";
 import { logger } from "@/lib/client-logger";
+import { extractionsToFolders } from "@/lib/import/extraction/to-kb-structure";
 import type { ExtractionStats } from "@/lib/import/extraction/types";
+import type { PendingExtraction } from "@/lib/db/schema";
 
 interface DiscoveryProgressProps {
     jobId: string;
     totalConversations: number;
     onComplete: (stats: ExtractionStats) => void;
-    onContinue: () => void;
+    onError?: (error: string) => void;
 }
 
 const MAX_CONSECUTIVE_ERRORS = 5;
@@ -21,17 +23,18 @@ const MAX_CONSECUTIVE_ERRORS = 5;
  * Phase 2: Discovery in progress
  *
  * Shows real-time progress as Carmenta reads through imported conversations
- * and discovers knowledge to extract.
+ * and discovers knowledge to extract. Displays a live preview of the KB
+ * structure filling in as items are discovered.
  */
 export function DiscoveryProgress({
     jobId,
     totalConversations,
     onComplete,
-    onContinue,
+    onError,
 }: DiscoveryProgressProps) {
-    const [stats, setStats] = useState<ExtractionStats | null>(null);
+    const [_stats, setStats] = useState<ExtractionStats | null>(null);
     const [processedCount, setProcessedCount] = useState(0);
-    const [latestFinding, setLatestFinding] = useState<string | null>(null);
+    const [extractions, setExtractions] = useState<PendingExtraction[]>([]);
     const [isComplete, setIsComplete] = useState(false);
     const [pollingError, setPollingError] = useState<string | null>(null);
     const consecutiveErrorsRef = useRef(0);
@@ -42,7 +45,10 @@ export function DiscoveryProgress({
         if (hasCalledComplete.current) return;
 
         try {
-            const response = await fetch(`/api/import/extract?jobId=${jobId}`);
+            // Fetch extractions with a higher limit for display
+            const response = await fetch(
+                `/api/import/extract?jobId=${jobId}&status=pending&limit=100`
+            );
 
             if (!response.ok) {
                 consecutiveErrorsRef.current++;
@@ -67,10 +73,34 @@ export function DiscoveryProgress({
             // Handle failed extraction jobs
             if (data.jobStatus === "failed") {
                 hasCalledComplete.current = true;
-                setPollingError(
+                const errorMessage =
                     data.errorMessage ||
-                        "Discovery failed. Some conversations may not have been processed."
-                );
+                    "Discovery failed. Some conversations may not have been processed.";
+
+                // Call onError to let parent handle the error state with recovery options
+                if (onError) {
+                    onError(errorMessage);
+                } else {
+                    // Fallback: show error inline and allow user to proceed
+                    setPollingError(errorMessage);
+                    // Call onComplete with zero stats to allow user to continue
+                    onComplete({
+                        total: 0,
+                        pending: 0,
+                        approved: 0,
+                        rejected: 0,
+                        edited: 0,
+                        byCategory: {
+                            identity: 0,
+                            person: 0,
+                            project: 0,
+                            preference: 0,
+                            decision: 0,
+                            expertise: 0,
+                            voice: 0,
+                        },
+                    });
+                }
                 return;
             }
 
@@ -90,9 +120,9 @@ export function DiscoveryProgress({
                 }
             }
 
-            // Show latest finding if available
-            if (data.latestExtraction) {
-                setLatestFinding(data.latestExtraction.content);
+            // Update extractions for live KB display
+            if (data.extractions) {
+                setExtractions(data.extractions);
             }
         } catch (err) {
             consecutiveErrorsRef.current++;
@@ -104,16 +134,15 @@ export function DiscoveryProgress({
                 );
             }
         }
-    }, [jobId, totalConversations, onComplete]);
+    }, [jobId, totalConversations, onComplete, onError]);
 
     useEffect(() => {
-        // Initial poll on mount (via setTimeout to avoid synchronous setState in effect)
+        // Initial poll on mount (via queueMicrotask to avoid synchronous setState in effect)
         // Then poll every 2 seconds
-        const timeout = setTimeout(pollProgress, 0);
+        queueMicrotask(pollProgress);
         const interval = setInterval(pollProgress, 2000);
 
         return () => {
-            clearTimeout(timeout);
             clearInterval(interval);
         };
     }, [pollProgress]);
@@ -123,18 +152,14 @@ export function DiscoveryProgress({
             ? Math.min(100, Math.round((processedCount / totalConversations) * 100))
             : 0;
 
-    const categoryStats = stats?.byCategory || {
-        project: 0,
-        person: 0,
-        preference: 0,
-        decision: 0,
-        identity: 0,
-        expertise: 0,
-    };
+    // Transform extractions to KB folder structure for display
+    const kbFolders = useMemo(() => extractionsToFolders(extractions), [extractions]);
+
+    const hasExtractions = extractions.length > 0;
 
     return (
         <Card>
-            <CardContent className="py-12">
+            <CardContent className="py-8">
                 <div className="flex flex-col items-center justify-center text-center">
                     {!isComplete && <LoadingSpinner size={48} />}
 
@@ -146,7 +171,7 @@ export function DiscoveryProgress({
 
                     {!isComplete && (
                         <p className="text-muted-foreground mt-1 text-sm">
-                            Surfacing projects, people, preferences, and decisions
+                            Surfacing projects, people, preferences
                         </p>
                     )}
 
@@ -171,51 +196,27 @@ export function DiscoveryProgress({
                         </div>
                     )}
 
-                    {/* Latest finding */}
-                    {latestFinding && (
-                        <div className="bg-muted/50 mt-6 max-w-md rounded-lg p-4">
-                            <p className="text-muted-foreground text-sm">Just found:</p>
-                            <p className="mt-1 line-clamp-2 text-sm">{latestFinding}</p>
-                        </div>
-                    )}
-
-                    {/* Category counts */}
-                    {stats && stats.total > 0 && (
-                        <div className="mt-6">
-                            <p className="text-muted-foreground mb-2 text-sm">
-                                Found so far:
-                            </p>
-                            <div className="text-muted-foreground flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm">
-                                {categoryStats.project > 0 && (
-                                    <span>{categoryStats.project} projects</span>
-                                )}
-                                {categoryStats.person > 0 && (
-                                    <span>{categoryStats.person} people</span>
-                                )}
-                                {categoryStats.preference > 0 && (
-                                    <span>{categoryStats.preference} preferences</span>
-                                )}
-                                {categoryStats.decision > 0 && (
-                                    <span>{categoryStats.decision} decisions</span>
-                                )}
+                    {/* Live KB Preview */}
+                    {hasExtractions && (
+                        <div className="border-foreground/10 mt-6 w-full max-w-md border-t pt-6">
+                            <div className="bg-muted/30 max-h-80 overflow-y-auto rounded-xl">
+                                <KBSidebar
+                                    folders={kbFolders}
+                                    selectedPath={null}
+                                    onSelect={() => {}}
+                                    dimmed={false}
+                                    className="!glass-card !max-h-none !w-full !rounded-none bg-transparent"
+                                />
                             </div>
                         </div>
                     )}
 
-                    {/* Continue button */}
-                    <div className="mt-8 border-t pt-6">
-                        <p className="text-muted-foreground mb-4 text-sm">
-                            This runs in the background. You can keep using Carmenta.
-                        </p>
-                        <Button
-                            variant="outline"
-                            onClick={onContinue}
-                            className="gap-2"
-                        >
-                            Continue to Carmenta
-                            <ArrowRightIcon className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    {/* Footer message */}
+                    <p className="text-muted-foreground mt-6 text-sm">
+                        This runs in the background.
+                        <br />
+                        You can keep using Carmenta.
+                    </p>
                 </div>
             </CardContent>
         </Card>

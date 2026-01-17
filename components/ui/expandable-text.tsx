@@ -112,23 +112,25 @@ export function ExpandableText({
                     "absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
                     // Base sizing
                     "flex h-8 w-8 items-center justify-center rounded-full",
-                    // Holographic gradient background
-                    "bg-gradient-to-b from-purple-300 to-pink-300 opacity-90",
-                    // Shadow and ring
-                    "shadow-lg ring-1 ring-white/20",
+                    // Theme-aware background with glass effect
+                    "bg-primary/85 backdrop-blur-sm",
+                    // Shadow - subtle depth with theme-tinted glow
+                    "shadow-primary/25 shadow-lg",
+                    // Ring for definition
+                    "ring-1 ring-white/30 dark:ring-white/20",
                     // Transitions
                     "transition-all duration-200",
-                    // Hover state
-                    "hover:scale-110 hover:shadow-xl",
-                    // Active state
-                    "active:translate-y-1/2 active:scale-95",
-                    // Focus state
-                    "focus:ring-primary/60 focus:ring-2 focus:outline-none"
+                    // Hover state - brighter and lifted
+                    "hover:bg-primary/95 hover:shadow-primary/30 hover:scale-110 hover:shadow-xl",
+                    // Active state - pressed feel
+                    "active:shadow-primary/20 active:translate-y-1/2 active:scale-95 active:shadow-md",
+                    // Focus state - prominent ring for keyboard nav
+                    "focus-visible:ring-primary-foreground/60 focus-visible:ring-2 focus-visible:outline-none"
                 )}
             >
                 <CaretDownIcon
                     className={cn(
-                        "h-4 w-4 text-white transition-transform duration-300",
+                        "text-primary-foreground h-4 w-4 transition-transform duration-300",
                         isExpanded && "rotate-180"
                     )}
                 />

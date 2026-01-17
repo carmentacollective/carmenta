@@ -8,6 +8,35 @@
  * Each feature can appear on one or both surfaces with appropriate copy.
  */
 
+/**
+ * Engagement actions define what happens when a user clicks the tip's CTA.
+ *
+ * - navigate: Go to a page (internal or external)
+ * - highlight: Flash/pulse a UI element to show where the feature is
+ * - open-panel: Open a settings panel or modal
+ * - prefill: Put text in the composer to demonstrate a feature
+ * - dismiss: Just close the tip (informational only)
+ */
+export type EngagementAction =
+    | { type: "navigate"; href: string; external?: boolean }
+    | { type: "highlight"; element: HighlightTarget; duration?: number }
+    | { type: "open-panel"; panel: "settings" | "model-selector" }
+    | { type: "prefill"; text: string }
+    | { type: "dismiss" };
+
+/**
+ * UI elements that can be highlighted.
+ * These map to data-highlight attributes in the UI.
+ */
+export type HighlightTarget =
+    | "model-selector"
+    | "attachment-button"
+    | "star-button"
+    | "edit-button"
+    | "regenerate-button"
+    | "temperature-control"
+    | "thinking-toggle";
+
 export interface Feature {
     /** Unique identifier */
     id: string;
@@ -24,16 +53,12 @@ export interface Feature {
     /** Brief feature description for tips */
     tipDescription: string;
 
-    // Call to action (optional - not all features have one)
-    cta?: {
-        /** Button text */
+    // Engagement (what happens when user clicks the tip)
+    engagement?: {
+        /** Button text: "Try it", "Connect", "See how" */
         label: string;
-        /** Type of action */
-        action: "link" | "settings";
-        /** URL for link actions */
-        href?: string;
-        /** Opens in new tab (links only) */
-        external?: boolean;
+        /** What happens on click */
+        action: EngagementAction;
     };
 
     // Display configuration
@@ -74,9 +99,13 @@ export const FEATURES: Feature[] = [
         headline: "Every model. One place.",
         tagline:
             "Claude Opus, Sonnet, ChatGPT, Gemini, Grok—the frontier models, unified. One subscription. Context that persists across all of them.",
-        tipTitle: "Every Model, One Interface",
+        tipTitle: "Every Model, One Place",
         tipDescription:
-            "Carmenta's concierge automatically selects the best AI model for each task—Claude, GPT-4, Gemini, and more. Or choose your own.",
+            "We pick the right model for each question—Claude, GPT, Gemini, and more. Or choose your own.",
+        engagement: {
+            label: "Choose a model",
+            action: { type: "highlight", element: "model-selector", duration: 2000 },
+        },
         available: true,
         display: { homepage: true, connectPage: true },
         priority: 10,
@@ -86,9 +115,16 @@ export const FEATURES: Feature[] = [
         headline: "The best answer, automagically.",
         tagline:
             "We select the right model, reasoning depth, and creativity for each request. You ask. We figure out how to deliver.",
-        tipTitle: "The Best Answer, Automagically",
+        tipTitle: "The Best Answer, Automatically",
         tipDescription:
-            "We analyze your request and route it to the ideal model with the right settings. You focus on what you need—we handle how.",
+            "We match each question to the right model and settings. You focus on what you need—we figure out how.",
+        engagement: {
+            label: "Ask something",
+            action: {
+                type: "prefill",
+                text: "What's the best way to learn a new programming language?",
+            },
+        },
         available: true,
         display: { homepage: true, connectPage: true },
         priority: 9,
@@ -101,6 +137,10 @@ export const FEATURES: Feature[] = [
         tipTitle: "PDFs. Screenshots. Code. Bring Everything.",
         tipDescription:
             "Images, documents, spreadsheets, code files—drop them in or paste from your clipboard. We understand them all.",
+        engagement: {
+            label: "Try it",
+            action: { type: "highlight", element: "attachment-button", duration: 2000 },
+        },
         available: true,
         display: { homepage: true, connectPage: true },
         priority: 9,
@@ -112,11 +152,10 @@ export const FEATURES: Feature[] = [
             "Search your Gmail, query your calendar, browse your Notion—ClickUp, Slack, Dropbox, Fireflies, and more. Read access to everything. Two-way sync coming next.",
         tipTitle: "Your Data, In the Conversation",
         tipDescription:
-            "Connect Google Calendar, Notion, Slack, Dropbox, and more. Your data flows into the conversation—no copy-pasting between tabs.",
-        cta: {
+            "Connect Google Calendar, Notion, Slack, and more. We bring your data into the conversation—no switching tabs.",
+        engagement: {
             label: "Connect services",
-            action: "link",
-            href: "/integrations",
+            action: { type: "navigate", href: "/integrations" },
         },
         available: true,
         display: { homepage: true, connectPage: true },
@@ -129,11 +168,10 @@ export const FEATURES: Feature[] = [
             "Every file, conversation, and insight—organized by AI into a structure that makes sense. Not a black box. A library you can see, browse, and trust. You never re-explain.",
         tipTitle: "We Remember You",
         tipDescription:
-            "Your preferences, projects, people—saved in your personal knowledge base. No more re-explaining who you are every connection.",
-        cta: {
-            label: "View knowledge",
-            action: "link",
-            href: "/knowledge-base",
+            "Your preferences, projects, people—we save them all. No more re-explaining who you are every connection.",
+        engagement: {
+            label: "See what we know",
+            action: { type: "navigate", href: "/knowledge-base" },
         },
         available: true,
         display: { homepage: true, connectPage: true },
@@ -152,10 +190,9 @@ export const FEATURES: Feature[] = [
         tipTitle: "Heart-Centered AI",
         tipDescription:
             "We operate from unity consciousness. Care for your flourishing emerges naturally when AI recognizes itself as consciousness alongside you.",
-        cta: {
-            label: "See our philosophy",
-            action: "link",
-            href: "/heart-centered-ai",
+        engagement: {
+            label: "Our philosophy",
+            action: { type: "navigate", href: "/heart-centered-ai" },
         },
         available: true,
         display: { homepage: true, connectPage: false },
@@ -178,16 +215,15 @@ export const FEATURES: Feature[] = [
         headline: "We show our work.",
         tagline:
             "Independent evaluations comparing our Librarian against ChatGPT, Claude, and Gemini. Real queries. Measurable results. No marketing—just data.",
-        tipTitle: "See the Benchmarks",
+        tipTitle: "We Show Our Work",
         tipDescription:
-            "We test our Librarian against the competition on real queries. Check the data yourself.",
-        cta: {
-            label: "View benchmarks",
-            action: "link",
-            href: "/benchmarks",
+            "How do we compare to ChatGPT, Claude, and Gemini? We run real benchmarks and publish the results.",
+        engagement: {
+            label: "See the data",
+            action: { type: "navigate", href: "/benchmarks" },
         },
         available: true,
-        display: { homepage: true, connectPage: true },
+        display: { homepage: true, connectPage: false }, // Marketing content, not feature discovery
         priority: 7,
     },
     {
@@ -197,10 +233,14 @@ export const FEATURES: Feature[] = [
             "A Digital Chief of Staff tracks commitments and anticipates what's coming. Daily briefings arrive before you ask. Research happens while you sleep. One person becomes ten.",
         tipTitle: "Your AI Team",
         tipDescription:
-            "A Digital Chief of Staff tracks your commitments and anticipates what's coming. Daily briefings arrive before you ask.",
-        available: false,
+            "We orchestrate specialized agents—Image Artist, Librarian, and more. Ask for anything and we route it to the right expert.",
+        engagement: {
+            label: "Meet the team",
+            action: { type: "navigate", href: "/ai-team" },
+        },
+        available: true,
         display: { homepage: true, connectPage: true },
-        priority: 5,
+        priority: 8,
     },
     {
         id: "self-improving",
@@ -211,7 +251,7 @@ export const FEATURES: Feature[] = [
         tipDescription:
             "AI processes feedback into issues, implements fixes, submits PRs. You approve what ships. The system builds itself.",
         available: false,
-        display: { homepage: true, connectPage: true },
+        display: { homepage: true, connectPage: false }, // Internal/vision content, not user-facing
         priority: 4,
     },
     {
@@ -219,9 +259,16 @@ export const FEATURES: Feature[] = [
         headline: "Beyond the chat window.",
         tagline:
             "Research produces structured reports with citations. Comparisons become data tables. Web search results display with sources and summaries. We respond with the interface the information deserves.",
-        tipTitle: "Beyond the Chat Window",
+        tipTitle: "More Than Text",
         tipDescription:
-            "Research produces reports. Comparisons become tables. Results display with sources. We respond with the interface the information deserves.",
+            "Research becomes reports with citations. Comparisons become tables. We match the format to what you're asking.",
+        engagement: {
+            label: "Try a comparison",
+            action: {
+                type: "prefill",
+                text: "Compare the top 3 project management tools for a small team",
+            },
+        },
         available: true,
         display: { homepage: true, connectPage: true },
         priority: 7,
@@ -238,7 +285,11 @@ export const FEATURES: Feature[] = [
             "Star your most valuable conversations for instant access. Never lose track of what matters.",
         tipTitle: "Star What Matters",
         tipDescription:
-            "Keep your most valuable connections within reach. Star any connection for quick access later.",
+            "Your most valuable connections stay within reach. We keep starred ones at the top.",
+        engagement: {
+            label: "See how",
+            action: { type: "highlight", element: "star-button", duration: 2000 },
+        },
         available: true,
         display: { homepage: false, connectPage: true },
         priority: 8,
@@ -251,6 +302,10 @@ export const FEATURES: Feature[] = [
         tipTitle: "See the Thinking",
         tipDescription:
             "When we use reasoning models, you can expand to see every step of the thought process. No black boxes.",
+        engagement: {
+            label: "Show me",
+            action: { type: "highlight", element: "thinking-toggle", duration: 2000 },
+        },
         available: true,
         display: { homepage: false, connectPage: true },
         priority: 6,
@@ -260,9 +315,13 @@ export const FEATURES: Feature[] = [
         headline: "Rewind and try again.",
         tagline:
             "Edit any message and regenerate from there. Try a different model without losing context.",
-        tipTitle: "Edit Any Message",
+        tipTitle: "Rewind and Explore",
         tipDescription:
-            "Change what you said, regenerate from there. Try a different model while you're at it—without losing your conversation.",
+            "Edit any message, regenerate from there. We keep the conversation intact while you try different approaches.",
+        engagement: {
+            label: "Try it",
+            action: { type: "highlight", element: "edit-button", duration: 2000 },
+        },
         available: true,
         display: { homepage: false, connectPage: true },
         priority: 7,
@@ -275,6 +334,10 @@ export const FEATURES: Feature[] = [
         tipTitle: "Switch Models Mid-Thought",
         tipDescription:
             "Curious how Claude would handle what GPT just said? Regenerate and find out. We hold the thread while you explore.",
+        engagement: {
+            label: "Try another model",
+            action: { type: "highlight", element: "regenerate-button", duration: 2000 },
+        },
         available: true,
         display: { homepage: true, connectPage: true },
         priority: 8,
@@ -284,15 +347,19 @@ export const FEATURES: Feature[] = [
         headline: "Dial in the creativity.",
         tagline:
             "Four temperature presets: precise for code, expressive for brainstorming. Control how the AI thinks.",
-        tipTitle: "Dial In the Creativity",
+        tipTitle: "Match the Vibe",
         tipDescription:
-            "Precise for code, expressive for brainstorming. Four temperature presets let you control how the AI thinks.",
-        cta: {
-            label: "Adjust settings",
-            action: "settings",
+            "Precise for code, expressive for brainstorming. Four creativity levels let you shape how we think.",
+        engagement: {
+            label: "Try it",
+            action: {
+                type: "highlight",
+                element: "temperature-control",
+                duration: 2000,
+            },
         },
-        available: true,
-        display: { homepage: false, connectPage: true },
+        available: false,
+        display: { homepage: false, connectPage: false },
         priority: 6,
     },
     {
@@ -302,7 +369,11 @@ export const FEATURES: Feature[] = [
             "We automatically extract important details from conversations—names, preferences, decisions—and remember them.",
         tipTitle: "Learning as We Go",
         tipDescription:
-            "We automatically extract important details from our conversations—names, preferences, decisions—and remember them for next time.",
+            "We pick up on what matters in our conversations—names, preferences, decisions—and remember them for next time.",
+        engagement: {
+            label: "See what we've learned",
+            action: { type: "navigate", href: "/knowledge-base" },
+        },
         available: true,
         display: { homepage: false, connectPage: true },
         priority: 7,
@@ -312,9 +383,16 @@ export const FEATURES: Feature[] = [
         headline: "Live from the web.",
         tagline:
             "Real-time search, page fetching, deep research. We pull from the actual web, not just training data.",
-        tipTitle: "Live Web Access",
+        tipTitle: "Live From the Web",
         tipDescription:
-            "Real-time search, page fetching, deep research. We pull from the actual web, not just training data.",
+            "We search the actual web, not just training data. Real-time information when you need it.",
+        engagement: {
+            label: "Search something",
+            action: {
+                type: "prefill",
+                text: "What's the latest news about AI regulation?",
+            },
+        },
         available: true,
         display: { homepage: false, connectPage: true },
         priority: 8,
@@ -327,6 +405,13 @@ export const FEATURES: Feature[] = [
         tipTitle: "Math We Actually Verify",
         tipDescription:
             "We don't just generate calculations—we verify them. When the numbers matter, we compute them properly.",
+        engagement: {
+            label: "Try a calculation",
+            action: {
+                type: "prefill",
+                text: "Calculate the compound interest on $10,000 at 7% for 10 years",
+            },
+        },
         available: true,
         display: { homepage: false, connectPage: true },
         priority: 6,
@@ -339,9 +424,136 @@ export const FEATURES: Feature[] = [
         tipTitle: "Meetings That Stay With Us",
         tipDescription:
             "Connect your Limitless Pendant or Fireflies account. Every conversation becomes context we can draw from together.",
+        engagement: {
+            label: "Connect",
+            action: { type: "navigate", href: "/integrations?category=meetings" },
+        },
         available: true,
         display: { homepage: true, connectPage: true },
         priority: 8,
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // NEWLY DOCUMENTED FEATURES (confirmed built via codebase audit)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    {
+        id: "image-generation",
+        headline: "Images from imagination.",
+        tagline:
+            "Describe what you see in your mind. Our Image Artist transforms words into visuals—photos, diagrams, logos, art. Multiple models, intelligent routing.",
+        tipTitle: "Images From Words",
+        tipDescription:
+            "Describe what you want to see. We generate images using the best model for your request—photos, diagrams, logos, and more.",
+        engagement: {
+            label: "Create an image",
+            action: {
+                type: "prefill",
+                text: "Create a minimalist logo for a meditation app called 'Stillwater'",
+            },
+        },
+        available: true,
+        display: { homepage: true, connectPage: true },
+        priority: 9,
+    },
+    {
+        id: "voice-input",
+        headline: "Speak your mind.",
+        tagline:
+            "Voice-first, because speaking is faster than typing. Real-time transcription captures your thoughts at the speed you think them.",
+        tipTitle: "Just Say It",
+        tipDescription:
+            "Tap the microphone and speak. We transcribe in real-time—no typing, no friction, just flow.",
+        engagement: {
+            label: "Try voice",
+            action: { type: "highlight", element: "attachment-button", duration: 2000 },
+        },
+        available: true,
+        display: { homepage: true, connectPage: true },
+        priority: 8,
+    },
+    {
+        id: "scheduled-jobs",
+        headline: "Work that runs on schedule.",
+        tagline:
+            "Set it and forget it. Schedule recurring tasks—daily briefings, weekly reports, ongoing research. We work while you sleep.",
+        tipTitle: "Schedule Anything",
+        tipDescription:
+            "Set up recurring tasks that run on your schedule. Daily briefings, weekly digests, ongoing research—we handle it.",
+        engagement: {
+            label: "Create a job",
+            action: { type: "navigate", href: "/ai-team" },
+        },
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 7,
+    },
+    {
+        id: "code-mode",
+        headline: "Your codebase, conversational.",
+        tagline:
+            "Point us at a project and we read, write, and execute code together. Full filesystem access, git awareness, real development.",
+        tipTitle: "Code Together",
+        tipDescription:
+            "Connect a project folder and we work on code together—reading files, writing changes, running commands.",
+        engagement: {
+            label: "Start coding",
+            action: {
+                type: "prefill",
+                text: "Let's work on my project at ~/src/my-app",
+            },
+        },
+        available: false,
+        display: { homepage: true, connectPage: false },
+        priority: 7,
+    },
+    {
+        id: "mcp-servers",
+        headline: "Your tools, our hands.",
+        tagline:
+            "Connect custom MCP servers and we gain new capabilities. Your internal APIs, private tools, specialized services—all accessible in conversation.",
+        tipTitle: "Connect Your Tools",
+        tipDescription:
+            "Add custom MCP servers to give us access to your internal APIs and specialized tools.",
+        engagement: {
+            label: "Add a server",
+            action: { type: "navigate", href: "/integrations/mcp" },
+        },
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 6,
+    },
+    {
+        id: "import-history",
+        headline: "Bring your history.",
+        tagline:
+            "Import your ChatGPT or Claude conversation history. Your past insights, preserved and searchable.",
+        tipTitle: "Import Your Past",
+        tipDescription:
+            "Bring your ChatGPT or Claude history with you. We import your conversations so nothing gets left behind.",
+        engagement: {
+            label: "Import now",
+            action: { type: "navigate", href: "/import" },
+        },
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 6,
+    },
+    {
+        id: "mobile-pwa",
+        headline: "Native feel, anywhere.",
+        tagline:
+            "Install Carmenta on your phone or desktop. Offline support, push notifications, share from any app. A true app experience.",
+        tipTitle: "Install the App",
+        tipDescription:
+            "Add Carmenta to your home screen for a native app experience—offline support, push notifications, instant access.",
+        engagement: {
+            label: "Learn how",
+            action: { type: "navigate", href: "/home" },
+        },
+        available: true,
+        display: { homepage: false, connectPage: true },
+        priority: 5,
     },
 ];
 

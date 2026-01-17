@@ -4,7 +4,6 @@
  * Processes imported conversations to extract knowledge for user review.
  */
 
-import * as Sentry from "@sentry/nextjs";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { eq, and, inArray, isNull, sql } from "drizzle-orm";
@@ -420,13 +419,8 @@ export async function processExtractionJob(jobId: string): Promise<void> {
             "Extraction job completed"
         );
     } catch (error) {
-        logger.error({ error, jobId }, "Extraction job failed");
-        Sentry.captureException(error, {
-            level: "error",
-            tags: { category: "extraction" },
-            extra: { jobId },
-        });
-
+        // Mark job as failed in database before re-throwing
+        // Sentry capture happens automatically when error bubbles up
         try {
             await db
                 .update(extractionJobs)
@@ -438,11 +432,8 @@ export async function processExtractionJob(jobId: string): Promise<void> {
                 })
                 .where(eq(extractionJobs.id, jobId));
         } catch (dbError) {
-            // If we can't update job status, at least capture that failure
+            // Log DB failure but don't mask the original error
             logger.error({ error: dbError, jobId }, "Failed to mark job as failed");
-            Sentry.captureException(dbError, {
-                extra: { originalError: error, jobId },
-            });
         }
         throw error;
     }

@@ -14,7 +14,6 @@
  */
 
 import { tool } from "ai";
-import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
@@ -153,99 +152,69 @@ async function executeSend(
         );
     }
 
-    try {
-        const result = await sendPushNotification({
-            userEmail: context.userEmail,
-            notification: {
-                title,
-                body,
-                url: url ?? "/",
-            },
-        });
+    const result = await sendPushNotification({
+        userEmail: context.userEmail,
+        notification: {
+            title,
+            body,
+            url: url ?? "/",
+        },
+    });
 
-        if (!result.success && result.totalSubscriptions === 0) {
-            logger.debug(
-                { userEmail: context.userEmail },
-                "🔔 No push subscriptions - user may not have enabled notifications"
-            );
-
-            return errorResult(
-                "PERMANENT",
-                "They haven't enabled push notifications yet (no devices registered). Consider SMS for urgent messages."
-            );
-        }
-
-        if (!result.success) {
-            logger.warn(
-                {
-                    userEmail: context.userEmail,
-                    error: result.error,
-                    totalSubscriptions: result.totalSubscriptions,
-                    failureReasons: result.failureReasons,
-                },
-                "🔔 Push notification failed to all devices"
-            );
-
-            const guidance = getNextStepGuidance(result);
-
-            return errorResult(
-                result.failureReasons.includes("network_error")
-                    ? "TEMPORARY"
-                    : "PERMANENT",
-                guidance ?? result.error ?? "Push notification failed to send."
-            );
-        }
-
-        logger.info(
-            {
-                userEmail: context.userEmail,
-                devicesNotified: result.devicesNotified,
-                totalSubscriptions: result.totalSubscriptions,
-                deviceTypes: result.deviceTypesNotified,
-                title,
-            },
-            "🔔 Push notification sent"
+    if (!result.success && result.totalSubscriptions === 0) {
+        logger.debug(
+            { userEmail: context.userEmail },
+            "🔔 No push subscriptions - user may not have enabled notifications"
         );
 
-        const nextStep = getNextStepGuidance(result);
+        return errorResult(
+            "PERMANENT",
+            "They haven't enabled push notifications yet (no devices registered). Consider SMS for urgent messages."
+        );
+    }
 
-        return successResult<SendData>({
-            sent: true,
+    if (!result.success) {
+        logger.warn(
+            {
+                userEmail: context.userEmail,
+                error: result.error,
+                totalSubscriptions: result.totalSubscriptions,
+                failureReasons: result.failureReasons,
+            },
+            "🔔 Push notification failed to all devices"
+        );
+
+        const guidance = getNextStepGuidance(result);
+
+        return errorResult(
+            result.failureReasons.includes("network_error") ? "TEMPORARY" : "PERMANENT",
+            guidance ?? result.error ?? "Push notification failed to send."
+        );
+    }
+
+    logger.info(
+        {
+            userEmail: context.userEmail,
             devicesNotified: result.devicesNotified,
             totalSubscriptions: result.totalSubscriptions,
             deviceTypes: result.deviceTypesNotified,
-            failureReasons:
-                result.failureReasons.length > 0 ? result.failureReasons : undefined,
-            sentAt: result.sentAt,
-            nextStep,
-        });
-    } catch (error) {
-        logger.error(
-            { error, userEmail: context.userEmail },
-            "🔔 Push notification failed unexpectedly"
-        );
+            title,
+        },
+        "🔔 Push notification sent"
+    );
 
-        Sentry.captureException(error, {
-            tags: { component: "pushNotification", action: "send" },
-            extra: { userEmail: context.userEmail, title, bodyLength: body.length },
-        });
+    const nextStep = getNextStepGuidance(result);
 
-        // Distinguish network/timeout errors (temporary) from other errors (permanent)
-        const isNetworkError =
-            error instanceof Error &&
-            (error.message.includes("ECONNREFUSED") ||
-                error.message.includes("ETIMEDOUT") ||
-                error.message.includes("ENOTFOUND") ||
-                error.message.includes("network") ||
-                error.message.includes("timeout"));
-
-        return errorResult(
-            isNetworkError ? "TEMPORARY" : "PERMANENT",
-            isNetworkError
-                ? "Network issue prevented delivery. Consider SMS as fallback."
-                : "Unexpected error sending notification. The team has been notified."
-        );
-    }
+    return successResult<SendData>({
+        sent: true,
+        devicesNotified: result.devicesNotified,
+        totalSubscriptions: result.totalSubscriptions,
+        deviceTypes: result.deviceTypesNotified,
+        failureReasons:
+            result.failureReasons.length > 0 ? result.failureReasons : undefined,
+        sentAt: result.sentAt,
+        nextStep,
+    });
 }
 
 /**

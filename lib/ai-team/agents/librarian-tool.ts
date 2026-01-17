@@ -419,57 +419,40 @@ async function executeSearch(
     // Enforce hard cap on results to prevent context overflow
     const cappedMaxResults = Math.min(maxResults, MAX_SEARCH_RESULTS);
 
-    try {
-        const response = await searchKnowledge(context.userId, query, {
-            maxResults: cappedMaxResults,
-            includeContent: true,
-        });
+    const response = await searchKnowledge(context.userId, query, {
+        maxResults: cappedMaxResults,
+        includeContent: true,
+    });
 
-        // Truncate content to preview length to prevent context overflow
-        const data: SearchData = {
-            results: response.results.map((r) => {
-                const content = r.content ?? "";
-                const truncated = content.length > MAX_SEARCH_CONTENT_CHARS;
-                return {
-                    path: r.path,
-                    name: r.name,
-                    contentPreview: truncated
-                        ? content.slice(0, MAX_SEARCH_CONTENT_CHARS) + "..."
-                        : content,
-                    contentTruncated: truncated,
-                    description: r.description,
-                    relevance: r.relevance,
-                };
-            }),
-            totalFound: response.metadata.totalBeforeFiltering,
-        };
+    // Truncate content to preview length to prevent context overflow
+    const data: SearchData = {
+        results: response.results.map((r) => {
+            const content = r.content ?? "";
+            const truncated = content.length > MAX_SEARCH_CONTENT_CHARS;
+            return {
+                path: r.path,
+                name: r.name,
+                contentPreview: truncated
+                    ? content.slice(0, MAX_SEARCH_CONTENT_CHARS) + "..."
+                    : content,
+                contentTruncated: truncated,
+                description: r.description,
+                relevance: r.relevance,
+            };
+        }),
+        totalFound: response.metadata.totalBeforeFiltering,
+    };
 
-        logger.info(
-            {
-                userId: context.userId,
-                query,
-                resultCount: data.results.length,
-            },
-            "📚 Librarian search completed"
-        );
+    logger.info(
+        {
+            userId: context.userId,
+            query,
+            resultCount: data.results.length,
+        },
+        "📚 Librarian search completed"
+    );
 
-        return successResult(data);
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, query, maxResults },
-            "📚 Librarian search failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "librarian", action: "search" },
-            extra: { userId: context.userId, query, maxResults },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Search failed"
-        );
-    }
+    return successResult(data);
 }
 
 /**
@@ -652,62 +635,43 @@ Focus on durable information: facts about the user, decisions made, people menti
         return successResult(data, { stepsUsed });
     } catch (error) {
         // Handle context overflow as degraded result, not permanent error
-        if (isContextOverflowError(error)) {
-            logger.warn(
-                {
-                    userId: context.userId,
-                    originalTokens: truncation.originalTokens,
-                    truncatedTokens: truncation.truncatedTokens,
-                    error: error instanceof Error ? error.message : String(error),
-                },
-                "📚 Librarian extraction failed due to context overflow despite truncation"
-            );
-
-            Sentry.captureMessage("Librarian context overflow after truncation", {
-                level: "warning",
-                tags: {
-                    component: "librarian",
-                    action: "extract",
-                    quality: "degraded",
-                },
-                extra: {
-                    userId: context.userId,
-                    originalTokens: truncation.originalTokens,
-                    truncatedTokens: truncation.truncatedTokens,
-                },
-            });
-
-            return degradedResult<ExtractionData>(
-                {
-                    extracted: false,
-                    summary:
-                        "Could not extract knowledge - conversation too long even after truncation. Try breaking into smaller conversations.",
-                    stepsUsed: 0,
-                },
-                "Context overflow"
-            );
+        // Other errors bubble to safeInvoke for standard handling
+        if (!isContextOverflowError(error)) {
+            throw error;
         }
 
-        logger.error(
+        logger.warn(
             {
-                error,
                 userId: context.userId,
-                conversationLength: conversationContent.length,
+                originalTokens: truncation.originalTokens,
+                truncatedTokens: truncation.truncatedTokens,
+                error: error instanceof Error ? error.message : String(error),
             },
-            "📚 Librarian extraction failed"
+            "📚 Librarian extraction failed due to context overflow despite truncation"
         );
 
-        Sentry.captureException(error, {
-            tags: { component: "librarian", action: "extract" },
+        Sentry.captureMessage("Librarian context overflow after truncation", {
+            level: "warning",
+            tags: {
+                component: "librarian",
+                action: "extract",
+                quality: "degraded",
+            },
             extra: {
                 userId: context.userId,
-                conversationLength: conversationContent.length,
+                originalTokens: truncation.originalTokens,
+                truncatedTokens: truncation.truncatedTokens,
             },
         });
 
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Extraction failed"
+        return degradedResult<ExtractionData>(
+            {
+                extracted: false,
+                summary:
+                    "Could not extract knowledge - conversation too long even after truncation. Try breaking into smaller conversations.",
+                stepsUsed: 0,
+            },
+            "Context overflow"
         );
     }
 }
@@ -731,46 +695,29 @@ async function executeList(
     params: { pathPrefix?: string },
     context: SubagentContext
 ): Promise<SubagentResult<ListData>> {
-    try {
-        const docs = params.pathPrefix
-            ? await kb.readFolder(context.userId, params.pathPrefix)
-            : await kb.listAll(context.userId);
+    const docs = params.pathPrefix
+        ? await kb.readFolder(context.userId, params.pathPrefix)
+        : await kb.listAll(context.userId);
 
-        const data: ListData = {
-            documents: docs.map((d) => ({
-                path: d.path,
-                name: d.name,
-                description: d.description,
-            })),
-            totalCount: docs.length,
-        };
+    const data: ListData = {
+        documents: docs.map((d) => ({
+            path: d.path,
+            name: d.name,
+            description: d.description,
+        })),
+        totalCount: docs.length,
+    };
 
-        logger.info(
-            {
-                userId: context.userId,
-                pathPrefix: params.pathPrefix,
-                count: data.totalCount,
-            },
-            "📚 Librarian list completed"
-        );
+    logger.info(
+        {
+            userId: context.userId,
+            pathPrefix: params.pathPrefix,
+            count: data.totalCount,
+        },
+        "📚 Librarian list completed"
+    );
 
-        return successResult(data);
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, pathPrefix: params.pathPrefix },
-            "📚 Librarian list failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "librarian", action: "list" },
-            extra: { userId: context.userId, pathPrefix: params.pathPrefix },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "List failed"
-        );
-    }
+    return successResult(data);
 }
 
 /**
@@ -796,57 +743,40 @@ async function executeRetrieve(
     params: { path: string },
     context: SubagentContext
 ): Promise<SubagentResult<RetrieveData>> {
-    try {
-        const doc = await kb.read(context.userId, params.path);
+    const doc = await kb.read(context.userId, params.path);
 
-        if (!doc) {
-            return successResult<RetrieveData>({ found: false });
-        }
-
-        // Truncate content if too large to prevent context overflow
-        const rawContent = doc.content ?? "";
-        const contentTruncated = rawContent.length > MAX_RETRIEVE_CONTENT_CHARS;
-        const content = contentTruncated
-            ? rawContent.slice(0, MAX_RETRIEVE_CONTENT_CHARS) +
-              `\n\n[Content truncated - ${rawContent.length} chars total. View full document in the Knowledge Base.]`
-            : rawContent;
-
-        logger.info(
-            {
-                userId: context.userId,
-                path: params.path,
-                contentTruncated,
-                originalLength: rawContent.length,
-            },
-            "📚 Librarian retrieve completed"
-        );
-
-        return successResult<RetrieveData>({
-            found: true,
-            document: {
-                path: doc.path,
-                name: doc.name,
-                content,
-                contentTruncated,
-                description: doc.description,
-            },
-        });
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, path: params.path },
-            "📚 Librarian retrieve failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "librarian", action: "retrieve" },
-            extra: { userId: context.userId, path: params.path },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Retrieve failed"
-        );
+    if (!doc) {
+        return successResult<RetrieveData>({ found: false });
     }
+
+    // Truncate content if too large to prevent context overflow
+    const rawContent = doc.content ?? "";
+    const contentTruncated = rawContent.length > MAX_RETRIEVE_CONTENT_CHARS;
+    const content = contentTruncated
+        ? rawContent.slice(0, MAX_RETRIEVE_CONTENT_CHARS) +
+          `\n\n[Content truncated - ${rawContent.length} chars total. View full document in the Knowledge Base.]`
+        : rawContent;
+
+    logger.info(
+        {
+            userId: context.userId,
+            path: params.path,
+            contentTruncated,
+            originalLength: rawContent.length,
+        },
+        "📚 Librarian retrieve completed"
+    );
+
+    return successResult<RetrieveData>({
+        found: true,
+        document: {
+            path: doc.path,
+            name: doc.name,
+            content,
+            contentTruncated,
+            description: doc.description,
+        },
+    });
 }
 
 /**
@@ -865,40 +795,23 @@ async function executeCreate(
     params: { path: string; name: string; content: string; description?: string },
     context: SubagentContext
 ): Promise<SubagentResult<CreateData>> {
-    try {
-        const doc = await kb.create(context.userId, {
-            path: params.path,
-            name: params.name,
-            content: params.content,
-            description: params.description,
-        });
+    const doc = await kb.create(context.userId, {
+        path: params.path,
+        name: params.name,
+        content: params.content,
+        description: params.description,
+    });
 
-        logger.info(
-            { userId: context.userId, path: doc.path, name: doc.name },
-            "📚 Librarian create completed"
-        );
+    logger.info(
+        { userId: context.userId, path: doc.path, name: doc.name },
+        "📚 Librarian create completed"
+    );
 
-        return successResult<CreateData>({
-            created: true,
-            path: doc.path,
-            name: doc.name,
-        });
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, path: params.path },
-            "📚 Librarian create failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "librarian", action: "create" },
-            extra: { userId: context.userId, path: params.path },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Create failed"
-        );
-    }
+    return successResult<CreateData>({
+        created: true,
+        path: doc.path,
+        name: doc.name,
+    });
 }
 
 /**
@@ -916,42 +829,25 @@ async function executeUpdate(
     params: { path: string; content?: string; name?: string },
     context: SubagentContext
 ): Promise<SubagentResult<UpdateData>> {
-    try {
-        const updates: { content?: string; name?: string } = {};
-        if (params.content !== undefined) updates.content = params.content;
-        if (params.name !== undefined) updates.name = params.name;
+    const updates: { content?: string; name?: string } = {};
+    if (params.content !== undefined) updates.content = params.content;
+    if (params.name !== undefined) updates.name = params.name;
 
-        const doc = await kb.update(context.userId, params.path, updates);
+    const doc = await kb.update(context.userId, params.path, updates);
 
-        if (!doc) {
-            return errorResult("VALIDATION", `Document not found: ${params.path}`);
-        }
-
-        logger.info(
-            { userId: context.userId, path: params.path },
-            "📚 Librarian update completed"
-        );
-
-        return successResult<UpdateData>({
-            updated: true,
-            path: doc.path,
-        });
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, path: params.path },
-            "📚 Librarian update failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "librarian", action: "update" },
-            extra: { userId: context.userId, path: params.path },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Update failed"
-        );
+    if (!doc) {
+        return errorResult("VALIDATION", `Document not found: ${params.path}`);
     }
+
+    logger.info(
+        { userId: context.userId, path: params.path },
+        "📚 Librarian update completed"
+    );
+
+    return successResult<UpdateData>({
+        updated: true,
+        path: doc.path,
+    });
 }
 
 /**
@@ -974,72 +870,46 @@ async function executeMove(
     params: { fromPath: string; toPath: string },
     context: SubagentContext
 ): Promise<SubagentResult<MoveData>> {
-    try {
-        // Read existing document
-        const oldDoc = await kb.read(context.userId, params.fromPath);
-        if (!oldDoc) {
-            return errorResult("VALIDATION", `Document not found: ${params.fromPath}`);
-        }
+    // Read existing document
+    const oldDoc = await kb.read(context.userId, params.fromPath);
+    if (!oldDoc) {
+        return errorResult("VALIDATION", `Document not found: ${params.fromPath}`);
+    }
 
-        // Create at new path, preserving all metadata from the original document
-        await kb.create(context.userId, {
-            path: params.toPath,
-            name: oldDoc.name,
-            content: oldDoc.content,
-            description: oldDoc.description ?? undefined,
-            promptLabel: oldDoc.promptLabel ?? undefined,
-            promptHint: oldDoc.promptHint ?? undefined,
-            promptOrder: oldDoc.promptOrder ?? undefined,
-            alwaysInclude: oldDoc.alwaysInclude ?? undefined,
-            searchable: oldDoc.searchable ?? undefined,
-            editable: oldDoc.editable ?? undefined,
-            sourceType: oldDoc.sourceType ?? undefined,
-            sourceId: oldDoc.sourceId ?? undefined,
-            tags: oldDoc.tags ?? undefined,
-        });
+    // Create at new path, preserving all metadata from the original document
+    await kb.create(context.userId, {
+        path: params.toPath,
+        name: oldDoc.name,
+        content: oldDoc.content,
+        description: oldDoc.description ?? undefined,
+        promptLabel: oldDoc.promptLabel ?? undefined,
+        promptHint: oldDoc.promptHint ?? undefined,
+        promptOrder: oldDoc.promptOrder ?? undefined,
+        alwaysInclude: oldDoc.alwaysInclude ?? undefined,
+        searchable: oldDoc.searchable ?? undefined,
+        editable: oldDoc.editable ?? undefined,
+        sourceType: oldDoc.sourceType ?? undefined,
+        sourceId: oldDoc.sourceId ?? undefined,
+        tags: oldDoc.tags ?? undefined,
+    });
 
-        // Delete old document
-        await kb.remove(context.userId, params.fromPath);
+    // Delete old document
+    await kb.remove(context.userId, params.fromPath);
 
-        logger.info(
-            {
-                userId: context.userId,
-                fromPath: params.fromPath,
-                toPath: params.toPath,
-            },
-            "📚 Librarian move completed"
-        );
-
-        return successResult<MoveData>({
-            moved: true,
+    logger.info(
+        {
+            userId: context.userId,
             fromPath: params.fromPath,
             toPath: params.toPath,
-        });
-    } catch (error) {
-        logger.error(
-            {
-                error,
-                userId: context.userId,
-                fromPath: params.fromPath,
-                toPath: params.toPath,
-            },
-            "📚 Librarian move failed"
-        );
+        },
+        "📚 Librarian move completed"
+    );
 
-        Sentry.captureException(error, {
-            tags: { component: "librarian", action: "move" },
-            extra: {
-                userId: context.userId,
-                fromPath: params.fromPath,
-                toPath: params.toPath,
-            },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Move failed"
-        );
-    }
+    return successResult<MoveData>({
+        moved: true,
+        fromPath: params.fromPath,
+        toPath: params.toPath,
+    });
 }
 
 /**
@@ -1057,38 +927,21 @@ async function executeDelete(
     params: { path: string },
     context: SubagentContext
 ): Promise<SubagentResult<DeleteData>> {
-    try {
-        const deleted = await kb.remove(context.userId, params.path);
+    const deleted = await kb.remove(context.userId, params.path);
 
-        if (!deleted) {
-            return errorResult("VALIDATION", `Document not found: ${params.path}`);
-        }
-
-        logger.info(
-            { userId: context.userId, path: params.path },
-            "📚 Librarian delete completed"
-        );
-
-        return successResult<DeleteData>({
-            deleted: true,
-            path: params.path,
-        });
-    } catch (error) {
-        logger.error(
-            { error, userId: context.userId, path: params.path },
-            "📚 Librarian delete failed"
-        );
-
-        Sentry.captureException(error, {
-            tags: { component: "librarian", action: "delete" },
-            extra: { userId: context.userId, path: params.path },
-        });
-
-        return errorResult(
-            "PERMANENT",
-            error instanceof Error ? error.message : "Delete failed"
-        );
+    if (!deleted) {
+        return errorResult("VALIDATION", `Document not found: ${params.path}`);
     }
+
+    logger.info(
+        { userId: context.userId, path: params.path },
+        "📚 Librarian delete completed"
+    );
+
+    return successResult<DeleteData>({
+        deleted: true,
+        path: params.path,
+    });
 }
 
 /**
