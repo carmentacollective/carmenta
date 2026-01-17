@@ -148,6 +148,13 @@
       "when": 1768600319516,
       "tag": "0032_feature-tips-system",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1768686267761,
+      "tag": "0033_typical_tyger_tiger",
+      "breakpoints": true
     }
   ]
 }
