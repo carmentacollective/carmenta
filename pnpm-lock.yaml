@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  resumable-stream:
+    hash: 246adf7760d323c402a4d37495e2d9ad2fa0e0e06d493039af82eadf862f9f5e
+    path: patches/resumable-stream.patch
+
 importers:
 
   .:
@@ -202,7 +207,7 @@ importers:
         version: 8.0.1
       resumable-stream:
         specifier: ^2.2.10
-        version: 2.2.10
+        version: 2.2.10(patch_hash=246adf7760d323c402a4d37495e2d9ad2fa0e0e06d493039af82eadf862f9f5e)
       rich-textarea:
         specifier: ^0.27.0
         version: 0.27.0(react@19.2.3)
@@ -14194,7 +14199,7 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  resumable-stream@2.2.10: {}
+  resumable-stream@2.2.10(patch_hash=246adf7760d323c402a4d37495e2d9ad2fa0e0e06d493039af82eadf862f9f5e): {}
 
   rettime@0.7.0:
     optional: true

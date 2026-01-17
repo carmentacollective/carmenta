@@ -15,6 +15,10 @@ import { after } from "next/server";
 
 import { logger } from "@/lib/logger";
 
+// Set DISABLE_RESUMABLE_STREAMS=true to force fallback path for debugging
+// This helps isolate whether streaming issues are in the resumable-stream layer
+const DISABLE_RESUMABLE_STREAMS = process.env.DISABLE_RESUMABLE_STREAMS === "true";
+
 let globalStreamContext: ResumableStreamContext | null = null;
 let backgroundStreamContext: ResumableStreamContext | null = null;
 
@@ -25,14 +29,38 @@ let backgroundStreamContext: ResumableStreamContext | null = null;
  * Returns null if Redis is not configured (graceful degradation).
  */
 export function getStreamContext(): ResumableStreamContext | null {
+    // Debug flag to force non-resumable path
+    if (DISABLE_RESUMABLE_STREAMS) {
+        logger.warn({}, "Resumable streams disabled via DISABLE_RESUMABLE_STREAMS");
+        return null;
+    }
+
     if (globalStreamContext) {
         return globalStreamContext;
     }
 
     try {
-        globalStreamContext = createResumableStreamContext({
+        const context = createResumableStreamContext({
             waitUntil: after,
         });
+
+        // Wrap createNewResumableStream to add timing diagnostics
+        const originalCreate = context.createNewResumableStream.bind(context);
+        context.createNewResumableStream = async (streamId, makeStream, skipChars) => {
+            const startTime = Date.now();
+            logger.debug({ streamId }, "createNewResumableStream: starting");
+
+            const result = await originalCreate(streamId, makeStream, skipChars);
+
+            logger.debug(
+                { streamId, duration: Date.now() - startTime },
+                "createNewResumableStream: returning stream"
+            );
+
+            return result;
+        };
+
+        globalStreamContext = context;
         logger.info({}, "Resumable stream context initialized");
         return globalStreamContext;
     } catch (error) {

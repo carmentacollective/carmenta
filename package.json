@@ -21,7 +21,10 @@
       "protobufjs",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "patchedDependencies": {
+      "resumable-stream": "patches/resumable-stream.patch"
+    }
   },
   "scripts": {
     "analyze": "next experimental-analyze",

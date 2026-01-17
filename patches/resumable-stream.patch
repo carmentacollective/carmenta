@@ -1,0 +1,40 @@
+diff --git a/dist/runtime.js b/dist/runtime.js
+index e0bf2ab87c474ca39dcacc2e8a5673ccf8bd321a..0b175513017e1f3d48efdd8d191b5eece8132f6f 100644
+--- a/dist/runtime.js
++++ b/dist/runtime.js
+@@ -86,10 +86,32 @@ async function createNewResumableStream(initPromise, ctx, streamId, makeStream)
+         debugLog("Connected to listener", parsedMessage.listenerId);
+         listenerChannels.push(parsedMessage.listenerId);
+         debugLog("parsedMessage", chunks.length, parsedMessage.skipCharacters);
+-        const chunksToSend = chunks.join("").slice(parsedMessage.skipCharacters || 0);
+-        debugLog("sending chunks", chunksToSend.length);
++        // FIX: Send chunks individually instead of joining them all together.
++        // This preserves streaming behavior for resumed clients.
++        const skipChars = parsedMessage.skipCharacters || 0;
++        let charsSeen = 0;
+         const promises = [];
+-        promises.push(ctx.publisher.publish(`${ctx.keyPrefix}:chunk:${parsedMessage.listenerId}`, chunksToSend));
++        for (const chunk of chunks) {
++            const chunkEnd = charsSeen + chunk.length;
++            if (chunkEnd <= skipChars) {
++                // Skip this entire chunk
++                charsSeen = chunkEnd;
++                continue;
++            }
++            if (charsSeen < skipChars) {
++                // Partial skip: slice the beginning of this chunk
++                const sliceStart = skipChars - charsSeen;
++                const partialChunk = chunk.slice(sliceStart);
++                debugLog("sending partial chunk", partialChunk.length);
++                promises.push(ctx.publisher.publish(`${ctx.keyPrefix}:chunk:${parsedMessage.listenerId}`, partialChunk));
++            } else {
++                // Send full chunk
++                debugLog("sending chunk", chunk.length);
++                promises.push(ctx.publisher.publish(`${ctx.keyPrefix}:chunk:${parsedMessage.listenerId}`, chunk));
++            }
++            charsSeen = chunkEnd;
++        }
++        debugLog("sending chunks individually", promises.length);
+         if (isDone) {
+             promises.push(ctx.publisher.publish(`${ctx.keyPrefix}:chunk:${parsedMessage.listenerId}`, DONE_MESSAGE));
+         }
