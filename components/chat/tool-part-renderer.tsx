@@ -17,6 +17,7 @@ import {
     FetchPageResult,
 } from "@/components/tools/research";
 import {
+    AsanaToolResult,
     ClickUpToolResult,
     CoinMarketCapToolResult,
     CreateImageToolResult,
@@ -205,6 +206,18 @@ export function ToolPartRenderer({ part }: ToolPartRendererProps) {
         }
 
         // Integration tools - keep alphabetical to minimize merge conflicts
+        case "asana":
+            return (
+                <AsanaToolResult
+                    toolCallId={part.toolCallId}
+                    status={status}
+                    action={(input?.action as string) ?? "unknown"}
+                    input={input}
+                    output={output}
+                    error={getToolError(part, output, "Asana request failed")}
+                />
+            );
+
         case "clickup":
             return (
                 <ClickUpToolResult
