@@ -22,6 +22,41 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { ToolStatus } from "@/lib/tools/tool-config";
 import { ToolRenderer } from "../shared";
 
+/**
+ * Map Asana color names to hex codes
+ * Based on Asana's standard project colors
+ */
+const ASANA_COLORS: Record<string, string> = {
+    "dark-pink": "#E362E3",
+    "dark-green": "#2D7E2E",
+    "dark-blue": "#1F76C2",
+    "dark-red": "#D9534F",
+    "dark-teal": "#299C9F",
+    "dark-brown": "#B06F3F",
+    "dark-orange": "#FF6B35",
+    "dark-purple": "#8B5AAF",
+    "dark-warm-gray": "#B07D5C",
+    pink: "#FC9EEA",
+    green: "#7ED47A",
+    blue: "#6CBEED",
+    red: "#E96768",
+    teal: "#4ECBC4",
+    brown: "#E1956C",
+    orange: "#FFC77D",
+    purple: "#C99AFF",
+    "warm-gray": "#C9AF98",
+    "light-pink": "#FBD6E9",
+    "light-green": "#C3EB8D",
+    "light-blue": "#B9ECFA",
+    "light-red": "#FCB3B3",
+    "light-teal": "#91F2EE",
+    "light-brown": "#E6CCA6",
+    "light-orange": "#FFD5B5",
+    "light-purple": "#E8D5FF",
+    "light-warm-gray": "#E0D7D1",
+    none: "#F0F0F0",
+};
+
 interface AsanaToolResultProps {
     toolCallId: string;
     status: ToolStatus;
@@ -244,7 +279,7 @@ function ProjectsDisplay({ output }: { output?: Record<string, unknown> }) {
                             className="h-3 w-3 rounded-sm"
                             style={{
                                 backgroundColor: project.color
-                                    ? `#${project.color}`
+                                    ? ASANA_COLORS[project.color] || "#F06A6A"
                                     : "#F06A6A",
                             }}
                         />
