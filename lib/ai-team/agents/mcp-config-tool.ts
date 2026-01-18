@@ -517,10 +517,11 @@ async function executeCreate(
     let toolSummary: string | undefined;
     if (toolNames && toolNames.length > 0) {
         const displayCount = toolNames.length;
+        const toolWord = totalTools === 1 ? "tool" : "tools";
         if (totalTools > MAX_TOOLS_IN_SUMMARY) {
-            toolSummary = `${displayCount} of ${totalTools} tools: ${toolNames.join(", ")}`;
+            toolSummary = `${displayCount} of ${totalTools} ${toolWord}: ${toolNames.join(", ")}`;
         } else {
-            toolSummary = `${totalTools} tools: ${toolNames.join(", ")}`;
+            toolSummary = `${totalTools} ${toolWord}: ${toolNames.join(", ")}`;
         }
     }
 
