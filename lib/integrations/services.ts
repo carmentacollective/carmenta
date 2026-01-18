@@ -273,7 +273,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         description: "Share posts and access your LinkedIn profile",
         logo: "/logos/linkedin.svg",
         authMethod: "oauth",
-        status: "beta",
+        status: "available",
         oauthProviderId: "linkedin",
         supportsMultipleAccounts: true,
         docsUrl: "https://learn.microsoft.com/en-us/linkedin/",
