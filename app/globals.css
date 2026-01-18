@@ -492,6 +492,22 @@
     }
 
     /*
+     * iOS Touch Behavior
+     *
+     * Prevent iOS from showing native callout menus (share, copy, etc.)
+     * when users long-press on interactive elements. This is critical for
+     * custom lists and menus where iOS's native behavior can trap interaction.
+     */
+    a,
+    button,
+    [role="button"],
+    [role="listitem"],
+    [role="option"],
+    [role="menuitem"] {
+        -webkit-touch-callout: none;
+    }
+
+    /*
      * Window Controls Overlay (WCO) Support
      *
      * When running as a desktop PWA with WCO enabled, we render a custom titlebar.

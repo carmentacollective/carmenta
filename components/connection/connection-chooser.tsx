@@ -585,7 +585,7 @@ function ConnectionDropdown({
     const { filteredStarred, filteredUnstarred, isSearching, hasMoreRecent } =
         useMemo(() => {
             const isSearching = Boolean(debouncedQuery.trim());
-            const recentLimit = 6;
+            const recentLimit = 20;
             const hasMoreRecent = unstarredConnections.length > recentLimit;
 
             if (!isSearching) {
@@ -697,10 +697,10 @@ function ConnectionDropdown({
                                 />
                                 <button
                                     onClick={handleClose}
-                                    className="btn-glass-interactive h-8 w-8"
+                                    className="btn-glass-interactive h-11 w-11"
                                     aria-label="Close"
                                 >
-                                    <X className="text-foreground/60 h-4 w-4" />
+                                    <X className="text-foreground/60 h-5 w-5" />
                                 </button>
                             </div>
 
