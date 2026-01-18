@@ -250,7 +250,7 @@ function describeOperations(): SubagentDescription {
                         name: "maxResults",
                         type: "number",
                         description:
-                            "Maximum results to return (default: 5, max: 5 to prevent context overflow)",
+                            "Maximum results to return (default: 5, capped to prevent context overflow)",
                         required: false,
                     },
                 ],
