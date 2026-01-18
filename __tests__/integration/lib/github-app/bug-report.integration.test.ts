@@ -97,6 +97,7 @@ This is an automated integration test issue created by the GitHub App test suite
     describe("Bug report handler", () => {
         it("creates issue for new bug report", async () => {
             const timestamp = new Date().toISOString();
+            const uniqueKeyword = `handlertest${Date.now()}`;
             const intent: EntityIntent = {
                 type: "bug_report",
                 confidence: "high",
@@ -104,7 +105,7 @@ This is an automated integration test issue created by the GitHub App test suite
                     title: `🧪 Handler test: Bug from integration test - ${timestamp}`,
                     description:
                         "This is a test bug report created by the integration test suite",
-                    keywords: ["integration", "test", "automated"],
+                    keywords: [uniqueKeyword, "integration-test"],
                 },
             };
 
