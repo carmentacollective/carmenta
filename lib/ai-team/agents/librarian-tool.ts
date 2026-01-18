@@ -238,7 +238,7 @@ function describeOperations(): SubagentDescription {
             {
                 name: "search",
                 description:
-                    "Search the knowledge base for relevant documents. Returns matching documents with relevance scores.",
+                    "Search the knowledge base for relevant documents. Returns matching documents with relevance scores. Content previews are truncated to ~500 chars; use 'retrieve' for full content.",
                 params: [
                     {
                         name: "query",
@@ -249,7 +249,8 @@ function describeOperations(): SubagentDescription {
                     {
                         name: "maxResults",
                         type: "number",
-                        description: "Maximum results to return (default: 5)",
+                        description:
+                            "Maximum results to return (default: 5, capped to prevent context overflow)",
                         required: false,
                     },
                 ],
@@ -270,7 +271,8 @@ function describeOperations(): SubagentDescription {
             },
             {
                 name: "retrieve",
-                description: "Get a specific document by its path",
+                description:
+                    "Get a specific document by its path. Content is truncated to ~4000 chars for very large documents.",
                 params: [
                     {
                         name: "path",
@@ -418,6 +420,18 @@ async function executeSearch(
     const { query, maxResults = 5 } = params;
     // Enforce hard cap on results to prevent context overflow
     const cappedMaxResults = Math.min(maxResults, MAX_SEARCH_RESULTS);
+
+    // Log when we cap the requested results
+    if (maxResults > MAX_SEARCH_RESULTS) {
+        logger.info(
+            {
+                userId: context.userId,
+                requested: maxResults,
+                capped: MAX_SEARCH_RESULTS,
+            },
+            "📚 Capped search results to prevent context overflow"
+        );
+    }
 
     const response = await searchKnowledge(context.userId, query, {
         maxResults: cappedMaxResults,
