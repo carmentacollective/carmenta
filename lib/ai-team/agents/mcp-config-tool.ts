@@ -379,6 +379,8 @@ interface CreateData {
         toolCount?: number;
         /** Tool names only (no descriptions), limited to MAX_TOOLS_IN_SUMMARY */
         toolNames?: string[];
+        /** Human-readable summary like "10 of 50 tools: tool1, tool2, ..." */
+        toolSummary?: string;
         error?: string;
     };
     // User-facing message with delight
@@ -506,9 +508,21 @@ async function executeCreate(
     );
 
     // Build tool names summary (names only, limited count) to prevent context overflow
+    const totalTools = testResult.tools?.length ?? 0;
     const toolNames = testResult.tools
         ?.slice(0, MAX_TOOLS_IN_SUMMARY)
         .map((t) => t.name);
+
+    // Build human-readable summary that indicates if tools were capped
+    let toolSummary: string | undefined;
+    if (toolNames && toolNames.length > 0) {
+        const displayCount = toolNames.length;
+        if (totalTools > MAX_TOOLS_IN_SUMMARY) {
+            toolSummary = `${displayCount} of ${totalTools} tools: ${toolNames.join(", ")}`;
+        } else {
+            toolSummary = `${totalTools} tools: ${toolNames.join(", ")}`;
+        }
+    }
 
     return successResult<CreateData>({
         success: true,
@@ -521,8 +535,9 @@ async function executeCreate(
         },
         connectionTest: {
             success: testResult.success,
-            toolCount: testResult.tools?.length,
+            toolCount: totalTools,
             toolNames,
+            toolSummary,
             error: testResult.error,
         },
         message,
