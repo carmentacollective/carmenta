@@ -367,6 +367,43 @@ export const TOOL_CONFIG: Record<string, ToolConfig> = {
             fast: ["Quick math!", "Done!"],
         },
     },
+    asana: {
+        displayName: "Asana",
+        icon: "/logos/asana.svg",
+        getDescription: (args) => {
+            const action = args.action as string | undefined;
+            const params = args.params as
+                | {
+                      name?: string;
+                      text?: string;
+                      assignee?: string;
+                  }
+                | undefined;
+            if (action === "search_tasks")
+                return params?.text ? truncate(params.text, 30) : "searching tasks";
+            if (action === "create_task")
+                return params?.name ? truncate(params.name, 30) : "creating task";
+            if (action === "get_me") return "getting user info";
+            if (action === "list_projects") return "listing projects";
+            if (action === "list_project_tasks") return "listing tasks";
+            return action;
+        },
+        messages: {
+            pending: "Getting ready...",
+            running: "Working with Asana...",
+            completed: "Asana ready",
+            error: "Hit a snag with Asana",
+        },
+        delightMessages: {
+            completed: [
+                "Tasks organized",
+                "All lined up",
+                "Work tracked",
+                "We're on it",
+            ],
+            fast: ["Quick check!", "Done!", "Got it"],
+        },
+    },
     clickup: {
         displayName: "ClickUp",
         icon: "/logos/clickup.svg",

@@ -16,6 +16,7 @@ import { z } from "zod";
 import { getConnectedServices, getCredentials } from "./connection-manager";
 import { getServiceById, type ServiceDefinition } from "./services";
 import {
+    AsanaAdapter,
     ClickUpAdapter,
     CoinMarketCapAdapter,
     DropboxAdapter,
@@ -43,6 +44,7 @@ import { logger } from "@/lib/logger";
  * insert it in alphabetical order rather than at the end.
  */
 const adapterMap: Record<string, ServiceAdapter> = {
+    asana: new AsanaAdapter(),
     clickup: new ClickUpAdapter(),
     coinmarketcap: new CoinMarketCapAdapter(),
     dropbox: new DropboxAdapter(),

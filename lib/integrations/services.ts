@@ -75,6 +75,35 @@ export interface ServiceDefinition {
  * insert it in alphabetical order rather than at the end.
  */
 export const SERVICE_REGISTRY: ServiceDefinition[] = [
+    // Asana - OAuth (in-house)
+    {
+        id: "asana",
+        name: "Asana",
+        description: "Manage tasks, projects, and track work",
+        logo: "/logos/asana.svg",
+        authMethod: "oauth",
+        status: "beta",
+        oauthProviderId: "asana",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developers.asana.com/reference",
+        capabilities: [
+            "search_tasks",
+            "create_task",
+            "update_task",
+            "list_projects",
+            "get_task",
+            "add_comment",
+        ],
+        suggestKeywords: [
+            "asana",
+            "my tasks",
+            "my to-do",
+            "task list",
+            "in asana",
+            "assigned to me",
+        ],
+    },
+
     // ClickUp - OAuth (in-house)
     {
         id: "clickup",

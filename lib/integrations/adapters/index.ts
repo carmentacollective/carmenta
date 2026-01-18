@@ -20,6 +20,7 @@ export {
     type ValidationResult,
     type ToolAnnotations,
 } from "./base";
+export { AsanaAdapter } from "./asana";
 export { ClickUpAdapter } from "./clickup";
 export { CoinMarketCapAdapter } from "./coinmarketcap";
 export { DropboxAdapter } from "./dropbox";

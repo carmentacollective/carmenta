@@ -7,6 +7,7 @@
 
 import { logger } from "@/lib/logger";
 import type { OAuthProviderConfig } from "../types";
+import { asanaProvider } from "./asana";
 import { clickupProvider } from "./clickup";
 import { dropboxProvider } from "./dropbox";
 import { googleCalendarContactsProvider } from "./google-calendar-contacts";
@@ -23,6 +24,7 @@ import { twitterProvider } from "./twitter";
  * Key is the provider ID that matches the service registry.
  */
 const providers: Record<string, OAuthProviderConfig> = {
+    asana: asanaProvider,
     clickup: clickupProvider,
     dropbox: dropboxProvider,
     "google-calendar-contacts": googleCalendarContactsProvider,
@@ -118,6 +120,8 @@ export function buildAuthorizationUrl(
 }
 
 // Re-export for convenience (alphabetical order)
+export { asanaProvider } from "./asana";
+export { ASANA_API_BASE } from "./asana";
 export { clickupProvider } from "./clickup";
 export { CLICKUP_API_BASE } from "./clickup";
 export { dropboxProvider } from "./dropbox";
