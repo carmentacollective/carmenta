@@ -354,13 +354,16 @@ export async function processExtractionJob(jobId: string): Promise<void> {
             // Save extractions and mark as processed atomically
             for (const result of results) {
                 await db.transaction(async (tx) => {
-                    // Mark as processed
-                    await tx.insert(extractionProcessedConnections).values({
-                        userId: job.userId,
-                        connectionId: result.connectionId,
-                        jobId: job.id,
-                        extractionCount: result.facts.length,
-                    });
+                    // Mark as processed (idempotent - handle retries gracefully)
+                    await tx
+                        .insert(extractionProcessedConnections)
+                        .values({
+                            userId: job.userId,
+                            connectionId: result.connectionId,
+                            jobId: job.id,
+                            extractionCount: result.facts.length,
+                        })
+                        .onConflictDoNothing();
 
                     // Save extractions
                     if (result.facts.length > 0) {
