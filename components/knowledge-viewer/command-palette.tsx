@@ -99,6 +99,7 @@ export function CommandPalette({
     const [focusedIndex, setFocusedIndex] = useState(0);
     const [searchResults, setSearchResults] = useState<KBSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState(false);
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState<SearchFilters>({});
@@ -122,11 +123,13 @@ export function CommandPalette({
         const performSearch = async () => {
             if (!query.trim()) {
                 setSearchResults([]);
+                setSearchError(false);
                 setIsSearching(false);
                 return;
             }
 
             setIsSearching(true);
+            setSearchError(false);
             try {
                 const results = await searchKB(query, abortController.signal);
                 if (!abortController.signal.aborted) {
@@ -136,6 +139,7 @@ export function CommandPalette({
                 if (!abortController.signal.aborted) {
                     logger.error({ error, query }, "Search failed");
                     setSearchResults([]);
+                    setSearchError(true);
                 }
             } finally {
                 if (!abortController.signal.aborted) {
@@ -452,9 +456,23 @@ export function CommandPalette({
 
                         {/* Results */}
                         <div className="max-h-80 overflow-y-auto p-2">
-                            {Object.keys(grouped).length === 0 ? (
+                            {searchError ? (
+                                <div className="py-8 text-center">
+                                    <p className="text-foreground/50 text-sm">
+                                        Search hit a snag
+                                    </p>
+                                    <button
+                                        onClick={() => setQuery(query + " ")}
+                                        className="text-primary hover:text-primary/80 mt-2 text-sm"
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
+                            ) : Object.keys(grouped).length === 0 ? (
                                 <p className="text-foreground/40 py-8 text-center text-sm">
-                                    {query ? "No matches found" : "No documents yet"}
+                                    {query
+                                        ? "Nothing matching that—try different words?"
+                                        : "No documents yet"}
                                 </p>
                             ) : (
                                 Object.entries(grouped).map(([folderPath, group]) => (

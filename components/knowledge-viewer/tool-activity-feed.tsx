@@ -12,7 +12,7 @@ import {
     PencilSimple,
     Plus,
     ArrowsLeftRight,
-    Spinner,
+    CircleNotch,
     Check,
     Warning,
 } from "@phosphor-icons/react";
@@ -133,11 +133,11 @@ function ToolActivityItem({ part }: { part: ToolPart }) {
                 )}
             >
                 {!isComplete && !hasError && (
-                    <Spinner className="h-3 w-3 animate-spin" />
+                    <CircleNotch className="h-4 w-4 animate-spin" />
                 )}
-                {isComplete && success && <Check className="h-3 w-3" weight="bold" />}
-                {isComplete && !success && <Warning className="h-3 w-3" />}
-                {hasError && <Warning className="h-3 w-3" />}
+                {isComplete && success && <Check className="h-4 w-4" weight="bold" />}
+                {isComplete && !success && <Warning className="h-4 w-4" />}
+                {hasError && <Warning className="h-4 w-4" />}
             </span>
 
             {/* Tool icon */}

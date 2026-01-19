@@ -10,9 +10,8 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
-import { X, Check } from "@phosphor-icons/react";
+import { X, Check, CircleNotch } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { cn } from "@/lib/utils";
 import { formatNodeName, type KBDocumentData } from "./tree-utils";
@@ -54,10 +53,12 @@ export function KnowledgeDetail({
                 toast.success("Correction applied");
                 onClose?.();
             } else {
-                toast.error("Failed to apply correction");
+                toast.error("Couldn't apply that correction. Try rephrasing?");
             }
-        } catch {
-            toast.error("Something went wrong");
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : "Something went wrong";
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -134,7 +135,7 @@ export function KnowledgeDetail({
                             disabled={!correction.trim() || isSubmitting}
                         >
                             {isSubmitting ? (
-                                <LoadingSpinner size={14} className="mr-2" />
+                                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
                                 <Check className="mr-2 h-4 w-4" />
                             )}
