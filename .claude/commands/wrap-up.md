@@ -60,11 +60,11 @@ Detect current state:
 ```
 ✓ PR #123 "Add wrap-up command" merged to main
 
-You're in: ~/src/carmenta-tools-auth (worktree, now orphaned)
-Main repo: ~/src/carmenta-tools
+You're in: {worktree-path} (worktree, now orphaned)
+Main repo: {main-repo-path}
 
 → git worktree remove . (from main repo) to clean up
-→ cd ~/src/carmenta-tools to continue there
+→ cd {main-repo-path} to continue there
 ```
 
 **If in main repo:**
@@ -72,7 +72,7 @@ Main repo: ~/src/carmenta-tools
 ```
 ✓ PR #123 "Add wrap-up command" merged to main
 
-On main at ~/src/carmenta-tools, up to date.
+On main at {repo-path}, up to date.
 ```
 
 The value is clarity of state, not celebration. Brief, informative, shows next options.
