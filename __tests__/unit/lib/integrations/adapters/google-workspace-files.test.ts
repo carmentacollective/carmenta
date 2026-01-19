@@ -12,6 +12,9 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { GoogleWorkspaceFilesAdapter } from "@/lib/integrations/adapters/google-workspace-files";
 import { ValidationError } from "@/lib/errors";
+import { getCredentials } from "@/lib/integrations/connection-manager";
+import { drive } from "@googleapis/drive";
+import { sheets } from "@googleapis/sheets";
 
 // Mock connection manager
 vi.mock("@/lib/integrations/connection-manager", () => ({
@@ -114,8 +117,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
 
     describe("Authentication", () => {
         it("returns friendly error when service not connected", async () => {
-            const { getCredentials } =
-                await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockRejectedValue(
                 new ValidationError("google-workspace-files is not connected")
             );
@@ -133,8 +134,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
         });
 
         it("proceeds with valid OAuth credentials", async () => {
-            const { getCredentials } =
-                await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
                 accessToken: "test-access-token",
@@ -143,7 +142,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
                 isDefault: true,
             });
 
-            const { sheets } = await import("@googleapis/sheets");
             (sheets as unknown as Mock).mockReturnValue({
                 spreadsheets: {
                     values: {
@@ -178,8 +176,7 @@ describe("GoogleWorkspaceFilesAdapter", () => {
     describe("Removed Actions", () => {
         beforeEach(async () => {
             // Set up valid credentials so we can test the action rejection
-            const { getCredentials } =
-                await import("@/lib/integrations/connection-manager");
+
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
                 accessToken: "test-access-token",
@@ -227,8 +224,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
 
     describe("read_sheet Operation", () => {
         beforeEach(async () => {
-            const { getCredentials } =
-                await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
                 accessToken: "test-access-token",
@@ -239,7 +234,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
         });
 
         it("reads sheet data successfully", async () => {
-            const { sheets } = await import("@googleapis/sheets");
             const mockGet = vi.fn().mockResolvedValue({
                 data: {
                     range: "Sheet1!A1:B2",
@@ -277,7 +271,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
         });
 
         it("uses default range A:ZZ when not specified", async () => {
-            const { sheets } = await import("@googleapis/sheets");
             const mockGet = vi.fn().mockResolvedValue({
                 data: {
                     range: "Sheet1!A:ZZ",
@@ -307,7 +300,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
         });
 
         it("handles empty sheet", async () => {
-            const { sheets } = await import("@googleapis/sheets");
             (sheets as unknown as Mock).mockReturnValue({
                 spreadsheets: {
                     values: {
@@ -337,8 +329,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
 
     describe("open_picker Operation", () => {
         beforeEach(async () => {
-            const { getCredentials } =
-                await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
                 accessToken: "test-access-token",
@@ -434,8 +424,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
 
     describe("Error Handling", () => {
         beforeEach(async () => {
-            const { getCredentials } =
-                await import("@/lib/integrations/connection-manager");
             (getCredentials as Mock).mockResolvedValue({
                 type: "oauth",
                 accessToken: "test-access-token",
@@ -446,7 +434,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
         });
 
         it("handles API errors gracefully", async () => {
-            const { sheets } = await import("@googleapis/sheets");
             (sheets as unknown as Mock).mockReturnValue({
                 spreadsheets: {
                     values: {
@@ -465,7 +452,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
         });
 
         it("handles 403 permission errors", async () => {
-            const { sheets } = await import("@googleapis/sheets");
             (sheets as unknown as Mock).mockReturnValue({
                 spreadsheets: {
                     values: {
@@ -500,7 +486,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
 
     describe("testConnection", () => {
         it("returns success when Drive API responds", async () => {
-            const { drive } = await import("@googleapis/drive");
             (drive as unknown as Mock).mockReturnValue({
                 about: {
                     get: vi.fn().mockResolvedValue({
@@ -516,7 +501,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
         });
 
         it("returns friendly error for 401 unauthorized", async () => {
-            const { drive } = await import("@googleapis/drive");
             (drive as unknown as Mock).mockReturnValue({
                 about: {
                     get: vi.fn().mockRejectedValue(new Error("HTTP 401: Unauthorized")),
@@ -532,7 +516,6 @@ describe("GoogleWorkspaceFilesAdapter", () => {
         });
 
         it("returns friendly error for 403 forbidden", async () => {
-            const { drive } = await import("@googleapis/drive");
             (drive as unknown as Mock).mockReturnValue({
                 about: {
                     get: vi.fn().mockRejectedValue(new Error("HTTP 403: Forbidden")),
