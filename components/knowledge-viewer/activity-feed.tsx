@@ -18,6 +18,7 @@ import {
     X,
     Check,
 } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -76,6 +77,7 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
                     setItems((prev) =>
                         prev.map((i) => (i.id === item.id ? { ...i, read: false } : i))
                     );
+                    toast.error("Couldn't mark as read. Try again?");
                 }
             }
 
@@ -97,8 +99,9 @@ export function ActivityFeed({ initialItems, onItemClick }: ActivityFeedProps) {
         try {
             await fetch("/api/notifications/mark-all-read", { method: "POST" });
         } catch {
-            // Revert on error - refetch would be better but this is simpler
+            // Revert on error
             setItems(initialItems);
+            toast.error("Couldn't mark all as read. Try again?");
         }
     }, [items, initialItems]);
 

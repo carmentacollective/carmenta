@@ -61,8 +61,8 @@ export function KnowledgeExplorer({
     onDocumentUpdate,
     enableSearch = false,
     treeHeader,
-    treeMaxHeight = "60vh",
-    detailMaxHeight = "60vh",
+    treeMaxHeight = "calc(100vh - 20rem)",
+    detailMaxHeight = "calc(100vh - 20rem)",
     className,
 }: KnowledgeExplorerProps) {
     const isMobile = useMediaQuery("(max-width: 767px)");

@@ -19,10 +19,13 @@ import {
     Check,
     ArrowCounterClockwise,
     CircleNotch,
+    Copy,
 } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { updateKBDocument, type KBDocument } from "@/lib/kb/actions";
+import { HUMAN_CHAR_LIMIT } from "@/lib/kb/text-utils";
 import { logger } from "@/lib/client-logger";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { analytics } from "@/lib/analytics/events";
@@ -34,10 +37,9 @@ const PATH_ICONS: Record<string, typeof FileText> = {
     "profile.preferences": ChatCircle,
 };
 
-// Character limits (~2,000 tokens for LLM context efficiency)
-const CHAR_LIMIT = 8000;
-const CHAR_SHOW_THRESHOLD = 0.6; // Show counter when content reaches 60% of limit
-const CHAR_WARNING_THRESHOLD = 0.8; // Show warning color at 80%
+// UI thresholds for character limit feedback
+const CHAR_SHOW_THRESHOLD = 0.75; // Show counter at 75% of human limit (~7,200)
+const CHAR_WARNING_THRESHOLD = 0.9; // Amber warning at 90% (~8,640)
 
 type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
 
@@ -64,10 +66,11 @@ export function KBContent({
 
     // Calculate character stats
     const charCount = editContent.length;
-    const charPercentage = (charCount / CHAR_LIMIT) * 100;
-    const isOverLimit = charCount > CHAR_LIMIT;
+    const charPercentage = (charCount / HUMAN_CHAR_LIMIT) * 100;
+    const isOverLimit = charCount > HUMAN_CHAR_LIMIT;
     const isNearLimit = charPercentage >= CHAR_WARNING_THRESHOLD * 100;
-    const shouldShowCounter = charPercentage >= CHAR_SHOW_THRESHOLD * 100;
+    // Only show counter when actively editing - don't scold users for LLM content
+    const shouldShowCounter = isFocused && charPercentage >= CHAR_SHOW_THRESHOLD * 100;
     const hasChanges = editContent !== originalContent;
 
     // Derive display save state from hasChanges and saveState
@@ -117,7 +120,10 @@ export function KBContent({
             const newValue = e.target.value;
 
             // Block input that would exceed limit (but allow deletions)
-            if (newValue.length > CHAR_LIMIT && newValue.length > editContent.length) {
+            if (
+                newValue.length > HUMAN_CHAR_LIMIT &&
+                newValue.length > editContent.length
+            ) {
                 return;
             }
 
@@ -140,9 +146,10 @@ export function KBContent({
             const selectionLength = selectionEnd - selectionStart;
             const resultLength = currentLength - selectionLength + pasteText.length;
 
-            if (resultLength > CHAR_LIMIT) {
+            if (resultLength > HUMAN_CHAR_LIMIT) {
                 e.preventDefault();
-                const availableChars = CHAR_LIMIT - currentLength + selectionLength;
+                const availableChars =
+                    HUMAN_CHAR_LIMIT - currentLength + selectionLength;
 
                 // Allow paste if we have selected text (even at limit)
                 // The selection will be replaced, freeing up space
@@ -158,7 +165,7 @@ export function KBContent({
                     if (truncatedPaste.length < pasteText.length) {
                         const truncatedChars = pasteText.length - truncatedPaste.length;
                         setError(
-                            `Pasted content truncated by ${truncatedChars.toLocaleString()} characters to fit ${CHAR_LIMIT.toLocaleString()} limit`
+                            `Pasted content truncated by ${truncatedChars.toLocaleString()} characters to fit ${HUMAN_CHAR_LIMIT.toLocaleString()} limit`
                         );
                     }
 
@@ -170,7 +177,7 @@ export function KBContent({
                 } else {
                     // No selection and already at/over limit
                     setError(
-                        `Cannot paste: already at ${CHAR_LIMIT.toLocaleString()} character limit`
+                        `Cannot paste: already at ${HUMAN_CHAR_LIMIT.toLocaleString()} character limit`
                     );
                 }
             }
@@ -261,7 +268,7 @@ export function KBContent({
         return (
             <main
                 className={cn(
-                    "glass-card flex h-full max-h-[calc(100vh-16rem)] flex-1 items-center justify-center rounded-xl transition-opacity duration-200",
+                    "glass-card flex h-full flex-1 items-center justify-center rounded-xl transition-opacity duration-200",
                     dimmed && "opacity-30"
                 )}
             >
@@ -276,7 +283,7 @@ export function KBContent({
     return (
         <main
             className={cn(
-                "glass-card relative flex h-full max-h-[calc(100vh-16rem)] flex-1 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
+                "glass-card relative flex h-full flex-1 flex-col overflow-hidden rounded-xl transition-opacity duration-200",
                 dimmed && "opacity-30"
             )}
         >
@@ -312,13 +319,33 @@ export function KBContent({
                             role="alert"
                             aria-live="assertive"
                             id="error-message"
-                            className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/10 px-6 py-3 text-sm text-red-600 dark:text-red-400"
+                            className="flex items-center justify-between gap-2 border-b border-red-500/20 bg-red-500/10 px-6 py-3 text-sm text-red-600 dark:text-red-400"
                         >
-                            <WarningCircle
-                                className="h-4 w-4 shrink-0"
-                                aria-hidden="true"
-                            />
-                            <span>{error}</span>
+                            <div className="flex items-center gap-2">
+                                <WarningCircle
+                                    className="h-4 w-4 shrink-0"
+                                    aria-hidden="true"
+                                />
+                                <span>{error}</span>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await navigator.clipboard.writeText(
+                                            editContent
+                                        );
+                                        toast.success("Copied to clipboard");
+                                    } catch {
+                                        toast.error(
+                                            "Could not copy—try selecting and copying manually"
+                                        );
+                                    }
+                                }}
+                                className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-500/20 dark:text-red-300"
+                            >
+                                <Copy className="h-3.5 w-3.5" />
+                                Copy content
+                            </button>
                         </div>
                     </motion.div>
                 )}
@@ -410,7 +437,7 @@ export function KBContent({
                                     )}
                                 >
                                     {charCount.toLocaleString()} /{" "}
-                                    {CHAR_LIMIT.toLocaleString()}
+                                    {HUMAN_CHAR_LIMIT.toLocaleString()}
                                     {isNearLimit && ` (${Math.round(charPercentage)}%)`}
                                 </span>
                             </motion.div>
@@ -467,12 +494,12 @@ export function KBContent({
                             {/* Icon only for loading/saved states */}
                             {displaySaveState === "saving" && (
                                 <CircleNotch
-                                    className="h-3.5 w-3.5 animate-spin"
+                                    className="h-4 w-4 animate-spin"
                                     aria-hidden="true"
                                 />
                             )}
                             {displaySaveState === "saved" && (
-                                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                                <Check className="h-4 w-4" aria-hidden="true" />
                             )}
 
                             {/* Text based on state - with ARIA live for screen readers */}
