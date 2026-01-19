@@ -293,7 +293,8 @@ export function GoogleWorkspaceFilesToolResult({
 
         // Handle picker action
         if (action === "open_google_picker" || output.action === "open_google_picker") {
-            const fileTypes = (output.fileTypes || input.fileTypes) as
+            // Note: input uses snake_case (file_types), output uses camelCase (fileTypes)
+            const fileTypes = (output.fileTypes || input.file_types) as
                 | Array<"spreadsheet" | "document" | "presentation">
                 | undefined;
             return <PickerAction toolCallId={toolCallId} fileTypes={fileTypes} />;
