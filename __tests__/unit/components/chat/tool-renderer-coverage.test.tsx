@@ -209,6 +209,7 @@ describe("Tool Renderer Coverage", () => {
             "dropbox",
             "fireflies",
             "giphy",
+            "google-workspace-files",
             "imgflip",
             "google-calendar-contacts",
             "limitless",
