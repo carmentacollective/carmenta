@@ -1,9 +1,9 @@
 /**
  * Transform Pending Extractions to KB Folder Structure
  *
- * Converts PendingExtraction[] into KBFolder[] that the KnowledgeViewer
- * and KBSidebar components expect. This enables us to show a live preview
- * of the knowledge base filling up during discovery.
+ * Converts PendingExtraction[] into KBFolder[] that KnowledgeExplorer
+ * can display. This enables us to show a live preview of the knowledge
+ * base filling up during discovery.
  *
  * Architecture:
  * - Identity extractions → "About You" section (special root folder)

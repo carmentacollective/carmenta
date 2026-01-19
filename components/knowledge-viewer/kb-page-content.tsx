@@ -5,7 +5,7 @@
  *
  * Renders the KB with:
  * 1. Prominent "About You" section at top (AI-enhanced, user-editable)
- * 2. Memories section below (folder-based knowledge browser)
+ * 2. Knowledge Explorer below (unified tree view with editing)
  */
 
 import { useCallback, useState, useTransition, useEffect, useRef } from "react";
@@ -21,7 +21,7 @@ import {
     CaretDownIcon,
 } from "@phosphor-icons/react";
 
-import { KnowledgeViewer } from "./index";
+import { KnowledgeExplorer, type KBDocumentData } from "@/components/kb";
 import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
 import { ImportWidget } from "@/components/import/import-widget";
 import {
@@ -29,7 +29,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { updateKBDocument, type KBDocument, type KBFolder } from "@/lib/kb/actions";
+import { updateKBDocument, type KBDocument } from "@/lib/kb/actions";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 import { analytics } from "@/lib/analytics/events";
@@ -37,14 +37,11 @@ import { analytics } from "@/lib/analytics/events";
 interface KBPageContentProps {
     /** The profile.identity document for prominent About You display */
     identityDocument: KBDocument | null;
-    /** Folders for the Memories section */
-    memoriesFolders: KBFolder[];
+    /** Documents for the Knowledge Explorer (flat list) */
+    documents: KBDocument[];
 }
 
-export function KBPageContent({
-    identityDocument,
-    memoriesFolders,
-}: KBPageContentProps) {
+export function KBPageContent({ identityDocument, documents }: KBPageContentProps) {
     const router = useRouter();
     const [sheetOpen, setSheetOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
@@ -209,23 +206,23 @@ export function KBPageContent({
                     </section>
                 )}
 
-                {/* Memories Section */}
+                {/* Knowledge Explorer Section */}
                 <section className="min-h-[400px] flex-1">
                     <div className="mb-3 flex items-center gap-2">
                         <Brain className="text-foreground/50 h-4 w-4" />
                         <h2 className="text-foreground/70 text-sm font-medium">
-                            Memories
+                            Knowledge
                         </h2>
                         <span className="text-foreground/40 text-sm">
-                            What we've learned together
+                            What we know together
                         </span>
                     </div>
 
-                    {memoriesFolders.length === 0 ? (
+                    {documents.length === 0 ? (
                         <div className="glass-panel flex h-full flex-col items-center justify-center py-16 text-center">
                             <SparkleIcon className="text-foreground/30 mb-4 h-12 w-12" />
                             <h3 className="text-foreground/80 text-lg font-medium">
-                                No memories yet
+                                No knowledge yet
                             </h3>
                             <p className="text-foreground/60 mt-2 max-w-sm text-sm">
                                 As we chat, we'll remember important details about your
@@ -233,7 +230,12 @@ export function KBPageContent({
                             </p>
                         </div>
                     ) : (
-                        <KnowledgeViewer initialFolders={memoriesFolders} />
+                        <KnowledgeExplorer
+                            documents={documents as KBDocumentData[]}
+                            mode="edit"
+                            enableSearch={true}
+                            onDocumentUpdate={() => router.refresh()}
+                        />
                     )}
                 </section>
 

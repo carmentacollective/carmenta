@@ -12,7 +12,7 @@ import type { ReactElement } from "react";
 // Mock Clerk authentication
 const mocks = vi.hoisted(() => ({
     mockCurrentUser: vi.fn(),
-    mockGetKBFolders: vi.fn(),
+    mockGetKBDocuments: vi.fn(),
     mockGetGlobalDocs: vi.fn(),
     mockGetValuesDocument: vi.fn(),
     mockInitializeKBWithClerkData: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock("@clerk/nextjs/server", () => ({
 
 // Mock KB actions
 vi.mock("@/lib/kb/actions", () => ({
-    getKBFolders: mocks.mockGetKBFolders,
+    getKBDocuments: mocks.mockGetKBDocuments,
     getGlobalDocs: mocks.mockGetGlobalDocs,
     getValuesDocument: mocks.mockGetValuesDocument,
     initializeKBWithClerkData: mocks.mockInitializeKBWithClerkData,
@@ -53,25 +53,17 @@ vi.mock("@/components/layouts/standard-page-layout", () => ({
     ),
 }));
 
-vi.mock("@/components/knowledge-viewer", () => ({
-    KnowledgeViewer: ({ initialFolders }: { initialFolders: unknown[] }) => (
-        <div data-testid="knowledge-viewer" data-folder-count={initialFolders.length}>
-            Knowledge Viewer
-        </div>
-    ),
-}));
-
 vi.mock("@/components/knowledge-viewer/kb-page-content", () => ({
     KBPageContent: ({
         identityDocument,
-        memoriesFolders,
+        documents,
     }: {
         identityDocument: unknown;
-        memoriesFolders: unknown[];
+        documents: unknown[];
     }) => (
         <div
             data-testid="knowledge-viewer"
-            data-folder-count={memoriesFolders.length}
+            data-doc-count={documents.length}
             data-has-identity={identityDocument ? "true" : "false"}
         >
             KB Page Content
@@ -103,28 +95,27 @@ describe("/knowledge-base page", () => {
         primaryEmailAddress: { emailAddress: "nick@example.com" },
     };
 
-    // Test folders fixture
-    const mockFolders = [
+    // Test documents fixture
+    const mockDocuments = [
         {
-            id: "profile",
-            name: "profile",
-            path: "profile",
-            documents: [
-                {
-                    id: "doc1",
-                    path: "profile.identity",
-                    name: "identity.txt",
-                    content: "Name: Nick Sullivan",
-                    updatedAt: new Date(),
-                },
-                {
-                    id: "doc2",
-                    path: "profile.preferences",
-                    name: "preferences.txt",
-                    content: "Communication style: Direct",
-                    updatedAt: new Date(),
-                },
-            ],
+            id: "doc1",
+            path: "profile.identity",
+            name: "identity",
+            content: "Name: Nick Sullivan",
+            description: null,
+            promptLabel: null,
+            editable: true,
+            updatedAt: new Date(),
+        },
+        {
+            id: "doc2",
+            path: "profile.preferences",
+            name: "preferences",
+            content: "Communication style: Direct",
+            description: null,
+            promptLabel: null,
+            editable: true,
+            updatedAt: new Date(),
         },
     ];
 
@@ -135,7 +126,7 @@ describe("/knowledge-base page", () => {
         // Default: authenticated user with existing profile
         mocks.mockCurrentUser.mockResolvedValue(mockUser);
         mocks.mockHasKBProfile.mockResolvedValue(true);
-        mocks.mockGetKBFolders.mockResolvedValue(mockFolders);
+        mocks.mockGetKBDocuments.mockResolvedValue(mockDocuments);
         mocks.mockGetGlobalDocs.mockResolvedValue([]);
         mocks.mockGetValuesDocument.mockResolvedValue({
             id: "values-heart-centered",
@@ -274,7 +265,7 @@ describe("/knowledge-base page", () => {
             expect(mocks.mockInitializeKBWithClerkData).not.toHaveBeenCalled();
         });
 
-        it("initializes profile before fetching folders", async () => {
+        it("initializes profile before fetching documents", async () => {
             // Arrange: New user
             mocks.mockHasKBProfile.mockResolvedValue(false);
 
@@ -285,9 +276,9 @@ describe("/knowledge-base page", () => {
                 return { created: true };
             });
 
-            mocks.mockGetKBFolders.mockImplementation(async () => {
-                callOrder.push("getFolders");
-                return mockFolders;
+            mocks.mockGetKBDocuments.mockImplementation(async () => {
+                callOrder.push("getDocuments");
+                return mockDocuments;
             });
 
             // Act
@@ -295,50 +286,50 @@ describe("/knowledge-base page", () => {
                 .default;
             await KnowledgeBasePage();
 
-            // Assert: Initialize should happen before fetching folders
-            expect(callOrder).toEqual(["initialize", "getFolders"]);
+            // Assert: Initialize should happen before fetching documents
+            expect(callOrder).toEqual(["initialize", "getDocuments"]);
         });
     });
 
     describe("Knowledge Viewer Rendering", () => {
-        it("passes identity and memories to KBPageContent", async () => {
+        it("passes identity and documents to KBPageContent", async () => {
             // Act
             const KnowledgeBasePage = (await import("@/app/knowledge-base/page"))
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert - Identity doc extracted, memories folder with placeholder
+            // Assert - Identity doc extracted, remaining docs passed
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
             expect(viewer).toHaveAttribute("data-has-identity", "true");
-            expect(viewer).toHaveAttribute("data-folder-count", "1"); // memories placeholder
+            expect(viewer).toHaveAttribute("data-doc-count", "1"); // preferences only (identity extracted)
         });
 
-        it("shows empty memories when no knowledge folders exist", async () => {
-            // Arrange: No user folders
-            mocks.mockGetKBFolders.mockResolvedValue([]);
+        it("shows empty state when no documents exist", async () => {
+            // Arrange: No documents
+            mocks.mockGetKBDocuments.mockResolvedValue([]);
 
             // Act
             const KnowledgeBasePage = (await import("@/app/knowledge-base/page"))
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Should render with memories placeholder
+            // Assert: Should render with empty documents array
             const { getByTestId } = render(result as ReactElement);
             const viewer = getByTestId("knowledge-viewer");
-            expect(viewer).toHaveAttribute("data-folder-count", "1"); // memories placeholder
+            expect(viewer).toHaveAttribute("data-doc-count", "0");
         });
 
-        it("renders with folders when they exist", async () => {
-            // Arrange: Folders exist
-            mocks.mockGetKBFolders.mockResolvedValue(mockFolders);
+        it("renders with documents when they exist", async () => {
+            // Arrange: Documents exist
+            mocks.mockGetKBDocuments.mockResolvedValue(mockDocuments);
 
             // Act
             const KnowledgeBasePage = (await import("@/app/knowledge-base/page"))
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Should render viewer with folders
+            // Assert: Should render viewer with documents
             const { getByTestId } = render(result as ReactElement);
             expect(getByTestId("knowledge-viewer")).toBeInTheDocument();
         });
@@ -381,8 +372,8 @@ describe("/knowledge-base page", () => {
                 .default;
             await KnowledgeBasePage();
 
-            // Assert: Should still fetch folders
-            expect(mocks.mockGetKBFolders).toHaveBeenCalled();
+            // Assert: Should still fetch documents
+            expect(mocks.mockGetKBDocuments).toHaveBeenCalled();
         });
 
         it("handles user with minimal Clerk data", async () => {
@@ -410,42 +401,38 @@ describe("/knowledge-base page", () => {
             });
         });
 
-        it("handles empty folders array with memories placeholder", async () => {
-            // Arrange: No user folders
-            mocks.mockGetKBFolders.mockResolvedValue([]);
+        it("handles empty documents array", async () => {
+            // Arrange: No documents
+            mocks.mockGetKBDocuments.mockResolvedValue([]);
 
             // Act
             const KnowledgeBasePage = (await import("@/app/knowledge-base/page"))
                 .default;
             const result = await KnowledgeBasePage();
 
-            // Assert: Memories folder always present with placeholder
+            // Assert: Should render with empty documents
             const { getByTestId } = render(result as ReactElement);
             expect(getByTestId("knowledge-viewer")).toBeInTheDocument();
             expect(getByTestId("knowledge-viewer")).toHaveAttribute(
-                "data-folder-count",
-                "1"
+                "data-doc-count",
+                "0"
             );
         });
 
-        it("handles folders with many documents", async () => {
-            // Arrange: Folder with 20 documents
+        it("handles many documents", async () => {
+            // Arrange: 20 documents
             const manyDocs = Array.from({ length: 20 }, (_, i) => ({
                 id: `doc${i}`,
                 path: `profile.doc${i}`,
-                name: `doc${i}.txt`,
+                name: `doc${i}`,
                 content: `Content ${i}`,
+                description: null,
+                promptLabel: null,
+                editable: true,
                 updatedAt: new Date(),
             }));
 
-            mocks.mockGetKBFolders.mockResolvedValue([
-                {
-                    id: "profile",
-                    name: "profile",
-                    path: "profile",
-                    documents: manyDocs,
-                },
-            ]);
+            mocks.mockGetKBDocuments.mockResolvedValue(manyDocs);
 
             // Act
             const KnowledgeBasePage = (await import("@/app/knowledge-base/page"))

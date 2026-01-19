@@ -5,24 +5,19 @@
  *
  * Shows the knowledge base being built in real-time during import.
  * Users can provide guidance and corrections as items stream in.
+ *
+ * Uses the shared KnowledgeExplorer for visualization with live polling
+ * for document updates.
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-    XIcon,
-    FolderIcon,
-    FolderOpenIcon,
-    FileTextIcon,
-    CheckIcon,
-    CaretRightIcon,
-} from "@phosphor-icons/react";
+import { motion } from "framer-motion";
+import { X } from "@phosphor-icons/react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { SimpleComposer } from "@/components/chat";
-import { cn } from "@/lib/utils";
+import { KnowledgeExplorer, type KBDocumentData } from "@/components/kb";
+import { logger } from "@/lib/client-logger";
 import { toast } from "sonner";
 
 interface KBDocument {
@@ -43,85 +38,6 @@ interface LiveKnowledgeBuilderProps {
     onError?: (message: string) => void;
 }
 
-/**
- * Tree node structure (after conversion to arrays)
- */
-interface TreeNode {
-    name: string;
-    path: string;
-    isFolder: boolean;
-    children: TreeNode[];
-    document?: KBDocument;
-}
-
-/**
- * Intermediate tree structure (during building with Record keys)
- */
-interface BuildingNode {
-    name: string;
-    path: string;
-    isFolder: boolean;
-    children: Record<string, BuildingNode>;
-    document?: KBDocument;
-}
-
-/**
- * Build a tree structure from flat document list
- */
-function buildTree(docs: KBDocument[]): TreeNode[] {
-    const root: Record<string, BuildingNode> = {};
-
-    for (const doc of docs) {
-        const parts = doc.path.split(".");
-        let current = root;
-
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            const isLast = i === parts.length - 1;
-            const pathSoFar = parts.slice(0, i + 1).join(".");
-
-            if (!current[part]) {
-                current[part] = {
-                    name: part,
-                    path: pathSoFar,
-                    isFolder: !isLast,
-                    children: {},
-                    document: isLast ? doc : undefined,
-                };
-            }
-
-            if (isLast) {
-                current[part].document = doc;
-                // Only mark as non-folder if there are no children
-                const hasChildren = Object.keys(current[part].children).length > 0;
-                current[part].isFolder = hasChildren;
-            }
-
-            current = current[part].children;
-        }
-    }
-
-    // Convert to array and sort
-    function toArray(nodes: Record<string, BuildingNode>): TreeNode[] {
-        return Object.values(nodes)
-            .map((node) => ({
-                name: node.name,
-                path: node.path,
-                isFolder: node.isFolder,
-                document: node.document,
-                children: toArray(node.children),
-            }))
-            .sort((a, b) => {
-                // Folders first, then alphabetically
-                if (a.isFolder && !b.isFolder) return -1;
-                if (!a.isFolder && b.isFolder) return 1;
-                return a.name.localeCompare(b.name);
-            });
-    }
-
-    return toArray(root);
-}
-
 export function LiveKnowledgeBuilder({
     jobId,
     totalConversations,
@@ -132,12 +48,6 @@ export function LiveKnowledgeBuilder({
     const [guidance, setGuidance] = useState<string[]>([]);
     const [newGuidance, setNewGuidance] = useState("");
     const [isAddingGuidance, setIsAddingGuidance] = useState(false);
-    const [selectedPath, setSelectedPath] = useState<string | null>(null);
-    const [correction, setCorrection] = useState("");
-    const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
-    const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
-        new Set(["Profile", "Knowledge"])
-    );
     const [newPaths, setNewPaths] = useState<Set<string>>(new Set());
     const [currentProcessed, setCurrentProcessed] = useState(0);
     const [jobStatus, setJobStatus] = useState<string>("running");
@@ -148,9 +58,13 @@ export function LiveKnowledgeBuilder({
     useEffect(() => {
         if (jobStatus === "completed" || jobStatus === "failed") return;
 
+        const abortController = new AbortController();
+
         const pollJobStatus = async () => {
             try {
-                const response = await fetch(`/api/import/job/${jobId}/status`);
+                const response = await fetch(`/api/import/job/${jobId}/status`, {
+                    signal: abortController.signal,
+                });
                 if (!response.ok) return;
 
                 const data = await response.json();
@@ -165,21 +79,28 @@ export function LiveKnowledgeBuilder({
                     onError?.(errorMsg);
                 }
             } catch (err) {
-                // Ignore polling errors
+                if (err instanceof Error && err.name === "AbortError") return;
+                logger.warn({ error: err, jobId }, "Job status poll failed");
             }
         };
 
         pollJobStatus();
         const interval = setInterval(pollJobStatus, 2000);
-        return () => clearInterval(interval);
-    }, [jobId, jobStatus, onComplete]);
+        return () => {
+            clearInterval(interval);
+            abortController.abort();
+        };
+    }, [jobId, jobStatus, onComplete, onError]);
 
     // Poll for KB changes
     useEffect(() => {
+        const abortController = new AbortController();
+
         const poll = async () => {
             try {
                 const response = await fetch(
-                    `/api/kb/documents?since=${encodeURIComponent(lastPollTime.current)}`
+                    `/api/kb/documents?since=${encodeURIComponent(lastPollTime.current)}`,
+                    { signal: abortController.signal }
                 );
                 if (!response.ok) return;
 
@@ -210,57 +131,72 @@ export function LiveKnowledgeBuilder({
                             a.path.localeCompare(b.path)
                         );
                     });
-
-                    // Auto-expand parent folders of new items
-                    for (const doc of data.documents) {
-                        const parts = doc.path.split(".");
-                        for (let i = 1; i < parts.length; i++) {
-                            setExpandedPaths((prev) =>
-                                new Set(prev).add(parts.slice(0, i).join("."))
-                            );
-                        }
-                    }
                 }
             } catch (err) {
-                // Ignore polling errors
+                if (err instanceof Error && err.name === "AbortError") return;
+                logger.warn({ error: err }, "KB documents poll failed");
             }
         };
 
         // Initial fetch of all docs
         const fetchAll = async () => {
             try {
-                const response = await fetch("/api/kb/documents");
+                const response = await fetch("/api/kb/documents", {
+                    signal: abortController.signal,
+                });
                 if (!response.ok) return;
 
                 const data = await response.json();
-                setDocuments(data.documents);
-                data.documents.forEach((d: KBDocument) =>
-                    seenPaths.current.add(d.path)
-                );
+                if (data.documents.length > 0) {
+                    // Mark initial documents as new to trigger folder expansion
+                    const initialPaths = new Set<string>();
+                    data.documents.forEach((d: KBDocument) => {
+                        if (!seenPaths.current.has(d.path)) {
+                            initialPaths.add(d.path);
+                            seenPaths.current.add(d.path);
+                        }
+                    });
+                    setNewPaths(initialPaths);
+                    setDocuments(data.documents);
+
+                    // Clear new status after animation
+                    setTimeout(() => setNewPaths(new Set()), 2000);
+                }
             } catch (err) {
-                // Ignore
+                if (err instanceof Error && err.name === "AbortError") return;
+                logger.warn({ error: err }, "Initial KB documents fetch failed");
             }
         };
 
         fetchAll();
         const interval = setInterval(poll, 1500);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            abortController.abort();
+        };
     }, []);
 
     // Fetch guidance on mount
     useEffect(() => {
+        const abortController = new AbortController();
+
         const fetchGuidance = async () => {
             try {
-                const response = await fetch(`/api/import/job/${jobId}/guidance`);
+                const response = await fetch(`/api/import/job/${jobId}/guidance`, {
+                    signal: abortController.signal,
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setGuidance(data.guidance);
                 }
             } catch (err) {
-                // Ignore
+                if (err instanceof Error && err.name === "AbortError") return;
+                logger.warn({ error: err, jobId }, "Guidance fetch failed");
             }
         };
         fetchGuidance();
+
+        return () => abortController.abort();
     }, [jobId]);
 
     const addGuidance = useCallback(async () => {
@@ -309,55 +245,40 @@ export function LiveKnowledgeBuilder({
         [jobId]
     );
 
-    const submitCorrection = useCallback(async () => {
-        if (!selectedPath || !correction.trim() || isSubmittingCorrection) return;
+    // Handle correction submission from KnowledgeExplorer
+    // Empty deps array is safe - setDocuments uses functional update pattern
+    const handleCorrection = useCallback(
+        async (
+            path: string,
+            correctionText: string
+        ): Promise<KBDocumentData | null> => {
+            try {
+                const response = await fetch("/api/kb/correct", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        path,
+                        correction: correctionText,
+                    }),
+                });
 
-        setIsSubmittingCorrection(true);
-        try {
-            const response = await fetch("/api/kb/correct", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    path: selectedPath,
-                    correction: correction.trim(),
-                }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                // Update the document in our local state
-                if (data.document) {
-                    setDocuments((prev) =>
-                        prev.map((d) => (d.path === selectedPath ? data.document : d))
-                    );
+                if (response.ok) {
+                    const data = await response.json();
+                    // Update the document in our local state
+                    if (data.document) {
+                        setDocuments((prev) =>
+                            prev.map((d) => (d.path === path ? data.document : d))
+                        );
+                        return data.document as KBDocumentData;
+                    }
                 }
-                setCorrection("");
-                setSelectedPath(null);
-                toast.success("Correction applied");
-            } else {
-                toast.error("Failed to apply correction");
+                return null;
+            } catch {
+                return null;
             }
-        } catch (err) {
-            toast.error("Something went wrong");
-        } finally {
-            setIsSubmittingCorrection(false);
-        }
-    }, [selectedPath, correction, isSubmittingCorrection]);
-
-    const toggleExpanded = useCallback((path: string) => {
-        setExpandedPaths((prev) => {
-            const next = new Set(prev);
-            if (next.has(path)) {
-                next.delete(path);
-            } else {
-                next.add(path);
-            }
-            return next;
-        });
-    }, []);
-
-    const tree = buildTree(documents);
-    const selectedDoc = documents.find((d) => d.path === selectedPath);
+        },
+        []
+    );
 
     const progressPercent =
         totalConversations > 0
@@ -426,7 +347,7 @@ export function LiveKnowledgeBuilder({
                                             onClick={() => removeGuidance(index)}
                                             className="hover:bg-primary/20 rounded-full p-0.5"
                                         >
-                                            <XIcon className="h-3 w-3" />
+                                            <X className="h-3 w-3" />
                                         </button>
                                     </motion.div>
                                 ))}
@@ -436,114 +357,15 @@ export function LiveKnowledgeBuilder({
                 </CardContent>
             </Card>
 
-            {/* KB Tree and Detail view */}
-            <div className="grid gap-4 lg:grid-cols-2">
-                {/* Tree view */}
-                <Card className="max-h-[60vh] overflow-hidden">
-                    <CardContent className="h-full overflow-y-auto p-0">
-                        <div className="p-4">
-                            <h3 className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
-                                Knowledge Base
-                            </h3>
-                            {tree.length === 0 ? (
-                                <p className="text-muted-foreground py-8 text-center text-sm">
-                                    Waiting for documents to appear...
-                                </p>
-                            ) : (
-                                <div className="space-y-0.5">
-                                    {tree.map((node) => (
-                                        <TreeNodeComponent
-                                            key={node.path}
-                                            node={node}
-                                            depth={0}
-                                            expandedPaths={expandedPaths}
-                                            selectedPath={selectedPath}
-                                            newPaths={newPaths}
-                                            onToggle={toggleExpanded}
-                                            onSelect={setSelectedPath}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Detail/correction view */}
-                <Card className="max-h-[60vh] overflow-hidden">
-                    <CardContent className="h-full overflow-y-auto p-4">
-                        {selectedDoc ? (
-                            <div className="space-y-4">
-                                <div className="flex items-start justify-between gap-2">
-                                    <h3 className="font-medium">{selectedDoc.name}</h3>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        onClick={() => setSelectedPath(null)}
-                                    >
-                                        <XIcon className="h-4 w-4" />
-                                    </Button>
-                                </div>
-
-                                <div className="bg-muted/50 prose prose-sm dark:prose-invert max-w-none rounded-md p-3 text-sm">
-                                    <MarkdownRenderer content={selectedDoc.content} />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                                        Correction
-                                    </label>
-                                    <textarea
-                                        value={correction}
-                                        onChange={(e) => setCorrection(e.target.value)}
-                                        placeholder="What should be different? (e.g., 'I actually have 26 years experience, not 25')"
-                                        className="border-input bg-background min-h-[80px] w-full rounded-md border px-3 py-2 text-sm"
-                                    />
-                                    <div className="flex gap-2">
-                                        <Button
-                                            size="sm"
-                                            onClick={submitCorrection}
-                                            disabled={
-                                                !correction.trim() ||
-                                                isSubmittingCorrection
-                                            }
-                                        >
-                                            {isSubmittingCorrection ? (
-                                                <LoadingSpinner
-                                                    size={14}
-                                                    className="mr-2"
-                                                />
-                                            ) : (
-                                                <CheckIcon className="mr-2 h-4 w-4" />
-                                            )}
-                                            Apply Correction
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => {
-                                                setCorrection("");
-                                                setSelectedPath(null);
-                                            }}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-muted-foreground flex h-full items-center justify-center text-center text-sm">
-                                <p>
-                                    Select a document to view details
-                                    <br />
-                                    and provide corrections
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+            {/* KB Explorer - unified tree and detail view */}
+            <KnowledgeExplorer
+                documents={documents as KBDocumentData[]}
+                newPaths={newPaths}
+                mode="view"
+                onCorrection={handleCorrection}
+                treeMaxHeight="60vh"
+                detailMaxHeight="60vh"
+            />
 
             {/* Footer */}
             <p className="text-muted-foreground text-center text-sm">
@@ -552,113 +374,6 @@ export function LiveKnowledgeBuilder({
                 <br />
                 Add guidance above to steer what gets captured.
             </p>
-        </div>
-    );
-}
-
-interface TreeNodeComponentProps {
-    node: TreeNode;
-    depth: number;
-    expandedPaths: Set<string>;
-    selectedPath: string | null;
-    newPaths: Set<string>;
-    onToggle: (path: string) => void;
-    onSelect: (path: string | null) => void;
-}
-
-function TreeNodeComponent({
-    node,
-    depth,
-    expandedPaths,
-    selectedPath,
-    newPaths,
-    onToggle,
-    onSelect,
-}: TreeNodeComponentProps) {
-    const isExpanded = expandedPaths.has(node.path);
-    const isSelected = selectedPath === node.path;
-    const isNew = newPaths.has(node.path);
-    const hasChildren = node.children.length > 0;
-
-    return (
-        <div>
-            <motion.div
-                initial={
-                    isNew
-                        ? {
-                              opacity: 0,
-                              x: -10,
-                              backgroundColor: "rgba(var(--primary), 0.2)",
-                          }
-                        : false
-                }
-                animate={{ opacity: 1, x: 0, backgroundColor: "transparent" }}
-                transition={{ duration: 0.3 }}
-                className={cn(
-                    "flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors",
-                    isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted",
-                    isNew && "ring-primary/50 ring-2"
-                )}
-                style={{ paddingLeft: `${depth * 16 + 8}px` }}
-                onClick={() => {
-                    if (node.isFolder && hasChildren) {
-                        onToggle(node.path);
-                    } else if (node.document) {
-                        onSelect(isSelected ? null : node.path);
-                    }
-                }}
-            >
-                {node.isFolder ? (
-                    <>
-                        <CaretRightIcon
-                            className={cn(
-                                "h-3 w-3 transition-transform",
-                                isExpanded && "rotate-90"
-                            )}
-                        />
-                        {isExpanded ? (
-                            <FolderOpenIcon className="h-4 w-4 text-amber-500" />
-                        ) : (
-                            <FolderIcon className="h-4 w-4 text-amber-500" />
-                        )}
-                    </>
-                ) : (
-                    <>
-                        <span className="w-3" />
-                        <FileTextIcon className="text-muted-foreground h-4 w-4" />
-                    </>
-                )}
-                <span className="truncate">{node.name}</span>
-                {isNew && (
-                    <span className="bg-primary/20 text-primary ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
-                        NEW
-                    </span>
-                )}
-            </motion.div>
-
-            <AnimatePresence>
-                {isExpanded && hasChildren && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        {node.children.map((child) => (
-                            <TreeNodeComponent
-                                key={child.path}
-                                node={child}
-                                depth={depth + 1}
-                                expandedPaths={expandedPaths}
-                                selectedPath={selectedPath}
-                                newPaths={newPaths}
-                                onToggle={onToggle}
-                                onSelect={onSelect}
-                            />
-                        ))}
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }
