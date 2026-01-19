@@ -25,6 +25,7 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { getGatewayClient, translateModelId } from "@/lib/ai/gateway";
 import { getIntegrationTools } from "@/lib/integrations/tools";
+import { getMcpGatewayTools } from "@/lib/mcp/gateway";
 import { builtInTools } from "@/lib/tools/built-in";
 import { pruneModelMessages } from "@/lib/ai/message-pruning";
 import { writeStatus } from "@/lib/streaming";
@@ -393,11 +394,16 @@ export async function runAITeamMember(
             try {
                 // Load tools available to this user
                 const integrationTools = await getIntegrationTools(userEmail);
+
+                // Load MCP gateway tools for user-configured MCP servers
+                const mcpTools = await getMcpGatewayTools(userEmail);
+
                 const completeTool = createCompleteTool();
 
                 const allTools = {
                     ...builtInTools,
                     ...integrationTools,
+                    ...mcpTools,
                     complete: completeTool,
                 };
 
@@ -617,11 +623,16 @@ export async function runAITeamMemberStreaming(
             try {
                 // Load tools available to this user
                 const integrationTools = await getIntegrationTools(userEmail);
+
+                // Load MCP gateway tools for user-configured MCP servers
+                const mcpTools = await getMcpGatewayTools(userEmail);
+
                 const completeTool = createCompleteTool();
 
                 const allTools = {
                     ...builtInTools,
                     ...integrationTools,
+                    ...mcpTools,
                     complete: completeTool,
                 };
 
