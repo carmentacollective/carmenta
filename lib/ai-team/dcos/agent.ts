@@ -20,6 +20,7 @@ import { logger } from "@/lib/logger";
 import { getGatewayClient, translateModelId, translateOptions } from "@/lib/ai/gateway";
 import { getFallbackChain } from "@/lib/model-config";
 import { getIntegrationTools } from "@/lib/integrations/tools";
+import { getMcpGatewayTools } from "@/lib/mcp/gateway";
 import { createSearchKnowledgeTool } from "@/lib/tools/built-in";
 import { writeStatus } from "@/lib/streaming";
 
@@ -150,6 +151,10 @@ export async function executeDCOS(input: DCOSExecutionInput) {
     // Load integration tools for connected services
     const integrationTools = await getIntegrationTools(userEmail);
 
+    // Load MCP gateway tools for user-configured MCP servers
+    // Each enabled server becomes a single tool with progressive disclosure
+    const mcpTools = await getMcpGatewayTools(userEmail);
+
     // Create searchKnowledge tool (direct KB search without agent)
     const searchKnowledgeTool = createSearchKnowledgeTool(userId);
 
@@ -162,6 +167,7 @@ export async function executeDCOS(input: DCOSExecutionInput) {
         smsUser: smsUserTool,
         pushNotification: pushNotificationTool,
         ...integrationTools,
+        ...mcpTools,
     };
 
     // Build system prompt with context
