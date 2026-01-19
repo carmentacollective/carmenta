@@ -58,9 +58,13 @@ export function LiveKnowledgeBuilder({
     useEffect(() => {
         if (jobStatus === "completed" || jobStatus === "failed") return;
 
+        const abortController = new AbortController();
+
         const pollJobStatus = async () => {
             try {
-                const response = await fetch(`/api/import/job/${jobId}/status`);
+                const response = await fetch(`/api/import/job/${jobId}/status`, {
+                    signal: abortController.signal,
+                });
                 if (!response.ok) return;
 
                 const data = await response.json();
@@ -75,21 +79,28 @@ export function LiveKnowledgeBuilder({
                     onError?.(errorMsg);
                 }
             } catch (err) {
+                if (err instanceof Error && err.name === "AbortError") return;
                 logger.warn({ error: err, jobId }, "Job status poll failed");
             }
         };
 
         pollJobStatus();
         const interval = setInterval(pollJobStatus, 2000);
-        return () => clearInterval(interval);
-    }, [jobId, jobStatus, onComplete]);
+        return () => {
+            clearInterval(interval);
+            abortController.abort();
+        };
+    }, [jobId, jobStatus, onComplete, onError]);
 
     // Poll for KB changes
     useEffect(() => {
+        const abortController = new AbortController();
+
         const poll = async () => {
             try {
                 const response = await fetch(
-                    `/api/kb/documents?since=${encodeURIComponent(lastPollTime.current)}`
+                    `/api/kb/documents?since=${encodeURIComponent(lastPollTime.current)}`,
+                    { signal: abortController.signal }
                 );
                 if (!response.ok) return;
 
@@ -122,6 +133,7 @@ export function LiveKnowledgeBuilder({
                     });
                 }
             } catch (err) {
+                if (err instanceof Error && err.name === "AbortError") return;
                 logger.warn({ error: err }, "KB documents poll failed");
             }
         };
@@ -129,38 +141,62 @@ export function LiveKnowledgeBuilder({
         // Initial fetch of all docs
         const fetchAll = async () => {
             try {
-                const response = await fetch("/api/kb/documents");
+                const response = await fetch("/api/kb/documents", {
+                    signal: abortController.signal,
+                });
                 if (!response.ok) return;
 
                 const data = await response.json();
-                setDocuments(data.documents);
-                data.documents.forEach((d: KBDocument) =>
-                    seenPaths.current.add(d.path)
-                );
+                if (data.documents.length > 0) {
+                    // Mark initial documents as new to trigger folder expansion
+                    const initialPaths = new Set<string>();
+                    data.documents.forEach((d: KBDocument) => {
+                        if (!seenPaths.current.has(d.path)) {
+                            initialPaths.add(d.path);
+                            seenPaths.current.add(d.path);
+                        }
+                    });
+                    setNewPaths(initialPaths);
+                    setDocuments(data.documents);
+
+                    // Clear new status after animation
+                    setTimeout(() => setNewPaths(new Set()), 2000);
+                }
             } catch (err) {
+                if (err instanceof Error && err.name === "AbortError") return;
                 logger.warn({ error: err }, "Initial KB documents fetch failed");
             }
         };
 
         fetchAll();
         const interval = setInterval(poll, 1500);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            abortController.abort();
+        };
     }, []);
 
     // Fetch guidance on mount
     useEffect(() => {
+        const abortController = new AbortController();
+
         const fetchGuidance = async () => {
             try {
-                const response = await fetch(`/api/import/job/${jobId}/guidance`);
+                const response = await fetch(`/api/import/job/${jobId}/guidance`, {
+                    signal: abortController.signal,
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setGuidance(data.guidance);
                 }
             } catch (err) {
+                if (err instanceof Error && err.name === "AbortError") return;
                 logger.warn({ error: err, jobId }, "Guidance fetch failed");
             }
         };
         fetchGuidance();
+
+        return () => abortController.abort();
     }, [jobId]);
 
     const addGuidance = useCallback(async () => {
@@ -210,6 +246,7 @@ export function LiveKnowledgeBuilder({
     );
 
     // Handle correction submission from KnowledgeExplorer
+    // Empty deps array is safe - setDocuments uses functional update pattern
     const handleCorrection = useCallback(
         async (
             path: string,

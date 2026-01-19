@@ -9,7 +9,7 @@
  * - "edit": Full editing with save states (for KB page)
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { X, Check } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -37,6 +37,11 @@ export function KnowledgeDetail({
 }: KnowledgeDetailProps) {
     const [correction, setCorrection] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Reset correction state when document changes
+    useEffect(() => {
+        setCorrection("");
+    }, [document?.path]);
 
     const handleSubmitCorrection = useCallback(async () => {
         if (!document || !correction.trim() || !onCorrection || isSubmitting) return;

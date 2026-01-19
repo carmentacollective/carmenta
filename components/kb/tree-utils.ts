@@ -66,7 +66,8 @@ export function buildTree(docs: KBDocumentData[]): TreeNode[] {
 
             if (!current[part]) {
                 current[part] = {
-                    name: part,
+                    // Use document name for leaf nodes, path segment for folders
+                    name: isLast ? doc.name : part,
                     path: pathSoFar,
                     isFolder: !isLast,
                     children: {},
@@ -76,7 +77,8 @@ export function buildTree(docs: KBDocumentData[]): TreeNode[] {
 
             if (isLast) {
                 current[part].document = doc;
-                // Only mark as non-folder if there are no children
+                // Use document name and mark as non-folder if no children
+                current[part].name = doc.name;
                 const hasChildren = Object.keys(current[part].children).length > 0;
                 current[part].isFolder = hasChildren;
             }
