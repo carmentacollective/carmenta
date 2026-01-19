@@ -5,7 +5,11 @@
  *
  * Handles tool results for google-workspace-files integration:
  * - open_google_picker: Opens the Google Picker for file selection
- * - Other actions: Sheet/Doc creation confirmations
+ * - read_sheet: Reads data from a Google Sheet (handled by ToolRenderer)
+ *
+ * Note: Document creation (create_sheet, create_doc) was removed in 2025-01.
+ * Carmenta is not a document formatting service—users should create docs in
+ * Google Workspace and have Carmenta read/analyze them.
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -251,61 +255,6 @@ function PickerAction({
 }
 
 /**
- * File creation confirmation
- */
-function FileCreatedConfirmation({
-    type,
-    title,
-    url,
-}: {
-    type: "sheet" | "doc" | "slides";
-    title: string;
-    url: string;
-}) {
-    const icons = {
-        sheet: <Table className="h-5 w-5 text-green-400" />,
-        doc: <TextT className="h-5 w-5 text-blue-400" />,
-        slides: <Presentation className="h-5 w-5 text-yellow-400" />,
-    };
-
-    const typeNames = {
-        sheet: "Google Sheet",
-        doc: "Google Doc",
-        slides: "Google Slides",
-    };
-
-    // Explicit mapping for action text (avoids brittle string split)
-    const openInLabels = {
-        sheet: "Open in Sheets",
-        doc: "Open in Docs",
-        slides: "Open in Slides",
-    };
-
-    return (
-        <div className="rounded-md border border-white/10 bg-white/5 p-4">
-            <div className="flex items-center gap-2 text-sm">
-                {icons[type]}
-                <span className="font-medium text-white">
-                    Your {typeNames[type]} is ready
-                </span>
-            </div>
-            <div className="mt-3 space-y-2 text-sm">
-                <div className="font-medium text-white">{title}</div>
-                <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1.5 rounded text-blue-400 transition-colors hover:text-blue-300 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
-                >
-                    <ArrowSquareOut className="h-3.5 w-3.5" />
-                    {openInLabels[type]}
-                </a>
-            </div>
-        </div>
-    );
-}
-
-/**
  * Integration not connected message with direct link
  */
 function IntegrationRequired() {
@@ -355,37 +304,7 @@ export function GoogleWorkspaceFilesToolResult({
             return <IntegrationRequired />;
         }
 
-        // Handle file creation
-        if (output.spreadsheetId && output.url) {
-            return (
-                <FileCreatedConfirmation
-                    type="sheet"
-                    title={(input.title as string) || "Untitled Spreadsheet"}
-                    url={output.url as string}
-                />
-            );
-        }
-
-        if (output.documentId && output.url) {
-            return (
-                <FileCreatedConfirmation
-                    type="doc"
-                    title={(input.title as string) || "Untitled Document"}
-                    url={output.url as string}
-                />
-            );
-        }
-
-        if (output.presentationId && output.url) {
-            return (
-                <FileCreatedConfirmation
-                    type="slides"
-                    title={(input.title as string) || "Untitled Presentation"}
-                    url={output.url as string}
-                />
-            );
-        }
-
+        // All other outputs (read_sheet results, etc.) are handled by ToolRenderer
         return null;
     };
 

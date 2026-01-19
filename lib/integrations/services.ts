@@ -250,25 +250,26 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
     },
 
     // Google Sheets/Docs/Slides - OAuth (in-house, "non-sensitive" drive.file scope)
+    // Read-only: users select files via Google Picker, Carmenta reads/analyzes them
     {
         id: "google-workspace-files",
         name: "Google Sheets/Docs/Slides",
         description:
-            "Create and work with Sheets, Docs, and Slides in your Carmenta workspace",
+            "Read and analyze your Sheets, Docs, and Slides by selecting them via file picker",
         logo: "/logos/google-workspace-files.svg",
         authMethod: "oauth",
         status: "available",
         oauthProviderId: "google-workspace-files",
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.google.com/workspace",
-        capabilities: ["create_sheet", "create_doc", "read_sheet", "open_picker"],
+        capabilities: ["read_sheet", "open_picker"],
         suggestKeywords: [
             "google sheet",
             "google doc",
             "google slides",
-            "export to sheets",
-            "create a spreadsheet",
-            "create a doc",
+            "read spreadsheet",
+            "analyze sheet",
+            "open google file",
         ],
     },
 
