@@ -355,7 +355,8 @@ export async function processExtractionJob(jobId: string): Promise<void> {
             for (const result of results) {
                 await db.transaction(async (tx) => {
                     // Mark as processed (idempotent - handle retries gracefully)
-                    await tx
+                    // If conflict (already processed), skip this connection entirely
+                    const processedRows = await tx
                         .insert(extractionProcessedConnections)
                         .values({
                             userId: job.userId,
@@ -363,10 +364,11 @@ export async function processExtractionJob(jobId: string): Promise<void> {
                             jobId: job.id,
                             extractionCount: result.facts.length,
                         })
-                        .onConflictDoNothing();
+                        .onConflictDoNothing()
+                        .returning({ id: extractionProcessedConnections.id });
 
-                    // Save extractions
-                    if (result.facts.length > 0) {
+                    // Only save extractions if we actually inserted (not a retry)
+                    if (processedRows.length > 0 && result.facts.length > 0) {
                         await tx.insert(pendingExtractions).values(
                             result.facts.map((f) => ({
                                 userId: job.userId,
@@ -383,6 +385,7 @@ export async function processExtractionJob(jobId: string): Promise<void> {
                     }
                 });
 
+                // Only count as processed if we actually processed (not skipped due to conflict)
                 processedCount++;
             }
 
