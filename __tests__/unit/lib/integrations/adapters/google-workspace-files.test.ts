@@ -392,6 +392,19 @@ describe("GoogleWorkspaceFilesAdapter", () => {
             expect(content.fileTypes).toEqual(["spreadsheet", "document"]);
             expect(content.mimeTypes).toHaveLength(2);
         });
+
+        it("ignores invalid file types", async () => {
+            const result = await adapter.execute(
+                "open_picker",
+                { file_types: ["invalid_type" as any] },
+                testUserEmail
+            );
+
+            const content = JSON.parse(result.content[0].text as string);
+            expect(content.fileTypes).toEqual(["invalid_type"]);
+            // Invalid types are silently ignored - no MIME types added
+            expect(content.mimeTypes).toEqual([]);
+        });
     });
 
     describe("Parameter Validation", () => {
@@ -513,8 +526,9 @@ describe("GoogleWorkspaceFilesAdapter", () => {
             const result = await adapter.testConnection("expired-token", testUserEmail);
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("expired");
-            expect(result.error).toContain("reconnecting");
+            expect(result.error).toBe(
+                "The Google connection may have expired. Try reconnecting."
+            );
         });
 
         it("returns friendly error for 403 forbidden", async () => {
@@ -531,7 +545,9 @@ describe("GoogleWorkspaceFilesAdapter", () => {
             );
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("expired");
+            expect(result.error).toBe(
+                "The Google connection may have expired. Try reconnecting."
+            );
         });
     });
 });
