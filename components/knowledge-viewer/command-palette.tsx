@@ -103,6 +103,7 @@ export function CommandPalette({
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState<SearchFilters>({});
+    const [retryTrigger, setRetryTrigger] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Load recent searches when palette opens
@@ -116,7 +117,7 @@ export function CommandPalette({
         }
     }, [open]);
 
-    // Perform full-text search when query changes
+    // Perform full-text search when query changes or retry is triggered
     useEffect(() => {
         const abortController = new AbortController();
 
@@ -153,7 +154,7 @@ export function CommandPalette({
             clearTimeout(debounceTimer);
             abortController.abort();
         };
-    }, [query]);
+    }, [query, retryTrigger]);
 
     // Use search results if query exists, otherwise show all documents
     const filtered = useMemo(() => {
@@ -462,7 +463,9 @@ export function CommandPalette({
                                         Search hit a snag
                                     </p>
                                     <button
-                                        onClick={() => setQuery(query + " ")}
+                                        onClick={() =>
+                                            setRetryTrigger((prev) => prev + 1)
+                                        }
                                         className="text-primary hover:text-primary/80 mt-2 text-sm"
                                     >
                                         Try again
