@@ -109,6 +109,7 @@ export function CommandPalette({
     // Load recent searches when palette opens
     useEffect(() => {
         if (open) {
+            setSearchError(false); // Reset error state on open
             getRecentSearches()
                 .then(setRecentSearches)
                 .catch((error) =>
@@ -466,7 +467,7 @@ export function CommandPalette({
                                         onClick={() =>
                                             setRetryTrigger((prev) => prev + 1)
                                         }
-                                        className="text-primary hover:text-primary/80 mt-2 text-sm"
+                                        className="text-primary hover:text-primary/80 focus-visible:ring-primary/40 mt-2 rounded text-sm focus-visible:ring-2 focus-visible:outline-none"
                                     >
                                         Try again
                                     </button>

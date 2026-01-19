@@ -329,9 +329,17 @@ export function KBContent({
                                 <span>{error}</span>
                             </div>
                             <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(editContent);
-                                    toast.success("Copied to clipboard");
+                                onClick={async () => {
+                                    try {
+                                        await navigator.clipboard.writeText(
+                                            editContent
+                                        );
+                                        toast.success("Copied to clipboard");
+                                    } catch {
+                                        toast.error(
+                                            "Could not copy—try selecting and copying manually"
+                                        );
+                                    }
                                 }}
                                 className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-500/20 dark:text-red-300"
                             >
