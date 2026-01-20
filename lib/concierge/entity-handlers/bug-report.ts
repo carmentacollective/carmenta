@@ -112,8 +112,9 @@ The more reports we get, the faster we fix it. Thank you for telling us.
                     : undefined;
 
             // Combine error sources for comprehensive error context
+            // Filter out empty/whitespace strings to avoid empty sections
             const errorDetails = [context.lastError, context.recentToolFailures]
-                .filter(Boolean)
+                .filter((e) => e && e.trim().length > 0)
                 .join("\n\n---\n\n");
 
             const issueResult = await createIssue({
@@ -136,10 +137,14 @@ The more reports we get, the faster we fix it. Thank you for telling us.
                 span?.setAttribute("issue_number", issue.number);
 
                 // Build a summary of what was included
+                // Use same filtering logic as template to get accurate counts
+                const validImageUrls = context.imageUrls?.filter(
+                    (url) => url && typeof url === "string" && url.trim().length > 0
+                );
                 const includedItems: string[] = [];
-                if (context.imageUrls?.length) {
+                if (validImageUrls && validImageUrls.length > 0) {
                     includedItems.push(
-                        `${context.imageUrls.length} screenshot${context.imageUrls.length > 1 ? "s" : ""}`
+                        `${validImageUrls.length} screenshot${validImageUrls.length > 1 ? "s" : ""}`
                     );
                 }
                 if (errorDetails) {

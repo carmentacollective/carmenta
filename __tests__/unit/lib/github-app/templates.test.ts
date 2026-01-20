@@ -109,6 +109,38 @@ describe("GitHub App Templates", () => {
                 "[View full conversation](https://carmenta.ai/c/abc123)"
             );
         });
+
+        it("filters out empty/whitespace image URLs", () => {
+            const result = formatBugReport({
+                description: "UI bug",
+                imageUrls: ["https://valid.com/img.png", "", "  ", undefined as any],
+                reportedAt: new Date("2025-01-15T10:30:00Z"),
+            });
+
+            expect(result).toContain("## Screenshots");
+            expect(result).toContain("![Screenshot 1](https://valid.com/img.png)");
+            expect(result).not.toContain("Screenshot 2");
+        });
+
+        it("does not render Screenshots section for empty array", () => {
+            const result = formatBugReport({
+                description: "Bug without images",
+                imageUrls: [],
+                reportedAt: new Date("2025-01-15T10:30:00Z"),
+            });
+
+            expect(result).not.toContain("## Screenshots");
+        });
+
+        it("does not render Screenshots section when all URLs are invalid", () => {
+            const result = formatBugReport({
+                description: "Bug with invalid URLs",
+                imageUrls: ["", "  ", undefined as any],
+                reportedAt: new Date("2025-01-15T10:30:00Z"),
+            });
+
+            expect(result).not.toContain("## Screenshots");
+        });
     });
 
     describe("formatFeedback", () => {
