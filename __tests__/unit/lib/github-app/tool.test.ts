@@ -485,6 +485,41 @@ describe("GitHub App Tool", () => {
             expect(result.message).not.toContain("+1");
         });
 
+        it("does not claim reaction added when reaction fails for admin", async () => {
+            (searchIssues as Mock).mockResolvedValue({
+                success: true,
+                data: [
+                    {
+                        number: 42,
+                        title: "Voice input cuts off",
+                        state: "open",
+                        html_url: "https://github.com/test/issues/42",
+                        labels: [{ name: "bug" }],
+                    },
+                ],
+            });
+            (addReaction as Mock).mockResolvedValue({
+                success: false,
+                error: "Rate limit exceeded",
+            });
+
+            const tool = createGitHubTool({
+                userId: "admin_123",
+                isAdmin: true,
+            });
+
+            const result = await executeTool(tool, {
+                operation: "create_issue",
+                title: "Voice input stops working",
+            });
+
+            expect(result.isDuplicate).toBe(true);
+            expect(addReaction).toHaveBeenCalledWith(42, "+1");
+            // Should NOT claim reaction was added when it failed
+            expect(result.message).not.toContain("Added your +1");
+            expect(result.message).toContain("Found existing issue #42");
+        });
+
         it("creates new issue when search fails", async () => {
             (searchIssues as Mock).mockResolvedValue({
                 success: false,

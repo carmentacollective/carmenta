@@ -312,12 +312,15 @@ async function executeOperation(
                     const existingIssue = searchResult.data[0];
 
                     // Try to add +1 reaction (requires admin, but gracefully fails for non-admins)
+                    let reactionAdded = false;
                     if (context.isAdmin) {
                         const reactionResult = await addReaction(
                             existingIssue.number,
                             "+1"
                         );
-                        if (!reactionResult.success) {
+                        if (reactionResult.success) {
+                            reactionAdded = true;
+                        } else {
                             logger.warn(
                                 {
                                     issue: existingIssue.number,
@@ -333,6 +336,7 @@ async function executeOperation(
                             existingIssue: existingIssue.number,
                             requestedTitle: input.title,
                             userId: context.userId,
+                            reactionAdded,
                         },
                         "Found duplicate issue, returning existing"
                     );
@@ -343,7 +347,7 @@ async function executeOperation(
                         issueNumber: existingIssue.number,
                         issueUrl: existingIssue.html_url,
                         title: existingIssue.title,
-                        message: `Found existing issue #${existingIssue.number} that matches this report.${context.isAdmin ? " Added your +1 to show additional interest." : ""}`,
+                        message: `Found existing issue #${existingIssue.number} that matches this report.${reactionAdded ? " Added your +1 to show additional interest." : ""}`,
                     };
                 }
                 // Search failed or no results - proceed to create new issue
