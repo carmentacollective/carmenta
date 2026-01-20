@@ -16,6 +16,7 @@
 
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { logger } from "@/lib/client-logger";
 
@@ -64,7 +65,11 @@ function getSavedDraft(key: string): string | null {
             return savedDraft;
         }
     } catch (error) {
-        logger.debug({ error, key }, "localStorage read failed");
+        logger.warn({ error, key }, "Failed to read draft from localStorage");
+        Sentry.captureException(error, {
+            tags: { hook: "useDraftPersistence", action: "getSavedDraft" },
+            level: "warning",
+        });
     }
     return null;
 }
@@ -158,8 +163,14 @@ export function useDraftPersistence({
                     localStorage.removeItem(key);
                 }
             } catch (error) {
-                // Quota exceeded or unavailable - fail silently
-                logger.debug({ error }, "Could not save draft");
+                logger.warn(
+                    { error, key: effectiveKey },
+                    "Failed to save draft to localStorage"
+                );
+                Sentry.captureException(error, {
+                    tags: { hook: "useDraftPersistence", action: "saveDraft" },
+                    level: "warning",
+                });
             }
         }, DEBOUNCE_MS);
 
@@ -184,7 +195,14 @@ export function useDraftPersistence({
             const key = getDraftKey(effectiveKey);
             localStorage.removeItem(key);
         } catch (error) {
-            logger.debug({ error, key: effectiveKey }, "Failed to clear draft");
+            logger.warn(
+                { error, key: effectiveKey },
+                "Failed to clear draft from localStorage"
+            );
+            Sentry.captureException(error, {
+                tags: { hook: "useDraftPersistence", action: "clearDraft" },
+                level: "warning",
+            });
         }
     }, [effectiveKey, setInput]);
 
@@ -200,7 +218,11 @@ export function useDraftPersistence({
             const key = getDraftKey(effectiveKey);
             localStorage.removeItem(key);
         } catch (error) {
-            logger.debug({ error, key: effectiveKey }, "Failed to clear draft on send");
+            logger.warn({ error, key: effectiveKey }, "Failed to clear draft on send");
+            Sentry.captureException(error, {
+                tags: { hook: "useDraftPersistence", action: "onMessageSent" },
+                level: "warning",
+            });
         }
 
         // Also dismiss recovery if it was showing
@@ -228,7 +250,14 @@ export function useDraftPersistence({
                 localStorage.removeItem(key);
             }
         } catch (error) {
-            logger.debug({ error }, "Could not save draft immediately");
+            logger.warn(
+                { error, key: effectiveKey },
+                "Failed to save draft immediately"
+            );
+            Sentry.captureException(error, {
+                tags: { hook: "useDraftPersistence", action: "saveImmediately" },
+                level: "warning",
+            });
         }
     }, [effectiveKey]);
 

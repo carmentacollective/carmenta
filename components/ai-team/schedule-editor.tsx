@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -138,7 +139,13 @@ export function ScheduleEditor({
             setIsEditing(false);
             setNaturalInput("");
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to parse schedule");
+            const message =
+                err instanceof Error ? err.message : "Failed to parse schedule";
+            setError(message);
+            Sentry.captureException(err, {
+                tags: { component: "ScheduleEditor", action: "parseSchedule" },
+                extra: { naturalInput: naturalInput.trim() },
+            });
         } finally {
             setIsParsingSchedule(false);
         }

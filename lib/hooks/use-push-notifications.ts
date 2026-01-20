@@ -21,6 +21,7 @@
  * ```
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect, useCallback } from "react";
 
 import { env } from "@/lib/env";
@@ -183,8 +184,11 @@ export function usePushNotifications(): UsePushNotificationsResult {
                 const subscription = await registration.pushManager.getSubscription();
                 setIsSubscribed(!!subscription);
             } catch (error) {
-                // Subscription check failed - not critical, but log for debugging
                 logger.warn({ error }, "Failed to check existing push subscription");
+                Sentry.captureException(error, {
+                    tags: { hook: "usePushNotifications", action: "checkSubscription" },
+                    level: "warning",
+                });
             }
         }
 
@@ -250,6 +254,10 @@ export function usePushNotifications(): UsePushNotificationsResult {
         } catch (err) {
             const message = err instanceof Error ? err.message : "Subscription failed";
             setError(message);
+            logger.error({ error: err }, "Push notification subscription failed");
+            Sentry.captureException(err, {
+                tags: { hook: "usePushNotifications", action: "subscribe" },
+            });
             return false;
         } finally {
             setIsLoading(false);
@@ -301,6 +309,10 @@ export function usePushNotifications(): UsePushNotificationsResult {
         } catch (err) {
             const message = err instanceof Error ? err.message : "Unsubscribe failed";
             setError(message);
+            logger.error({ error: err }, "Push notification unsubscribe failed");
+            Sentry.captureException(err, {
+                tags: { hook: "usePushNotifications", action: "unsubscribe" },
+            });
             return false;
         } finally {
             setIsLoading(false);
