@@ -21,6 +21,8 @@ import {
     CaretDownIcon,
 } from "@phosphor-icons/react";
 
+import { useIsClient } from "@/lib/hooks/use-is-client";
+
 import { KnowledgeExplorer, type KBDocumentData } from "@/components/kb";
 import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
 import { ImportWidget } from "@/components/import/import-widget";
@@ -43,6 +45,7 @@ interface KBPageContentProps {
 
 export function KBPageContent({ identityDocument, documents }: KBPageContentProps) {
     const router = useRouter();
+    const isClient = useIsClient();
     const [sheetOpen, setSheetOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
 
@@ -240,43 +243,63 @@ export function KBPageContent({ identityDocument, documents }: KBPageContentProp
                 </section>
 
                 {/* Import Knowledge Section */}
-                <Collapsible open={importOpen} onOpenChange={setImportOpen}>
+                {/* Render placeholder during SSR to avoid Radix ID hydration mismatch */}
+                {!isClient ? (
                     <section className="glass-card overflow-hidden rounded-xl">
-                        <CollapsibleTrigger asChild>
-                            <button className="hover:bg-foreground/5 flex w-full items-center justify-between px-6 py-4 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <UploadIcon className="text-foreground/50 h-5 w-5" />
-                                    <div className="text-left">
-                                        <h2 className="text-foreground text-base font-medium">
-                                            Import Knowledge
-                                        </h2>
-                                        <p className="text-foreground/50 text-sm">
-                                            Extract insights from ChatGPT or Claude
-                                            history
-                                        </p>
-                                    </div>
+                        <button className="hover:bg-foreground/5 flex w-full items-center justify-between px-6 py-4 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <UploadIcon className="text-foreground/50 h-5 w-5" />
+                                <div className="text-left">
+                                    <h2 className="text-foreground text-base font-medium">
+                                        Import Knowledge
+                                    </h2>
+                                    <p className="text-foreground/50 text-sm">
+                                        Extract insights from ChatGPT or Claude history
+                                    </p>
                                 </div>
-                                <CaretDownIcon
-                                    className={cn(
-                                        "text-foreground/30 h-5 w-5 transition-transform duration-200",
-                                        importOpen && "rotate-180"
-                                    )}
-                                />
-                            </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                            <div className="border-foreground/5 border-t px-6 py-4">
-                                <ImportWidget
-                                    mode="knowledge-only"
-                                    compact
-                                    showStepper={false}
-                                    onSuccess={handleImportSuccess}
-                                    onCancel={() => setImportOpen(false)}
-                                />
                             </div>
-                        </CollapsibleContent>
+                            <CaretDownIcon className="text-foreground/30 h-5 w-5" />
+                        </button>
                     </section>
-                </Collapsible>
+                ) : (
+                    <Collapsible open={importOpen} onOpenChange={setImportOpen}>
+                        <section className="glass-card overflow-hidden rounded-xl">
+                            <CollapsibleTrigger asChild>
+                                <button className="hover:bg-foreground/5 flex w-full items-center justify-between px-6 py-4 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <UploadIcon className="text-foreground/50 h-5 w-5" />
+                                        <div className="text-left">
+                                            <h2 className="text-foreground text-base font-medium">
+                                                Import Knowledge
+                                            </h2>
+                                            <p className="text-foreground/50 text-sm">
+                                                Extract insights from ChatGPT or Claude
+                                                history
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <CaretDownIcon
+                                        className={cn(
+                                            "text-foreground/30 h-5 w-5 transition-transform duration-200",
+                                            importOpen && "rotate-180"
+                                        )}
+                                    />
+                                </button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <div className="border-foreground/5 border-t px-6 py-4">
+                                    <ImportWidget
+                                        mode="knowledge-only"
+                                        compact
+                                        showStepper={false}
+                                        onSuccess={handleImportSuccess}
+                                        onCancel={() => setImportOpen(false)}
+                                    />
+                                </div>
+                            </CollapsibleContent>
+                        </section>
+                    </Collapsible>
+                )}
             </div>
 
             {/* Carmenta Sheet */}
