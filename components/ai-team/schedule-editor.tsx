@@ -110,6 +110,7 @@ export function ScheduleEditor({
         setIsParsingSchedule(true);
         setError(null);
 
+        let responseStatus: number | undefined;
         try {
             const response = await fetch("/api/schedule/parse", {
                 method: "POST",
@@ -119,6 +120,8 @@ export function ScheduleEditor({
                     currentTimezone: timezone,
                 }),
             });
+
+            responseStatus = response.status;
 
             if (!response.ok) {
                 const data = await response.json();
@@ -142,10 +145,19 @@ export function ScheduleEditor({
             const message =
                 err instanceof Error ? err.message : "Failed to parse schedule";
             setError(message);
-            Sentry.captureException(err, {
-                tags: { component: "ScheduleEditor", action: "parseSchedule" },
-                extra: { naturalInput: naturalInput.trim() },
-            });
+
+            // Only report to Sentry if it's a system error (network failure, 500, etc.)
+            // User input errors (400 responses) are expected and shouldn't create noise
+            const isUserInputError = responseStatus === 400;
+            if (!isUserInputError) {
+                Sentry.captureException(err, {
+                    tags: { component: "ScheduleEditor", action: "parseSchedule" },
+                    extra: {
+                        naturalInput: naturalInput.trim(),
+                        responseStatus,
+                    },
+                });
+            }
         } finally {
             setIsParsingSchedule(false);
         }
