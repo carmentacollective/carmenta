@@ -103,14 +103,26 @@ The more reports we get, the faster we fix it. Thank you for telling us.
                 };
             }
 
-            // 3. Create new issue
+            // 3. Create new issue with rich context for AI triaging
+            // Build connection URL for easy debugging access
+            const connectionUrl = context.connectionSlug
+                ? `https://carmenta.ai/c/${context.connectionSlug}`
+                : undefined;
+
+            // Combine error sources for comprehensive error context
+            const errorDetails = [context.lastError, context.recentToolFailures]
+                .filter(Boolean)
+                .join("\n\n---\n\n");
+
             const issueResult = await createIssue({
                 title,
                 body: formatBugReport({
                     description: details.description || title,
                     conversationExcerpt: context.recentMessages,
-                    errorDetails: context.lastError,
+                    errorDetails: errorDetails || undefined,
                     browserInfo: context.userAgent,
+                    imageUrls: context.imageUrls,
+                    connectionUrl,
                     reportedAt: new Date(),
                 }),
                 labels: getBugLabels(),
@@ -121,19 +133,50 @@ The more reports we get, the faster we fix it. Thank you for telling us.
                 span?.setAttribute("action", "created_issue");
                 span?.setAttribute("issue_number", issue.number);
 
+                // Build a summary of what was included
+                const includedItems: string[] = [];
+                if (context.imageUrls?.length) {
+                    includedItems.push(
+                        `${context.imageUrls.length} screenshot${context.imageUrls.length > 1 ? "s" : ""}`
+                    );
+                }
+                if (errorDetails) {
+                    includedItems.push("error details");
+                }
+                if (context.recentMessages) {
+                    includedItems.push("conversation context");
+                }
+                const includedSummary =
+                    includedItems.length > 0
+                        ? `Included: ${includedItems.join(", ")}.`
+                        : "";
+
                 logger.info(
-                    { issueNumber: issue.number, title },
+                    {
+                        issueNumber: issue.number,
+                        title,
+                        hasImages: Boolean(context.imageUrls?.length),
+                        hasErrors: Boolean(errorDetails),
+                    },
                     "Bug report filed successfully"
                 );
 
+                // Build the response text, avoiding extra blank lines
+                const responseLines = [
+                    "Tracked it.",
+                    "",
+                    `**#${issue.number}**: ${issue.title}`,
+                    `[View on GitHub](${issue.html_url})`,
+                ];
+                if (includedSummary) {
+                    responseLines.push("", includedSummary);
+                }
+                responseLines.push(
+                    "We check issues daily. Thank you for surfacing this."
+                );
+
                 return {
-                    text: `Tracked it.
-
-**#${issue.number}**: ${issue.title}
-[View on GitHub](${issue.html_url})
-
-Included: error details and recent conversation context.
-We check issues daily. Thank you for surfacing this.`,
+                    text: responseLines.join("\n"),
                     issueUrl: issue.html_url,
                     issueNumber: issue.number,
                 };

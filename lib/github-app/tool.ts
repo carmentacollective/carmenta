@@ -114,6 +114,12 @@ const githubToolSchema = z.object({
         .string()
         .optional()
         .describe("Error details/stack trace to include"),
+    imageUrls: z
+        .array(z.string().url())
+        .optional()
+        .describe(
+            "URLs of screenshots or images from the user's message to include in the bug report"
+        ),
 });
 
 type GitHubToolInput = z.infer<typeof githubToolSchema>;
@@ -364,6 +370,7 @@ async function executeOperation(
                         description: input.body || input.title,
                         conversationExcerpt: input.conversationExcerpt,
                         errorDetails: input.errorDetails,
+                        imageUrls: input.imageUrls,
                         reportedAt: now,
                     });
                     labels = getBugLabels();

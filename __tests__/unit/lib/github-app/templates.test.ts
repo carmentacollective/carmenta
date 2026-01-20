@@ -59,7 +59,7 @@ describe("GitHub App Templates", () => {
                 reportedAt: new Date("2025-01-15T10:30:00Z"),
             });
 
-            expect(result).toContain("## Conversation Excerpt");
+            expect(result).toContain("## Conversation Context");
             expect(result).toContain("User: How do I do X?");
         });
 
@@ -75,8 +75,39 @@ describe("GitHub App Templates", () => {
             expect(result).toContain("## Description");
             expect(result).toContain("## Context");
             expect(result).toContain("## Error Details");
-            expect(result).toContain("## Conversation Excerpt");
+            expect(result).toContain("## Conversation Context");
             expect(result).toContain("Firefox 121");
+        });
+
+        it("includes screenshots when imageUrls provided", () => {
+            const result = formatBugReport({
+                description: "UI bug",
+                imageUrls: [
+                    "https://storage.example.com/screenshot1.png",
+                    "https://storage.example.com/screenshot2.png",
+                ],
+                reportedAt: new Date("2025-01-15T10:30:00Z"),
+            });
+
+            expect(result).toContain("## Screenshots");
+            expect(result).toContain(
+                "![Screenshot 1](https://storage.example.com/screenshot1.png)"
+            );
+            expect(result).toContain(
+                "![Screenshot 2](https://storage.example.com/screenshot2.png)"
+            );
+        });
+
+        it("includes connection URL when provided", () => {
+            const result = formatBugReport({
+                description: "Bug with context",
+                connectionUrl: "https://carmenta.ai/c/abc123",
+                reportedAt: new Date("2025-01-15T10:30:00Z"),
+            });
+
+            expect(result).toContain(
+                "[View full conversation](https://carmenta.ai/c/abc123)"
+            );
         });
     });
 
