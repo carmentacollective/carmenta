@@ -14,6 +14,62 @@ import { generateImage, generateText } from "ai";
 import type { ReasoningConfig } from "@/lib/concierge/types";
 import { getGatewayClient } from "@/lib/ai/gateway";
 import { getOpenRouterClient } from "@/lib/ai/openrouter";
+import { logger } from "@/lib/logger";
+
+/**
+ * Maximum prompt length in characters for image generation.
+ *
+ * Imagen models have a 480 token limit (~1920 chars). We use a conservative
+ * limit of 1500 characters to ensure prompts fit within model limits while
+ * leaving headroom for tokenization variance.
+ *
+ * @see https://ai.google.dev/gemini-api/docs/imagen
+ */
+const MAX_PROMPT_LENGTH = 1500;
+
+/**
+ * Truncate prompt to fit within image model limits.
+ *
+ * Strategy: Preserves the beginning and end of the prompt (which typically
+ * contain the core subject and quality modifiers respectively), removing
+ * middle content when truncation is needed.
+ *
+ * @param prompt - Original prompt text
+ * @param maxLength - Maximum allowed length (defaults to MAX_PROMPT_LENGTH)
+ * @returns Truncated prompt that fits within limits
+ */
+export function truncatePrompt(
+    prompt: string,
+    maxLength: number = MAX_PROMPT_LENGTH
+): string {
+    if (prompt.length <= maxLength) {
+        return prompt;
+    }
+
+    // Reserve space for truncation indicator
+    const ellipsis = "... ";
+    const availableLength = maxLength - ellipsis.length;
+
+    // Split: 60% for beginning (subject/context), 40% for end (quality markers)
+    const beginLength = Math.floor(availableLength * 0.6);
+    const endLength = availableLength - beginLength;
+
+    const beginning = prompt.slice(0, beginLength).trim();
+    const ending = prompt.slice(-endLength).trim();
+
+    const truncated = `${beginning}${ellipsis}${ending}`;
+
+    logger.warn(
+        {
+            originalLength: prompt.length,
+            truncatedLength: truncated.length,
+            maxLength,
+        },
+        "Image prompt truncated to fit model limits"
+    );
+
+    return truncated;
+}
 
 /**
  * API type determines which Vercel AI SDK function to use:
@@ -434,6 +490,9 @@ export async function generateImageFromModel(
 ): Promise<GeneratedImage> {
     const { modelId, api, prompt, aspectRatio = "1:1", provider = "gateway" } = options;
 
+    // Truncate prompt if it exceeds model limits to prevent token limit errors
+    const safePrompt = truncatePrompt(prompt);
+
     if (api === "generateText") {
         // Multimodal LLMs use generateText with images in files[] response
         // Note: aspectRatio is not supported by generateText API (Gemini, OpenRouter models)
@@ -443,7 +502,7 @@ export async function generateImageFromModel(
 
         const result = await generateText({
             model: client(modelId),
-            prompt,
+            prompt: safePrompt,
         });
 
         // Extract image from files array
@@ -465,7 +524,7 @@ export async function generateImageFromModel(
     const gateway = getGatewayClient();
     const { image } = await generateImage({
         model: gateway.imageModel(modelId),
-        prompt,
+        prompt: safePrompt,
         aspectRatio,
     });
 
