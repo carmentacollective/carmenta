@@ -140,21 +140,22 @@ export const detectTaskTypeTool = tool({
  */
 /**
  * Maximum prompt length in characters.
- * Image models have token limits: Imagen (480 tokens), FLUX (512 tokens).
- * At ~4 chars/token, theoretical max is ~1920 chars. We use 400 as a
- * conservative limit with headroom for tokenization variance.
  *
- * The system prompt targets 350 chars (85% of limit) since LLMs are
- * notoriously bad at self-counting. This constant is the hard ceiling.
+ * Image models have TOKEN limits, not character limits:
+ * - Imagen: 480 tokens × ~4 chars/token = ~1920 chars max
+ * - FLUX: 512 tokens × ~4 chars/token = ~2048 chars max
+ *
+ * We use 1500 chars as a safe ceiling (~375 tokens, well under both limits).
+ * The system prompt targets 1200 chars (80%) since LLMs can't count reliably.
  */
-const MAX_PROMPT_LENGTH = 400;
+const MAX_PROMPT_LENGTH = 1500;
 
 /**
  * Truncate prompt to fit within model limits.
  * Preserves beginning (subject/context) and end (quality markers).
  *
  * This is a safety net for when the LLM fails to self-limit.
- * The system prompt targets 350 chars, but LLMs can't count reliably.
+ * The system prompt targets 1200 chars, but LLMs can't count reliably.
  */
 function truncatePrompt(prompt: string, maxLength: number = MAX_PROMPT_LENGTH): string {
     if (prompt.length <= maxLength) {
@@ -177,7 +178,7 @@ function truncatePrompt(prompt: string, maxLength: number = MAX_PROMPT_LENGTH): 
 
 export const expandPromptTool = tool({
     description:
-        "Expand the user's brief prompt into a detailed image specification. Keep the expanded prompt UNDER 350 characters - image models have strict token limits. Prioritize specificity over quantity.",
+        "Expand the user's brief prompt into a detailed image specification. Keep the expanded prompt UNDER 1200 characters (~300 tokens) - image models have strict token limits. Prioritize specificity over quantity.",
     inputSchema: z.object({
         originalPrompt: z.string().describe("The user's original prompt"),
         taskType: z
