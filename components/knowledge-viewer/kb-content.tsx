@@ -38,8 +38,8 @@ const PATH_ICONS: Record<string, typeof FileText> = {
 };
 
 // UI thresholds for character limit feedback
-const CHAR_SHOW_THRESHOLD = 0.75; // Show counter at 75% of human limit (~7,200)
-const CHAR_WARNING_THRESHOLD = 0.9; // Amber warning at 90% (~8,640)
+const CHAR_SHOW_THRESHOLD = 0.9; // Show counter at 90% of human limit (~8,640)
+const CHAR_WARNING_THRESHOLD = 0.95; // Amber warning at 95% (~9,120)
 
 type SaveState = "idle" | "unsaved" | "saving" | "saved" | "error";
 
@@ -351,8 +351,8 @@ export function KBContent({
                 )}
             </AnimatePresence>
 
-            {/* Content Area - scrollable within fixed height */}
-            <div className="relative min-h-0 flex-1 overflow-hidden p-4">
+            {/* Content Area - generous space for comfortable editing */}
+            <div className="relative flex min-h-[400px] flex-1 overflow-hidden p-6">
                 {isEditable ? (
                     <textarea
                         ref={textareaRef}
