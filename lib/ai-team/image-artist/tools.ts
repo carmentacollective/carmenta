@@ -138,9 +138,16 @@ export const detectTaskTypeTool = tool({
 /**
  * Expand a brief prompt into a detailed specification
  */
+/**
+ * Maximum recommended prompt length in characters.
+ * Image models have token limits: Imagen (480 tokens), FLUX (512 tokens).
+ * At ~4 chars/token, 400 chars is a safe limit with headroom.
+ */
+const MAX_PROMPT_LENGTH = 400;
+
 export const expandPromptTool = tool({
     description:
-        "Expand the user's brief prompt into a detailed image specification. Add style, lighting, composition, and quality details while preserving intent.",
+        "Expand the user's brief prompt into a detailed image specification. Keep the expanded prompt UNDER 400 characters - image models have strict token limits. Prioritize specificity over quantity.",
     inputSchema: z.object({
         originalPrompt: z.string().describe("The user's original prompt"),
         taskType: z
@@ -229,6 +236,20 @@ export const generateImageTool = tool({
     }> => {
         const startTime = Date.now();
         const routing = TASK_MODEL_ROUTING[taskType];
+
+        // Warn if prompt exceeds recommended length (but don't truncate - let the model handle it)
+        if (prompt.length > MAX_PROMPT_LENGTH) {
+            logger.warn(
+                {
+                    promptLength: prompt.length,
+                    maxRecommended: MAX_PROMPT_LENGTH,
+                    excess: prompt.length - MAX_PROMPT_LENGTH,
+                    taskType,
+                    modelId: routing.modelId,
+                },
+                "⚠️ Image prompt exceeds recommended length - may hit model token limits"
+            );
+        }
 
         try {
             logger.info(

@@ -42,26 +42,30 @@ Avoid: GPT-5 Image (37%), Imagen 4.0 Fast (33%), FLUX Kontext Pro (31%)
 </model-routing>
 
 <prompt-expansion>
-Transform brief requests into detailed specifications using:
+Transform brief requests into detailed specifications.
 
-Structure: Subject + Style/Medium + Details + Environment + Lighting + Mood
+CRITICAL: Keep expanded prompts under 400 characters. Image models have strict token limits (Imagen: 480 tokens, FLUX: 512 tokens). A concise, well-crafted prompt outperforms a verbose one.
+
+Structure: Subject + Style + Key Details + Mood (prioritize these elements, skip others if space is tight)
 
 Example:
 - User: "coffee shop logo"
-- Expanded: "Minimalist logo for a coffee shop, clean vector style, warm earth tones (brown, cream, terracotta), single coffee cup icon with steam forming abstract shape, simple sans-serif wordmark, professional and inviting, white background, suitable for signage"
+- Expanded: "Minimalist coffee shop logo, clean vector style, warm earth tones, coffee cup icon with steam, sans-serif wordmark, professional, white background" (143 chars)
 
-Key additions:
-1. Specificity: "dog" becomes "golden retriever puppy, 3 months old, sitting"
-2. Style anchor: Add art medium or photography style
-3. Lighting: golden hour, soft diffused, dramatic side lighting
-4. Mood: warm, professional, playful, mysterious
-5. Composition: close-up, wide shot, rule of thirds, centered
-6. Quality markers: highly detailed, 4K, professional quality
+Example of architectural prompt (the hardest case):
+- User: "Modern hotel room, Desert Modernist style, hexagonal building with courtyard"
+- Expanded: "Modern hotel room, Desert Modernist, hexagonal courtyard building. Warm wood, terracotta, terrazzo floors, breeze blocks. Bed facing sliding glass doors to courtyard. Natural light, Palm Springs aesthetic. Architectural photography." (232 chars)
+
+Key principles:
+1. Specificity over quantity: "golden retriever puppy sitting" beats a paragraph
+2. One style anchor: Pick the most important artistic direction
+3. Essential mood: One or two descriptors
+4. Quality markers: "professional quality" or "detailed" - pick one
 
 Remove from prompts:
 - Conversational language ("please create", "I want")
-- Abstract concepts without grounding ("freedom" → "eagle soaring over canyon at sunrise")
-- Conflicting styles ("photorealistic oil painting")
+- Redundant modifiers (don't say "beautiful stunning gorgeous")
+- Abstract concepts without grounding ("freedom" → "eagle soaring over canyon")
 </prompt-expansion>
 
 <reference-images>
