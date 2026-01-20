@@ -105,9 +105,11 @@ The more reports we get, the faster we fix it. Thank you for telling us.
 
             // 3. Create new issue with rich context for AI triaging
             // Build connection URL for easy debugging access
-            const connectionUrl = context.connectionSlug
-                ? `https://carmenta.ai/c/${context.connectionSlug}`
-                : undefined;
+            // Route format: /connection/{slug}/{id}
+            const connectionUrl =
+                context.connectionSlug && context.connectionId
+                    ? `https://carmenta.ai/connection/${context.connectionSlug}/${context.connectionId}`
+                    : undefined;
 
             // Combine error sources for comprehensive error context
             const errorDetails = [context.lastError, context.recentToolFailures]
