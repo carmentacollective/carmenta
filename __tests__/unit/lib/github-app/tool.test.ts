@@ -80,8 +80,8 @@ describe("GitHub App Tool", () => {
                 isAdmin: false,
             });
 
-            expect(tool.description).toContain("Report bugs");
-            expect(tool.description).toContain("ABOUT CARMENTA ITSELF");
+            expect(tool.description).toContain("Create or update issues");
+            expect(tool.description).toContain("checks for duplicates");
             expect(tool.description).not.toContain("admin access");
         });
 
@@ -194,6 +194,14 @@ describe("GitHub App Tool", () => {
     });
 
     describe("create_issue Operation", () => {
+        beforeEach(() => {
+            // Default: no duplicates found, so issues get created
+            (searchIssues as Mock).mockResolvedValue({
+                success: true,
+                data: [],
+            });
+        });
+
         it("requires title parameter", async () => {
             const tool = createGitHubTool({
                 userId: "user_123",
@@ -377,10 +385,160 @@ describe("GitHub App Tool", () => {
 
             expect(result).toEqual({
                 success: true,
+                isDuplicate: false,
                 issueNumber: 200,
                 issueUrl: "https://github.com/carmentacollective/carmenta/issues/200",
                 title: "Test issue",
             });
+        });
+    });
+
+    describe("Duplicate Detection", () => {
+        it("returns existing issue when duplicate found", async () => {
+            (searchIssues as Mock).mockResolvedValue({
+                success: true,
+                data: [
+                    {
+                        number: 42,
+                        title: "Voice input cuts off",
+                        state: "open",
+                        html_url: "https://github.com/test/issues/42",
+                        labels: [{ name: "bug" }],
+                    },
+                ],
+            });
+
+            const tool = createGitHubTool({
+                userId: "user_123",
+                isAdmin: false,
+            });
+
+            const result = await executeTool(tool, {
+                operation: "create_issue",
+                title: "Voice input stops working",
+                category: "bug",
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.isDuplicate).toBe(true);
+            expect(result.issueNumber).toBe(42);
+            expect(result.message).toContain("Found existing issue #42");
+            expect(createIssue).not.toHaveBeenCalled();
+        });
+
+        it("adds reaction to duplicate when user is admin", async () => {
+            (searchIssues as Mock).mockResolvedValue({
+                success: true,
+                data: [
+                    {
+                        number: 42,
+                        title: "Voice input cuts off",
+                        state: "open",
+                        html_url: "https://github.com/test/issues/42",
+                        labels: [{ name: "bug" }],
+                    },
+                ],
+            });
+            (addReaction as Mock).mockResolvedValue({ success: true });
+
+            const tool = createGitHubTool({
+                userId: "admin_123",
+                isAdmin: true,
+            });
+
+            const result = await executeTool(tool, {
+                operation: "create_issue",
+                title: "Voice input stops working",
+            });
+
+            expect(result.isDuplicate).toBe(true);
+            expect(addReaction).toHaveBeenCalledWith(42, "+1");
+            expect(result.message).toContain("Added your +1");
+        });
+
+        it("does not add reaction when user is not admin", async () => {
+            (searchIssues as Mock).mockResolvedValue({
+                success: true,
+                data: [
+                    {
+                        number: 42,
+                        title: "Voice input cuts off",
+                        state: "open",
+                        html_url: "https://github.com/test/issues/42",
+                        labels: [{ name: "bug" }],
+                    },
+                ],
+            });
+
+            const tool = createGitHubTool({
+                userId: "user_123",
+                isAdmin: false,
+            });
+
+            const result = await executeTool(tool, {
+                operation: "create_issue",
+                title: "Voice input stops working",
+            });
+
+            expect(result.isDuplicate).toBe(true);
+            expect(addReaction).not.toHaveBeenCalled();
+            expect(result.message).not.toContain("+1");
+        });
+
+        it("creates new issue when search fails", async () => {
+            (searchIssues as Mock).mockResolvedValue({
+                success: false,
+                error: "Network error",
+            });
+            (createIssue as Mock).mockResolvedValue({
+                success: true,
+                data: {
+                    number: 100,
+                    html_url: "https://github.com/test/issues/100",
+                    title: "Test issue",
+                },
+            });
+
+            const tool = createGitHubTool({
+                userId: "user_123",
+                isAdmin: false,
+            });
+
+            const result = await executeTool(tool, {
+                operation: "create_issue",
+                title: "Test issue",
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.isDuplicate).toBe(false);
+            expect(createIssue).toHaveBeenCalled();
+        });
+
+        it("creates new issue when no keywords can be extracted", async () => {
+            // Title with only stop words - no meaningful keywords
+            (createIssue as Mock).mockResolvedValue({
+                success: true,
+                data: {
+                    number: 100,
+                    html_url: "https://github.com/test/issues/100",
+                    title: "Bug",
+                },
+            });
+
+            const tool = createGitHubTool({
+                userId: "user_123",
+                isAdmin: false,
+            });
+
+            const result = await executeTool(tool, {
+                operation: "create_issue",
+                title: "Bug",
+            });
+
+            // Should skip search when no keywords
+            expect(searchIssues).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+            expect(result.isDuplicate).toBe(false);
         });
     });
 
@@ -531,6 +689,14 @@ describe("GitHub App Tool", () => {
     });
 
     describe("Error Handling", () => {
+        beforeEach(() => {
+            // Default: no duplicates found
+            (searchIssues as Mock).mockResolvedValue({
+                success: true,
+                data: [],
+            });
+        });
+
         it("returns error from client on failure", async () => {
             (createIssue as Mock).mockResolvedValue({
                 success: false,

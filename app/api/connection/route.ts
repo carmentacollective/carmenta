@@ -56,6 +56,7 @@ import { createLibrarianTool } from "@/lib/ai-team/agents/librarian-tool";
 import { createMcpConfigTool } from "@/lib/ai-team/agents/mcp-config-tool";
 import { createSmsUserTool } from "@/lib/ai-team/agents/sms-user-tool";
 import { createPushNotificationTool } from "@/lib/ai-team/agents/push-notification-tool";
+import { createGitHubTool } from "@/lib/github-app";
 import { postResponseTools } from "@/lib/tools/post-response";
 import {
     unauthorizedResponse,
@@ -660,6 +661,14 @@ export async function POST(req: Request) {
             userEmail: userEmail!,
         });
 
+        // Create GitHub tool for filing issues in Carmenta's own repo
+        // This is Carmenta's GitHub App (carmenta-bot[bot]), not a user integration
+        // Used for bug reports, feature requests, and feedback about Carmenta itself
+        const carmentaGitHub = createGitHubTool({
+            userId: dbUser.id,
+            isAdmin: user?.publicMetadata?.role === "admin",
+        });
+
         // Discovery mode is disabled until we refine the experience
         // It was interrupting substantive responses and degrading quality
         // TODO: Re-enable when discovery is less intrusive
@@ -678,6 +687,7 @@ export async function POST(req: Request) {
             mcpConfig: mcpConfigTool,
             smsUser: smsUserTool,
             pushNotification: pushNotificationTool,
+            carmentaGitHub,
             ...discoveryTools,
         };
 
