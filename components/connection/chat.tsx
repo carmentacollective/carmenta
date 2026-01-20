@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 import { HoloThread } from "./holo-thread";
@@ -32,6 +33,13 @@ class ChatErrorBoundary extends Component<
         };
 
         logger.error(errorDetails, "Chat component error");
+
+        // Forward to Sentry - error boundaries swallow errors before they reach
+        // global handlers, so we must explicitly capture here
+        Sentry.captureException(error, {
+            extra: { componentStack: errorInfo.componentStack },
+            tags: { errorBoundary: "ChatErrorBoundary" },
+        });
     }
 
     render(): ReactNode {
