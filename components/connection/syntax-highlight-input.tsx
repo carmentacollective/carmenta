@@ -26,6 +26,7 @@ import Image from "next/image";
 import { RichTextarea, type RichTextareaProps } from "rich-textarea";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsClient } from "@/lib/hooks/use-is-client";
 
 // Simple placeholder
 const PLACEHOLDER = "Message Carmenta...";
@@ -179,6 +180,7 @@ export const SyntaxHighlightInput = forwardRef<
         ref
     ) => {
         const textareaRef = useRef<HTMLTextAreaElement>(null);
+        const isClient = useIsClient();
         const [autocompleteType, setAutocompleteType] =
             useState<AutocompleteType>(null);
         const [autocompleteQuery, setAutocompleteQuery] = useState("");
@@ -484,6 +486,40 @@ export const SyntaxHighlightInput = forwardRef<
         const isAutocompleteOpen = !!autocompleteType && autocompleteItems.length > 0;
         const placeholder = externalPlaceholder || PLACEHOLDER;
 
+        // Shared textarea element to avoid duplication
+        const textareaElement = (
+            <div className="relative flex w-full @xl:self-center">
+                <RichTextarea
+                    ref={textareaRef}
+                    value={value}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    onCompositionStart={onCompositionStart}
+                    onCompositionEnd={onCompositionEnd}
+                    onPaste={onPaste}
+                    placeholder={placeholder}
+                    className={className}
+                    // RichTextarea requires explicit width and line-height via style prop
+                    // CSS classes alone don't apply to the inner textarea
+                    style={{
+                        width: "100%",
+                        lineHeight: "1.25rem", // Match leading-5 from className
+                        ...props.style,
+                    }}
+                    {...props}
+                >
+                    {renderHighlightedText}
+                </RichTextarea>
+            </div>
+        );
+
+        // Render without Popover during SSR to avoid Radix ID hydration mismatch
+        if (!isClient) {
+            return textareaElement;
+        }
+
         return (
             <Popover
                 open={isAutocompleteOpen}
@@ -492,31 +528,7 @@ export const SyntaxHighlightInput = forwardRef<
                 <PopoverTrigger asChild>
                     {/* flex: eliminates inline-block baseline gap that adds 6px
                         @xl:self-center: prevents stretch in flex-row parent */}
-                    <div className="relative flex w-full @xl:self-center">
-                        <RichTextarea
-                            ref={textareaRef}
-                            value={value}
-                            onChange={handleChange}
-                            onKeyDown={handleKeyDown}
-                            onFocus={onFocus}
-                            onBlur={onBlur}
-                            onCompositionStart={onCompositionStart}
-                            onCompositionEnd={onCompositionEnd}
-                            onPaste={onPaste}
-                            placeholder={placeholder}
-                            className={className}
-                            // RichTextarea requires explicit width and line-height via style prop
-                            // CSS classes alone don't apply to the inner textarea
-                            style={{
-                                width: "100%",
-                                lineHeight: "1.25rem", // Match leading-5 from className
-                                ...props.style,
-                            }}
-                            {...props}
-                        >
-                            {renderHighlightedText}
-                        </RichTextarea>
-                    </div>
+                    {textareaElement}
                 </PopoverTrigger>
                 <PopoverContent
                     className="z-modal w-80 p-2"
