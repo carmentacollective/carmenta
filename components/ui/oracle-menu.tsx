@@ -27,7 +27,6 @@ import {
     ShieldIcon,
     FileTextIcon,
     LockIcon,
-    ArrowSquareOutIcon,
     HouseIcon,
     SparkleIcon,
 } from "@phosphor-icons/react";
@@ -239,24 +238,22 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
                                           <span className="relative">How We Build</span>
                                       </Link>
 
-                                      <Link
-                                          href="https://github.com/carmentacollective/carmenta"
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          onClick={() => setIsOpen(false)}
-                                          className="group text-foreground/80 hover:text-foreground relative flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-all"
-                                      >
-                                          <div className="bg-primary/5 pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                          <GithubLogoIcon className="text-foreground/60 relative h-4 w-4" />
-                                          <span className="relative flex items-center gap-1">
-                                              Source Code
-                                              <ArrowSquareOutIcon className="h-3 w-3 opacity-50" />
-                                          </span>
-                                      </Link>
-
-                                      {/* Legal links - compact row */}
+                                      {/* Footer links - compact row */}
                                       <div className="border-foreground/10 border-t px-4 py-3">
                                           <div className="text-foreground/50 flex items-center gap-3 text-xs">
+                                              <Link
+                                                  href="https://github.com/carmentacollective/carmenta"
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  onClick={() => setIsOpen(false)}
+                                                  className="hover:text-foreground/80 flex items-center gap-1 transition-colors"
+                                              >
+                                                  <GithubLogoIcon className="h-3 w-3" />
+                                                  Source
+                                              </Link>
+                                              <span className="text-foreground/20">
+                                                  ·
+                                              </span>
                                               <Link
                                                   href="/privacy"
                                                   onClick={() => setIsOpen(false)}
