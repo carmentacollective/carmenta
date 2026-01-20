@@ -12,6 +12,7 @@
  * - Search filters (date, starred, model)
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -112,9 +113,15 @@ export function CommandPalette({
             setSearchError(false); // Reset error state on open
             getRecentSearches()
                 .then(setRecentSearches)
-                .catch((error) =>
-                    logger.error({ error }, "Failed to load recent searches")
-                );
+                .catch((error) => {
+                    logger.error({ error }, "Failed to load recent searches");
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "CommandPalette",
+                            action: "loadRecentSearches",
+                        },
+                    });
+                });
         }
     }, [open]);
 
@@ -139,7 +146,11 @@ export function CommandPalette({
                 }
             } catch (error) {
                 if (!abortController.signal.aborted) {
-                    logger.error({ error, query }, "Search failed");
+                    logger.error({ error, query }, "Knowledge base search failed");
+                    Sentry.captureException(error, {
+                        tags: { component: "CommandPalette", action: "search" },
+                        extra: { query },
+                    });
                     setSearchResults([]);
                     setSearchError(true);
                 }
@@ -188,9 +199,15 @@ export function CommandPalette({
         (path: string) => {
             if (query.trim()) {
                 // Save to recent searches (fire-and-forget)
-                addRecentSearch(query).catch((error) =>
-                    logger.error({ error }, "Failed to save recent search")
-                );
+                addRecentSearch(query).catch((error) => {
+                    logger.error({ error }, "Failed to save recent search");
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "CommandPalette",
+                            action: "addRecentSearch",
+                        },
+                    });
+                });
             }
             onSelect(path);
         },
@@ -206,9 +223,15 @@ export function CommandPalette({
     const handleClearRecent = useCallback(() => {
         clearRecentSearches()
             .then(() => setRecentSearches([]))
-            .catch((error) =>
-                logger.error({ error }, "Failed to clear recent searches")
-            );
+            .catch((error) => {
+                logger.error({ error }, "Failed to clear recent searches");
+                Sentry.captureException(error, {
+                    tags: {
+                        component: "CommandPalette",
+                        action: "clearRecentSearches",
+                    },
+                });
+            });
     }, []);
 
     // ⌘K keyboard shortcut

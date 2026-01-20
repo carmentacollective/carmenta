@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 import { logger } from "@/lib/client-logger";
 
@@ -62,7 +63,10 @@ export function PWARegistration() {
                     });
                 })
                 .catch((error) => {
-                    logger.error({ error }, "❌ Service worker registration failed");
+                    logger.error({ error }, "Service worker registration failed");
+                    Sentry.captureException(error, {
+                        tags: { component: "PWARegistration" },
+                    });
                 });
 
             navigator.serviceWorker.addEventListener("message", handleMessage);

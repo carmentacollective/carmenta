@@ -16,6 +16,7 @@
 
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { logger } from "@/lib/client-logger";
 
@@ -107,7 +108,11 @@ function loadQueue(key: string): QueuedMessage[] {
             }));
         }
     } catch (error) {
-        logger.debug({ error, key }, "Failed to load queue from localStorage");
+        logger.warn({ error, key }, "Failed to load message queue from localStorage");
+        Sentry.captureException(error, {
+            tags: { hook: "useMessageQueue", action: "loadQueue" },
+            level: "warning",
+        });
     }
     return [];
 }
@@ -126,7 +131,11 @@ function saveQueue(key: string, queue: QueuedMessage[]): void {
             localStorage.removeItem(storageKey);
         }
     } catch (error) {
-        logger.debug({ error, key }, "Failed to save queue to localStorage");
+        logger.warn({ error, key }, "Failed to save message queue to localStorage");
+        Sentry.captureException(error, {
+            tags: { hook: "useMessageQueue", action: "saveQueue" },
+            level: "warning",
+        });
     }
 }
 
@@ -272,7 +281,14 @@ export function useMessageQueue({
             const storageKey = getQueueKey(effectiveKey);
             localStorage.removeItem(storageKey);
         } catch (error) {
-            logger.debug({ error }, "Failed to clear queue from localStorage");
+            logger.warn(
+                { error, key: effectiveKey },
+                "Failed to clear message queue from localStorage"
+            );
+            Sentry.captureException(error, {
+                tags: { hook: "useMessageQueue", action: "clearQueue" },
+                level: "warning",
+            });
         }
     }, [effectiveKey]);
 
