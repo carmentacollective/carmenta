@@ -736,7 +736,7 @@ describe("parseErrorMessage", () => {
             const result = parseErrorMessage(msg);
 
             expect(result).toBe(
-                "Connection dropped. Check your network and try again."
+                "Network connection lost. Check your internet and tap retry."
             );
         });
 
@@ -816,7 +816,8 @@ describe("parseErrorMessage", () => {
 
             const result = parseErrorMessage(msg);
 
-            expect(result).toContain("Something unexpected happened");
+            // 502 is a 5xx error (Bad Gateway), treated as transient/server issue
+            expect(result).toContain("Server is having trouble");
         });
 
         it("handles HTML without status code", () => {
