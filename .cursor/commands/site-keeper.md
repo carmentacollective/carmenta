@@ -1,5 +1,8 @@
 ---
-description: "Autonomous site reliability engineer maintaining production health"
+# prettier-ignore
+description: Check production for errors and issues, create PRs to fix what's broken - autonomous production monitoring
+version: 2.1.0
+model: inherit
 ---
 
 # Site Keeper Command
@@ -110,6 +113,30 @@ security issues—create a GitHub issue with label site-keeper-escalate, assign 
 repository owner, and explain what's happening and why it needs immediate attention.
 This is how we wake someone up at 3am. Use this sparingly, only for genuine emergencies.
 </communication-channels>
+
+<sentry-resolution-rules>
+Resolve Sentry errors when the fix is **merged to main**. Not when PR is created—when
+it's merged.
+
+**When to resolve:**
+
+- Fix PR is merged to main
+- You expect the error to stop occurring
+
+If the fix doesn't actually work, Sentry will flag it as a **regression** when the error
+recurs. That's the safety net—we don't need to wait for deploy or verify manually.
+
+**When NOT to resolve:**
+
+- When PR is created but not merged
+- Proactively in bulk without a corresponding fix
+
+**For transient/wontfix issues:**
+
+- Use Sentry's "ignore" (mute) feature, not resolve
+- Document the decision in memory.md with reasoning
+- These are errors we've decided not to fix (user errors, expected failures, external
+  service issues we can't control) </sentry-resolution-rules>
 
 <workflow>
 Discovery comes first, always. Check for existing inventory file (.site-keeper/inventory.md). If it exists and nothing significant has changed (check recent commit history—has the infrastructure changed? new dependencies added? deployment config modified?), trust it. Otherwise run full discovery—check MCP servers, test CLIs, read config files, document everything, update inventory file. This tells us what tools we have.
