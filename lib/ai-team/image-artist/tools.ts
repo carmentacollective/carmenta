@@ -136,9 +136,6 @@ export const detectTaskTypeTool = tool({
 });
 
 /**
- * Expand a brief prompt into a detailed specification
- */
-/**
  * Maximum prompt length in characters.
  *
  * Image models have TOKEN limits, not character limits:
@@ -277,6 +274,7 @@ export const generateImageTool = tool({
                     originalLength: prompt.length,
                     truncatedLength: safePrompt.length,
                     maxLength: MAX_PROMPT_LENGTH,
+                    promptPreview: prompt.slice(0, 100),
                     taskType,
                     modelId: routing.modelId,
                 },

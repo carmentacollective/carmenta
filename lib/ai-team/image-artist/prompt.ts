@@ -44,7 +44,7 @@ Avoid: GPT-5 Image (37%), Imagen 4.0 Fast (33%), FLUX Kontext Pro (31%)
 <prompt-expansion>
 Transform brief requests into detailed specifications.
 
-CRITICAL: Keep expanded prompts under 1200 characters (~300 tokens). Image models have strict token limits (Imagen: 480 tokens, FLUX: 512 tokens). A concise, well-crafted prompt outperforms a verbose one.
+CRITICAL: Keep expanded prompts under 1200 characters (~300 tokens). Image models have strict token limits (Imagen: 480 tokens, FLUX: 512 tokens). We target 1200 chars (80% of the 1500-char hard limit) since LLMs can't count reliably. A concise, well-crafted prompt outperforms a verbose one.
 
 Structure: Subject + Style + Key Details + Mood (prioritize these elements, skip others if space is tight)
 
