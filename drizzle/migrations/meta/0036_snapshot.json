@@ -1,6 +1,6 @@
 {
-  "id": "d4353b3e-ab0c-4b14-a7a7-291b7de1bca7",
-  "prevId": "edda4a30-9387-4922-921f-3fd01a92ffcb",
+  "id": "05b3cc0d-7847-450a-8459-9c897322db97",
+  "prevId": "d4353b3e-ab0c-4b14-a7a7-291b7de1bca7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -54,12 +54,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'idle'"
-        },
-        "active_stream_id": {
-          "name": "active_stream_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "model_id": {
           "name": "model_id",
@@ -691,7 +685,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "extraction_processed_connections_id_seq",
             "schema": "public",
             "increment": "1",
@@ -803,7 +797,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "feature_tip_views_id_seq",
             "schema": "public",
             "increment": "1",
@@ -1507,12 +1501,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "active_stream_id": {
-          "name": "active_stream_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "execution_trace": {
           "name": "execution_trace",
           "type": "jsonb",
@@ -1634,7 +1622,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "mcp_connection_events_id_seq",
             "schema": "public",
             "increment": "1",
@@ -1769,7 +1757,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "mcp_servers_id_seq",
             "schema": "public",
             "increment": "1",
@@ -2638,7 +2626,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "push_subscriptions_id_seq",
             "schema": "public",
             "increment": "1",
@@ -3137,7 +3125,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "sms_outbound_messages_id_seq",
             "schema": "public",
             "increment": "1",
@@ -3462,7 +3450,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "user_phone_numbers_id_seq",
             "schema": "public",
             "increment": "1",
