@@ -1,6 +1,6 @@
 {
-  "id": "d4353b3e-ab0c-4b14-a7a7-291b7de1bca7",
-  "prevId": "f7e34a89-bc12-4d56-9012-345678abcdef",
+  "id": "f130bb81-03c5-46ff-a95e-d8b955ad636f",
+  "prevId": "d4353b3e-ab0c-4b14-a7a7-291b7de1bca7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -685,7 +685,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "extraction_processed_connections_id_seq",
             "schema": "public",
             "increment": "1",
@@ -797,7 +797,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "feature_tip_views_id_seq",
             "schema": "public",
             "increment": "1",
@@ -1622,7 +1622,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "mcp_connection_events_id_seq",
             "schema": "public",
             "increment": "1",
@@ -1757,7 +1757,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "mcp_servers_id_seq",
             "schema": "public",
             "increment": "1",
@@ -2626,7 +2626,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "push_subscriptions_id_seq",
             "schema": "public",
             "increment": "1",
@@ -3125,7 +3125,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "sms_outbound_messages_id_seq",
             "schema": "public",
             "increment": "1",
@@ -3450,7 +3450,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "user_phone_numbers_id_seq",
             "schema": "public",
             "increment": "1",

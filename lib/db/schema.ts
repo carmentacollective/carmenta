@@ -20,9 +20,9 @@
  *   Used by: connections, integrations (encoded via Sqids for public URLs)
  *
  * - Identity (NEW TABLES): Use for new tables needing auto-increment integers
- *   Example: `integer("id").primaryKey().generatedAlwaysAsIdentity()`
+ *   Example: `integer("id").primaryKey().generatedByDefaultAsIdentity()`
  *   Benefits: Modern PostgreSQL standard, explicit control over sequences
- *   Note: Don't migrate existing serial columns; use for new tables only
+ *   Note: Use generatedByDefaultAsIdentity (not Always) for Drizzle ORM compatibility
  *
  * - Text: Use when IDs come from external systems (AI SDK message IDs, etc.)
  *   Example: `text("id").primaryKey()`
@@ -883,7 +883,7 @@ export interface McpServerManifest {
 export const mcpServers = pgTable(
     "mcp_servers",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
 
         /** Owner's email - direct FK to users.email */
         userEmail: varchar("user_email", { length: 255 })
@@ -979,7 +979,7 @@ export const mcpServers = pgTable(
 export const mcpConnectionEvents = pgTable(
     "mcp_connection_events",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
 
         /** User's email */
         userEmail: varchar("user_email", { length: 255 })
@@ -1893,7 +1893,7 @@ export type NewSmsInboundMessage = typeof smsInboundMessages.$inferInsert;
 export const userPhoneNumbers = pgTable(
     "user_phone_numbers",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
 
         /** Owner's email - direct FK to users.email */
         userEmail: varchar("user_email", { length: 255 })
@@ -1978,7 +1978,7 @@ export const smsNotificationSourceEnum = pgEnum("sms_notification_source", [
 export const smsOutboundMessages = pgTable(
     "sms_outbound_messages",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
 
         /** Quo's message ID (after send) - idempotency for delivery webhooks */
         quoMessageId: varchar("quo_message_id", { length: 100 }),
@@ -2230,7 +2230,7 @@ export type NewExtractionJob = typeof extractionJobs.$inferInsert;
 export const extractionProcessedConnections = pgTable(
     "extraction_processed_connections",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
 
         /** User who owns this record */
         userId: uuid("user_id")
@@ -2329,7 +2329,7 @@ export interface WebPushSubscription {
 export const pushSubscriptions = pgTable(
     "push_subscriptions",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
 
         /** Owner's email - direct FK to users.email */
         userEmail: varchar("user_email", { length: 255 })
@@ -2418,7 +2418,7 @@ export const featureTipStateEnum = pgEnum("feature_tip_state", [
 export const featureTipViews = pgTable(
     "feature_tip_views",
     {
-        id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+        id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
 
         /** User who saw the tip */
         userId: uuid("user_id")

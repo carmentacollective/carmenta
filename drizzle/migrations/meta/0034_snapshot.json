@@ -1,6 +1,6 @@
 {
-  "id": "d4353b3e-ab0c-4b14-a7a7-291b7de1bca7",
-  "prevId": "f7e34a89-bc12-4d56-9012-345678abcdef",
+  "id": "f7e34a89-bc12-4d56-9012-345678abcdef",
+  "prevId": "edda4a30-9387-4922-921f-3fd01a92ffcb",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -593,13 +593,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "user_guidance": {
-          "name": "user_guidance",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'[]'::jsonb"
-        },
         "started_at": {
           "name": "started_at",
           "type": "timestamp with time zone",
@@ -618,6 +611,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "user_guidance": {
+          "name": "user_guidance",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
         }
       },
       "indexes": {
