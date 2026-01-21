@@ -300,6 +300,7 @@ export function parseErrorMessage(message: string | undefined): string {
     // Network/connection errors - transient, user can fix by checking connection
     if (
         lowerMessage.includes("networkerror") ||
+        lowerMessage.includes("network error") ||
         lowerMessage.includes("econnrefused") ||
         lowerMessage.includes("econnreset")
     ) {
