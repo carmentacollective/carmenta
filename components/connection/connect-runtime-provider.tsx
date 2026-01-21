@@ -1665,6 +1665,10 @@ function ConnectRuntimeProviderInner({
             return;
         }
 
+        // Save any draft the user may have started typing after the error appeared
+        // append() clears input, so we need to restore it to avoid losing the draft
+        const currentDraft = input;
+
         // Mark retry as in-flight
         isRetryingRef.current = true;
 
@@ -1678,15 +1682,23 @@ function ConnectRuntimeProviderInner({
             await append(failedMessage);
             // Success! Show confirmation toast
             toast.success("Message sent successfully", { duration: 3000 });
+            // Restore user's draft if they had started typing something new
+            if (currentDraft && currentDraft !== failedMessage.content) {
+                setInput(currentDraft);
+            }
         } catch (err) {
             logger.error({ error: err }, "Failed to retry message");
             // If retry fails, restore the failed message and error state
             setFailedMessage(failedMessage);
+            // Also restore user's draft
+            if (currentDraft && currentDraft !== failedMessage.content) {
+                setInput(currentDraft);
+            }
             throw err;
         } finally {
             isRetryingRef.current = false;
         }
-    }, [failedMessage, clearError, append]);
+    }, [failedMessage, clearError, append, input]);
 
     /**
      * Regenerate from a specific assistant message.
