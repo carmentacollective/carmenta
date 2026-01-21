@@ -9,17 +9,31 @@ import type { BugReportContext, FeedbackContext, SuggestionContext } from "./typ
 
 /**
  * Format a bug report for GitHub issue body
+ *
+ * Structures the bug report for AI triaging with rich context:
+ * - Screenshots/images embedded directly
+ * - Error details in code blocks
+ * - Conversation context for understanding what user was trying to do
+ * - Link back to conversation for full debugging context
  */
 export function formatBugReport(context: BugReportContext): string {
     const sections: string[] = [];
 
     sections.push(`## Description\n\n${context.description}`);
 
-    sections.push(`## Context
+    // Screenshots section - placed early for visibility
+    // Filter out any undefined/empty URLs before rendering
+    const validImageUrls = context.imageUrls?.filter(
+        (url) => url && typeof url === "string" && url.trim().length > 0
+    );
+    if (validImageUrls && validImageUrls.length > 0) {
+        const imageMarkdown = validImageUrls
+            .map((url, i) => `![Screenshot ${i + 1}](${url})`)
+            .join("\n\n");
+        sections.push(`## Screenshots\n\n${imageMarkdown}`);
+    }
 
-- Reported via Carmenta chat
-- Timestamp: ${context.reportedAt.toISOString()}${context.browserInfo ? `\n- Browser: ${context.browserInfo}` : ""}`);
-
+    // Error details - critical for debugging
     if (context.errorDetails) {
         sections.push(`## Error Details
 
@@ -28,11 +42,27 @@ ${context.errorDetails}
 \`\`\``);
     }
 
+    // Conversation excerpt - helps understand user intent
     if (context.conversationExcerpt) {
-        sections.push(`## Conversation Excerpt
+        sections.push(`## Conversation Context
+
+> What the user was doing when the bug occurred:
 
 ${context.conversationExcerpt}`);
     }
+
+    // Metadata section
+    const metadata: string[] = [
+        `- Reported via Carmenta chat`,
+        `- Timestamp: ${context.reportedAt.toISOString()}`,
+    ];
+    if (context.browserInfo) {
+        metadata.push(`- Browser: ${context.browserInfo}`);
+    }
+    if (context.connectionUrl) {
+        metadata.push(`- [View full conversation](${context.connectionUrl})`);
+    }
+    sections.push(`## Context\n\n${metadata.join("\n")}`);
 
     sections.push(`---
 *Filed automatically by Carmenta from chat conversation*`);
