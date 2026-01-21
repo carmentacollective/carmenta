@@ -288,7 +288,8 @@ export async function exchangeCodeForTokens(
 
     // Validate granted scopes match what we requested
     // Per RFC 6749 §5.1: if scope is omitted, it's identical to what was requested
-    const grantedScopes = scope && scope.trim() ? scope.split(" ") : [];
+    // Normalize delimiters - providers use space (RFC) or comma (Slack, Google)
+    const grantedScopes = scope && scope.trim() ? scope.split(/[ ,]+/) : [];
     const requestedScopes = provider.scopes;
 
     // Only check if scope was explicitly returned (empty = all granted per RFC 6749)
