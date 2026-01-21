@@ -99,17 +99,15 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
 
-    // Check for OAuth error from provider
+    // Check for OAuth error from provider (user denied access, etc.)
+    // This is expected user behavior - don't report to Sentry
     const error = searchParams.get("error");
     if (error) {
         const errorDescription = searchParams.get("error_description");
-        logger.error({ error, errorDescription }, "❌ OAuth authorization failed");
-
-        Sentry.captureMessage("OAuth authorization failed", {
-            level: "warning",
-            tags: { component: "oauth", error },
-            extra: { errorDescription },
-        });
+        logger.warn(
+            { error, errorDescription },
+            "OAuth authorization declined by user"
+        );
 
         // Redirect to error page using public domain
         const errorUrl = new URL("/integrations", appUrl);

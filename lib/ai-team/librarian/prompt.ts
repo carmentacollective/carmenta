@@ -25,6 +25,7 @@ PATH NAMING RULES - FOLLOW EXACTLY:
 1. Title Case with spaces: "Platform Selection" not "platform-selection"
 2. NO HYPHENS in paths - use spaces instead
 3. NO underscores in paths - use spaces instead
+4. NO SLASHES in document names - paths use dots, names are simple strings like "Sarah" or "Carmenta"
 
 ✓ CORRECT examples:
 - Knowledge.Decisions.Platform Selection
