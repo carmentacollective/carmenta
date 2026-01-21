@@ -10,6 +10,21 @@ import * as Sentry from "@sentry/node";
 import { Context } from "@temporalio/activity";
 import { logger } from "../../lib/logger";
 
+/**
+ * Normalize error messages for Sentry fingerprinting.
+ * Extracts operation + table for DB errors so they group properly.
+ */
+function normalizeErrorForFingerprint(message: string): string {
+    // DB query errors: extract operation and table name
+    const dbMatch = message.match(
+        /Failed query: (insert|update|delete|select).*?"(\w+)"/i
+    );
+    if (dbMatch) {
+        return `db-${dbMatch[1].toLowerCase()}-${dbMatch[2]}`;
+    }
+    return message;
+}
+
 export interface ActivityContext {
     activityName: string;
     jobId?: string;
@@ -49,6 +64,7 @@ export function captureActivityError(error: unknown, context: ActivityContext): 
 
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorCode = (error as { code?: string })?.code;
+    const normalizedMessage = normalizeErrorForFingerprint(errorMessage);
 
     // Log with structured context
     logger.error(
@@ -81,7 +97,7 @@ export function captureActivityError(error: unknown, context: ActivityContext): 
             temporal: temporalContext,
             errorMessage,
         },
-        fingerprint: ["temporal-activity", activityName, errorMessage],
+        fingerprint: ["temporal-activity", activityName, normalizedMessage],
     });
 }
 
