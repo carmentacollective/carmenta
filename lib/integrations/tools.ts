@@ -13,8 +13,10 @@ import * as Sentry from "@sentry/nextjs";
 import { tool } from "ai";
 import { z } from "zod";
 
+import { createClerkClient } from "@clerk/nextjs/server";
+
 import { getConnectedServices, getCredentials } from "./connection-manager";
-import { getServiceById, type ServiceDefinition } from "./services";
+import { getServiceById, type ServiceDefinition, type RolloutStatus } from "./services";
 import {
     AsanaAdapter,
     ClickUpAdapter,
@@ -322,28 +324,114 @@ function createAdapterTool(adapterId: string, userEmail: string) {
 type IntegrationTool = ReturnType<typeof createServiceTool>;
 
 /**
+ * Permission options for filtering services by rollout status
+ */
+export interface IntegrationPermissions {
+    showBetaIntegrations?: boolean;
+    showInternalIntegrations?: boolean;
+}
+
+/**
+ * Fetch user permissions from Clerk by email address.
+ * Used in server-side contexts (like AI Team) where there's no active Clerk session.
+ *
+ * In development/test mode, returns all permissions enabled for testing.
+ * In production, queries Clerk's backend API for the user's publicMetadata.
+ */
+export async function getPermissionsByEmail(
+    email: string
+): Promise<IntegrationPermissions> {
+    // Development/test mode - all permissions enabled for testing
+    if (process.env.NODE_ENV !== "production") {
+        return {
+            showBetaIntegrations: true,
+            showInternalIntegrations: true,
+        };
+    }
+
+    try {
+        const clerkClient = createClerkClient({
+            secretKey: process.env.CLERK_SECRET_KEY,
+        });
+
+        // Look up user by email
+        const { data: users } = await clerkClient.users.getUserList({
+            emailAddress: [email],
+            limit: 1,
+        });
+
+        if (users.length === 0) {
+            logger.warn({ email }, "User not found in Clerk when fetching permissions");
+            return {};
+        }
+
+        const user = users[0];
+        return {
+            showBetaIntegrations: user.publicMetadata?.showBetaIntegrations === true,
+            showInternalIntegrations:
+                user.publicMetadata?.showInternalIntegrations === true,
+        };
+    } catch (error) {
+        logger.error({ error, email }, "Failed to fetch user permissions from Clerk");
+        Sentry.captureException(error, {
+            tags: { component: "integrations", operation: "get_permissions" },
+            extra: { email },
+        });
+        // Return empty permissions on error (only "available" services will be shown)
+        return {};
+    }
+}
+
+/**
+ * Check if a service should be visible based on its rollout status and user permissions.
+ * Services with status "available" are always visible.
+ * Services with status "beta" require showBetaIntegrations permission.
+ * Services with status "internal" require showInternalIntegrations permission.
+ */
+function isServiceAllowed(
+    status: RolloutStatus,
+    permissions: IntegrationPermissions
+): boolean {
+    if (status === "available") return true;
+    if (status === "beta") return permissions.showBetaIntegrations === true;
+    if (status === "internal") return permissions.showInternalIntegrations === true;
+    return false;
+}
+
+/**
  * Get all integration tools for a user's connected services
  *
  * Returns a Record of tool name → tool that can be spread into streamText's tools option.
  *
  * @param userEmail - User's email address (NOT userId UUID - database queries use email)
+ * @param permissions - Optional permission flags to filter services by rollout status.
+ *                      If not provided, permissions are fetched from Clerk automatically.
+ *                      In contexts with a Clerk session, pass the user's permissions to avoid
+ *                      an extra API call.
  *
  * @example
  * ```ts
- * const integrationTools = await getIntegrationTools(userEmail);
- * const result = await streamText({
- *     model: openrouter.chat(modelId),
- *     tools: { ...builtInTools, ...integrationTools },
- *     // ...
+ * // In a route with Clerk session - pass user's permissions (avoids extra API call)
+ * const integrationTools = await getIntegrationTools(userEmail, {
+ *     showBetaIntegrations: user.publicMetadata.showBetaIntegrations,
+ *     showInternalIntegrations: user.publicMetadata.showInternalIntegrations,
  * });
+ *
+ * // In server context without session - permissions fetched automatically
+ * const integrationTools = await getIntegrationTools(userEmail);
  * ```
  */
 export async function getIntegrationTools(
-    userEmail: string
+    userEmail: string,
+    permissions?: IntegrationPermissions
 ): Promise<Record<string, IntegrationTool>> {
     const tools: Record<string, IntegrationTool> = {};
 
     try {
+        // Fetch permissions from Clerk if not provided
+        const effectivePermissions =
+            permissions ?? (await getPermissionsByEmail(userEmail));
+
         // Get user's connected services
         const connectedServiceIds = await getConnectedServices(userEmail);
 
@@ -356,6 +444,15 @@ export async function getIntegrationTools(
             const service = getServiceById(serviceId);
             if (!service) {
                 logger.warn({ serviceId }, "Unknown connected service");
+                continue;
+            }
+
+            // Filter by rollout status and user permissions
+            if (!isServiceAllowed(service.status, effectivePermissions)) {
+                logger.debug(
+                    { serviceId, status: service.status },
+                    "Skipping service due to permission restrictions"
+                );
                 continue;
             }
 

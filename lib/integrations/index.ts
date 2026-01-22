@@ -55,7 +55,11 @@ export {
 } from "./adapters";
 
 // Tools factory for Vercel AI SDK
-export { getIntegrationTools } from "./tools";
+export {
+    getIntegrationTools,
+    getPermissionsByEmail,
+    type IntegrationPermissions,
+} from "./tools";
 
 // Types
 export type {
