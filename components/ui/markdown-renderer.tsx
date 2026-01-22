@@ -9,18 +9,34 @@ import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
-/** Error boundary that falls back to react-markdown when Streamdown crashes */
+/** Error boundary that falls back to plain text when Streamdown crashes */
 class StreamdownErrorBoundary extends Component<
     { children: ReactNode; fallback: ReactNode },
-    { hasError: boolean }
+    { hasError: boolean; previousChildren: ReactNode }
 > {
     constructor(props: { children: ReactNode; fallback: ReactNode }) {
         super(props);
-        this.state = { hasError: false };
+        this.state = { hasError: false, previousChildren: props.children };
     }
 
     static getDerivedStateFromError() {
         return { hasError: true };
+    }
+
+    // Reset error state when content changes (e.g., during streaming)
+    static getDerivedStateFromProps(
+        props: { children: ReactNode; fallback: ReactNode },
+        state: { hasError: boolean; previousChildren: ReactNode }
+    ) {
+        // If children changed and we were in error state, reset to try rendering again
+        if (state.hasError && props.children !== state.previousChildren) {
+            return { hasError: false, previousChildren: props.children };
+        }
+        // Update previousChildren for future comparisons
+        if (props.children !== state.previousChildren) {
+            return { previousChildren: props.children };
+        }
+        return null;
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
