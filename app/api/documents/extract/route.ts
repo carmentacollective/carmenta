@@ -134,17 +134,38 @@ export async function POST(request: NextRequest) {
             processingTimeMs: result.processingTimeMs,
         });
     } catch (error) {
-        logger.error({ error, userId }, "Document extraction failed");
-        Sentry.captureException(error, {
-            tags: { route: "/api/documents/extract" },
-            extra: { userId },
-        });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const lowerMessage = errorMessage.toLowerCase();
+        const isServiceUnavailable =
+            lowerMessage.includes("unable to reach") ||
+            lowerMessage.includes("timed out");
 
+        // Log to Sentry for visibility, but with appropriate severity
+        if (isServiceUnavailable) {
+            // Service unavailable - warn level, don't page anyone
+            logger.warn({ error, userId }, "Docling service unavailable");
+            Sentry.captureMessage("Docling service unavailable", {
+                level: "warning",
+                tags: {
+                    route: "/api/documents/extract",
+                    docling_status: "unavailable",
+                },
+                extra: { userId, errorMessage },
+            });
+        } else {
+            // Actual extraction error - error level
+            logger.error({ error, userId }, "Document extraction failed");
+            Sentry.captureException(error, {
+                tags: { route: "/api/documents/extract" },
+                extra: { userId },
+            });
+        }
+
+        // Return 503 for service unavailability - client handles this gracefully
+        // Return 500 for actual extraction errors
         return NextResponse.json(
-            {
-                error: getUserFriendlyError(error),
-            },
-            { status: 500 }
+            { error: getUserFriendlyError(error) },
+            { status: isServiceUnavailable ? 503 : 500 }
         );
     }
 }
