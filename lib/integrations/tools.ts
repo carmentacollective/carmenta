@@ -428,16 +428,16 @@ export async function getIntegrationTools(
     const tools: Record<string, IntegrationTool> = {};
 
     try {
-        // Fetch permissions from Clerk if not provided
-        const effectivePermissions =
-            permissions ?? (await getPermissionsByEmail(userEmail));
-
-        // Get user's connected services
+        // Get user's connected services first (avoids Clerk API call if no services)
         const connectedServiceIds = await getConnectedServices(userEmail);
 
         if (connectedServiceIds.length === 0) {
             return tools;
         }
+
+        // Fetch permissions from Clerk only when we have services to filter
+        const effectivePermissions =
+            permissions ?? (await getPermissionsByEmail(userEmail));
 
         // Create tools for each connected service
         for (const serviceId of connectedServiceIds) {
