@@ -1,12 +1,47 @@
 "use client";
 
-import { memo } from "react";
+import { Component, memo, type ReactNode } from "react";
 import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import * as Sentry from "@sentry/nextjs";
 
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
+
+/** Error boundary that falls back to react-markdown when Streamdown crashes */
+class StreamdownErrorBoundary extends Component<
+    { children: ReactNode; fallback: ReactNode },
+    { hasError: boolean }
+> {
+    constructor(props: { children: ReactNode; fallback: ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        Sentry.captureException(error, {
+            tags: {
+                component: "StreamdownErrorBoundary",
+                fallback_triggered: "true",
+            },
+            extra: {
+                componentStack: errorInfo.componentStack,
+            },
+        });
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback;
+        }
+        return this.props.children;
+    }
+}
 
 /** Pulsing Carmenta logo as streaming cursor with graceful exit */
 function StreamingCursor() {
@@ -46,6 +81,11 @@ function StreamingCursor() {
     );
 }
 
+/** Plain text fallback when Streamdown fails */
+function PlainTextFallback({ content }: { content: string }) {
+    return <div className="whitespace-pre-wrap">{content}</div>;
+}
+
 interface MarkdownRendererProps {
     /** The markdown content to render */
     content: string;
@@ -72,6 +112,8 @@ interface MarkdownRendererProps {
  *
  * The `isStreaming` prop disables interactive buttons during active streaming
  * to prevent copying incomplete content.
+ *
+ * Falls back to plain text if Streamdown crashes (Turbopack compatibility issue).
  */
 export const MarkdownRenderer = memo(
     ({
@@ -94,9 +136,17 @@ export const MarkdownRenderer = memo(
                     className
                 )}
             >
-                <Streamdown mode="streaming" isAnimating={isStreaming} controls={true}>
-                    {content}
-                </Streamdown>
+                <StreamdownErrorBoundary
+                    fallback={<PlainTextFallback content={content} />}
+                >
+                    <Streamdown
+                        mode="streaming"
+                        isAnimating={isStreaming}
+                        controls={true}
+                    >
+                        {content}
+                    </Streamdown>
+                </StreamdownErrorBoundary>
                 <AnimatePresence>
                     {isStreaming && <StreamingCursor key="cursor" />}
                 </AnimatePresence>
