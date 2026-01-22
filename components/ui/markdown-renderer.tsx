@@ -1,12 +1,63 @@
 "use client";
 
-import { memo } from "react";
+import { Component, memo, type ReactNode } from "react";
 import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import * as Sentry from "@sentry/nextjs";
 
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
+
+/** Error boundary that falls back to plain text when Streamdown crashes */
+class StreamdownErrorBoundary extends Component<
+    { children: ReactNode; fallback: ReactNode },
+    { hasError: boolean; previousChildren: ReactNode }
+> {
+    constructor(props: { children: ReactNode; fallback: ReactNode }) {
+        super(props);
+        this.state = { hasError: false, previousChildren: props.children };
+    }
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    // Reset error state when content changes (e.g., during streaming)
+    static getDerivedStateFromProps(
+        props: { children: ReactNode; fallback: ReactNode },
+        state: { hasError: boolean; previousChildren: ReactNode }
+    ) {
+        // If children changed and we were in error state, reset to try rendering again
+        if (state.hasError && props.children !== state.previousChildren) {
+            return { hasError: false, previousChildren: props.children };
+        }
+        // Update previousChildren for future comparisons
+        if (props.children !== state.previousChildren) {
+            return { previousChildren: props.children };
+        }
+        return null;
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        Sentry.captureException(error, {
+            tags: {
+                component: "StreamdownErrorBoundary",
+                fallback_triggered: "true",
+            },
+            extra: {
+                componentStack: errorInfo.componentStack,
+            },
+        });
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback;
+        }
+        return this.props.children;
+    }
+}
 
 /** Pulsing Carmenta logo as streaming cursor with graceful exit */
 function StreamingCursor() {
@@ -46,6 +97,11 @@ function StreamingCursor() {
     );
 }
 
+/** Plain text fallback when Streamdown fails */
+function PlainTextFallback({ content }: { content: string }) {
+    return <div className="whitespace-pre-wrap">{content}</div>;
+}
+
 interface MarkdownRendererProps {
     /** The markdown content to render */
     content: string;
@@ -72,6 +128,8 @@ interface MarkdownRendererProps {
  *
  * The `isStreaming` prop disables interactive buttons during active streaming
  * to prevent copying incomplete content.
+ *
+ * Falls back to plain text if Streamdown crashes (Turbopack compatibility issue).
  */
 export const MarkdownRenderer = memo(
     ({
@@ -94,9 +152,17 @@ export const MarkdownRenderer = memo(
                     className
                 )}
             >
-                <Streamdown mode="streaming" isAnimating={isStreaming} controls={true}>
-                    {content}
-                </Streamdown>
+                <StreamdownErrorBoundary
+                    fallback={<PlainTextFallback content={content} />}
+                >
+                    <Streamdown
+                        mode="streaming"
+                        isAnimating={isStreaming}
+                        controls={true}
+                    >
+                        {content}
+                    </Streamdown>
+                </StreamdownErrorBoundary>
                 <AnimatePresence>
                     {isStreaming && <StreamingCursor key="cursor" />}
                 </AnimatePresence>
