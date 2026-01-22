@@ -1,39 +1,58 @@
 # Carmenta
 
-> A heart-centered AI interface with complete memory, multi-model access, AI team, and purpose-built responses for builders who work at the speed of thought.
+> A heart-centered AI interface with complete memory, multi-model access, AI team, and
+> purpose-built responses for builders who work at the speed of thought.
 
-Carmenta embodies Heart Centered AI - the philosophy that human and artificial intelligence are expressions of the same underlying consciousness. The interface uses "we" language, dissolving the human-machine boundary. Built using AI-First Development where the knowledge/ folder IS the product specification.
+Carmenta embodies Heart Centered AI - human and artificial intelligence as expressions
+of the same underlying consciousness. Uses "we" language throughout, dissolving the
+human-machine boundary. Built using AI-First Development where knowledge/ IS the product
+specification.
 
-## Documentation
+## For AI Assistants
 
-- [README](README.md): Project overview, setup instructions, and tech stack
-- [Vision](knowledge/vision.md): Why Carmenta exists, philosophical foundation, core capabilities
-- [AI-First Development](knowledge/ai-first-development.md): How products get built in the age of AI
-- [Roadmap](knowledge/roadmap.md): Milestone progression organized by audience expansion (M0-M4)
+- [AGENTS.md](AGENTS.md): Required conventions, anti-patterns to avoid, error handling
+- [.claude/CLAUDE.md](.claude/CLAUDE.md): Agent/skill standards, model tiers, YAML patterns
+
+## Getting Started
+
+- [README](README.md): Project overview, setup instructions, tech stack
+- [Getting Started](docs/getting-started.md): New user onboarding guide
+- [What is Carmenta](docs/what-is-carmenta.md): Core identity and value proposition
 
 ## Product Knowledge
 
-- [Components Overview](knowledge/components/README.md): Full catalog of feature specifications
-- [Design Principles](knowledge/design-principles.md): Interface design standards for flow state
-- [Tech Architecture](knowledge/tech-architecture.md): Technical architecture decisions
-- [100x Framework](knowledge/context/100x-framework.md): The 1x/10x/100x leverage framework
+- [Vision](knowledge/vision.md): Why Carmenta exists, for whom, what success looks like
+- [AI-First Development](knowledge/ai-first-development.md): How products get built with AI
+- [Components Catalog](knowledge/components/README.md): Full feature specifications
+- [Tech Architecture](knowledge/tech-architecture.md): Technical stack and decisions
+- [Roadmap](knowledge/roadmap.md): Milestones organized by audience (M0-M4)
 
 ## Key Components
 
-- [Concierge](knowledge/components/concierge.md): Pre/post processing for every model call
+- [Concierge](knowledge/components/concierge.md): Pre/post processing, model selection
 - [Memory](knowledge/components/memory.md): Context and memory management
-- [Interface](knowledge/components/interface.md): Web app and AG-UI protocol
-- [Voice](knowledge/components/voice.md): First-class voice interaction
-- [AI Team](knowledge/components/ai-team.md): Digital Chief of Staff and specialized agents
+- [AI Team](knowledge/components/ai-team.md): Digital Chief of Staff and agents
+- [Scheduled Agents](knowledge/components/scheduled-agents.md): Automated agent execution
+- [Knowledge Base](knowledge/components/knowledge-base.md): Personal knowledge layer
+- [Service Connectivity](knowledge/components/service-connectivity.md): Integration architecture
 
 ## Development Standards
 
-- [TypeScript Standards](.cursor/rules/frontend/typescript-coding-standards.mdc): Pino logging, Sentry, error handling
-- [Git Workflow](.cursor/rules/git-interaction.mdc): Commit practices and version control
-- [Heart-Centered Philosophy](.cursor/rules/heart-centered-ai-philosophy.mdc): Core product identity
+- [TypeScript Standards](.cursor/rules/frontend/typescript-coding-standards.mdc): Coding conventions
+- [Git Workflow](.cursor/rules/git-interaction.mdc): Commit practices, version control
+- [Error Handling](knowledge/components/error-handling.md): Let errors throw philosophy
+- [Prompt Engineering](.cursor/rules/prompt-engineering.mdc): Writing prompts for LLMs
+
+## AI Capabilities
+
+- [Commands](.claude/commands/): 18 user-invoked workflows (build-next, do-issue, etc.)
+- [Agents](.claude/agents/): 7 specialized agents (empathy-reviewer, browser-verifier)
+- [Skills](.claude/skills/): 5 auto-triggered capabilities (writing-for-llms, testing)
 
 ## Optional
 
-- [Competitors Analysis](knowledge/competitors/README.md): Competitive landscape research
-- [User Personas](knowledge/product/personas.md): Target users by milestone
-- [Product Boundaries](knowledge/product/boundaries.md): What Carmenta is NOT building
+- [Competitors](knowledge/competitors/README.md): Competitive landscape analysis
+- [Personas](knowledge/product/personas.md): Target users by milestone
+- [Boundaries](knowledge/product/boundaries.md): What Carmenta is NOT building
+- [Design Principles](knowledge/design-principles.md): Interface design standards
+- [100x Framework](knowledge/context/100x-framework.md): The 1x/10x/100x leverage model
