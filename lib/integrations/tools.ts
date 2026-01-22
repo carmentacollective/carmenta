@@ -370,10 +370,38 @@ export async function getIntegrationTools(
                 } catch (error) {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
-                    logger.warn(
-                        { serviceId, error: errorMessage, userEmail },
-                        "Skipping virtual service parent due to credential error"
-                    );
+
+                    // Distinguish config errors (missing env vars) from user connection issues.
+                    // Config errors are serious - surface them loudly so they get fixed.
+                    const isConfigError =
+                        errorMessage.includes("environment variable") ||
+                        errorMessage.includes("ENCRYPTION_KEY") ||
+                        errorMessage.includes("encryption key") || // Matches actual error from decryptCredentials
+                        errorMessage.includes("CLIENT_ID") || // OAuth client credentials
+                        errorMessage.includes("CLIENT_SECRET") ||
+                        errorMessage.includes("data is corrupted");
+
+                    if (isConfigError) {
+                        logger.error(
+                            { serviceId, error: errorMessage, userEmail },
+                            "🚨 Configuration error loading virtual service - check environment variables"
+                        );
+                        Sentry.captureException(error, {
+                            level: "error",
+                            tags: {
+                                component: "integrations",
+                                service: serviceId,
+                                errorType: "config",
+                            },
+                            extra: { userEmail },
+                        });
+                    } else {
+                        // User connection issues (expired token, disconnected, etc.) - warn level
+                        logger.warn(
+                            { serviceId, error: errorMessage, userEmail },
+                            "Skipping virtual service parent due to credential error"
+                        );
+                    }
                     continue;
                 }
 
