@@ -214,6 +214,8 @@ jobs:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
             ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST ||
             'pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
+          # App URL for OAuth redirects - must be set at build time (NEXT_PUBLIC_ is inlined)
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
 
       - name: ⚙️ Build Temporal worker
         run: pnpm run build:worker
