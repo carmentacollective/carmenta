@@ -91,12 +91,8 @@ setup("authenticate and cache session", async ({ page }) => {
 
     // Warm up critical pages to trigger Next.js compilation
     // This is essential in CI where dev server starts fresh
-    const pagesToWarmUp = [
-        "/connection",
-        "/ai-team",
-        "/integrations",
-        "/knowledge-base",
-    ];
+    // FIXME: /knowledge-base excluded - page times out during warmup (see GitHub issue)
+    const pagesToWarmUp = ["/connection", "/ai-team", "/integrations"];
 
     console.log("🔥 Warming up pages...");
     for (const pagePath of pagesToWarmUp) {
