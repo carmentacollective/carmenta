@@ -526,11 +526,14 @@ export const SyntaxHighlightInput = forwardRef<
                     onPaste={onPaste}
                     placeholder={placeholder}
                     className={className}
-                    // RichTextarea requires explicit width and line-height via style prop
-                    // CSS classes alone don't apply to the inner textarea
+                    // RichTextarea requires explicit style props for cursor alignment.
+                    // CSS classes alone don't apply consistently to the overlay layer,
+                    // causing cursor position to mismatch with actual text insertion point.
+                    // See issue #855 for the bug this fixes.
                     style={{
                         width: "100%",
-                        lineHeight: "1.25rem", // Match leading-5 from className
+                        fontSize: "1rem", // Match text-base (16px)
+                        lineHeight: "1.25rem", // Match leading-5 (20px)
                         ...props.style,
                     }}
                     {...props}
