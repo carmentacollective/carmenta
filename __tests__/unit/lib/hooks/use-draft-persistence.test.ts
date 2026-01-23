@@ -221,6 +221,33 @@ describe("useDraftPersistence", () => {
             // The draft should be restored
             expect(mockSetInput).toHaveBeenCalledWith("draft for connection B");
         });
+
+        it("clears input when switching between connections with no draft", () => {
+            // Start with connection A and some typed text
+            const { rerender } = renderHook<
+                ReturnType<typeof useDraftPersistence>,
+                { connectionId: string; input: string }
+            >(
+                ({ connectionId, input }) =>
+                    useDraftPersistence({
+                        connectionId,
+                        input,
+                        setInput: mockSetInput,
+                    }),
+                {
+                    initialProps: { connectionId: "conn-a", input: "message for A" },
+                }
+            );
+
+            // Clear mount calls
+            mockSetInput.mockClear();
+
+            // Switch to connection B (no draft saved)
+            rerender({ connectionId: "conn-b", input: "message for A" });
+
+            // Input should be cleared to prevent message leakage between conversations
+            expect(mockSetInput).toHaveBeenCalledWith("");
+        });
     });
 
     describe("draft length threshold", () => {

@@ -90,6 +90,9 @@ export function useDraftPersistence({
     // This ensures we always save the most current value, even if React is batching updates
     const inputRef = useRef(input);
 
+    // Track previous connection key to distinguish ID transitions from connection switches
+    const previousKeyRef = useRef<string | null>(null);
+
     // Keep ref in sync with latest input (must be in effect, not during render)
     useEffect(() => {
         inputRef.current = input;
@@ -106,6 +109,7 @@ export function useDraftPersistence({
         if (restoredConnectionRef.current === effectiveKey) return;
 
         const savedDraft = getSavedDraft(effectiveKey);
+        const previousKey = previousKeyRef.current;
 
         if (savedDraft) {
             if (!cancelled) {
@@ -123,11 +127,32 @@ export function useDraftPersistence({
                 "📝 Draft recovered"
             );
         } else {
-            // No draft for this connection - just hide recovery banner
-            // DO NOT clear input here! This effect runs when connectionId changes
-            // (e.g., from null to a real ID after first message is sent).
-            // Clearing input would erase what the user is currently typing.
-            // See issues #856, #857 for the bug this fixes.
+            // No draft for this connection - decide whether to clear input
+
+            // CASE 1: Connection ID transition (null/"new" → real ID)
+            // The user sent a message, server assigned an ID, and the user is already
+            // typing their next message. DO NOT clear - preserve what they're typing.
+            // See issues #856, #857 for the bug this scenario fixes.
+            const isIdTransition =
+                previousKey === NEW_CONNECTION_KEY &&
+                effectiveKey !== NEW_CONNECTION_KEY;
+
+            // CASE 2: Connection switch (real ID A → real ID B)
+            // The user switched conversations. Clear the input so messages from
+            // conversation A don't leak into conversation B.
+            const isConnectionSwitch =
+                previousKey !== null &&
+                previousKey !== NEW_CONNECTION_KEY &&
+                effectiveKey !== previousKey;
+
+            if (isConnectionSwitch) {
+                // Switching threads - clear stale input from previous conversation
+                if (!cancelled) {
+                    setInput("");
+                }
+            }
+            // else: ID transition or first mount - don't clear input
+
             Promise.resolve().then(() => {
                 if (!cancelled) {
                     setShowRecoveryBanner(false);
@@ -135,8 +160,9 @@ export function useDraftPersistence({
             });
         }
 
-        // Mark this connection as restored
+        // Mark this connection as restored and track for next change
         restoredConnectionRef.current = effectiveKey;
+        previousKeyRef.current = effectiveKey;
 
         return () => {
             cancelled = true;
