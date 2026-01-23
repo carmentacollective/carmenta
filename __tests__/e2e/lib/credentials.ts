@@ -14,14 +14,6 @@ export const testCredentials = {
     testUserPassword: process.env.TEST_USER_PASSWORD,
 };
 
-export const hasClerkSecrets =
-    !!testCredentials.clerkPublishableKey && !!testCredentials.clerkSecretKey;
-
-export const hasTestUserCredentials =
-    !!testCredentials.testUserEmail && !!testCredentials.testUserPassword;
-
-export const hasAllCredentials = hasClerkSecrets && hasTestUserCredentials;
-
 export type CredentialOptions = { requireTestUser?: boolean };
 
 /**
