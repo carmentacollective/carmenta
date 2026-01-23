@@ -342,11 +342,10 @@ jobs:
           # Required for OAuth URL validation tests
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           # Clerk keys for testing (required for @clerk/testing)
-          # Note: Fork PRs won't have these secrets, tests will be skipped
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+            ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           # Test user credentials for authenticated E2E tests
-          # Tests are skipped if not configured
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
 
