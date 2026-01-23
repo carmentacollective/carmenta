@@ -276,11 +276,12 @@ jobs:
           retention-days: 1
 
   # E2E Tests (OAuth flows, public URL validation)
-  # Runs in parallel with other jobs using dev server
+  # Uses production build for consistent, fast page loads
   e2e:
     name: 🎭 E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [build]
     if: github.actor != 'dependabot[bot]'
 
     services:
@@ -313,6 +314,14 @@ jobs:
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: 📥 Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+
+      - name: 📦 Extract build
+        run: tar -xzf nextjs-build.tar.gz
 
       - name: 🗄️ Run database migrations
         run: pnpm run db:migrate

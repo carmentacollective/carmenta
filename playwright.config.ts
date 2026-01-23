@@ -77,13 +77,13 @@ export default defineConfig({
 
     // WebServer management:
     // - If BASE_URL is set, assume server is already running (skip webServer entirely)
-    // - Otherwise, start dev server on port 3000
-    // This handles multi-repo workflows where different servers run on different ports
+    // - CI uses production build (pnpm start) for fast, consistent page loads
+    // - Local uses dev server (pnpm dev) for hot reloading during development
     ...(process.env.BASE_URL
         ? {} // Skip webServer when BASE_URL is explicitly set
         : {
               webServer: {
-                  command: "pnpm dev",
+                  command: process.env.CI ? "pnpm start" : "pnpm dev",
                   url: "http://localhost:3000",
                   reuseExistingServer: !process.env.CI,
                   timeout: 120 * 1000,
