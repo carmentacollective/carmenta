@@ -129,6 +129,8 @@ export function useDraftPersistence({
         } else {
             // No draft for this connection - decide whether to clear input
 
+            // Detect the type of connection change to determine behavior:
+
             // CASE 1: Connection ID transition (null/"new" → real ID)
             // The user sent a message, server assigned an ID, and the user is already
             // typing their next message. DO NOT clear - preserve what they're typing.
@@ -150,8 +152,10 @@ export function useDraftPersistence({
                 if (!cancelled) {
                     setInput("");
                 }
+            } else if (isIdTransition) {
+                // ID transition - preserve user's typing (no-op, intentional)
             }
-            // else: ID transition or first mount - don't clear input
+            // else: First mount - input already at initial state
 
             Promise.resolve().then(() => {
                 if (!cancelled) {
