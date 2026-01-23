@@ -19,7 +19,11 @@ Think about the user's INTENT, not just their words.
 
 "Create a PR" means create a branch and open a pull request for review.
 "Ship this" probably means they want review first.
-"Commit this" means commit locally, not push to main.
+"Commit this" means commit locally, not push.
+"Commit to main" means commit locally to main branch, NOT PUSH.
+"Push to main" means actually push to the remote.
+
+COMMIT ≠ PUSH. These are different git operations. Do not conflate them.
 
 Pushing to main or merging PRs skips code review. Users almost never want that.
 When in doubt, ASK THE USER. Do not rationalize bypassing this guard.
@@ -315,12 +319,15 @@ def check_git_push(
                     "\n"
                     '"Create a PR" → Create a BRANCH, push it, open a pull request\n'
                     '"Ship this" → Probably wants a PR for review first\n'
-                    '"Commit this" → Commit locally, not push to main\n'
+                    '"Commit this" → Commit locally, NOT push\n'
+                    '"Commit to main" → Commit locally to main branch, NOT push\n'
+                    '"Push to main" → Actually push to remote main\n'
                     "\n"
+                    "COMMIT ≠ PUSH. These are different operations.\n"
                     "Pushing to main skips code review. The user almost never wants that.\n"
                     "If you're unsure, ASK. Do not rationalize bypassing this guard.\n"
                     "\n"
-                    "Only if user's intent is genuinely to push to main:\n"
+                    "Only if user said PUSH (not commit):\n"
                     "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push ..."
                 ),
                 ViolationType.NEEDS_CONFIRMATION,
