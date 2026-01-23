@@ -108,15 +108,11 @@ test.describe("Integrations Page", () => {
         await expect(page).toHaveURL(/\/integrations/);
 
         // Check for critical console errors
-        // Filter out expected errors that occur in CI without full API credentials
         const criticalErrors = consoleErrors.filter(
             (err) =>
                 !err.includes("ResizeObserver") &&
                 !err.includes("Script error") &&
-                !err.includes("WebSocket") &&
-                // Feature tip and sparks require AI API access (not available in CI)
-                !err.includes("Failed to fetch feature tip") &&
-                !err.includes("Failed to load sparks")
+                !err.includes("WebSocket")
         );
 
         expect(criticalErrors).toHaveLength(0);
@@ -160,15 +156,11 @@ test.describe("Knowledge Base Page", () => {
         await expect(page).toHaveURL(/\/knowledge-base/);
 
         // Check for critical console errors
-        // Filter out expected errors that occur in CI without full API credentials
         const criticalErrors = consoleErrors.filter(
             (err) =>
                 !err.includes("ResizeObserver") &&
                 !err.includes("Script error") &&
-                !err.includes("WebSocket") &&
-                // Feature tip and sparks require AI API access (not available in CI)
-                !err.includes("Failed to fetch feature tip") &&
-                !err.includes("Failed to load sparks")
+                !err.includes("WebSocket")
         );
 
         expect(criticalErrors).toHaveLength(0);
@@ -243,15 +235,11 @@ test.describe("Connection/Chat Page", () => {
         await expect(page).toHaveURL(/\/connection/);
 
         // Check for critical console errors
-        // Filter out expected errors that occur in CI without full API credentials
         const criticalErrors = consoleErrors.filter(
             (err) =>
                 !err.includes("ResizeObserver") &&
                 !err.includes("Script error") &&
-                !err.includes("WebSocket") &&
-                // Feature tip and sparks require AI API access (not available in CI)
-                !err.includes("Failed to fetch feature tip") &&
-                !err.includes("Failed to load sparks")
+                !err.includes("WebSocket")
         );
 
         expect(criticalErrors).toHaveLength(0);
