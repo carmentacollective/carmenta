@@ -123,10 +123,11 @@ export function useDraftPersistence({
                 "📝 Draft recovered"
             );
         } else {
-            // No draft for this connection - clear input and hide banner
-            if (!cancelled) {
-                setInput("");
-            }
+            // No draft for this connection - just hide recovery banner
+            // DO NOT clear input here! This effect runs when connectionId changes
+            // (e.g., from null to a real ID after first message is sent).
+            // Clearing input would erase what the user is currently typing.
+            // See issues #856, #857 for the bug this fixes.
             Promise.resolve().then(() => {
                 if (!cancelled) {
                     setShowRecoveryBanner(false);
