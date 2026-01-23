@@ -43,6 +43,9 @@ jobs:
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: 🖥️ Log runner info
+        run: nproc && free -h
+
       - name: 🔎 Run ESLint
         run: pnpm run lint
 
@@ -150,7 +153,7 @@ jobs:
   # Unit Tests
   test:
     name: 🧪 Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-8core
     timeout-minutes: 5
 
     steps:
@@ -170,6 +173,9 @@ jobs:
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: 🖥️ Log runner info
+        run: nproc && free -h
 
       - name: 🧪 Run test suite
         run: pnpm run test
@@ -179,7 +185,7 @@ jobs:
   # Build Verification
   build:
     name: 🏗️ Production Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-8core
     timeout-minutes: 5
 
     steps:
@@ -199,6 +205,9 @@ jobs:
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: 🖥️ Log runner info
+        run: nproc && free -h
 
       - name: 📦 Restore Next.js build cache
         uses: actions/cache@v5
@@ -214,6 +223,8 @@ jobs:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
             ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST ||
             'pk_test_Y2ktYnVpbGQuY2FybWVudGEubGNsLmRldiQ=' }}
+          # App URL for OAuth redirects - must be set at build time (NEXT_PUBLIC_ is inlined)
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
 
       - name: ⚙️ Build Temporal worker
         run: pnpm run build:worker
@@ -276,11 +287,12 @@ jobs:
           retention-days: 1
 
   # E2E Tests (OAuth flows, public URL validation)
-  # Runs in parallel with other jobs using dev server
+  # Uses production build for consistent, fast page loads
   e2e:
     name: 🎭 E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [build]
     if: github.actor != 'dependabot[bot]'
 
     services:
@@ -314,6 +326,14 @@ jobs:
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: 📥 Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+
+      - name: 📦 Extract build
+        run: tar -xzf nextjs-build.tar.gz
+
       - name: 🗄️ Run database migrations
         run: pnpm run db:migrate
         env:
@@ -331,11 +351,10 @@ jobs:
           # Required for OAuth URL validation tests
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           # Clerk keys for testing (required for @clerk/testing)
-          # Note: Fork PRs won't have these secrets, tests will be skipped
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY_TEST }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+            ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           # Test user credentials for authenticated E2E tests
-          # Tests are skipped if not configured
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
 

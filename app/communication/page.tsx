@@ -4,12 +4,11 @@ import { currentUser } from "@clerk/nextjs/server";
 import { Chat } from "@phosphor-icons/react/dist/ssr";
 
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
-import { KnowledgeViewer } from "@/components/knowledge-viewer";
+import { CommunicationContent } from "./communication-content";
 import {
-    getKBFolders,
+    getKBDocuments,
     initializeKBWithClerkData,
     hasKBProfile,
-    type KBFolder,
 } from "@/lib/kb/actions";
 
 export const metadata: Metadata = {
@@ -48,29 +47,12 @@ export default async function CommunicationPage() {
     }
 
     // Fetch KB data
-    const userFolders = await getKBFolders();
+    const allDocuments = await getKBDocuments();
 
-    // Build folder structure for communication preferences
-    const allFolders: KBFolder[] = [];
-    const profileFolder = userFolders.find((f) => f.path === "profile");
-
-    // Communication documents: voice/style and collaboration preferences
-    // Virtual folder - documents have "profile.*" paths but we present them
-    // under "style" folder for navigation purposes on this page
-    if (profileFolder) {
-        const communicationDocs = profileFolder.documents.filter(
-            (d) => d.path === "profile.character" || d.path === "profile.preferences"
-        );
-        if (communicationDocs.length > 0) {
-            allFolders.push({
-                id: "style",
-                name: "style",
-                path: "style",
-                documents: communicationDocs,
-                children: [],
-            });
-        }
-    }
+    // Filter to communication documents only: voice/style and collaboration preferences
+    const communicationDocs = allDocuments.filter(
+        (d) => d.path === "profile.character" || d.path === "profile.preferences"
+    );
 
     return (
         <StandardPageLayout
@@ -94,7 +76,7 @@ export default async function CommunicationPage() {
 
             {/* Communication Viewer */}
             <section className="min-h-[400px] flex-1">
-                {allFolders.length === 0 || allFolders[0]?.documents.length === 0 ? (
+                {communicationDocs.length === 0 ? (
                     <div className="glass-panel flex h-full flex-col items-center justify-center py-16 text-center">
                         <Chat className="text-foreground/30 mb-4 h-12 w-12" />
                         <h3 className="text-foreground/80 text-lg font-medium">
@@ -105,10 +87,7 @@ export default async function CommunicationPage() {
                         </p>
                     </div>
                 ) : (
-                    <KnowledgeViewer
-                        initialFolders={allFolders}
-                        title="Communication"
-                    />
+                    <CommunicationContent documents={communicationDocs} />
                 )}
             </section>
         </StandardPageLayout>

@@ -1,17 +1,12 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { useHapticFeedback } from "@/lib/hooks/use-haptic-feedback";
-
-// Track whether we're on the client
-const subscribe = () => () => {};
-const getSnapshot = () => true;
-const getServerSnapshot = () => false;
+import { useIsClient } from "@/lib/hooks/use-is-client";
 
 interface ThemeSwitcherProps {
     /**
@@ -32,7 +27,7 @@ interface ThemeSwitcherProps {
 export function ThemeSwitcher({
     enableViewTransition = false,
 }: ThemeSwitcherProps = {}) {
-    const isClient = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    const isClient = useIsClient();
     const { resolvedTheme, setTheme } = useTheme();
     const { trigger: triggerHaptic } = useHapticFeedback();
 

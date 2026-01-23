@@ -203,11 +203,8 @@ function ConnectionCard({
                 <StarButton
                     isStarred={connection.isStarred}
                     onToggle={() => onStar(connection.id)}
-                    showOnHover
                     size="sm"
-                    className={cn(
-                        !connection.isStarred && "opacity-40 group-hover:opacity-100"
-                    )}
+                    className={cn(!connection.isStarred && "opacity-40")}
                 />
             </div>
 
@@ -244,8 +241,8 @@ function ConnectionCard({
                 </div>
             </Link>
 
-            {/* Actions - visible on hover */}
-            <div className="flex flex-shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            {/* Actions */}
+            <div className="flex flex-shrink-0 items-center gap-1">
                 <button
                     onClick={(e) => {
                         e.preventDefault();

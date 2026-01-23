@@ -5,6 +5,23 @@
  * Extracted from UI components for easier testing and reuse.
  */
 
+// ============================================================================
+// Character Limits
+// ============================================================================
+
+/**
+ * Target character limit for LLM-generated content.
+ * ~2,000 tokens for context efficiency.
+ */
+export const LLM_CHAR_TARGET = 8000;
+
+/**
+ * Hard limit for human editing.
+ * 20% higher than LLM target so users aren't scolded for LLM-generated content
+ * that slightly exceeds the target.
+ */
+export const HUMAN_CHAR_LIMIT = Math.round(LLM_CHAR_TARGET * 1.2); // 9,600
+
 export interface PasteCalculation {
     /** The resulting text after paste */
     result: string;

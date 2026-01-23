@@ -145,7 +145,7 @@ export function FeatureTip({
                             <p className="text-foreground text-sm leading-tight font-medium">
                                 {feature.tipTitle}
                             </p>
-                            <p className="text-foreground/60 mt-0.5 line-clamp-1 text-xs">
+                            <p className="text-foreground/60 mt-0.5 text-xs">
                                 {feature.tipDescription}
                             </p>
                         </div>

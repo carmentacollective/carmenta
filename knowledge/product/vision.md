@@ -1,6 +1,6 @@
 # Carmenta Vision
 
-Carmenta is the best interface to AI. The unified front door to artificial intelligence
+Carmenta is the best connection to AI. The unified front door to artificial intelligence
 for people who build at the speed of thought.
 
 ## Why Carmenta Exists
@@ -158,7 +158,7 @@ product we're building.
 
 ## Success Criteria
 
-The best interface to AI that exists. Personal leverage multiplied. Vision executed at
+The best connection to AI that exists. Personal leverage multiplied. Vision executed at
 the speed of thought.
 
 The [100x framework](./context/100x-framework.md) made accessible. An AI team for

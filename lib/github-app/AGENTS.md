@@ -47,7 +47,8 @@ Operations are permission-gated based on user role:
 
 **Public (anyone):**
 
-- `create_issue` - File bug reports, feature requests, feedback
+- `create_issue` - File bug reports, feature requests, feedback (with automatic
+  duplicate detection)
 - `search_issues` - Find existing issues
 
 **Admin only:**
@@ -60,6 +61,35 @@ Operations are permission-gated based on user role:
 - `push_commit` - Push changes (future)
 
 Admin status is determined by `user.publicMetadata.role === "admin"` from Clerk.
+
+## Duplicate Detection
+
+The `create_issue` operation automatically checks for existing similar issues before
+creating a new one:
+
+1. Extracts keywords from the title and body (filtering stop words)
+2. Searches open issues for matches
+3. If a similar issue exists:
+   - Returns the existing issue details with `isDuplicate: true`
+   - Admins get a +1 reaction added to the existing issue
+   - Message indicates the duplicate was found
+4. If no match found, creates a new issue with `isDuplicate: false`
+
+This prevents issue spam while still acknowledging reports. The LLM receives clear
+feedback about whether a new issue was created or an existing one was found.
+
+**Response fields for create_issue:**
+
+```typescript
+{
+  success: true,
+  isDuplicate: boolean,      // true if existing issue found
+  issueNumber: number,
+  issueUrl: string,
+  title: string,
+  message?: string,          // explanation when duplicate found
+}
+```
 
 ## Usage
 
@@ -190,6 +220,17 @@ To add a new operation:
 2. Add relevant schema fields to `githubToolSchema`
 3. Implement handler in `executeOperation` switch statement
 4. Add any needed low-level functions to `client.ts`
+
+## Where It's Wired
+
+The `carmentaGitHub` tool is included in:
+
+- **Main chat conversations** (`app/api/connection/route.ts`) - Available to all users
+- **@carmenta entity handler** (`lib/concierge/entity-handlers/bug-report.ts`) - Uses
+  low-level API directly for structured bug reports
+
+Not currently included in AI Team jobs (`lib/agents/ai-team-member.ts`), but could be
+added if background jobs need to file issues.
 
 ## Related
 

@@ -1,17 +1,18 @@
 /**
  * Google Workspace Files Adapter
  *
- * Create and work with Google Sheets, Docs, and Slides using the drive.file scope.
- * This scope only grants access to:
- * - Files the user explicitly picks via Google Picker
- * - Files our app creates
+ * Read-only access to Google Sheets, Docs, and Slides using the drive.file scope.
+ * This scope only grants access to files the user explicitly picks via Google Picker.
+ *
+ * Design decision (2025-01-18): Removed document creation capabilities.
+ * Carmenta is not a document formatting service - users should create docs in
+ * Google Workspace and have Carmenta read/analyze them.
  *
  * No full Drive browsing - that would require CASA audit ($15-75k/year).
  */
 
 import { drive, auth } from "@googleapis/drive";
 import { sheets } from "@googleapis/sheets";
-import { docs } from "@googleapis/docs";
 import { ServiceAdapter, HelpResponse, MCPToolResponse } from "./base";
 import { logger } from "@/lib/logger";
 
@@ -79,76 +80,13 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         return {
             service: this.serviceDisplayName,
             description:
-                "Create and work with Google Sheets, Docs, and Slides. " +
-                "Access is limited to files you create through Carmenta or explicitly select via Google Picker.",
+                "Read and interact with Google Sheets, Docs, and Slides. " +
+                "Select files via Google Picker to grant Carmenta access.",
             operations: [
-                {
-                    name: "create_sheet",
-                    description:
-                        "Create a new Google Sheet with optional initial data. " +
-                        "Returns the spreadsheet URL for the user to open.",
-                    annotations: { readOnlyHint: false, destructiveHint: false },
-                    parameters: [
-                        {
-                            name: "title",
-                            type: "string",
-                            required: true,
-                            description: "Title for the new spreadsheet",
-                            example: "Q1 Budget",
-                        },
-                        {
-                            name: "data",
-                            type: "array",
-                            required: false,
-                            description:
-                                "2D array of cell values. First row is typically headers. " +
-                                'Example: [["Name", "Email"], ["Alice", "alice@example.com"]]',
-                            example:
-                                '[[\"Name\", \"Amount\"], [\"Alice\", \"100\"], [\"Bob\", \"200\"]]',
-                        },
-                        {
-                            name: "sheet_name",
-                            type: "string",
-                            required: false,
-                            description: "Name for the first sheet (default: 'Sheet1')",
-                            example: "Sales Data",
-                        },
-                    ],
-                    returns: "Object with spreadsheetId and url to open the new sheet",
-                    example: `create_sheet({ title: "Team Roster", data: [["Name", "Role"], ["Alice", "Engineer"]] })`,
-                },
-                {
-                    name: "create_doc",
-                    description:
-                        "Create a new Google Doc with optional initial content. " +
-                        "Returns the document URL for the user to open.",
-                    annotations: { readOnlyHint: false, destructiveHint: false },
-                    parameters: [
-                        {
-                            name: "title",
-                            type: "string",
-                            required: true,
-                            description: "Title for the new document",
-                            example: "Meeting Notes - Jan 10",
-                        },
-                        {
-                            name: "content",
-                            type: "string",
-                            required: false,
-                            description:
-                                "Plain text content to insert into the document. " +
-                                "For formatting, the user can edit in Google Docs after creation.",
-                            example:
-                                "Attendees:\\n- Alice\\n- Bob\\n\\nAgenda:\\n1. Project updates",
-                        },
-                    ],
-                    returns: "Object with documentId and url to open the new doc",
-                    example: `create_doc({ title: "Project Brief", content: "Overview\\n\\nThis project aims to..." })`,
-                },
                 {
                     name: "read_sheet",
                     description:
-                        "Read data from a Google Sheet that was created by Carmenta or selected via Picker. " +
+                        "Read data from a Google Sheet that the user selected via Picker. " +
                         "Cannot access arbitrary sheets - only those the user has explicitly granted access to.",
                     annotations: { readOnlyHint: true },
                     parameters: [
@@ -157,7 +95,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                             type: "string",
                             required: true,
                             description:
-                                "The spreadsheet ID (from the URL or a previous create_sheet result)",
+                                "The spreadsheet ID (from Google Picker selection or URL)",
                             example: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
                         },
                         {
@@ -175,9 +113,9 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                 {
                     name: "open_picker",
                     description:
-                        "Signal the frontend to open Google Picker so user can select an existing file. " +
+                        "Open Google Picker so user can select an existing file from their Drive. " +
                         "This grants Carmenta access to the selected file. " +
-                        "Returns an action for the frontend to handle - does not directly open the picker.",
+                        "Use this when the user wants to work with an existing spreadsheet, document, or presentation.",
                     annotations: { readOnlyHint: true },
                     parameters: [
                         {
@@ -194,7 +132,7 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                     example: `open_picker({ file_types: ["spreadsheet", "document"] })`,
                 },
             ],
-            commonOperations: ["create_sheet", "create_doc", "open_picker"],
+            commonOperations: ["read_sheet", "open_picker"],
             docsUrl: "https://developers.google.com/workspace",
         };
     }
@@ -205,6 +143,17 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         userId: string,
         accountId?: string
     ): Promise<MCPToolResponse> {
+        // Early return for removed actions with helpful message
+        // This runs before validation to provide better error messages
+        const removedActions = ["create_sheet", "create_doc", "create_slides"];
+        if (removedActions.includes(action)) {
+            return this.createErrorResponse(
+                `'${action}' is no longer supported. Available actions: read_sheet, open_picker. ` +
+                    `Document creation was removed - create files in Google Workspace directly, ` +
+                    `then use open_picker to select them for reading/analysis.`
+            );
+        }
+
         // Validate action and params
         const validation = this.validate(action, params);
         if (!validation.valid) {
@@ -240,10 +189,6 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
         // Route to appropriate handler
         try {
             switch (action) {
-                case "create_sheet":
-                    return await this.handleCreateSheet(params, accessToken);
-                case "create_doc":
-                    return await this.handleCreateDoc(params, accessToken);
                 case "read_sheet":
                     return await this.handleReadSheet(params, accessToken);
                 case "open_picker":
@@ -253,7 +198,8 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                         `[GOOGLE WORKSPACE FILES ADAPTER] Unknown action '${action}' requested by user ${userId}`
                     );
                     return this.createErrorResponse(
-                        `Unknown action: ${action}. Use action='describe' to see available operations.`
+                        `Unknown action: ${action}. Available actions: read_sheet, open_picker. ` +
+                            `Note: Document creation is not supported - use Google Workspace directly to create files.`
                     );
             }
         } catch (error) {
@@ -264,184 +210,6 @@ export class GoogleWorkspaceFilesAdapter extends ServiceAdapter {
                 userId
             );
         }
-    }
-
-    /**
-     * Create a new Google Sheet
-     */
-    private async handleCreateSheet(
-        params: unknown,
-        accessToken: string
-    ): Promise<MCPToolResponse> {
-        const { title, data, sheet_name } = params as {
-            title: string;
-            data?: unknown[][];
-            sheet_name?: string;
-        };
-
-        const auth = this.createAuthClient(accessToken);
-        const sheetsClient = sheets({ version: "v4", auth });
-
-        // Build the request body
-        const requestBody: {
-            properties: { title: string };
-            sheets?: Array<{
-                properties?: { title: string };
-                data?: Array<{
-                    startRow: number;
-                    startColumn: number;
-                    rowData: Array<{
-                        values: Array<{
-                            userEnteredValue: { stringValue: string };
-                        }>;
-                    }>;
-                }>;
-            }>;
-        } = {
-            properties: { title },
-        };
-
-        // Add initial data if provided
-        if (data && data.length > 0) {
-            requestBody.sheets = [
-                {
-                    properties: sheet_name ? { title: sheet_name } : undefined,
-                    data: [
-                        {
-                            startRow: 0,
-                            startColumn: 0,
-                            rowData: data.map((row) => ({
-                                values: (Array.isArray(row) ? row : []).map((cell) => ({
-                                    userEnteredValue: {
-                                        stringValue: cell == null ? "" : String(cell),
-                                    },
-                                })),
-                            })),
-                        },
-                    ],
-                },
-            ];
-        } else if (sheet_name) {
-            requestBody.sheets = [{ properties: { title: sheet_name } }];
-        }
-
-        logger.info(
-            { title, hasData: !!data, rowCount: data?.length },
-            "Creating Google Sheet"
-        );
-
-        const response = await sheetsClient.spreadsheets.create({ requestBody });
-
-        const { spreadsheetId, spreadsheetUrl } = response.data;
-
-        if (!spreadsheetId || !spreadsheetUrl) {
-            logger.error(
-                { response: response.data, title },
-                "Google Sheets API returned incomplete data"
-            );
-            return this.createErrorResponse(
-                "Google created the spreadsheet but didn't return all required info. " +
-                    "Check your recent files in Google Drive."
-            );
-        }
-
-        return this.createJSONResponse({
-            success: true,
-            spreadsheetId,
-            url: spreadsheetUrl,
-            title,
-            message: `Created Google Sheet "${title}"`,
-        });
-    }
-
-    /**
-     * Create a new Google Doc
-     */
-    private async handleCreateDoc(
-        params: unknown,
-        accessToken: string
-    ): Promise<MCPToolResponse> {
-        const { title, content } = params as {
-            title: string;
-            content?: string;
-        };
-
-        const auth = this.createAuthClient(accessToken);
-        const docsClient = docs({ version: "v1", auth });
-
-        logger.info({ title, hasContent: !!content }, "Creating Google Doc");
-
-        // Create the document
-        const createResponse = await docsClient.documents.create({
-            requestBody: { title },
-        });
-
-        const documentId = createResponse.data.documentId;
-
-        if (!documentId) {
-            logger.error(
-                { response: createResponse.data, title },
-                "Google Docs API returned no documentId"
-            );
-            return this.createErrorResponse(
-                "Google created the document but didn't return its ID. " +
-                    "Check your recent files in Google Drive."
-            );
-        }
-
-        const url = `https://docs.google.com/document/d/${documentId}/edit`;
-
-        // Insert content if provided
-        if (content && content.length > 0) {
-            try {
-                await docsClient.documents.batchUpdate({
-                    documentId,
-                    requestBody: {
-                        requests: [
-                            {
-                                insertText: {
-                                    location: { index: 1 },
-                                    text: content,
-                                },
-                            },
-                        ],
-                    },
-                });
-            } catch (contentError) {
-                logger.error(
-                    { documentId, error: contentError, title },
-                    "Failed to insert content into newly created doc"
-                );
-                // Capture to Sentry for visibility into partial failures
-                this.captureError(contentError, {
-                    action: "create_doc_content",
-                    params: { documentId },
-                });
-                // Return partial success - doc exists but content failed
-                return this.createJSONResponse({
-                    success: false,
-                    partial: true,
-                    documentId,
-                    url,
-                    title,
-                    message:
-                        `Created Google Doc "${title}" but couldn't insert content. ` +
-                        `The empty doc is available at the URL.`,
-                    error:
-                        contentError instanceof Error
-                            ? contentError.message
-                            : "Unknown error inserting content",
-                });
-            }
-        }
-
-        return this.createJSONResponse({
-            success: true,
-            documentId,
-            url,
-            title,
-            message: `Created Google Doc "${title}"`,
-        });
     }
 
     /**

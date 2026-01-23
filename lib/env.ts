@@ -70,6 +70,9 @@ export const env = createEnv({
         // In-house OAuth credentials - LinkedIn
         LINKEDIN_CLIENT_ID: z.string().min(1).optional(),
         LINKEDIN_CLIENT_SECRET: z.string().min(1).optional(),
+        // In-house OAuth credentials - Asana
+        ASANA_CLIENT_ID: z.string().min(1).optional(),
+        ASANA_CLIENT_SECRET: z.string().min(1).optional(),
         // Braintrust API key for evals and production tracing
         BRAINTRUST_API_KEY: z.string().min(1).optional(),
         // Deepgram API key for real-time voice transcription
@@ -150,6 +153,8 @@ export const env = createEnv({
         TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET,
         LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
         LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
+        ASANA_CLIENT_ID: process.env.ASANA_CLIENT_ID,
+        ASANA_CLIENT_SECRET: process.env.ASANA_CLIENT_SECRET,
         BRAINTRUST_API_KEY: process.env.BRAINTRUST_API_KEY,
         DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY,
         DATABASE_URL: process.env.DATABASE_URL,

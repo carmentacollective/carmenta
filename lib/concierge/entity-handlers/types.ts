@@ -47,6 +47,11 @@ export interface EntityIntent {
 
 /**
  * Context available to entity handlers
+ *
+ * Provides rich context for high-quality bug reports that AI can triage:
+ * - Screenshots/images from user's message
+ * - Error details and recent tool failures
+ * - Conversation context for understanding intent
  */
 export interface EntityHandlerContext {
     /** User ID for rate limiting */
@@ -63,6 +68,15 @@ export interface EntityHandlerContext {
 
     /** Connection ID for linking */
     connectionId?: string;
+
+    /** Connection slug for building URLs */
+    connectionSlug?: string;
+
+    /** URLs of images/screenshots from the user's bug report message */
+    imageUrls?: string[];
+
+    /** Recent tool failures that might be relevant to the bug */
+    recentToolFailures?: string;
 }
 
 /**

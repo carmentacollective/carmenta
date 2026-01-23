@@ -75,6 +75,35 @@ export interface ServiceDefinition {
  * insert it in alphabetical order rather than at the end.
  */
 export const SERVICE_REGISTRY: ServiceDefinition[] = [
+    // Asana - OAuth (in-house)
+    {
+        id: "asana",
+        name: "Asana",
+        description: "Manage tasks, projects, and track work",
+        logo: "/logos/asana.svg",
+        authMethod: "oauth",
+        status: "beta",
+        oauthProviderId: "asana",
+        supportsMultipleAccounts: true,
+        docsUrl: "https://developers.asana.com/reference",
+        capabilities: [
+            "search_tasks",
+            "create_task",
+            "update_task",
+            "list_projects",
+            "get_task",
+            "add_comment",
+        ],
+        suggestKeywords: [
+            "asana",
+            "my tasks",
+            "my to-do",
+            "task list",
+            "in asana",
+            "assigned to me",
+        ],
+    },
+
     // ClickUp - OAuth (in-house)
     {
         id: "clickup",
@@ -221,25 +250,26 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
     },
 
     // Google Sheets/Docs/Slides - OAuth (in-house, "non-sensitive" drive.file scope)
+    // Read-only: users select files via Google Picker, Carmenta reads/analyzes them
     {
         id: "google-workspace-files",
         name: "Google Sheets/Docs/Slides",
         description:
-            "Create and work with Sheets, Docs, and Slides in your Carmenta workspace",
+            "Read and analyze your Sheets, Docs, and Slides by selecting them via file picker",
         logo: "/logos/google-workspace-files.svg",
         authMethod: "oauth",
         status: "available",
         oauthProviderId: "google-workspace-files",
         supportsMultipleAccounts: true,
         docsUrl: "https://developers.google.com/workspace",
-        capabilities: ["create_sheet", "create_doc", "read_sheet", "open_picker"],
+        capabilities: ["read_sheet", "open_picker"],
         suggestKeywords: [
             "google sheet",
             "google doc",
             "google slides",
-            "export to sheets",
-            "create a spreadsheet",
-            "create a doc",
+            "read spreadsheet",
+            "analyze sheet",
+            "open google file",
         ],
     },
 
@@ -273,7 +303,7 @@ export const SERVICE_REGISTRY: ServiceDefinition[] = [
         description: "Share posts and access your LinkedIn profile",
         logo: "/logos/linkedin.svg",
         authMethod: "oauth",
-        status: "beta",
+        status: "available",
         oauthProviderId: "linkedin",
         supportsMultipleAccounts: true,
         docsUrl: "https://learn.microsoft.com/en-us/linkedin/",

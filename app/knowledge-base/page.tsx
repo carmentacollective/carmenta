@@ -6,11 +6,11 @@ import { Book } from "@phosphor-icons/react/dist/ssr";
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { KBPageContent } from "@/components/knowledge-viewer/kb-page-content";
 import {
-    getKBFolders,
+    getKBDocuments,
     initializeKBWithClerkData,
     hasKBProfile,
     getRecentActivity,
-    type KBFolder,
+    type KBDocument,
 } from "@/lib/kb/actions";
 import { ActivityFeed } from "@/components/knowledge-viewer/activity-feed";
 
@@ -57,74 +57,17 @@ export default async function KnowledgeBasePage() {
     }
 
     // Fetch KB data in parallel
-    const [userFolders, activityItems] = await Promise.all([
-        getKBFolders(),
+    const [allDocuments, activityItems] = await Promise.all([
+        getKBDocuments(),
         getRecentActivity(),
     ]);
 
-    // Build folder structure: Memories
-    // About You (profile.identity) is passed separately for prominent display
-    // Communication preferences are on dedicated /communication page
-    // Philosophy (Heart-Centered AI) is on dedicated /philosophy page
-    const allFolders: KBFolder[] = [];
-    const profileFolder = userFolders.find((f) => f.path === "profile");
-
     // Extract the identity document for prominent display at top of KB
-    const identityDoc =
-        profileFolder?.documents.find((d) => d.path === "profile.identity") ?? null;
+    // All other documents go to the unified explorer
+    const identityDoc = allDocuments.find((d) => d.path === "profile.identity") ?? null;
 
-    // Memories - learned knowledge from conversations
-    // Aggregate ALL folders under knowledge.* namespace (knowledge.people, knowledge.preferences, etc.)
-    // Since getKBFolders() now returns a tree structure with nested children,
-    // we need to recursively collect all documents from the knowledge folder and its descendants
-    const knowledgeFolder = userFolders.find((f) => f.path === "knowledge");
-
-    // Helper to recursively collect all documents from a folder and its children
-    const collectAllDocuments = (folder: KBFolder): typeof folder.documents => {
-        const docs = [...folder.documents];
-        for (const child of folder.children) {
-            docs.push(...collectAllDocuments(child));
-        }
-        return docs;
-    };
-
-    // Collect all knowledge documents
-    // Note: The Librarian is instructed to never create knowledge.about-* or knowledge.identity*
-    // documents - identity facts belong only in profile.identity. If such documents somehow
-    // exist, we show them rather than hide, so we can identify and fix the source.
-    const knowledgeDocuments = knowledgeFolder
-        ? collectAllDocuments(knowledgeFolder)
-        : [];
-
-    if (knowledgeDocuments.length > 0) {
-        allFolders.push({
-            id: "memories",
-            name: "memories",
-            path: "memories",
-            documents: knowledgeDocuments.sort((a, b) => a.name.localeCompare(b.name)),
-            children: [],
-        });
-    } else {
-        allFolders.push({
-            id: "memories",
-            name: "memories",
-            path: "memories",
-            documents: [
-                {
-                    id: "memories-placeholder",
-                    path: "_placeholder.memories",
-                    name: "Coming Soon",
-                    content:
-                        "What we learn together will appear here.\n\nSoon we'll capture insights, preferences, and context from our conversations.",
-                    description: "What we learn from our conversations",
-                    promptLabel: null,
-                    editable: false,
-                    updatedAt: new Date(),
-                },
-            ],
-            children: [],
-        });
-    }
+    // Filter out identity doc - it's shown separately in "About You" section
+    const explorerDocuments = allDocuments.filter((d) => d.path !== "profile.identity");
 
     return (
         <StandardPageLayout
@@ -155,10 +98,10 @@ export default async function KnowledgeBasePage() {
                 </div>
             </section>
 
-            {/* About You + Memories */}
+            {/* About You + Knowledge Explorer */}
             <KBPageContent
                 identityDocument={identityDoc}
-                memoriesFolders={allFolders}
+                documents={explorerDocuments}
             />
         </StandardPageLayout>
     );

@@ -296,6 +296,7 @@ describe("OAuth Token Exchange & Refresh Lifecycle", () => {
 
                 const provider = createMockProvider({
                     id: "slack",
+                    scopes: ["channels:read", "chat:write"], // Match the scopes returned by Slack
                     extractTokens: (response) => {
                         const authedUser = response.authed_user as {
                             access_token: string;
@@ -1003,8 +1004,8 @@ describe("OAuth Token Exchange & Refresh Lifecycle", () => {
         });
     });
 
-    describe("Scope Warning Behavior", () => {
-        it("logs warning when granted scopes differ from requested", async () => {
+    describe("Scope Rejection Behavior", () => {
+        it("rejects connection when granted scopes differ from requested", async () => {
             const { exchangeCodeForTokens } =
                 await import("@/lib/integrations/oauth/tokens");
             const { logger } = await import("@/lib/logger");
@@ -1021,21 +1022,25 @@ describe("OAuth Token Exchange & Refresh Lifecycle", () => {
                 }),
             });
 
-            await exchangeCodeForTokens(provider, "code", "https://app.com/callback");
+            // Should throw when scopes are missing
+            await expect(
+                exchangeCodeForTokens(provider, "code", "https://app.com/callback")
+            ).rejects.toThrow(
+                "Some permissions weren't granted. We need them all to connect. Try again?"
+            );
 
-            // Verify warning was logged about dropped scopes
-            expect(logger.warn).toHaveBeenCalledWith(
+            // Verify error was logged with details
+            expect(logger.error).toHaveBeenCalledWith(
                 expect.objectContaining({
                     missingScopes: ["delete"],
                 }),
-                expect.stringContaining("scopes were dropped")
+                expect.stringContaining("required scopes not granted")
             );
         });
 
-        it("does not warn when scope is undefined (RFC 6749 default)", async () => {
+        it("accepts connection when scope is undefined (RFC 6749 default)", async () => {
             const { exchangeCodeForTokens } =
                 await import("@/lib/integrations/oauth/tokens");
-            const { logger } = await import("@/lib/logger");
 
             const provider = createMockProvider({
                 scopes: ["read", "write"],
@@ -1049,13 +1054,13 @@ describe("OAuth Token Exchange & Refresh Lifecycle", () => {
                 }),
             });
 
-            await exchangeCodeForTokens(provider, "code", "https://app.com/callback");
-
-            // Should NOT warn about missing scopes
-            expect(logger.warn).not.toHaveBeenCalledWith(
-                expect.anything(),
-                expect.stringContaining("scopes were dropped")
+            // Should succeed - undefined scope means all granted per RFC 6749
+            const result = await exchangeCodeForTokens(
+                provider,
+                "code",
+                "https://app.com/callback"
             );
+            expect(result.tokens.accessToken).toBe("token");
         });
     });
 

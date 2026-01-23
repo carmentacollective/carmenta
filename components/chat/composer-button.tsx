@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
  * Pipeline state for button animations.
  * - idle: Default state
  * - concierge: Model selection phase (sparkles)
- * - streaming: AI is responding (glow)
+ * - streaming: AI is responding (cyan glow)
  * - complete: Response finished (success pulse)
  */
 export type PipelineState = "idle" | "concierge" | "streaming" | "complete";

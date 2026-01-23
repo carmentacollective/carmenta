@@ -142,4 +142,41 @@ describe("getIntegrationTools", () => {
             expect(tools).toEqual({});
         });
     });
+
+    describe("virtual services", () => {
+        it("should create gmail and googleDrive tools when google-internal is connected", async () => {
+            // google-internal is a virtual service parent that provides OAuth for gmail/googleDrive
+            // It has no adapter itself, but should still create tools for its children
+            mockGetConnectedServices.mockResolvedValue(["google-internal"]);
+            mockGetCredentials.mockResolvedValue({
+                type: "oauth",
+                connectionId: "google-conn-id",
+                accountId: "test-account",
+                isDefault: true,
+            });
+
+            const tools = await getIntegrationTools(testUserEmail);
+
+            // Should have gmail and googleDrive tools, NOT google-internal
+            expect(tools).toHaveProperty("gmail");
+            expect(tools).toHaveProperty("googleDrive");
+            expect(tools).not.toHaveProperty("google-internal");
+        });
+
+        it("should verify credentials for virtual service parent before creating child tools", async () => {
+            mockGetConnectedServices.mockResolvedValue(["google-internal"]);
+            mockGetCredentials.mockRejectedValue(new Error("OAuth token expired"));
+
+            const tools = await getIntegrationTools(testUserEmail);
+
+            // Should have no tools since parent credentials failed
+            expect(tools).not.toHaveProperty("gmail");
+            expect(tools).not.toHaveProperty("googleDrive");
+            // Credentials should be checked for the parent service
+            expect(mockGetCredentials).toHaveBeenCalledWith(
+                testUserEmail,
+                "google-internal"
+            );
+        });
+    });
 });

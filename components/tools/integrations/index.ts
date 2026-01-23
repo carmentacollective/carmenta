@@ -5,6 +5,7 @@
  * Each component uses ToolRenderer for consistent status display.
  */
 
+export { AsanaToolResult } from "./asana";
 export { ClickUpToolResult } from "./clickup";
 export { CoinMarketCapToolResult } from "./coinmarketcap";
 export { DropboxToolResult } from "./dropbox";

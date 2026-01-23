@@ -12,6 +12,7 @@
  * - Search filters (date, starred, model)
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -99,34 +100,45 @@ export function CommandPalette({
     const [focusedIndex, setFocusedIndex] = useState(0);
     const [searchResults, setSearchResults] = useState<KBSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState(false);
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState<SearchFilters>({});
+    const [retryTrigger, setRetryTrigger] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Load recent searches when palette opens
     useEffect(() => {
         if (open) {
+            setSearchError(false); // Reset error state on open
             getRecentSearches()
                 .then(setRecentSearches)
-                .catch((error) =>
-                    logger.error({ error }, "Failed to load recent searches")
-                );
+                .catch((error) => {
+                    logger.error({ error }, "Failed to load recent searches");
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "CommandPalette",
+                            action: "loadRecentSearches",
+                        },
+                    });
+                });
         }
     }, [open]);
 
-    // Perform full-text search when query changes
+    // Perform full-text search when query changes or retry is triggered
     useEffect(() => {
         const abortController = new AbortController();
 
         const performSearch = async () => {
             if (!query.trim()) {
                 setSearchResults([]);
+                setSearchError(false);
                 setIsSearching(false);
                 return;
             }
 
             setIsSearching(true);
+            setSearchError(false);
             try {
                 const results = await searchKB(query, abortController.signal);
                 if (!abortController.signal.aborted) {
@@ -134,8 +146,13 @@ export function CommandPalette({
                 }
             } catch (error) {
                 if (!abortController.signal.aborted) {
-                    logger.error({ error, query }, "Search failed");
+                    logger.error({ error, query }, "Knowledge base search failed");
+                    Sentry.captureException(error, {
+                        tags: { component: "CommandPalette", action: "search" },
+                        extra: { query },
+                    });
                     setSearchResults([]);
+                    setSearchError(true);
                 }
             } finally {
                 if (!abortController.signal.aborted) {
@@ -149,7 +166,7 @@ export function CommandPalette({
             clearTimeout(debounceTimer);
             abortController.abort();
         };
-    }, [query]);
+    }, [query, retryTrigger]);
 
     // Use search results if query exists, otherwise show all documents
     const filtered = useMemo(() => {
@@ -182,9 +199,15 @@ export function CommandPalette({
         (path: string) => {
             if (query.trim()) {
                 // Save to recent searches (fire-and-forget)
-                addRecentSearch(query).catch((error) =>
-                    logger.error({ error }, "Failed to save recent search")
-                );
+                addRecentSearch(query).catch((error) => {
+                    logger.error({ error }, "Failed to save recent search");
+                    Sentry.captureException(error, {
+                        tags: {
+                            component: "CommandPalette",
+                            action: "addRecentSearch",
+                        },
+                    });
+                });
             }
             onSelect(path);
         },
@@ -200,9 +223,15 @@ export function CommandPalette({
     const handleClearRecent = useCallback(() => {
         clearRecentSearches()
             .then(() => setRecentSearches([]))
-            .catch((error) =>
-                logger.error({ error }, "Failed to clear recent searches")
-            );
+            .catch((error) => {
+                logger.error({ error }, "Failed to clear recent searches");
+                Sentry.captureException(error, {
+                    tags: {
+                        component: "CommandPalette",
+                        action: "clearRecentSearches",
+                    },
+                });
+            });
     }, []);
 
     // ⌘K keyboard shortcut
@@ -452,9 +481,25 @@ export function CommandPalette({
 
                         {/* Results */}
                         <div className="max-h-80 overflow-y-auto p-2">
-                            {Object.keys(grouped).length === 0 ? (
+                            {searchError ? (
+                                <div className="py-8 text-center">
+                                    <p className="text-foreground/50 text-sm">
+                                        Search hit a snag
+                                    </p>
+                                    <button
+                                        onClick={() =>
+                                            setRetryTrigger((prev) => prev + 1)
+                                        }
+                                        className="text-primary hover:text-primary/80 focus-visible:ring-primary/40 mt-2 rounded text-sm focus-visible:ring-2 focus-visible:outline-none"
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
+                            ) : Object.keys(grouped).length === 0 ? (
                                 <p className="text-foreground/40 py-8 text-center text-sm">
-                                    {query ? "No matches found" : "No documents yet"}
+                                    {query
+                                        ? "Nothing matching that—try different words?"
+                                        : "No documents yet"}
                                 </p>
                             ) : (
                                 Object.entries(grouped).map(([folderPath, group]) => (

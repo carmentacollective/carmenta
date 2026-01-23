@@ -10,9 +10,11 @@
  * Uses variable reward psychology - not every session shows a tip.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Feature } from "@/lib/features/feature-catalog";
 import { USER_ENGAGED_EVENT } from "@/components/ui/oracle-whisper";
+import { logger } from "@/lib/client-logger";
 
 interface UseFeatureTipOptions {
     /** Disable tip fetching (e.g., when thread has messages) */
@@ -68,7 +70,10 @@ export function useFeatureTip(options: UseFeatureTipOptions = {}): UseFeatureTip
                     setIsLoading(false);
                 }
             } catch (error) {
-                console.error("[useFeatureTip] Failed to fetch tip:", error);
+                logger.error({ error }, "Failed to fetch feature tip");
+                Sentry.captureException(error, {
+                    tags: { hook: "useFeatureTip", action: "fetch" },
+                });
                 if (isMountedRef.current) {
                     setTip(null);
                     setIsLoading(false);
@@ -95,7 +100,11 @@ export function useFeatureTip(options: UseFeatureTipOptions = {}): UseFeatureTip
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ tipId: tip.id, state: "shown" }),
         }).catch((error) => {
-            console.error("[useFeatureTip] Failed to record shown:", error);
+            logger.error({ error, tipId: tip.id }, "Failed to record tip shown");
+            Sentry.captureException(error, {
+                tags: { hook: "useFeatureTip", action: "recordShown" },
+                extra: { tipId: tip.id },
+            });
         });
     }, [tip]);
 
@@ -122,7 +131,11 @@ export function useFeatureTip(options: UseFeatureTipOptions = {}): UseFeatureTip
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ tipId: tip.id, state: "dismissed" }),
         }).catch((error) => {
-            console.error("[useFeatureTip] Failed to record dismiss:", error);
+            logger.error({ error, tipId: tip.id }, "Failed to record tip dismiss");
+            Sentry.captureException(error, {
+                tags: { hook: "useFeatureTip", action: "recordDismiss" },
+                extra: { tipId: tip.id },
+            });
         });
 
         setTip(null);
@@ -137,7 +150,11 @@ export function useFeatureTip(options: UseFeatureTipOptions = {}): UseFeatureTip
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ tipId: tip.id, state: "engaged" }),
         }).catch((error) => {
-            console.error("[useFeatureTip] Failed to record engage:", error);
+            logger.error({ error, tipId: tip.id }, "Failed to record tip engage");
+            Sentry.captureException(error, {
+                tags: { hook: "useFeatureTip", action: "recordEngage" },
+                extra: { tipId: tip.id },
+            });
         });
 
         setTip(null);

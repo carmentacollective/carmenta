@@ -675,7 +675,7 @@ Options:
    Carmenta capability.
 
 **Recommendation**: Tier 3 (conversation-driven) with Tier 2 fallback (code editor for
-advanced users). Aligns with "best interface to AI" positioning—hooks through natural
+advanced users). Aligns with "best connection to AI" positioning—hooks through natural
 language, not JSON editing.
 
 **Q: How do we handle hook security?**

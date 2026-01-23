@@ -28,11 +28,12 @@ async function extractDocumentContent(file: File): Promise<string | undefined> {
         });
 
         if (!response.ok) {
-            // 503 means Docling is not enabled - this is expected in some environments
+            // 503 means Docling is unavailable (not configured or service down)
+            // This is expected - gracefully fall back to native PDF handling
             if (response.status === 503) {
                 logger.info(
                     { filename: file.name },
-                    "Docling not enabled, skipping extraction"
+                    "Docling unavailable, falling back to native PDF handling"
                 );
                 return undefined;
             }
@@ -51,9 +52,11 @@ async function extractDocumentContent(file: File): Promise<string | undefined> {
         );
         return result.markdown;
     } catch (error) {
-        logger.error(
+        // Extraction failed - fall back gracefully
+        // The PDF will be sent directly to the model, which handles PDFs natively
+        logger.warn(
             { error, filename: file.name },
-            "Document extraction failed - file will be uploaded without parsed content"
+            "Document extraction unavailable, falling back to native PDF handling"
         );
         return undefined;
     }

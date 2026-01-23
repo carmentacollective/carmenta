@@ -4,7 +4,7 @@ Tests for git-guard.py hook.
 
 Tests the ViolationType separation between:
 - HARD_BLOCK: Always exit 2, never bypassable
-- NEEDS_CONFIRMATION: Exit 2 unless GITGUARD_CONFIRMED=1 prefix is present
+- NEEDS_CONFIRMATION: Exit 2 unless I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes prefix is present
 """
 
 import json
@@ -52,21 +52,21 @@ def test_needs_confirmation_blocked():
     # git push origin main - blocked
     exit_code, stdout, stderr = run_hook("git push origin main")
     results.check(
-        exit_code == 2 and "explicit user request required" in stderr.lower(),
+        exit_code == 2 and "BLOCKED" in stderr,
         "git push origin main → blocked without confirmation"
     )
 
     # git push origin master - blocked
     exit_code, stdout, stderr = run_hook("git push origin master")
     results.check(
-        exit_code == 2 and "explicit user request required" in stderr.lower(),
+        exit_code == 2 and "BLOCKED" in stderr,
         "git push origin master → blocked without confirmation"
     )
 
     # gh pr merge - blocked
     exit_code, stdout, stderr = run_hook("gh pr merge 123")
     results.check(
-        exit_code == 2 and "explicit user request required" in stderr.lower(),
+        exit_code == 2 and "BLOCKED" in stderr,
         "gh pr merge → blocked without confirmation"
     )
 
@@ -74,65 +74,65 @@ def test_needs_confirmation_blocked():
 
 
 def test_confirmed_operations():
-    """Test that GITGUARD_CONFIRMED=1 bypasses NEEDS_CONFIRMATION blocks."""
-    print("\n✅ Testing GITGUARD_CONFIRMED=1 bypass (should exit 0)")
+    """Test that I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes bypasses NEEDS_CONFIRMATION blocks."""
+    print("\n✅ Testing I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes bypass (should exit 0)")
     results = TestResults()
 
     # git push origin main with confirmation
-    exit_code, stdout, stderr = run_hook("GITGUARD_CONFIRMED=1 git push origin main")
+    exit_code, stdout, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin main")
     results.check(
         exit_code == 0 and not stderr.strip(),
-        "GITGUARD_CONFIRMED=1 git push origin main → allowed"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin main → allowed"
     )
 
     # git push origin master with confirmation
-    exit_code, stdout, stderr = run_hook("GITGUARD_CONFIRMED=1 git push origin master")
+    exit_code, stdout, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin master")
     results.check(
         exit_code == 0 and not stderr.strip(),
-        "GITGUARD_CONFIRMED=1 git push origin master → allowed"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin master → allowed"
     )
 
     # gh pr merge with confirmation
-    exit_code, stdout, stderr = run_hook("GITGUARD_CONFIRMED=1 gh pr merge 123")
+    exit_code, stdout, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes gh pr merge 123")
     results.check(
         exit_code == 0 and not stderr.strip(),
-        "GITGUARD_CONFIRMED=1 gh pr merge → allowed"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes gh pr merge → allowed"
     )
 
     # Refspec with confirmation
-    exit_code, stdout, stderr = run_hook("GITGUARD_CONFIRMED=1 git push origin HEAD:main")
+    exit_code, stdout, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin HEAD:main")
     results.check(
         exit_code == 0 and not stderr.strip(),
-        "GITGUARD_CONFIRMED=1 git push origin HEAD:main → allowed"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin HEAD:main → allowed"
     )
 
     return results
 
 
 def test_confirmation_does_not_bypass_hard_blocks():
-    """Test that GITGUARD_CONFIRMED=1 does NOT bypass HARD_BLOCK violations."""
+    """Test that I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes does NOT bypass HARD_BLOCK violations."""
     print("\n🔒 Testing that confirmation doesn't bypass hard blocks")
     results = TestResults()
 
     # git commit -a with confirmation - still blocked
-    exit_code, stdout, stderr = run_hook("GITGUARD_CONFIRMED=1 git commit -a -m 'test'")
+    exit_code, stdout, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git commit -a -m 'test'")
     results.check(
         exit_code == 2 and "git commit -a is forbidden" in stderr,
-        "GITGUARD_CONFIRMED=1 git commit -a → still hard blocked"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git commit -a → still hard blocked"
     )
 
     # git push --no-verify with confirmation - still blocked
-    exit_code, stdout, stderr = run_hook("GITGUARD_CONFIRMED=1 git push --no-verify origin main")
+    exit_code, stdout, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push --no-verify origin main")
     results.check(
         exit_code == 2 and "git push --no-verify is forbidden" in stderr,
-        "GITGUARD_CONFIRMED=1 git push --no-verify → still hard blocked"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push --no-verify → still hard blocked"
     )
 
     # git commit --no-verify with confirmation - still blocked
-    exit_code, stdout, stderr = run_hook("GITGUARD_CONFIRMED=1 git commit --no-verify -m 'test'")
+    exit_code, stdout, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git commit --no-verify -m 'test'")
     results.check(
         exit_code == 2 and "git commit --no-verify is forbidden" in stderr,
-        "GITGUARD_CONFIRMED=1 git commit --no-verify → still hard blocked"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git commit --no-verify → still hard blocked"
     )
 
     return results
@@ -182,7 +182,7 @@ def test_hard_block_priority():
     # git commit -a --no-verify: both are HARD_BLOCK
     exit_code, stdout, stderr = run_hook("git commit -a --no-verify -m 'test'")
     results.check(
-        exit_code == 2 and "Operation not allowed" in stderr,
+        exit_code == 2 and "forbidden" in stderr,
         "git commit -a --no-verify → hard blocks"
     )
 
@@ -195,10 +195,10 @@ def test_hard_block_priority():
     )
 
     # Even with confirmation, hard block still wins
-    exit_code, stdout, stderr = run_hook("GITGUARD_CONFIRMED=1 git push --no-verify origin main")
+    exit_code, stdout, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push --no-verify origin main")
     results.check(
         exit_code == 2 and "git push --no-verify is forbidden" in stderr,
-        "GITGUARD_CONFIRMED=1 git push --no-verify → still hard blocked"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push --no-verify → still hard blocked"
     )
 
     return results
@@ -297,21 +297,21 @@ def test_refspec_detection():
     # HEAD:main - blocked
     exit_code, stdout, stderr = run_hook("git push origin HEAD:main")
     results.check(
-        exit_code == 2 and "explicit user request required" in stderr.lower(),
+        exit_code == 2 and "BLOCKED" in stderr,
         "git push origin HEAD:main → blocked without confirmation"
     )
 
     # feature:master - blocked
     exit_code, stdout, stderr = run_hook("git push origin feature:master")
     results.check(
-        exit_code == 2 and "explicit user request required" in stderr.lower(),
+        exit_code == 2 and "BLOCKED" in stderr,
         "git push origin feature:master → blocked without confirmation"
     )
 
     # +main (force push) - blocked
     exit_code, stdout, stderr = run_hook("git push origin +main")
     results.check(
-        exit_code == 2 and "explicit user request required" in stderr.lower(),
+        exit_code == 2 and "BLOCKED" in stderr,
         "git push origin +main → blocked without confirmation"
     )
 
@@ -331,14 +331,14 @@ def test_confirmation_flag_parsing():
     results = TestResults()
 
     # Standard format
-    exit_code, _, _ = run_hook("GITGUARD_CONFIRMED=1 git push origin main")
-    results.check(exit_code == 0, "GITGUARD_CONFIRMED=1 git push origin main → allowed")
+    exit_code, _, _ = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin main")
+    results.check(exit_code == 0, "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin main → allowed")
 
     # Wrong value (should not work)
-    exit_code, _, stderr = run_hook("GITGUARD_CONFIRMED=0 git push origin main")
+    exit_code, _, stderr = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=no git push origin main")
     results.check(
         exit_code == 2,
-        "GITGUARD_CONFIRMED=0 git push origin main → blocked (wrong value)"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=no git push origin main → blocked (wrong value)"
     )
 
     # Other env var (should not work)
@@ -348,47 +348,47 @@ def test_confirmation_flag_parsing():
         "OTHER_VAR=1 git push origin main → blocked (wrong var)"
     )
 
-    # Flag in wrong position - git parses this as subcommand "GITGUARD_CONFIRMED=1"
+    # Flag in wrong position - git parses this as subcommand "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes"
     # which is invalid and will fail anyway. Hook allows it through (not a push to main).
-    exit_code, _, stderr = run_hook("git GITGUARD_CONFIRMED=1 push origin main")
+    exit_code, _, stderr = run_hook("git I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes push origin main")
     results.check(
         exit_code == 0,
-        "git GITGUARD_CONFIRMED=1 push ... → allowed (malformed, git will reject)"
+        "git I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes push ... → allowed (malformed, git will reject)"
     )
 
     # Multiple env vars with confirmation first
-    exit_code, _, _ = run_hook("GITGUARD_CONFIRMED=1 FOO=bar git push origin main")
+    exit_code, _, _ = run_hook("I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes FOO=bar git push origin main")
     results.check(
         exit_code == 0,
-        "GITGUARD_CONFIRMED=1 FOO=bar git push origin main → allowed"
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes FOO=bar git push origin main → allowed"
     )
 
     # cd && ... prefix (common for worktrees)
-    exit_code, _, _ = run_hook("cd /repo && GITGUARD_CONFIRMED=1 git push origin main")
+    exit_code, _, _ = run_hook("cd /repo && I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin main")
     results.check(
         exit_code == 0,
-        "cd /repo && GITGUARD_CONFIRMED=1 git push origin main → allowed"
+        "cd /repo && I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin main → allowed"
     )
 
     # Confirmation after command separator
-    exit_code, _, _ = run_hook("cd /tmp ; GITGUARD_CONFIRMED=1 git push origin master")
+    exit_code, _, _ = run_hook("cd /tmp ; I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin master")
     results.check(
         exit_code == 0,
-        "cd /tmp ; GITGUARD_CONFIRMED=1 git push → allowed (semicolon separator)"
+        "cd /tmp ; I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push → allowed (semicolon separator)"
     )
 
     # Security test: flag AFTER command (suffix bypass attempt) should be blocked
-    exit_code, _, stderr = run_hook("gh pr merge 123 GITGUARD_CONFIRMED=1")
+    exit_code, _, stderr = run_hook("gh pr merge 123 I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes")
     results.check(
         exit_code == 2,
-        "gh pr merge 123 GITGUARD_CONFIRMED=1 → blocked (suffix bypass attempt)"
+        "gh pr merge 123 I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes → blocked (suffix bypass attempt)"
     )
 
     # Same for git
-    exit_code, _, stderr = run_hook("git push origin main GITGUARD_CONFIRMED=1")
+    exit_code, _, stderr = run_hook("git push origin main I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes")
     results.check(
         exit_code == 2,
-        "git push origin main GITGUARD_CONFIRMED=1 → blocked (suffix bypass attempt)"
+        "git push origin main I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes → blocked (suffix bypass attempt)"
     )
 
     return results

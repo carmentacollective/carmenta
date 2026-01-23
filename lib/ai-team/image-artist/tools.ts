@@ -136,11 +136,46 @@ export const detectTaskTypeTool = tool({
 });
 
 /**
- * Expand a brief prompt into a detailed specification
+ * Maximum prompt length in characters.
+ *
+ * Image models have TOKEN limits, not character limits:
+ * - Imagen: 480 tokens × ~4 chars/token = ~1920 chars max
+ * - FLUX: 512 tokens × ~4 chars/token = ~2048 chars max
+ *
+ * We use 1500 chars as a safe ceiling (~375 tokens, well under both limits).
+ * The system prompt targets 1200 chars (80%) since LLMs can't count reliably.
  */
+const MAX_PROMPT_LENGTH = 1500;
+
+/**
+ * Truncate prompt to fit within model limits.
+ * Preserves beginning (subject/context) and end (quality markers).
+ *
+ * This is a safety net for when the LLM fails to self-limit.
+ * The system prompt targets 1200 chars, but LLMs can't count reliably.
+ */
+function truncatePrompt(prompt: string, maxLength: number = MAX_PROMPT_LENGTH): string {
+    if (prompt.length <= maxLength) {
+        return prompt;
+    }
+
+    // Reserve space for ellipsis
+    const ellipsis = "... ";
+    const availableLength = maxLength - ellipsis.length;
+
+    // 60% beginning (subject), 40% end (quality markers)
+    const beginLength = Math.floor(availableLength * 0.6);
+    const endLength = availableLength - beginLength;
+
+    const beginning = prompt.slice(0, beginLength).trim();
+    const ending = prompt.slice(-endLength).trim();
+
+    return `${beginning}${ellipsis}${ending}`;
+}
+
 export const expandPromptTool = tool({
     description:
-        "Expand the user's brief prompt into a detailed image specification. Add style, lighting, composition, and quality details while preserving intent.",
+        "Expand the user's brief prompt into a detailed image specification. Keep the expanded prompt UNDER 1200 characters (~300 tokens) - image models have strict token limits. Prioritize specificity over quantity.",
     inputSchema: z.object({
         originalPrompt: z.string().describe("The user's original prompt"),
         taskType: z
@@ -230,12 +265,29 @@ export const generateImageTool = tool({
         const startTime = Date.now();
         const routing = TASK_MODEL_ROUTING[taskType];
 
+        // Safety net: truncate if prompt exceeds limit (LLMs can't self-count reliably)
+        let safePrompt = prompt;
+        if (prompt.length > MAX_PROMPT_LENGTH) {
+            safePrompt = truncatePrompt(prompt);
+            logger.warn(
+                {
+                    originalLength: prompt.length,
+                    truncatedLength: safePrompt.length,
+                    maxLength: MAX_PROMPT_LENGTH,
+                    promptPreview: prompt.slice(0, 100),
+                    taskType,
+                    modelId: routing.modelId,
+                },
+                "⚠️ Image prompt exceeded limit - truncated to fit model constraints"
+            );
+        }
+
         try {
             logger.info(
                 {
                     taskType,
                     modelId: routing.modelId,
-                    promptLength: prompt.length,
+                    promptLength: safePrompt.length,
                     aspectRatio,
                 },
                 "🎨 Generating image"
@@ -244,7 +296,7 @@ export const generateImageTool = tool({
             const image = await generateImageFromModel({
                 modelId: routing.modelId,
                 api: routing.api,
-                prompt,
+                prompt: safePrompt,
                 aspectRatio,
                 provider: routing.provider,
             });

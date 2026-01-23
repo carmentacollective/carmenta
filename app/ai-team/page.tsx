@@ -13,6 +13,8 @@ import {
     WarningCircleIcon,
     CheckCircleIcon,
     BroadcastIcon,
+    CircleHalfIcon,
+    StopCircleIcon,
 } from "@phosphor-icons/react";
 import * as Sentry from "@sentry/nextjs";
 import { toast } from "sonner";
@@ -40,7 +42,7 @@ interface ActivityItem {
     jobSlug: string;
     jobEncodedId: string;
     summary: string;
-    status: "completed" | "failed" | "running";
+    status: "completed" | "failed" | "running" | "partial" | "blocked";
     completedAt: Date | null;
     notificationCount: number;
 }
@@ -660,6 +662,12 @@ function AITeamContent({
                                                         <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
                                                     ) : activity.status === "failed" ? (
                                                         <WarningCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                                                    ) : activity.status ===
+                                                      "partial" ? (
+                                                        <CircleHalfIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                                                    ) : activity.status ===
+                                                      "blocked" ? (
+                                                        <StopCircleIcon className="text-foreground/40 mt-0.5 h-5 w-5 shrink-0" />
                                                     ) : (
                                                         <SparkleIcon className="text-primary mt-0.5 h-5 w-5 shrink-0 animate-pulse" />
                                                     )}
@@ -705,9 +713,15 @@ function AITeamContent({
                                                     <span className="text-foreground/50 text-xs whitespace-nowrap">
                                                         {activity.status === "running"
                                                             ? "Running"
-                                                            : formatRelativeTime(
-                                                                  activity.completedAt
-                                                              )}
+                                                            : activity.status ===
+                                                                "partial"
+                                                              ? "Partial"
+                                                              : activity.status ===
+                                                                  "blocked"
+                                                                ? "Blocked"
+                                                                : formatRelativeTime(
+                                                                      activity.completedAt
+                                                                  )}
                                                     </span>
                                                 </div>
                                             </div>

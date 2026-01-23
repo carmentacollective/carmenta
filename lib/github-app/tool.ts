@@ -114,6 +114,12 @@ const githubToolSchema = z.object({
         .string()
         .optional()
         .describe("Error details/stack trace to include"),
+    imageUrls: z
+        .array(z.string().url())
+        .optional()
+        .describe(
+            "URLs of screenshots or images from the user's message to include in the bug report"
+        ),
 });
 
 type GitHubToolInput = z.infer<typeof githubToolSchema>;
@@ -146,7 +152,13 @@ export function createGitHubTool(context: GitHubToolContext) {
         : "";
 
     return tool({
-        description: `Report bugs, feedback, or feature requests ABOUT CARMENTA ITSELF. This files issues in Carmenta's own repository as carmenta-bot. Use when users want to report problems with Carmenta, suggest features, or give feedback. NOT for accessing user's GitHub repos - that's a separate integration.${adminNote}`,
+        description: `Create or update issues in Carmenta's repository. Use when:
+- Users report bugs, request features, or give feedback about Carmenta
+- You (as an AI agent) identify issues that should be tracked
+
+Automatically checks for duplicates first. If a similar issue exists, adds your report to it instead of creating a new one. Returns issue number and URL either way.
+
+NOT for accessing user's GitHub repos - that's a separate integration.${adminNote}`,
 
         inputSchema: githubToolSchema,
 
@@ -206,6 +218,74 @@ export function createGitHubTool(context: GitHubToolContext) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Extract keywords from text for duplicate issue searching.
+ * Removes common words to focus on meaningful terms.
+ */
+function extractKeywords(text: string): string[] {
+    const stopWords = new Set([
+        "the",
+        "a",
+        "an",
+        "is",
+        "it",
+        "to",
+        "in",
+        "on",
+        "for",
+        "with",
+        "and",
+        "or",
+        "but",
+        "not",
+        "this",
+        "that",
+        "when",
+        "what",
+        "how",
+        "why",
+        "i",
+        "my",
+        "me",
+        "we",
+        "our",
+        "you",
+        "your",
+        "just",
+        "like",
+        "get",
+        "got",
+        "bug",
+        "error",
+        "issue",
+        "problem",
+        "broken",
+        "doesnt",
+        "doesn't",
+        "work",
+        "working",
+        "feature",
+        "request",
+        "add",
+        "please",
+        "want",
+        "need",
+    ]);
+
+    const words = text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, " ")
+        .split(/\s+/)
+        .filter((word) => word.length > 2 && !stopWords.has(word));
+
+    // Return unique keywords, max 5
+    return [...new Set(words)].slice(0, 5);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Operation Handlers
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -223,6 +303,62 @@ async function executeOperation(
                 return { success: false, error: "Title is required for create_issue" };
             }
 
+            // Extract keywords for duplicate detection
+            const keywords = extractKeywords(input.title + " " + (input.body || ""));
+
+            // Search for similar existing issues (skip if no keywords)
+            if (keywords.length > 0) {
+                const searchResult = await searchIssues({
+                    query: keywords.join(" "),
+                    maxResults: 5,
+                });
+
+                if (searchResult.success && searchResult.data.length > 0) {
+                    // Found potential duplicate - add reaction and return existing issue
+                    const existingIssue = searchResult.data[0];
+
+                    // Try to add +1 reaction (requires admin, but gracefully fails for non-admins)
+                    let reactionAdded = false;
+                    if (context.isAdmin) {
+                        const reactionResult = await addReaction(
+                            existingIssue.number,
+                            "+1"
+                        );
+                        if (reactionResult.success) {
+                            reactionAdded = true;
+                        } else {
+                            logger.warn(
+                                {
+                                    issue: existingIssue.number,
+                                    error: reactionResult.error,
+                                },
+                                "Failed to add reaction to duplicate issue"
+                            );
+                        }
+                    }
+
+                    logger.info(
+                        {
+                            existingIssue: existingIssue.number,
+                            requestedTitle: input.title,
+                            userId: context.userId,
+                            reactionAdded,
+                        },
+                        "Found duplicate issue, returning existing"
+                    );
+
+                    return {
+                        success: true,
+                        isDuplicate: true,
+                        issueNumber: existingIssue.number,
+                        issueUrl: existingIssue.html_url,
+                        title: existingIssue.title,
+                        message: `Found existing issue #${existingIssue.number} that matches this report.${reactionAdded ? " Added your +1 to show additional interest." : ""}`,
+                    };
+                }
+                // Search failed or no results - proceed to create new issue
+            }
+
             // Format body based on category
             const now = new Date();
             let body: string;
@@ -234,6 +370,7 @@ async function executeOperation(
                         description: input.body || input.title,
                         conversationExcerpt: input.conversationExcerpt,
                         errorDetails: input.errorDetails,
+                        imageUrls: input.imageUrls,
                         reportedAt: now,
                     });
                     labels = getBugLabels();
@@ -283,6 +420,7 @@ async function executeOperation(
 
             return {
                 success: true,
+                isDuplicate: false,
                 issueNumber: result.data.number,
                 issueUrl: result.data.html_url,
                 title: result.data.title,

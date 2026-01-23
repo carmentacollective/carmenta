@@ -1,5 +1,10 @@
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 import { test, expect } from "@playwright/test";
+import {
+    testCredentials,
+    checkCredentials,
+    warnSkippedTests,
+} from "../lib/credentials";
 
 /**
  * Recent Changes E2E Tests
@@ -9,20 +14,9 @@ import { test, expect } from "@playwright/test";
  * - Knowledge Base page access
  * - Header navigation (Oracle Menu)
  * - Integration cards layout
- *
- * Required environment variables:
- * - CLERK_PUBLISHABLE_KEY (or NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
- * - CLERK_SECRET_KEY
- * - TEST_USER_EMAIL, TEST_USER_PASSWORD
  */
 
-const testUserEmail = process.env.TEST_USER_EMAIL;
-const testUserPassword = process.env.TEST_USER_PASSWORD;
-const hasClerkKeys =
-    (process.env.CLERK_PUBLISHABLE_KEY ||
-        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
-    process.env.CLERK_SECRET_KEY;
-const hasCredentials = testUserEmail && testUserPassword && hasClerkKeys;
+const { shouldSkip, skipReason } = checkCredentials();
 
 /**
  * Helper to sign in before tests
@@ -35,8 +29,8 @@ async function signIn(page: import("@playwright/test").Page) {
         page,
         signInParams: {
             strategy: "password",
-            identifier: testUserEmail!,
-            password: testUserPassword!,
+            identifier: testCredentials.testUserEmail!,
+            password: testCredentials.testUserPassword!,
         },
     });
 
@@ -45,10 +39,8 @@ async function signIn(page: import("@playwright/test").Page) {
 }
 
 test.describe("AI Team Page", () => {
-    test.skip(
-        !hasCredentials,
-        "Skipping: Clerk API keys or TEST_USER_* credentials not set"
-    );
+    test.beforeAll(() => warnSkippedTests("AI Team Page"));
+    test.skip(shouldSkip, skipReason);
 
     test("loads without console errors", async ({ page }) => {
         await signIn(page);
@@ -87,10 +79,8 @@ test.describe("AI Team Page", () => {
 });
 
 test.describe("Integrations Page", () => {
-    test.skip(
-        !hasCredentials,
-        "Skipping: Clerk API keys or TEST_USER_* credentials not set"
-    );
+    test.beforeAll(() => warnSkippedTests("Integrations Page"));
+    test.skip(shouldSkip, skipReason);
 
     test("loads without console errors", async ({ page }) => {
         await signIn(page);
@@ -135,10 +125,8 @@ test.describe("Integrations Page", () => {
 });
 
 test.describe("Knowledge Base Page", () => {
-    test.skip(
-        !hasCredentials,
-        "Skipping: Clerk API keys or TEST_USER_* credentials not set"
-    );
+    test.beforeAll(() => warnSkippedTests("Knowledge Base Page"));
+    test.skip(shouldSkip, skipReason);
 
     test("loads without console errors", async ({ page }) => {
         await signIn(page);
@@ -177,10 +165,8 @@ test.describe("Knowledge Base Page", () => {
 });
 
 test.describe("Header Navigation", () => {
-    test.skip(
-        !hasCredentials,
-        "Skipping: Clerk API keys or TEST_USER_* credentials not set"
-    );
+    test.beforeAll(() => warnSkippedTests("Header Navigation"));
+    test.skip(shouldSkip, skipReason);
 
     test("header is visible on authenticated pages", async ({ page }) => {
         await signIn(page);
@@ -214,10 +200,8 @@ test.describe("Header Navigation", () => {
 });
 
 test.describe("Connection/Chat Page", () => {
-    test.skip(
-        !hasCredentials,
-        "Skipping: Clerk API keys or TEST_USER_* credentials not set"
-    );
+    test.beforeAll(() => warnSkippedTests("Connection/Chat Page"));
+    test.skip(shouldSkip, skipReason);
 
     test("loads without console errors", async ({ page }) => {
         await signIn(page);
@@ -258,10 +242,8 @@ test.describe("Connection/Chat Page", () => {
 });
 
 test.describe("Visual Consistency", () => {
-    test.skip(
-        !hasCredentials,
-        "Skipping: Clerk API keys or TEST_USER_* credentials not set"
-    );
+    test.beforeAll(() => warnSkippedTests("Visual Consistency"));
+    test.skip(shouldSkip, skipReason);
 
     test("no broken images on main pages", async ({ page }) => {
         await signIn(page);

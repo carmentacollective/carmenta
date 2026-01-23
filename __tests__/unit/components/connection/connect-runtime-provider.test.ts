@@ -675,9 +675,7 @@ describe("parseErrorMessage", () => {
 
             const result = parseErrorMessage(msg);
 
-            expect(result).toBe(
-                "We hit a conversation glitch. Try sending your message again."
-            );
+            expect(result).toBe("We hit a conversation glitch. Tap retry to continue.");
         });
 
         it("handles rate limit errors (429)", () => {
@@ -686,7 +684,7 @@ describe("parseErrorMessage", () => {
             const result = parseErrorMessage(msg);
 
             expect(result).toBe(
-                "The model is busy right now. Give it a moment and try again."
+                "The model is busy right now. Wait a moment and tap retry."
             );
         });
 
@@ -716,7 +714,7 @@ describe("parseErrorMessage", () => {
             const result = parseErrorMessage(msg);
 
             expect(result).toBe(
-                "We couldn't reach the model. Try again or switch models."
+                "Couldn't reach the model. Tap retry or try a different model."
             );
         });
     });
@@ -728,7 +726,7 @@ describe("parseErrorMessage", () => {
             const result = parseErrorMessage(msg);
 
             expect(result).toBe(
-                "Connection dropped. Check your network and try again."
+                "Network connection lost. Check your internet and tap retry."
             );
         });
 
@@ -738,7 +736,7 @@ describe("parseErrorMessage", () => {
             const result = parseErrorMessage(msg);
 
             expect(result).toBe(
-                "Connection dropped. Check your network and try again."
+                "Network connection lost. Check your internet and tap retry."
             );
         });
 
@@ -748,7 +746,7 @@ describe("parseErrorMessage", () => {
             const result = parseErrorMessage(msg);
 
             expect(result).toBe(
-                "Connection dropped. Check your network and try again."
+                "Network connection lost. Check your internet and tap retry."
             );
         });
     });
@@ -771,7 +769,7 @@ describe("parseErrorMessage", () => {
             const result = parseErrorMessage(msg);
 
             expect(result).toBe(
-                "The model is busy right now. Give it a moment and try again."
+                "The model is busy right now. Wait a moment and tap retry."
             );
         });
 
@@ -800,7 +798,9 @@ describe("parseErrorMessage", () => {
 
             const result = parseErrorMessage(msg);
 
-            expect(result).toBe("We lost the thread. Refresh to continue.");
+            expect(result).toBe(
+                "That connection doesn't exist. Check the URL or start a new chat."
+            );
         });
 
         it("handles 500 HTML errors", () => {
@@ -816,7 +816,8 @@ describe("parseErrorMessage", () => {
 
             const result = parseErrorMessage(msg);
 
-            expect(result).toContain("Something unexpected happened");
+            // 502 is a 5xx error (Bad Gateway), treated as transient/server issue
+            expect(result).toContain("Server is having trouble");
         });
 
         it("handles HTML without status code", () => {
@@ -852,7 +853,7 @@ describe("parseErrorMessage", () => {
 
             const result = parseErrorMessage(msg);
 
-            expect(result).toBe("Model error. Try again or switch models.");
+            expect(result).toBe("Model error. Tap retry or try a different model.");
         });
 
         it("preserves helpful error messages with please", () => {
@@ -891,7 +892,7 @@ describe("parseErrorMessage", () => {
             const result = parseErrorMessage(msg);
 
             expect(result).toBe(
-                "Connection dropped. Check your network and try again."
+                "Network connection lost. Check your internet and tap retry."
             );
         });
     });

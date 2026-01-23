@@ -159,7 +159,7 @@ function SparkPill({ spark, onClick, index }: SparkPillProps) {
                         : "text-primary/60 group-hover:text-primary"
                 )}
             />
-            <span className="max-w-[200px] truncate">{spark.label}</span>
+            <span>{spark.label}</span>
             {(isNavigate || isDeeplink) && (
                 <ArrowRightIcon className="text-foreground/30 group-hover:text-foreground/50 h-3.5 w-3.5 transition-all group-hover:translate-x-0.5" />
             )}

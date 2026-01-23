@@ -1,6 +1,6 @@
 # What is Carmenta
 
-The best interface to AI. For builders who work at the speed of thought.
+The best connection to AI. For builders who work at the speed of thought.
 
 ## The Problem We Solve
 

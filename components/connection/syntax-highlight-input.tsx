@@ -26,6 +26,7 @@ import Image from "next/image";
 import { RichTextarea, type RichTextareaProps } from "rich-textarea";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsClient } from "@/lib/hooks/use-is-client";
 
 // Simple placeholder
 const PLACEHOLDER = "Message Carmenta...";
@@ -63,6 +64,11 @@ const TOOLS = [
 ];
 
 const MODIFIERS = [
+    {
+        id: "background",
+        name: "Background",
+        description: "Run in background, notify when done",
+    },
     { id: "ultrathink", name: "Ultra Think", description: "Maximum reasoning depth" },
     { id: "quick", name: "Quick", description: "Fast response, less reasoning" },
     { id: "creative", name: "Creative", description: "High temperature, exploratory" },
@@ -179,6 +185,7 @@ export const SyntaxHighlightInput = forwardRef<
         ref
     ) => {
         const textareaRef = useRef<HTMLTextAreaElement>(null);
+        const isClient = useIsClient();
         const [autocompleteType, setAutocompleteType] =
             useState<AutocompleteType>(null);
         const [autocompleteQuery, setAutocompleteQuery] = useState("");
@@ -225,11 +232,31 @@ export const SyntaxHighlightInput = forwardRef<
                 const lastHash = textBeforeCursor.lastIndexOf("#");
                 const lastSlash = textBeforeCursor.lastIndexOf("/");
 
+                // Check if the slash is part of a URL (don't trigger autocomplete)
+                // Simple heuristics that cover common cases without exhaustive TLD list
+                const isSlashInUrl = (() => {
+                    if (lastSlash === -1) return false;
+                    const beforeSlash = textBeforeCursor.slice(0, lastSlash);
+                    // Check for protocol prefix (http:/ or https:/)
+                    if (/^https?:/.test(textBeforeCursor)) return true;
+                    // Check for domain-like pattern with TLD before slash
+                    if (/\.\w{2,}$/.test(beforeSlash)) return true;
+                    // Check for localhost with optional port
+                    if (/localhost(:\d+)?$/.test(beforeSlash)) return true;
+                    // Check for IP address with optional port
+                    if (/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(beforeSlash))
+                        return true;
+                    return false;
+                })();
+
                 // Determine which trigger is active
                 const triggers = [
                     { type: "mention" as const, pos: lastAt },
                     { type: "modifier" as const, pos: lastHash },
-                    { type: "command" as const, pos: lastSlash },
+                    // Only include slash if it's not part of a URL
+                    ...(isSlashInUrl
+                        ? []
+                        : [{ type: "command" as const, pos: lastSlash }]),
                 ].filter((t) => t.pos !== -1);
 
                 if (triggers.length === 0) {
@@ -484,6 +511,43 @@ export const SyntaxHighlightInput = forwardRef<
         const isAutocompleteOpen = !!autocompleteType && autocompleteItems.length > 0;
         const placeholder = externalPlaceholder || PLACEHOLDER;
 
+        // Shared textarea element to avoid duplication
+        const textareaElement = (
+            <div className="relative flex w-full @xl:self-center">
+                <RichTextarea
+                    ref={textareaRef}
+                    value={value}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    onCompositionStart={onCompositionStart}
+                    onCompositionEnd={onCompositionEnd}
+                    onPaste={onPaste}
+                    placeholder={placeholder}
+                    className={className}
+                    // RichTextarea requires explicit style props for cursor alignment.
+                    // CSS classes alone don't apply consistently to the overlay layer,
+                    // causing cursor position to mismatch with actual text insertion point.
+                    // See issue #855 for the bug this fixes.
+                    style={{
+                        width: "100%",
+                        fontSize: "1rem", // Match text-base (16px)
+                        lineHeight: "1.25rem", // Match leading-5 (20px)
+                        ...props.style,
+                    }}
+                    {...props}
+                >
+                    {renderHighlightedText}
+                </RichTextarea>
+            </div>
+        );
+
+        // Render without Popover during SSR to avoid Radix ID hydration mismatch
+        if (!isClient) {
+            return textareaElement;
+        }
+
         return (
             <Popover
                 open={isAutocompleteOpen}
@@ -492,31 +556,7 @@ export const SyntaxHighlightInput = forwardRef<
                 <PopoverTrigger asChild>
                     {/* flex: eliminates inline-block baseline gap that adds 6px
                         @xl:self-center: prevents stretch in flex-row parent */}
-                    <div className="relative flex w-full @xl:self-center">
-                        <RichTextarea
-                            ref={textareaRef}
-                            value={value}
-                            onChange={handleChange}
-                            onKeyDown={handleKeyDown}
-                            onFocus={onFocus}
-                            onBlur={onBlur}
-                            onCompositionStart={onCompositionStart}
-                            onCompositionEnd={onCompositionEnd}
-                            onPaste={onPaste}
-                            placeholder={placeholder}
-                            className={className}
-                            // RichTextarea requires explicit width and line-height via style prop
-                            // CSS classes alone don't apply to the inner textarea
-                            style={{
-                                width: "100%",
-                                lineHeight: "1.25rem", // Match leading-5 from className
-                                ...props.style,
-                            }}
-                            {...props}
-                        >
-                            {renderHighlightedText}
-                        </RichTextarea>
-                    </div>
+                    {textareaElement}
                 </PopoverTrigger>
                 <PopoverContent
                     className="z-modal w-80 p-2"

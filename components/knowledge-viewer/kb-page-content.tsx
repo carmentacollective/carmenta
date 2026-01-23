@@ -5,7 +5,7 @@
  *
  * Renders the KB with:
  * 1. Prominent "About You" section at top (AI-enhanced, user-editable)
- * 2. Memories section below (folder-based knowledge browser)
+ * 2. Knowledge Explorer below (unified tree view with editing)
  */
 
 import { useCallback, useState, useTransition, useEffect, useRef } from "react";
@@ -21,7 +21,9 @@ import {
     CaretDownIcon,
 } from "@phosphor-icons/react";
 
-import { KnowledgeViewer } from "./index";
+import { useIsClient } from "@/lib/hooks/use-is-client";
+
+import { KnowledgeExplorer, type KBDocumentData } from "@/components/kb";
 import { CarmentaSheet, CarmentaToggle } from "@/components/carmenta-assistant";
 import { ImportWidget } from "@/components/import/import-widget";
 import {
@@ -29,7 +31,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { updateKBDocument, type KBDocument, type KBFolder } from "@/lib/kb/actions";
+import { updateKBDocument, type KBDocument } from "@/lib/kb/actions";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/client-logger";
 import { analytics } from "@/lib/analytics/events";
@@ -37,15 +39,13 @@ import { analytics } from "@/lib/analytics/events";
 interface KBPageContentProps {
     /** The profile.identity document for prominent About You display */
     identityDocument: KBDocument | null;
-    /** Folders for the Memories section */
-    memoriesFolders: KBFolder[];
+    /** Documents for the Knowledge Explorer (flat list) */
+    documents: KBDocument[];
 }
 
-export function KBPageContent({
-    identityDocument,
-    memoriesFolders,
-}: KBPageContentProps) {
+export function KBPageContent({ identityDocument, documents }: KBPageContentProps) {
     const router = useRouter();
+    const isClient = useIsClient();
     const [sheetOpen, setSheetOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
 
@@ -209,23 +209,23 @@ export function KBPageContent({
                     </section>
                 )}
 
-                {/* Memories Section */}
+                {/* Knowledge Explorer Section */}
                 <section className="min-h-[400px] flex-1">
                     <div className="mb-3 flex items-center gap-2">
                         <Brain className="text-foreground/50 h-4 w-4" />
                         <h2 className="text-foreground/70 text-sm font-medium">
-                            Memories
+                            Knowledge
                         </h2>
                         <span className="text-foreground/40 text-sm">
-                            What we've learned together
+                            What we know together
                         </span>
                     </div>
 
-                    {memoriesFolders.length === 0 ? (
+                    {documents.length === 0 ? (
                         <div className="glass-panel flex h-full flex-col items-center justify-center py-16 text-center">
                             <SparkleIcon className="text-foreground/30 mb-4 h-12 w-12" />
                             <h3 className="text-foreground/80 text-lg font-medium">
-                                No memories yet
+                                No knowledge yet
                             </h3>
                             <p className="text-foreground/60 mt-2 max-w-sm text-sm">
                                 As we chat, we'll remember important details about your
@@ -233,48 +233,73 @@ export function KBPageContent({
                             </p>
                         </div>
                     ) : (
-                        <KnowledgeViewer initialFolders={memoriesFolders} />
+                        <KnowledgeExplorer
+                            documents={documents as KBDocumentData[]}
+                            mode="edit"
+                            enableSearch={true}
+                            onDocumentUpdate={() => router.refresh()}
+                        />
                     )}
                 </section>
 
                 {/* Import Knowledge Section */}
-                <Collapsible open={importOpen} onOpenChange={setImportOpen}>
+                {/* Render placeholder during SSR to avoid Radix ID hydration mismatch */}
+                {!isClient ? (
                     <section className="glass-card overflow-hidden rounded-xl">
-                        <CollapsibleTrigger asChild>
-                            <button className="hover:bg-foreground/5 flex w-full items-center justify-between px-6 py-4 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <UploadIcon className="text-foreground/50 h-5 w-5" />
-                                    <div className="text-left">
-                                        <h2 className="text-foreground text-base font-medium">
-                                            Import Knowledge
-                                        </h2>
-                                        <p className="text-foreground/50 text-sm">
-                                            Extract insights from ChatGPT or Claude
-                                            history
-                                        </p>
-                                    </div>
+                        <button className="hover:bg-foreground/5 flex w-full items-center justify-between px-6 py-4 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <UploadIcon className="text-foreground/50 h-5 w-5" />
+                                <div className="text-left">
+                                    <h2 className="text-foreground text-base font-medium">
+                                        Import Knowledge
+                                    </h2>
+                                    <p className="text-foreground/50 text-sm">
+                                        Extract insights from ChatGPT or Claude history
+                                    </p>
                                 </div>
-                                <CaretDownIcon
-                                    className={cn(
-                                        "text-foreground/30 h-5 w-5 transition-transform duration-200",
-                                        importOpen && "rotate-180"
-                                    )}
-                                />
-                            </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                            <div className="border-foreground/5 border-t px-6 py-4">
-                                <ImportWidget
-                                    mode="knowledge-only"
-                                    compact
-                                    showStepper={false}
-                                    onSuccess={handleImportSuccess}
-                                    onCancel={() => setImportOpen(false)}
-                                />
                             </div>
-                        </CollapsibleContent>
+                            <CaretDownIcon className="text-foreground/30 h-5 w-5" />
+                        </button>
                     </section>
-                </Collapsible>
+                ) : (
+                    <Collapsible open={importOpen} onOpenChange={setImportOpen}>
+                        <section className="glass-card overflow-hidden rounded-xl">
+                            <CollapsibleTrigger asChild>
+                                <button className="hover:bg-foreground/5 flex w-full items-center justify-between px-6 py-4 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <UploadIcon className="text-foreground/50 h-5 w-5" />
+                                        <div className="text-left">
+                                            <h2 className="text-foreground text-base font-medium">
+                                                Import Knowledge
+                                            </h2>
+                                            <p className="text-foreground/50 text-sm">
+                                                Extract insights from ChatGPT or Claude
+                                                history
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <CaretDownIcon
+                                        className={cn(
+                                            "text-foreground/30 h-5 w-5 transition-transform duration-200",
+                                            importOpen && "rotate-180"
+                                        )}
+                                    />
+                                </button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <div className="border-foreground/5 border-t px-6 py-4">
+                                    <ImportWidget
+                                        mode="knowledge-only"
+                                        compact
+                                        showStepper={false}
+                                        onSuccess={handleImportSuccess}
+                                        onCancel={() => setImportOpen(false)}
+                                    />
+                                </div>
+                            </CollapsibleContent>
+                        </section>
+                    </Collapsible>
+                )}
             </div>
 
             {/* Carmenta Sheet */}

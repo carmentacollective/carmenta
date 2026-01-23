@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useState, useCallback, useRef, useEffect } from "react";
 
 import { logger } from "@/lib/client-logger";
@@ -174,6 +175,9 @@ export function useGooglePicker(): UseGooglePickerReturn {
             .catch((err) => {
                 if (!cancelled) {
                     logger.error({ error: err }, "Failed to load Google Picker API");
+                    Sentry.captureException(err, {
+                        tags: { hook: "useGooglePicker", action: "loadApi" },
+                    });
                     setError("Failed to load Google Picker API");
                 }
             });
@@ -310,6 +314,9 @@ export function useGooglePicker(): UseGooglePickerReturn {
                             : "Failed to open Google Picker";
                     setError(message);
                     logger.error({ error: err }, "Failed to open Google Picker");
+                    Sentry.captureException(err, {
+                        tags: { hook: "useGooglePicker", action: "openPicker" },
+                    });
                     resolveRef.current = null;
                     resolve(null);
                 }

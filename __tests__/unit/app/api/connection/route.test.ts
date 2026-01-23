@@ -681,7 +681,7 @@ describe("POST /api/connection", () => {
     // ========================================================================
 
     describe("Temporal Background Mode", () => {
-        it("dispatches to Temporal when background mode enabled and configured", async () => {
+        it("dispatches to Temporal when #background hashtag used and Temporal configured", async () => {
             vi.mocked(isBackgroundModeEnabled).mockReturnValue(true);
             vi.mocked(startBackgroundResponse).mockResolvedValue("workflow-123");
             vi.mocked(runConcierge).mockResolvedValueOnce({
@@ -690,7 +690,6 @@ describe("POST /api/connection", () => {
                 explanation: "Research task.",
                 reasoning: { enabled: false },
                 title: "Deep research",
-                backgroundMode: { enabled: true, reason: "Long-running research task" },
             });
 
             const request = new Request("http://localhost/api/connection", {
@@ -701,7 +700,12 @@ describe("POST /api/connection", () => {
                         {
                             id: "msg-1",
                             role: "user",
-                            parts: [{ type: "text", text: "Do deep research on AI" }],
+                            parts: [
+                                {
+                                    type: "text",
+                                    text: "Do deep research on AI #background",
+                                },
+                            ],
                         },
                     ],
                 }),
@@ -729,7 +733,6 @@ describe("POST /api/connection", () => {
                 explanation: "Research task.",
                 reasoning: { enabled: false },
                 title: "Deep research",
-                backgroundMode: { enabled: true, reason: "Long-running task" },
             });
 
             const request = new Request("http://localhost/api/connection", {
@@ -740,7 +743,12 @@ describe("POST /api/connection", () => {
                         {
                             id: "msg-1",
                             role: "user",
-                            parts: [{ type: "text", text: "Research something" }],
+                            parts: [
+                                {
+                                    type: "text",
+                                    text: "Research something #background",
+                                },
+                            ],
                         },
                     ],
                 }),
@@ -754,7 +762,7 @@ describe("POST /api/connection", () => {
             expect(response.headers.get("X-Background-Mode")).toBeNull();
         });
 
-        it("skips background mode when Temporal not configured", async () => {
+        it("skips background mode when Temporal not configured even with #background", async () => {
             vi.mocked(isBackgroundModeEnabled).mockReturnValue(false);
             vi.mocked(runConcierge).mockResolvedValueOnce({
                 modelId: "anthropic/claude-sonnet-4.5",
@@ -762,7 +770,6 @@ describe("POST /api/connection", () => {
                 explanation: "Research task.",
                 reasoning: { enabled: false },
                 title: "Research",
-                backgroundMode: { enabled: true, reason: "Long task" },
             });
 
             const request = new Request("http://localhost/api/connection", {
@@ -773,7 +780,7 @@ describe("POST /api/connection", () => {
                         {
                             id: "msg-1",
                             role: "user",
-                            parts: [{ type: "text", text: "Research" }],
+                            parts: [{ type: "text", text: "Research #background" }],
                         },
                     ],
                 }),
@@ -783,6 +790,38 @@ describe("POST /api/connection", () => {
             expect(response.status).toBe(200);
 
             // Should run inline - no Temporal dispatch
+            expect(vi.mocked(startBackgroundResponse)).not.toHaveBeenCalled();
+            expect(response.headers.get("X-Background-Mode")).toBeNull();
+        });
+
+        it("does NOT trigger background mode without #background hashtag", async () => {
+            vi.mocked(isBackgroundModeEnabled).mockReturnValue(true);
+            vi.mocked(runConcierge).mockResolvedValueOnce({
+                modelId: "anthropic/claude-sonnet-4.5",
+                temperature: 0.5,
+                explanation: "Research task.",
+                reasoning: { enabled: false },
+                title: "Research",
+            });
+
+            const request = new Request("http://localhost/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            id: "msg-1",
+                            role: "user",
+                            parts: [{ type: "text", text: "Do deep research on AI" }],
+                        },
+                    ],
+                }),
+            });
+
+            const response = await POST(request);
+            expect(response.status).toBe(200);
+
+            // Should NOT dispatch to Temporal - no #background hashtag
             expect(vi.mocked(startBackgroundResponse)).not.toHaveBeenCalled();
             expect(response.headers.get("X-Background-Mode")).toBeNull();
         });

@@ -100,6 +100,10 @@ vi.mock("./lib/env", () => ({
         // AI Gateway - read from process.env for live integration tests
         AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
         AI_LIVE_TESTS: process.env.AI_LIVE_TESTS,
+        // GitHub App - read from process.env for live integration tests
+        GITHUB_APP_ID: process.env.GITHUB_APP_ID,
+        GITHUB_APP_PRIVATE_KEY: process.env.GITHUB_APP_PRIVATE_KEY,
+        GITHUB_APP_INSTALLATION_ID: process.env.GITHUB_APP_INSTALLATION_ID,
         SENTRY_DSN: undefined,
         SENTRY_AUTH_TOKEN: undefined,
         NEXT_PUBLIC_SENTRY_DSN: undefined,

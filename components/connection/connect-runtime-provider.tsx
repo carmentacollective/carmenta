@@ -193,6 +193,8 @@ interface ChatContextType {
     handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     /** Whether background mode is active (long-running task) */
     isBackgroundMode: boolean;
+    /** When background mode started (for elapsed time display) */
+    backgroundStartTime: number | null;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -297,6 +299,32 @@ export function parseErrorMessage(message: string | undefined): string {
     const trimmed = message.trim();
     const lowerMessage = trimmed.toLowerCase();
 
+    // Network/connection errors - transient, user can fix by checking connection
+    if (
+        lowerMessage.includes("networkerror") ||
+        lowerMessage.includes("network error") ||
+        lowerMessage.includes("econnrefused") ||
+        lowerMessage.includes("econnreset")
+    ) {
+        return "Network connection lost. Check your internet and tap retry.";
+    }
+
+    // "Failed to fetch" - be careful, distinguish true network from HTTP errors
+    if (lowerMessage.includes("failed to fetch")) {
+        // If the error includes HTTP status or response info, it's not a pure network error
+        if (
+            lowerMessage.includes("http") ||
+            lowerMessage.includes("status") ||
+            lowerMessage.includes("response")
+        ) {
+            // This is likely an HTTP error dressed up as a fetch error
+            // Fall through to provider error handling below
+        } else {
+            // True network error - connection issue
+            return "Network connection lost. Check your internet and tap retry.";
+        }
+    }
+
     // Provider/model errors - translate technical messages to helpful ones
     if (
         lowerMessage.includes("provider returned error") ||
@@ -305,11 +333,11 @@ export function parseErrorMessage(message: string | undefined): string {
         // Check for specific patterns in the full message
         // Thinking block issues - transient, retry is honest
         if (lowerMessage.includes("thinking") && lowerMessage.includes("block")) {
-            return "We hit a conversation glitch. Try sending your message again.";
+            return "We hit a conversation glitch. Tap retry to continue.";
         }
         // Rate limits - transient, retry works after waiting
         if (lowerMessage.includes("rate limit") || lowerMessage.includes("429")) {
-            return "The model is busy right now. Give it a moment and try again.";
+            return "The model is busy right now. Wait a moment and tap retry.";
         }
         // Overloaded - transient, offer alternative
         if (lowerMessage.includes("overloaded") || lowerMessage.includes("503")) {
@@ -320,17 +348,7 @@ export function parseErrorMessage(message: string | undefined): string {
             return "The response took too long. Try a simpler question or a faster model.";
         }
         // Generic provider error - might be transient, offer options
-        return "We couldn't reach the model. Try again or switch models.";
-    }
-
-    // Connection/network errors - user can fix
-    if (
-        lowerMessage.includes("failed to fetch") ||
-        lowerMessage.includes("fetch failed") ||
-        lowerMessage.includes("network error") ||
-        lowerMessage.includes("econnrefused")
-    ) {
-        return "Connection dropped. Check your network and try again.";
+        return "Couldn't reach the model. Tap retry or try a different model.";
     }
 
     // Handle JSON error responses
@@ -352,10 +370,19 @@ export function parseErrorMessage(message: string | undefined): string {
         if (statusMatch) {
             const status = statusMatch[1];
             // 404 - might be stale state, refresh helps
-            if (status === "404") return "We lost the thread. Refresh to continue.";
+            if (status === "404")
+                return "That connection doesn't exist. Check the URL or start a new chat.";
             // 500 - our bug, don't lie about retry working
             if (status === "500")
                 return "Something broke on our end. The robots have been notified. 🤖";
+            // 5xx - server issues, might be transient
+            if (status.startsWith("5")) {
+                return "Server is having trouble. Wait a moment and try again.";
+            }
+            // Other 4xx - client error, likely not transient
+            if (status.startsWith("4")) {
+                return "Something went wrong with your request. Check and try again.";
+            }
             // Other status - our bug
             return "Something unexpected happened. The bots are on it. 🤖";
         }
@@ -372,7 +399,7 @@ export function parseErrorMessage(message: string | undefined): string {
     if (lowerMessage.includes("error")) {
         // Make generic "error" messages more helpful
         if (trimmed.length < 50 && !lowerMessage.includes("please")) {
-            return `${trimmed}. Try again or switch models.`;
+            return `${trimmed}. Tap retry or try a different model.`;
         }
     }
 
@@ -381,22 +408,45 @@ export function parseErrorMessage(message: string | undefined): string {
 
 /**
  * Error banner displayed when a runtime error occurs.
+ *
+ * If a retry button is shown, it means either:
+ * 1. The message was successfully saved and will be resent on retry
+ * 2. The error is transient (network, rate limit, etc.) and retry has a good chance
+ *
+ * This prevents the misleading "retry" button that doesn't actually retry.
  */
 function RuntimeErrorBanner({
     error,
     onDismiss,
     onRetry,
+    hasFailedMessage,
 }: {
     error: Error;
     onDismiss: () => void;
     onRetry: () => void;
+    hasFailedMessage: boolean;
 }) {
     const displayMessage = parseErrorMessage(error.message);
+    const [isRetrying, setIsRetrying] = useState(false);
 
     // Trigger haptic on mount (error appeared)
     useEffect(() => {
         triggerHaptic();
     }, []);
+
+    const handleRetryClick = async () => {
+        setIsRetrying(true);
+        try {
+            await onRetry();
+            // onRetry success shows a toast, banner will auto-close
+        } catch (err) {
+            // Error restored via setFailedMessage in handleRetry
+            // Banner stays open to show new error
+            logger.debug({ error: err }, "Retry failed, banner shows updated error");
+        } finally {
+            setIsRetrying(false);
+        }
+    };
 
     return (
         <div
@@ -421,13 +471,33 @@ function RuntimeErrorBanner({
                 >
                     <HouseIcon className="h-4 w-4" />
                 </Link>
-                <button
-                    onClick={onRetry}
-                    className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
-                    aria-label="Retry"
-                >
-                    <ArrowsClockwiseIcon className="h-4 w-4" />
-                </button>
+                {hasFailedMessage && (
+                    <button
+                        onClick={handleRetryClick}
+                        disabled={isRetrying}
+                        className={cn(
+                            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            isRetrying
+                                ? "cursor-wait text-red-600/60"
+                                : "text-red-600 hover:bg-red-100"
+                        )}
+                        aria-label={
+                            isRetrying
+                                ? "Retrying your message..."
+                                : "Retry your message"
+                        }
+                        title={
+                            isRetrying
+                                ? "Retrying your message..."
+                                : "Retry your message"
+                        }
+                    >
+                        <ArrowsClockwiseIcon
+                            className={cn("h-4 w-4", isRetrying && "animate-spin")}
+                        />
+                        <span>{isRetrying ? "Retrying..." : "Retry"}</span>
+                    </button>
+                )}
                 <button
                     onClick={onDismiss}
                     className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-100"
@@ -485,6 +555,12 @@ interface ConnectRuntimeProviderProps {
 /**
  * Retry configuration for network errors.
  * Used to gracefully handle transient failures during deploys.
+ *
+ * Patterns cover:
+ * - Fetch API errors: "Failed to fetch" (browser native)
+ * - Node.js connection errors: ECONNREFUSED, ECONNRESET, ETIMEDOUT, EPIPE
+ * - DNS/network errors: EHOSTUNREACH, ENETUNREACH, NXDOMAIN
+ * - Generic patterns: "fetch failed", "NetworkError"
  */
 const RETRY_CONFIG = {
     maxRetries: 3,
@@ -493,6 +569,12 @@ const RETRY_CONFIG = {
         "Failed to fetch",
         "NetworkError",
         "ECONNREFUSED",
+        "ECONNRESET",
+        "ETIMEDOUT",
+        "EHOSTUNREACH",
+        "ENETUNREACH",
+        "EPIPE",
+        "NXDOMAIN",
         "fetch failed",
     ],
 };
@@ -500,13 +582,33 @@ const RETRY_CONFIG = {
 /**
  * Check if an error is a retryable network error.
  * We only retry network failures, NOT HTTP errors (4xx, 5xx).
+ *
+ * Network errors are distinguished from HTTP errors:
+ * - Network: "Failed to fetch", "NetworkError", connection refused, timeouts
+ * - HTTP: Status codes, JSON error responses, server validation errors
  */
 function isRetryableNetworkError(error: unknown): boolean {
     if (!(error instanceof Error)) return false;
     const message = error.message.toLowerCase();
-    return RETRY_CONFIG.retryableErrors.some((pattern) =>
-        message.includes(pattern.toLowerCase())
-    );
+
+    // Match retryable network patterns
+    for (const pattern of RETRY_CONFIG.retryableErrors) {
+        if (message.includes(pattern.toLowerCase())) {
+            // "Failed to fetch" is only network-related if it's not a response error
+            // (responses are returned, not thrown on fetch)
+            if (
+                pattern.toLowerCase() === "failed to fetch" &&
+                (message.includes("http") ||
+                    message.includes("status") ||
+                    message.includes("response"))
+            ) {
+                return false;
+            }
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -973,6 +1075,11 @@ function ConnectRuntimeProviderInner({
         useToolState();
     const [overrides, setOverrides] = useState<ModelOverrides>(DEFAULT_OVERRIDES);
     const [displayError, setDisplayError] = useState<Error | null>(null);
+    const [failedMessage, setFailedMessage] = useState<{
+        role: "user";
+        content: string;
+        files?: Array<{ url: string; mediaType: string; name: string }>;
+    } | null>(null);
     const [input, setInput] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -994,6 +1101,8 @@ function ConnectRuntimeProviderInner({
     const projectPathRef = useRef(projectPath);
     // Ref to hold setMessages callback (needed for background mode hook)
     const setMessagesRef = useRef<(messages: UIMessage[]) => void>(() => {});
+    // Guard against concurrent retries
+    const isRetryingRef = useRef(false);
 
     useEffect(() => {
         overridesRef.current = overrides;
@@ -1083,6 +1192,7 @@ function ConnectRuntimeProviderInner({
 
     const {
         isBackgroundMode,
+        startTime: backgroundStartTime,
         startPolling: startBackgroundPolling,
         stopPolling: stopBackgroundPolling,
     } = useBackgroundMode({
@@ -1141,7 +1251,7 @@ function ConnectRuntimeProviderInner({
     // Note: We pass ref objects (not .current) to be read at fetch time, not render time
     // The fetch wrapper handles routing to /api/code when projectPath is set
     // In standalone mode, uses the endpoint prop directly (e.g., /api/dcos)
-    /* eslint-disable react-hooks/refs -- refs passed to transport are read at fetch/request time, not render */
+
     const transport = useMemo(
         () =>
             new DefaultChatTransport({
@@ -1193,7 +1303,6 @@ function ConnectRuntimeProviderInner({
             getPageContext,
         ]
     );
-    /* eslint-enable react-hooks/refs */
 
     // Chat hook with AI SDK 5.0
     // Key insight: We use effectiveChatId (which is stable from the start)
@@ -1445,6 +1554,10 @@ function ConnectRuntimeProviderInner({
     // Sync display error with SDK error
     useEffect(() => {
         if (error) {
+            logger.error(
+                { errorMessage: error.message },
+                "💥 Chat error occurred, showing error banner"
+            );
             setDisplayError(error);
         } else {
             // Clear display error when SDK error clears
@@ -1461,7 +1574,9 @@ function ConnectRuntimeProviderInner({
             content: string;
             files?: Array<{ url: string; mediaType: string; name: string }>;
         }) => {
+            const currentInput = input; // Capture current input to detect user edits
             setDisplayError(null);
+            setFailedMessage(null);
             try {
                 // Build parts array with text and files
                 const parts: Array<
@@ -1497,12 +1612,19 @@ function ConnectRuntimeProviderInner({
                 });
             } catch (err) {
                 logger.error({ error: err }, "Failed to send message");
-                // Note: We don't restore input here anymore.
-                // Callers (composer, queue) handle their own input state.
+                // Save the message so retry can resend it
+                // But don't overwrite if a retry is already in flight (prevents collision with another failed message)
+                if (!isRetryingRef.current) {
+                    setFailedMessage(message);
+                }
+                // Only restore input if user hasn't started editing a new message
+                if (currentInput === message.content || currentInput.trim() === "") {
+                    setInput(message.content);
+                }
                 throw err;
             }
         },
-        [sendMessage]
+        [sendMessage, input]
     );
 
     // Input handling
@@ -1534,16 +1656,61 @@ function ConnectRuntimeProviderInner({
 
     const clearError = useCallback(() => {
         setDisplayError(null);
+        setFailedMessage(null);
         sdkClearError();
     }, [sdkClearError]);
 
-    const handleRetry = useCallback(() => {
-        clearError();
-        const composer = document.querySelector<HTMLTextAreaElement>(
-            '[data-testid="composer-input"], textarea[placeholder]'
-        );
-        composer?.focus();
-    }, [clearError]);
+    const handleRetry = useCallback(async () => {
+        // Prevent concurrent retries (if retry already in flight, don't start another)
+        if (isRetryingRef.current) {
+            logger.debug({}, "Retry already in flight, ignoring duplicate");
+            return;
+        }
+
+        if (!failedMessage) {
+            // If no failed message, just clear error and focus
+            clearError();
+            const composer = document.querySelector<HTMLTextAreaElement>(
+                '[data-testid="composer-input"], textarea[placeholder]'
+            );
+            composer?.focus();
+            return;
+        }
+
+        // Save any draft the user may have started typing after the error appeared
+        // append() clears input, so we need to restore it to avoid losing the draft
+        const currentDraft = input;
+
+        // Mark retry as in-flight
+        isRetryingRef.current = true;
+
+        // Actually retry the failed message
+        try {
+            logger.info(
+                { content: failedMessage.content },
+                "🔄 Retrying failed message"
+            );
+            clearError();
+            await append(failedMessage);
+            // Success! Show confirmation toast
+            toast.success("Message sent successfully", { duration: 3000 });
+            // Restore user's draft if they had started typing something new
+            if (currentDraft && currentDraft !== failedMessage.content) {
+                setInput(currentDraft);
+            }
+        } catch (err) {
+            logger.error({ error: err }, "Failed to retry message");
+            // If retry fails, restore the failed message and error state
+            setFailedMessage(failedMessage);
+            // Also restore user's draft
+            if (currentDraft && currentDraft !== failedMessage.content) {
+                setInput(currentDraft);
+            }
+            throw err;
+        } finally {
+            isRetryingRef.current = false;
+        }
+    }, [failedMessage, clearError, append, input]);
 
     /**
      * Regenerate from a specific assistant message.
@@ -1666,6 +1833,7 @@ function ConnectRuntimeProviderInner({
             handleInputChange,
             handleSubmit,
             isBackgroundMode,
+            backgroundStartTime,
         }),
         [
             messages,
@@ -1683,6 +1851,7 @@ function ConnectRuntimeProviderInner({
             handleInputChange,
             handleSubmit,
             isBackgroundMode,
+            backgroundStartTime,
         ]
     );
 
@@ -1718,6 +1887,7 @@ function ConnectRuntimeProviderInner({
                                     error={displayError}
                                     onDismiss={clearError}
                                     onRetry={handleRetry}
+                                    hasFailedMessage={!!failedMessage}
                                 />
                             )}
                         </ChatContext.Provider>

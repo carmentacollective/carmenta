@@ -16,6 +16,7 @@ import { z } from "zod";
 import { getConnectedServices, getCredentials } from "./connection-manager";
 import { getServiceById, type ServiceDefinition } from "./services";
 import {
+    AsanaAdapter,
     ClickUpAdapter,
     CoinMarketCapAdapter,
     DropboxAdapter,
@@ -43,6 +44,7 @@ import { logger } from "@/lib/logger";
  * insert it in alphabetical order rather than at the end.
  */
 const adapterMap: Record<string, ServiceAdapter> = {
+    asana: new AsanaAdapter(),
     clickup: new ClickUpAdapter(),
     coinmarketcap: new CoinMarketCapAdapter(),
     dropbox: new DropboxAdapter(),
@@ -357,7 +359,67 @@ export async function getIntegrationTools(
                 continue;
             }
 
-            // Skip services without adapters
+            // Check if this service exposes virtual tools FIRST
+            // Virtual service parents (like google-internal) don't have their own adapter
+            // They provide OAuth credentials for child tools (gmail, googleDrive)
+            const virtualAdapterIds = VIRTUAL_SERVICES[serviceId];
+            if (virtualAdapterIds) {
+                // Verify credentials exist for the parent OAuth service
+                try {
+                    await getCredentials(userEmail, serviceId);
+                } catch (error) {
+                    const errorMessage =
+                        error instanceof Error ? error.message : String(error);
+
+                    // Distinguish config errors (missing env vars) from user connection issues.
+                    // Config errors are serious - surface them loudly so they get fixed.
+                    const isConfigError =
+                        errorMessage.includes("environment variable") ||
+                        errorMessage.includes("ENCRYPTION_KEY") ||
+                        errorMessage.includes("encryption key") || // Matches actual error from decryptCredentials
+                        errorMessage.includes("CLIENT_ID") || // OAuth client credentials
+                        errorMessage.includes("CLIENT_SECRET") ||
+                        errorMessage.includes("data is corrupted");
+
+                    if (isConfigError) {
+                        logger.error(
+                            { serviceId, error: errorMessage, userEmail },
+                            "🚨 Configuration error loading virtual service - check environment variables"
+                        );
+                        Sentry.captureException(error, {
+                            level: "error",
+                            tags: {
+                                component: "integrations",
+                                service: serviceId,
+                                errorType: "config",
+                            },
+                            extra: { userEmail },
+                        });
+                    } else {
+                        // User connection issues (expired token, disconnected, etc.) - warn level
+                        logger.warn(
+                            { serviceId, error: errorMessage, userEmail },
+                            "Skipping virtual service parent due to credential error"
+                        );
+                    }
+                    continue;
+                }
+
+                // Create tools for each virtual service
+                for (const adapterId of virtualAdapterIds) {
+                    if (!getAdapter(adapterId)) {
+                        logger.warn(
+                            { adapterId, parentService: serviceId },
+                            "No adapter for virtual service"
+                        );
+                        continue;
+                    }
+                    tools[adapterId] = createAdapterTool(adapterId, userEmail);
+                }
+                continue;
+            }
+
+            // Regular service - needs its own adapter
             const adapter = getAdapter(serviceId);
             if (!adapter) {
                 logger.warn({ serviceId }, "No adapter for connected service");
@@ -405,24 +467,8 @@ export async function getIntegrationTools(
                 continue;
             }
 
-            // Check if this service exposes virtual tools
-            const virtualAdapterIds = VIRTUAL_SERVICES[serviceId];
-            if (virtualAdapterIds) {
-                // Parent service that exposes virtual tools - don't create tool for parent itself
-                for (const adapterId of virtualAdapterIds) {
-                    if (!getAdapter(adapterId)) {
-                        logger.warn(
-                            { adapterId, parentService: serviceId },
-                            "No adapter for virtual service"
-                        );
-                        continue;
-                    }
-                    tools[adapterId] = createAdapterTool(adapterId, userEmail);
-                }
-            } else {
-                // Regular service - create tool directly
-                tools[serviceId] = createServiceTool(service, userEmail);
-            }
+            // Regular service - create tool directly
+            tools[serviceId] = createServiceTool(service, userEmail);
         }
 
         // Log success with both attempted and loaded counts for debugging

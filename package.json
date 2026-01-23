@@ -126,7 +126,7 @@
     "rich-textarea": "^0.27.0",
     "sonner": "^2.0.7",
     "sqids": "^0.3.0",
-    "streamdown": "^2.0.1",
+    "streamdown": "^2.1.0",
     "svix": "^1.82.0",
     "tailwind-merge": "^3.4.0",
     "web-push": "^3.6.7",

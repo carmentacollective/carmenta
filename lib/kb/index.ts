@@ -4,7 +4,7 @@
  * Core CRUD operations for the user knowledge base. Uses dot-notation paths
  * for hierarchical queries, enabling filesystem-like navigation.
  *
- * Path format: "profile.identity", "profile.people.sarah" (dots as separators)
+ * Path format: "Profile.Identity", "Knowledge.People.Sarah" (dots as separators, Title Case)
  * No leading dots - paths start at root level.
  *
  * ## Architecture Decision: V1 Text Paths vs V2 ltree
@@ -34,16 +34,16 @@
  * ```typescript
  * // Create a document
  * await kb.create(userId, {
- *   path: "profile.identity",
- *   name: "identity.txt",
+ *   path: "Profile.Identity",
+ *   name: "Identity",
  *   content: "Name: Nick Sullivan\nRole: Software Engineer"
  * });
  *
- * // Read all documents under /profile/
- * const docs = await kb.readFolder(userId, "profile");
+ * // Read all documents under Profile/
+ * const docs = await kb.readFolder(userId, "Profile");
  *
  * // Update a document
- * await kb.update(userId, "profile.identity", { content: "Updated..." });
+ * await kb.update(userId, "Profile.Identity", { content: "Updated..." });
  * ```
  */
 
@@ -145,8 +145,8 @@ function escapeLikePattern(input: string): string {
 
 /**
  * Convert filesystem-style path to ltree format
- * "/profile/identity.txt" → "profile.identity"
- * "profile/identity" → "profile.identity"
+ * "/Profile/Identity.txt" → "Profile.Identity"
+ * "Profile/Identity" → "Profile.Identity"
  */
 export function toPath(input: string): string {
     return input
@@ -157,7 +157,7 @@ export function toPath(input: string): string {
 
 /**
  * Convert ltree path to display format
- * "profile.identity" → "/profile/identity"
+ * "Profile.Identity" → "/Profile/Identity"
  */
 export function toDisplayPath(ltreePath: string): string {
     return "/" + ltreePath.replace(/\./g, "/");
@@ -165,8 +165,8 @@ export function toDisplayPath(ltreePath: string): string {
 
 /**
  * Get parent path
- * "profile.people.sarah" → "profile.people"
- * "profile" → null
+ * "Knowledge.People.Sarah" → "Knowledge.People"
+ * "Profile" → null
  */
 export function getParentPath(path: string): string | null {
     const lastDot = path.lastIndexOf(".");
@@ -175,8 +175,8 @@ export function getParentPath(path: string): string | null {
 
 /**
  * Get document name from path
- * "profile.people.sarah" → "sarah"
- * "profile.identity" → "identity"
+ * "Knowledge.People.Sarah" → "Sarah"
+ * "Profile.Identity" → "Identity"
  */
 export function getNameFromPath(path: string): string {
     const lastDot = path.lastIndexOf(".");
@@ -212,14 +212,15 @@ function validateDocumentInput(input: CreateDocumentInput): void {
         throw new Error("Document content exceeds 1MB limit");
     }
 
-    // Path format: Only allow alphanumeric, dots, hyphens, apostrophes
+    // Path format: alphanumeric, dots, hyphens, apostrophes, and SPACES
+    // Spaces allow natural Title Case names: "AI Product Manager" not "AI-Product-Manager"
     // No underscores - we use Title Case for names (e.g., SarahConnor not sarah_connor)
     // This also means we don't need LIKE escaping for path queries since % and _ are both disallowed
     const normalizedPath = toPath(input.path);
-    if (!/^[a-z0-9.'-]+$/i.test(normalizedPath)) {
+    if (!/^[a-z0-9.' -]+$/i.test(normalizedPath)) {
         throw new Error(
             `Invalid path format: "${input.path}". ` +
-                "Paths must contain only letters, numbers, dots, hyphens, and apostrophes."
+                "Paths must contain only letters, numbers, dots, spaces, hyphens, and apostrophes."
         );
     }
 
@@ -551,10 +552,10 @@ function mapUnifiedToSearchResult(result: UnifiedSearchResult): SearchResult {
  * V2 (deferred): people.* for tracking relationships
  */
 export const PROFILE_PATHS = {
-    root: "profile",
-    character: "profile.character",
-    identity: "profile.identity",
-    preferences: "profile.preferences",
+    root: "Profile",
+    character: "Profile.Character",
+    identity: "Profile.Identity",
+    preferences: "Profile.Preferences",
 } as const;
 
 // ============================================================================

@@ -32,6 +32,10 @@ export interface BugReportContext {
     errorDetails?: string;
     browserInfo?: string;
     reportedAt: Date;
+    /** URLs of screenshots/images attached by the user */
+    imageUrls?: string[];
+    /** URL to view the conversation (for debugging) */
+    connectionUrl?: string;
 }
 
 export interface FeedbackContext {

@@ -86,8 +86,14 @@ export function HoloThread({ hideWelcome = false }: HoloThreadProps) {
 
 function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
     const router = useRouter();
-    const { messages, isLoading, setInput, append, isBackgroundMode } =
-        useChatContext();
+    const {
+        messages,
+        isLoading,
+        setInput,
+        append,
+        isBackgroundMode,
+        backgroundStartTime,
+    } = useChatContext();
     const { addFiles, addPreUploadedFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
     const { isCodeMode } = useCodeMode();
@@ -305,7 +311,10 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
                             {/* Background mode banner - shows when processing in background */}
                             <AnimatePresence>
                                 {isBackgroundMode && (
-                                    <BackgroundModeBanner className="my-4" />
+                                    <BackgroundModeBanner
+                                        className="my-4"
+                                        startTime={backgroundStartTime}
+                                    />
                                 )}
                             </AnimatePresence>
 

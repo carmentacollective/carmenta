@@ -29,6 +29,29 @@ case - creating new files and accessing user-picked files.
 
 ## Architecture Decisions
 
+### Read-Only Integration (Decided 2025-01-18)
+
+**Decision**: Remove document creation capabilities (`create_doc`, `create_sheet`).
+Integration is now read-only: `read_sheet` and `open_picker` only.
+
+**Why**:
+
+1. **Scope mismatch**: Users expected Carmenta to create formatted documents (specific
+   fonts, logos, layouts). The Docs API inserts plain text—no formatting control.
+2. **Malformed JSON loops**: Creation attempts generated malformed tool calls
+   (`{"action", "create_doc"}` with comma instead of colon), causing infinite "Working"
+   loops with no user feedback.
+3. **Not our purpose**: Carmenta is an AI assistant, not a document formatting service.
+   Users should create documents in Google Workspace and have Carmenta read/analyze
+   them.
+4. **Better UX**: "Read your spreadsheet and analyze it" is a clear value prop. "Create
+   a formatted doc" sets expectations we can't meet.
+
+**What remains**:
+
+- `read_sheet` - Read data from user-selected Google Sheets
+- `open_picker` - Let users select files to grant Carmenta access
+
 ### Integration Naming: Google Sheets/Docs/Slides (Decided 2025-01-10)
 
 **Decision**: Name it "Google Sheets/Docs/Slides" - NOT "Google Drive"
@@ -37,7 +60,6 @@ case - creating new files and accessing user-picked files.
 scope only grants access to:
 
 - Files the user explicitly picks via Google Picker
-- Files our app creates
 
 Calling it "Google Drive" would mislead users into expecting they can browse their
 entire Drive. The more honest name sets correct expectations.
@@ -48,8 +70,8 @@ entire Drive. The more honest name sets correct expectations.
 +----------------------------------------+
 | Google Sheets/Docs/Slides              |
 |                                        |
-| Create and work with Sheets, Docs,     |
-| and Slides in your Carmenta workspace  |
+| Read and interact with your Sheets,    |
+| Docs, and Slides via file selection    |
 |                                        |
 | [Connect]                              |
 +----------------------------------------+
@@ -62,11 +84,8 @@ Sheets/Docs/Slides APIs. No CASA audit required.
 
 **What `drive.file` enables**:
 
-- Create new Google Sheets from data
-- Create new Google Docs from content
-- Create new Google Slides from content
 - Access files user explicitly picks via Google Picker
-- Read/write to app-created files
+- Read spreadsheet data, document content
 
 **What it doesn't enable**:
 
@@ -74,8 +93,8 @@ Sheets/Docs/Slides APIs. No CASA audit required.
 - List all files
 - Access files without explicit user selection
 
-This covers Julianna's use case perfectly: "Look at this sheet and create a new one like
-it"
+**Use case**: "Read my spreadsheet and analyze the data" or "Look at this doc and
+summarize it"
 
 ### Google Cloud Project Architecture (Decided 2025-01-10)
 
@@ -301,359 +320,90 @@ export const googleInternalProvider: OAuthProviderConfig = {
 
 ### Service Definition
 
-**File**: `lib/integrations/services.ts` (add to existing)
+**File**: `lib/integrations/services.ts`
 
 ```typescript
 {
   id: "google-workspace-files",
   name: "Google Sheets/Docs/Slides",
-  description: "Create and work with Sheets, Docs, and Slides in your Carmenta workspace",
-  logo: "/integrations/google-workspace.svg",
+  description: "Read and analyze your Sheets, Docs, and Slides by selecting them via file picker",
+  logo: "/logos/google-workspace-files.svg",
   authMethod: "oauth",
-  status: "active",
+  status: "available",
   oauthProviderId: "google-workspace-files",
-  capabilities: [
-    "create_sheet",
-    "create_doc",
-    "create_slides",
-    "read_picked_file",
-    "update_picked_file",
-  ],
+  capabilities: ["read_sheet", "open_picker"],
 }
 ```
 
 ### Adapter Implementation
 
-**File**: `lib/integrations/adapters/google-workspace-files.ts`
+The adapter is in `lib/integrations/adapters/google-workspace-files.ts`. Key operations:
 
-```typescript
-import { google } from "googleapis";
-import type { IntegrationAdapter } from "../types";
-
-export const googleWorkspaceFilesAdapter: IntegrationAdapter = {
-  id: "google-workspace-files",
-
-  async createSheet(
-    accessToken: string,
-    title: string,
-    data: string[][]
-  ): Promise<{ spreadsheetId: string; url: string }> {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
-
-    const sheets = google.sheets({ version: "v4", auth });
-
-    const response = await sheets.spreadsheets.create({
-      requestBody: {
-        properties: { title },
-        sheets: [
-          {
-            data: [
-              {
-                startRow: 0,
-                startColumn: 0,
-                rowData: data.map((row) => ({
-                  values: row.map((cell) => ({
-                    userEnteredValue: { stringValue: String(cell) },
-                  })),
-                })),
-              },
-            ],
-          },
-        ],
-      },
-    });
-
-    return {
-      spreadsheetId: response.data.spreadsheetId!,
-      url: response.data.spreadsheetUrl!,
-    };
-  },
-
-  async createDoc(
-    accessToken: string,
-    title: string,
-    content: string
-  ): Promise<{ documentId: string; url: string }> {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
-
-    const docs = google.docs({ version: "v1", auth });
-
-    // Create empty doc
-    const createResponse = await docs.documents.create({
-      requestBody: { title },
-    });
-
-    const documentId = createResponse.data.documentId!;
-
-    // Insert content
-    await docs.documents.batchUpdate({
-      documentId,
-      requestBody: {
-        requests: [
-          {
-            insertText: {
-              location: { index: 1 },
-              text: content,
-            },
-          },
-        ],
-      },
-    });
-
-    return {
-      documentId,
-      url: `https://docs.google.com/document/d/${documentId}/edit`,
-    };
-  },
-
-  async readSheetData(
-    accessToken: string,
-    spreadsheetId: string,
-    range?: string
-  ): Promise<string[][]> {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
-
-    const sheets = google.sheets({ version: "v4", auth });
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: range || "A:ZZ", // All columns
-    });
-
-    return response.data.values || [];
-  },
-};
-```
+- `read_sheet` - Read data from a user-selected Google Sheet
+- `open_picker` - Signal frontend to open Google Picker for file selection
 
 ### Google Picker Integration
 
-**File**: `components/integrations/google-picker.tsx`
+The Google Picker component is in `components/integrations/google-picker.tsx` with a
+hook in `lib/hooks/use-google-picker.ts`. Key features:
 
-```typescript
-"use client";
-
-import { useEffect, useState } from "react";
-import Script from "next/script";
-
-interface GooglePickerProps {
-  accessToken: string;
-  onSelect: (file: { id: string; name: string; mimeType: string }) => void;
-  onCancel: () => void;
-  mimeTypes?: string[];
-}
-
-export function GooglePicker({
-  accessToken,
-  onSelect,
-  onCancel,
-  mimeTypes = [
-    "application/vnd.google-apps.spreadsheet",
-    "application/vnd.google-apps.document",
-    "application/vnd.google-apps.presentation",
-  ],
-}: GooglePickerProps) {
-  const [pickerLoaded, setPickerLoaded] = useState(false);
-
-  useEffect(() => {
-    if (pickerLoaded && accessToken) {
-      openPicker();
-    }
-  }, [pickerLoaded, accessToken]);
-
-  function openPicker() {
-    const picker = new google.picker.PickerBuilder()
-      .setOAuthToken(accessToken)
-      .setDeveloperKey(process.env.NEXT_PUBLIC_GOOGLE_API_KEY!)
-      .addView(
-        new google.picker.DocsView()
-          .setIncludeFolders(true)
-          .setMimeTypes(mimeTypes.join(","))
-      )
-      .setCallback((data: google.picker.ResponseObject) => {
-        if (data.action === google.picker.Action.PICKED) {
-          const doc = data.docs[0];
-          onSelect({
-            id: doc.id,
-            name: doc.name,
-            mimeType: doc.mimeType,
-          });
-        } else if (data.action === google.picker.Action.CANCEL) {
-          onCancel();
-        }
-      })
-      .build();
-
-    picker.setVisible(true);
-  }
-
-  return (
-    <Script
-      src="https://apis.google.com/js/api.js"
-      onLoad={() => {
-        gapi.load("picker", () => setPickerLoaded(true));
-      }}
-    />
-  );
-}
-```
-
-### Tool Definitions
-
-**File**: `lib/integrations/tools/google-workspace-files.ts`
-
-```typescript
-import { tool } from "ai";
-import { z } from "zod";
-
-export function getGoogleWorkspaceTools(accessToken: string) {
-  return {
-    createGoogleSheet: tool({
-      description:
-        "Create a new Google Sheet with the given title and data. Returns the URL to the new sheet.",
-      parameters: z.object({
-        title: z.string().describe("Title for the new spreadsheet"),
-        data: z
-          .array(z.array(z.string()))
-          .describe("2D array of cell values, first row is headers"),
-      }),
-      execute: async ({ title, data }) => {
-        const result = await googleWorkspaceFilesAdapter.createSheet(
-          accessToken,
-          title,
-          data
-        );
-        return {
-          success: true,
-          spreadsheetId: result.spreadsheetId,
-          url: result.url,
-          message: `Created Google Sheet "${title}"`,
-        };
-      },
-    }),
-
-    createGoogleDoc: tool({
-      description:
-        "Create a new Google Doc with the given title and content. Returns the URL to the new document.",
-      parameters: z.object({
-        title: z.string().describe("Title for the new document"),
-        content: z.string().describe("Text content for the document"),
-      }),
-      execute: async ({ title, content }) => {
-        const result = await googleWorkspaceFilesAdapter.createDoc(
-          accessToken,
-          title,
-          content
-        );
-        return {
-          success: true,
-          documentId: result.documentId,
-          url: result.url,
-          message: `Created Google Doc "${title}"`,
-        };
-      },
-    }),
-
-    openGooglePicker: tool({
-      description:
-        "Open Google Picker to let user select a file from their Drive. Use this when user wants to work with an existing file.",
-      parameters: z.object({
-        fileTypes: z
-          .array(z.enum(["spreadsheet", "document", "presentation"]))
-          .optional()
-          .describe("Types of files to show in picker"),
-      }),
-      execute: async ({ fileTypes }) => {
-        // This triggers UI - returns instruction for frontend
-        return {
-          action: "open_google_picker",
-          fileTypes: fileTypes || ["spreadsheet", "document", "presentation"],
-        };
-      },
-    }),
-  };
-}
-```
+- Auto-opens picker when mounted with valid credentials
+- Handles file selection callback with file ID, name, MIME type, URL
+- Handles cancellation gracefully
+- Filters by MIME type (spreadsheet, document, presentation)
 
 ---
 
 ## User Experience Flows
 
-### Flow 1: Create New Sheet from Data
+### Flow 1: Read Existing Sheet
 
 ```
-User: "Create a Google Sheet from this data"
+User: "Look at my budget spreadsheet"
 1. Check if google-workspace-files connected
-   - If not: "To create Google Sheets, connect your account: [Connect Google Sheets/Docs/Slides]"
-2. If connected: Use createGoogleSheet tool
-3. Return: "Created 'Untitled Spreadsheet' - [Open in Google Sheets](url)"
-```
-
-### Flow 2: Work with Existing Sheet
-
-```
-User: "Look at my budget spreadsheet and create a new one for next month"
-1. Check if connected
-2. Call openGooglePicker tool → Frontend shows Google Picker
+   - If not: "Connect Google Sheets/Docs/Slides to access your files: [Connect]"
+2. Call open_picker tool → Frontend shows Google Picker
 3. User selects "2024 Budget.gsheet"
-4. Read sheet data via readSheetData
-5. Understand structure, create new sheet with updated template
-6. Return: "Created '2025 Budget' based on your 2024 template - [Open](url)"
+4. Read sheet data via read_sheet
+5. Return: "Here's what I found in your budget spreadsheet: [summary]"
 ```
 
-### Flow 3: User Uploads XLSX, Recommend Integration
+### Flow 2: Analyze Data
 
 ```
-User: [uploads budget.xlsx]
-1. Parse XLSX via spreadsheet-handling
-2. If google-workspace-files NOT connected:
-   "I can see your spreadsheet. If you'd like to create a live Google Sheet
-    from this data, connect Google Sheets/Docs/Slides: [Connect]"
-3. If connected:
-   "I can see your spreadsheet. Would you like me to create a Google Sheet
-    from this data so you can collaborate on it?"
+User: "Analyze my sales data and find trends"
+1. Check if connected
+2. Call open_picker tool with file_types: ["spreadsheet"]
+3. User selects sales spreadsheet
+4. Read and analyze the data
+5. Return insights about trends, patterns, anomalies
 ```
 
 ---
 
-## Implementation Milestones
+## Implementation Status
 
-### Milestone 1: OAuth Provider Setup
+### ✅ Milestone 1: OAuth Provider Setup (Complete)
 
-- Create `google-workspace-files` OAuth provider
-- Add to provider registry
-- Add service definition
-- Test OAuth flow
-- **Validates**: Users can connect and we get access token
+- `google-workspace-files` OAuth provider configured
+- Service definition in registry
+- OAuth flow working
 
-### Milestone 2: Basic Sheet Creation
+### ✅ Milestone 2: Google Picker Integration (Complete)
 
-- Implement `createSheet` in adapter
-- Add `createGoogleSheet` tool
-- Wire into chat tools
-- **Validates**: "Create a Google Sheet" works
+- Google Picker component with hook
+- File selection flow with callbacks
+- MIME type filtering
 
-### Milestone 3: Google Picker Integration
+### ✅ Milestone 3: Sheet Reading (Complete)
 
-- Add Google Picker component
-- Implement file selection flow
-- Read selected file data
-- **Validates**: "Open my budget spreadsheet" works
+- `read_sheet` operation implemented
+- A1 notation range support
 
-### Milestone 4: Doc & Slides Support
+### ❌ Document Creation (Removed 2025-01-18)
 
-- Implement `createDoc` in adapter
-- Implement `createSlides` in adapter
-- Add corresponding tools
-- **Validates**: Full Workspace file creation
-
-### Milestone 5: Update Existing Files
-
-- Implement sheet update methods
-- Handle versioning/conflicts
-- **Validates**: "Update this spreadsheet" works
+Document creation (`create_doc`, `create_sheet`) was removed. See "Read-Only
+Integration" decision at top of file for rationale.
 
 ---
 
@@ -678,12 +428,12 @@ If we want Photos integration, it must use the Picker API for user selection.
 
 When adding scopes to Project 2:
 
-| Requirement        | What to Provide                                                           |
-| ------------------ | ------------------------------------------------------------------------- |
-| **Justification**  | "Users create Google Sheets/Docs from AI-generated content and templates" |
-| **Video demo**     | Show: OAuth flow → Picker selection → Sheet creation → actual usage       |
-| **Privacy policy** | Update to mention Google Drive/Sheets data handling                       |
-| **Homepage**       | Must match authorized domain                                              |
+| Requirement        | What to Provide                                                    |
+| ------------------ | ------------------------------------------------------------------ |
+| **Justification**  | "Users read and analyze their Google Sheets data via AI assistant" |
+| **Video demo**     | Show: OAuth flow → Picker selection → Sheet reading → AI analysis  |
+| **Privacy policy** | Update to mention Google Drive/Sheets data handling                |
+| **Homepage**       | Must match authorized domain                                       |
 
 Timeline: 3-5 business days for sensitive scope review.
 

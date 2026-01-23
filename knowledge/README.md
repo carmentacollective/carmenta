@@ -1,6 +1,6 @@
 # Carmenta Knowledge
 
-The product kernel for the best interface to AI.
+The product kernel for the best connection to AI.
 
 This folder IS the product specification. Code is generated from it. New team members
 (human or AI) bootstrap from it. The specification is the IP.

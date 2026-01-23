@@ -284,7 +284,7 @@ differentiated capability.
 MCP Apps handles tool interfaces (data analysis tool → interactive visualization). Two
 complementary layers of the interface.
 
-**Aligns with positioning**: "The best interface to AI" includes the best interface to
+**Aligns with positioning**: "The best connection to AI" includes the best interface to
 AI tools. Visual tool experiences strengthen this positioning.
 
 ### Implementation Considerations
@@ -417,7 +417,7 @@ suggestions in context of failed requests. Human-first framing throughout.
 **Visual tool experiences**: With MCP Apps support, Carmenta could deliver interactive
 tool UIs while competitors remain text-only. Data visualizations render as interactive
 charts, not JSON dumps. Form-based tools show actual forms, not text-based prompts. This
-strengthens "best interface to AI" positioning.
+strengthens "best connection to AI" positioning.
 
 For technical users: Full MCP access remains available. Custom servers, advanced config,
 direct protocol access. But the default experience assumes no technical knowledge.

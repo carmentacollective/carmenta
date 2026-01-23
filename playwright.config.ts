@@ -15,6 +15,9 @@ config({ path: ".env.local" });
  * - CLERK_SECRET_KEY
  * - TEST_USER_EMAIL + TEST_USER_PASSWORD (for authenticated tests)
  */
+// Path to cached auth state - shared across all authenticated tests
+const AUTH_STATE_PATH = "./__tests__/e2e/.auth/user.json";
+
 export default defineConfig({
     testDir: "./__tests__/e2e",
     fullyParallel: true,
@@ -26,9 +29,9 @@ export default defineConfig({
     workers: process.env.CI ? 4 : undefined,
     reporter: "html",
 
-    // Timeouts optimized for CI (cold start) and local (warm cache)
-    // Cold start can be slow, but once warm, pages should be fast
-    timeout: 60_000, // 60s per test - SSR pages with auth can be slow
+    // Timeouts reduced - auth caching eliminates login overhead
+    // Tests should be fast once initial setup is complete
+    timeout: 30_000, // 30s per test (down from 60s)
     expect: {
         timeout: 5_000, // 5s for assertions - should be instant
     },
@@ -36,35 +39,61 @@ export default defineConfig({
     use: {
         baseURL: process.env.BASE_URL || "http://localhost:3000",
         trace: "retain-on-failure", // Captures traces for debugging failed tests
-        // Navigation/action timeouts
+        // Navigation/action timeouts - reduced for faster feedback
         actionTimeout: 5_000, // 5s for clicks, fills - should be instant
-        navigationTimeout: 45_000, // 45s for page.goto - SSR pages can be slow
+        navigationTimeout: 30_000, // 30s for page.goto (down from 45s)
     },
 
     projects: [
-        // Global setup initializes Clerk testing token
+        // Auth setup - creates cached auth state for all authenticated tests
+        // This runs once, then all tests reuse the saved session
         {
             name: "setup",
-            testMatch: /global\.setup\.ts/,
+            testMatch: /seed\.spec\.ts/,
         },
+        // Unauthenticated tests - legacy *.test.ts files (smoke tests, public pages, etc.)
+        // These do NOT require cached auth state
         {
             name: "chromium",
             use: { ...devices["Desktop Chrome"] },
+            testMatch: /\.test\.ts$/, // Only legacy test files
+            testIgnore: [/seed\.spec\.ts/, /global\.setup\.ts/],
+            dependencies: ["setup"],
+        },
+        // Authenticated tests - new *.spec.ts files that use cached auth state
+        // These REQUIRE authentication via storageState
+        {
+            name: "chromium-authenticated",
+            use: {
+                ...devices["Desktop Chrome"],
+                // Load cached auth state - skips login entirely
+                storageState: AUTH_STATE_PATH,
+            },
+            testMatch: /\.spec\.ts$/, // Only new spec files
+            testIgnore: /seed\.spec\.ts/, // Exclude setup
             dependencies: ["setup"],
         },
     ],
 
-    webServer: {
-        command: "pnpm dev",
-        url: "http://localhost:3000",
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000,
-        // Explicitly pass env vars - webServer doesn't inherit by default on CI
-        // See: https://github.com/microsoft/playwright/issues/19780
-        env: Object.fromEntries(
-            Object.entries(process.env).filter(
-                (entry): entry is [string, string] => entry[1] !== undefined
-            )
-        ),
-    },
+    // WebServer management:
+    // - If BASE_URL is set, assume server is already running (skip webServer entirely)
+    // - CI uses production build (pnpm start) for fast, consistent page loads
+    // - Local uses dev server (pnpm dev) for hot reloading during development
+    ...(process.env.BASE_URL
+        ? {} // Skip webServer when BASE_URL is explicitly set
+        : {
+              webServer: {
+                  command: process.env.CI ? "pnpm start" : "pnpm dev",
+                  url: "http://localhost:3000",
+                  reuseExistingServer: !process.env.CI,
+                  timeout: 120 * 1000,
+                  // Explicitly pass env vars - webServer doesn't inherit by default on CI
+                  // See: https://github.com/microsoft/playwright/issues/19780
+                  env: Object.fromEntries(
+                      Object.entries(process.env).filter(
+                          (entry): entry is [string, string] => entry[1] !== undefined
+                      )
+                  ),
+              },
+          }),
 });

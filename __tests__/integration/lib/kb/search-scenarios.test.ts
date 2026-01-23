@@ -31,7 +31,7 @@ describe("Knowledge Base Search Scenarios", () => {
         whatIsCarmenta: {
             path: "docs.what-is-carmenta",
             name: "What is Carmenta",
-            content: `The best interface to AI. For builders who work at the speed of thought.
+            content: `The best connection to AI. For builders who work at the speed of thought.
 
 You're drowning in AI tools. ChatGPT for quick questions. Claude for deep work. Cursor for code. Each one smart—but each one amnesiac. Every conversation starts fresh.
 

@@ -49,6 +49,8 @@ export interface ImportCommitResult {
     errors: string[];
     /** IDs of connections created, for triggering discovery */
     connectionIds: number[];
+    /** IDs of existing connections that were skipped as duplicates (for re-running extraction) */
+    existingConnectionIds: number[];
 }
 
 /**
@@ -143,6 +145,7 @@ export async function commitImport(
             skippedDuplicates: 0,
             errors: ["Sign in to import your connections"],
             connectionIds: [],
+            existingConnectionIds: [],
         };
     }
 
@@ -156,11 +159,13 @@ export async function commitImport(
             skippedDuplicates: 0,
             errors: ["Cannot import native Carmenta connections"],
             connectionIds: [],
+            existingConnectionIds: [],
         };
     }
 
     const errors: string[] = [];
     const createdConnectionIds: number[] = [];
+    const existingConnectionIds: number[] = [];
     let connectionsCreated = 0;
     let messagesImported = 0;
     let skippedDuplicates = 0;
@@ -181,6 +186,7 @@ export async function commitImport(
 
             if (existing) {
                 skippedDuplicates++;
+                existingConnectionIds.push(existing.id);
                 logger.debug(
                     { conversationId: conv.id, existingConnectionId: existing.id },
                     "Skipping duplicate import"
@@ -295,5 +301,6 @@ export async function commitImport(
         skippedDuplicates,
         errors,
         connectionIds: createdConnectionIds,
+        existingConnectionIds,
     };
 }
