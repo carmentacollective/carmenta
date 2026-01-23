@@ -120,11 +120,11 @@ export const STATUS_MESSAGES = {
         considering: "Considering approaches...",
         analyzing: "Analyzing the problem...",
     },
-    // Background work
+    // Background work (triggered via #background)
     background: {
         starting:
-            "We're still working on this. You can close this window and come back whenever.",
-        working: "Still working...",
-        complete: "We finished while you were away.",
+            "Got it! We're working on this in the background. Keep chatting—we'll notify you when ready.",
+        working: "Still working on your background task...",
+        complete: "Your background task is ready!",
     },
 } as const;

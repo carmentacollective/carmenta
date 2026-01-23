@@ -178,9 +178,14 @@ export async function POST(req: Request) {
                 .map((part) => part.text)
                 .join(" ") ?? "";
 
+        // Detect #background hashtag - user explicitly requests background processing
+        // Strip it from the query before sending to concierge/LLM
+        const userRequestedBackground = /#background\b/i.test(userQuery);
+        const cleanedUserQuery = userQuery.replace(/#background\b/gi, "").trim();
+
         // Find integrations that might help with this query
         const suggestableIntegrations = findSuggestableIntegrations(
-            userQuery,
+            cleanedUserQuery,
             connectedSet
         );
 
@@ -456,14 +461,15 @@ export async function POST(req: Request) {
         // Client polls for completion via useBackgroundMode hook.
         //
         // Gracefully disabled if Temporal isn't configured - runs inline instead.
+        // Background mode is now OPT-IN via #background hashtag, not automatic
         const temporalConfigured = isBackgroundModeEnabled();
-        if (conciergeResult.backgroundMode?.enabled && !temporalConfigured) {
+        if (userRequestedBackground && !temporalConfigured) {
             logger.info(
-                { connectionId, reason: conciergeResult.backgroundMode.reason },
-                "Background mode requested but Temporal not configured, running inline"
+                { connectionId },
+                "Background mode requested via #background but Temporal not configured, running inline"
             );
         }
-        if (conciergeResult.backgroundMode?.enabled && temporalConfigured) {
+        if (userRequestedBackground && temporalConfigured) {
             const streamId = nanoid();
 
             // Dispatch to Temporal - payloads contain only IDs for security
@@ -493,9 +499,8 @@ export async function POST(req: Request) {
                         connectionId,
                         streamId,
                         userId: dbUser.id,
-                        reason: conciergeResult.backgroundMode.reason,
                     },
-                    "Dispatched to Temporal background mode"
+                    "Dispatched to Temporal background mode (user requested via #background)"
                 );
             } catch (temporalError) {
                 // Temporal is configured but unavailable - fall back to inline
@@ -510,7 +515,6 @@ export async function POST(req: Request) {
                     level: "warning",
                     data: {
                         connectionId,
-                        reason: conciergeResult.backgroundMode?.reason,
                     },
                 });
 
@@ -523,7 +527,6 @@ export async function POST(req: Request) {
                     extra: {
                         connectionId,
                         streamId,
-                        reason: conciergeResult.backgroundMode?.reason,
                     },
                 });
             }
@@ -531,7 +534,7 @@ export async function POST(req: Request) {
             // Only return early if Temporal dispatch succeeded
             if (!temporalDispatchSucceeded) {
                 logger.info(
-                    { connectionId, reason: conciergeResult.backgroundMode.reason },
+                    { connectionId },
                     "Temporal unavailable, continuing with inline execution"
                 );
                 // Fall through to inline execution below

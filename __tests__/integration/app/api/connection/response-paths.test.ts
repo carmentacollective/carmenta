@@ -705,27 +705,35 @@ describe("Connection API Response Paths", () => {
     // 3. BACKGROUND MODE PATH
     // ========================================================================
     describe("Background Mode Path", () => {
+        // Create request body with #background hashtag to trigger background mode
+        const createBackgroundRequestBody = () =>
+            createRequestBody({
+                messages: [
+                    {
+                        id: "msg-1",
+                        role: "user",
+                        parts: [{ type: "text", text: "Do deep research #background" }],
+                    },
+                ],
+            });
+
         beforeEach(() => {
-            // Enable background mode
+            // Enable background mode infrastructure
             vi.mocked(isBackgroundModeEnabled).mockReturnValue(true);
             vi.mocked(startBackgroundResponse).mockResolvedValue("workflow-123");
 
-            // Configure concierge to request background mode
+            // Standard concierge response (background mode is now opt-in via hashtag)
             vi.mocked(runConcierge).mockResolvedValue({
                 modelId: "anthropic/claude-sonnet-4.5",
                 temperature: 0.5,
                 explanation: "Deep research task.",
                 reasoning: { enabled: true, effort: "high", maxTokens: 16000 },
                 title: "Deep Research",
-                backgroundMode: {
-                    enabled: true,
-                    reason: "Deep research - this will take a few minutes",
-                },
             });
         });
 
         it("returns 200 with text/event-stream content type", async () => {
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
 
             expect(response.status).toBe(200);
@@ -733,14 +741,14 @@ describe("Connection API Response Paths", () => {
         });
 
         it("includes X-Background-Mode header", async () => {
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
 
             expect(response.headers.get("X-Background-Mode")).toBe("true");
         });
 
         it("includes X-Stream-Id header", async () => {
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
 
             const streamId = response.headers.get("X-Stream-Id");
@@ -750,7 +758,7 @@ describe("Connection API Response Paths", () => {
         });
 
         it("includes all concierge headers", async () => {
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
 
             expect(response.headers.get("X-Concierge-Model-Id")).toBe(
@@ -761,7 +769,7 @@ describe("Connection API Response Paths", () => {
         });
 
         it("includes new connection headers for new connections", async () => {
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
 
             expect(response.headers.get("X-Connection-Is-New")).toBe("true");
@@ -772,7 +780,7 @@ describe("Connection API Response Paths", () => {
         });
 
         it("dispatches to Temporal workflow", async () => {
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             await POST(request);
 
             expect(vi.mocked(startBackgroundResponse)).toHaveBeenCalledWith({
@@ -786,7 +794,7 @@ describe("Connection API Response Paths", () => {
         });
 
         it("streams background status message", async () => {
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
 
             const chunks = await parseSSEStream(response);
@@ -798,11 +806,11 @@ describe("Connection API Response Paths", () => {
             expect(transientChunk).toBeTruthy();
 
             const data = (transientChunk as { data?: { text?: string } }).data;
-            expect(data?.text).toContain("still working");
+            expect(data?.text).toContain("background");
         });
 
         it("returns immediately (does not call streamText)", async () => {
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
             const text = await readStreamAsText(response);
 
@@ -815,7 +823,7 @@ describe("Connection API Response Paths", () => {
                 new Error("Temporal unavailable")
             );
 
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
 
             // Should still return 200 (falls back to inline)
@@ -832,7 +840,7 @@ describe("Connection API Response Paths", () => {
         it("runs inline when Temporal is not configured", async () => {
             vi.mocked(isBackgroundModeEnabled).mockReturnValue(false);
 
-            const request = createRequest(createRequestBody());
+            const request = createRequest(createBackgroundRequestBody());
             const response = await POST(request);
 
             // Should NOT have background mode headers

@@ -193,6 +193,8 @@ interface ChatContextType {
     handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     /** Whether background mode is active (long-running task) */
     isBackgroundMode: boolean;
+    /** When background mode started (for elapsed time display) */
+    backgroundStartTime: number | null;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -1190,6 +1192,7 @@ function ConnectRuntimeProviderInner({
 
     const {
         isBackgroundMode,
+        startTime: backgroundStartTime,
         startPolling: startBackgroundPolling,
         stopPolling: stopBackgroundPolling,
     } = useBackgroundMode({
@@ -1821,6 +1824,7 @@ function ConnectRuntimeProviderInner({
             handleInputChange,
             handleSubmit,
             isBackgroundMode,
+            backgroundStartTime,
         }),
         [
             messages,
@@ -1838,6 +1842,7 @@ function ConnectRuntimeProviderInner({
             handleInputChange,
             handleSubmit,
             isBackgroundMode,
+            backgroundStartTime,
         ]
     );
 
