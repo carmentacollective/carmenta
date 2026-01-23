@@ -64,6 +64,11 @@ const TOOLS = [
 ];
 
 const MODIFIERS = [
+    {
+        id: "background",
+        name: "Background",
+        description: "Run in background, notify when done",
+    },
     { id: "ultrathink", name: "Ultra Think", description: "Maximum reasoning depth" },
     { id: "quick", name: "Quick", description: "Fast response, less reasoning" },
     { id: "creative", name: "Creative", description: "High temperature, exploratory" },
@@ -227,11 +232,31 @@ export const SyntaxHighlightInput = forwardRef<
                 const lastHash = textBeforeCursor.lastIndexOf("#");
                 const lastSlash = textBeforeCursor.lastIndexOf("/");
 
+                // Check if the slash is part of a URL (don't trigger autocomplete)
+                // Simple heuristics that cover common cases without exhaustive TLD list
+                const isSlashInUrl = (() => {
+                    if (lastSlash === -1) return false;
+                    const beforeSlash = textBeforeCursor.slice(0, lastSlash);
+                    // Check for protocol prefix (http:/ or https:/)
+                    if (/^https?:/.test(textBeforeCursor)) return true;
+                    // Check for domain-like pattern with TLD before slash
+                    if (/\.\w{2,}$/.test(beforeSlash)) return true;
+                    // Check for localhost with optional port
+                    if (/localhost(:\d+)?$/.test(beforeSlash)) return true;
+                    // Check for IP address with optional port
+                    if (/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(beforeSlash))
+                        return true;
+                    return false;
+                })();
+
                 // Determine which trigger is active
                 const triggers = [
                     { type: "mention" as const, pos: lastAt },
                     { type: "modifier" as const, pos: lastHash },
-                    { type: "command" as const, pos: lastSlash },
+                    // Only include slash if it's not part of a URL
+                    ...(isSlashInUrl
+                        ? []
+                        : [{ type: "command" as const, pos: lastSlash }]),
                 ].filter((t) => t.pos !== -1);
 
                 if (triggers.length === 0) {

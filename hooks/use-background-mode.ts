@@ -7,10 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-    pollBackgroundModeStatus,
-    type BackgroundModeStatus,
-} from "@/lib/actions/connections";
+import { pollBackgroundModeStatus } from "@/lib/actions/connections";
 import type { UIMessageLike } from "@/lib/db/message-mapping";
 import { logger } from "@/lib/client-logger";
 
@@ -28,6 +25,8 @@ interface UseBackgroundModeOptions {
 interface UseBackgroundModeResult {
     /** Whether currently in background mode */
     isBackgroundMode: boolean;
+    /** When background mode started (for elapsed time display) */
+    startTime: number | null;
     /** Start polling for a connection */
     startPolling: (connectionId: string) => void;
     /** Stop polling */
@@ -39,12 +38,14 @@ export function useBackgroundMode({
     onFailed,
 }: UseBackgroundModeOptions): UseBackgroundModeResult {
     const [isBackgroundMode, setIsBackgroundMode] = useState(false);
+    const [startTime, setStartTime] = useState<number | null>(null);
 
     // Use refs for values needed in poll callback to avoid recreating callback
     const connectionIdRef = useRef<string | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const failureCountRef = useRef(0);
-    const startTimeRef = useRef<number>(0);
+    // Keep ref in sync with state for use in poll callback (refs for internal use, state for render)
+    const startTimeRef = useRef<number | null>(null);
 
     // Store callbacks in refs to avoid dependency issues
     const onCompleteRef = useRef(onComplete);
@@ -61,7 +62,8 @@ export function useBackgroundMode({
         }
         connectionIdRef.current = null;
         failureCountRef.current = 0;
-        startTimeRef.current = 0;
+        startTimeRef.current = null;
+        setStartTime(null);
         setIsBackgroundMode(false);
     }, []);
 
@@ -165,7 +167,9 @@ export function useBackgroundMode({
             // Set connection ID synchronously via ref
             connectionIdRef.current = connId;
             failureCountRef.current = 0;
-            startTimeRef.current = Date.now();
+            const now = Date.now();
+            startTimeRef.current = now;
+            setStartTime(now);
             setIsBackgroundMode(true);
 
             // Start polling immediately
@@ -188,6 +192,7 @@ export function useBackgroundMode({
 
     return {
         isBackgroundMode,
+        startTime,
         startPolling,
         stopPolling,
     };

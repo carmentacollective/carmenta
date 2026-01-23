@@ -178,14 +178,42 @@ export async function POST(req: Request) {
                 .map((part) => part.text)
                 .join(" ") ?? "";
 
+        // Detect #background hashtag - user explicitly requests background processing
+        // Strip it from the query before sending to concierge/LLM
+        const userRequestedBackground = /#background\b/i.test(userQuery);
+        const cleanedUserQuery = userQuery.replace(/#background\b/gi, "").trim();
+
+        // Strip #background hashtag from the actual messages array so it doesn't leak to LLM
+        // Only processes text parts - userQuery above is built from text parts only, so detection
+        // and stripping are symmetric. File parts and other non-text parts can't contain #background.
+        const cleanedMessages = userRequestedBackground
+            ? messages.map((msg) =>
+                  msg.role === "user"
+                      ? {
+                            ...msg,
+                            parts: msg.parts.map((part) =>
+                                part.type === "text"
+                                    ? {
+                                          ...part,
+                                          text: part.text
+                                              .replace(/#background\b/gi, "")
+                                              .trim(),
+                                      }
+                                    : part
+                            ),
+                        }
+                      : msg
+              )
+            : messages;
+
         // Find integrations that might help with this query
         const suggestableIntegrations = findSuggestableIntegrations(
-            userQuery,
+            cleanedUserQuery,
             connectedSet
         );
 
         // Run the Concierge FIRST to get model selection AND title (for new connections)
-        const conciergeResult = await runConcierge(messages, {
+        const conciergeResult = await runConcierge(cleanedMessages, {
             integrationContext:
                 suggestableIntegrations.length > 0
                     ? {
@@ -201,7 +229,7 @@ export async function POST(req: Request) {
         });
 
         // Build lightweight input for routing rules
-        const conciergeInput = buildConciergeInput(messages, {
+        const conciergeInput = buildConciergeInput(cleanedMessages, {
             currentModel: conciergeResult.modelId,
             userSignals: {
                 requestedModel: modelOverride,
@@ -222,7 +250,7 @@ export async function POST(req: Request) {
             attachmentTypes: getAttachmentTypesFromInput(conciergeInput),
             reasoningEnabled: conciergeResult.reasoning.enabled,
             toolsEnabled: true, // Tools are always available
-            messages,
+            messages: cleanedMessages,
         });
 
         // Track if this is a new connection (for header response)
@@ -335,7 +363,7 @@ export async function POST(req: Request) {
 
         // Save the latest user message before streaming
         // (messages array may contain history, we only need to save new messages)
-        const lastMessage = messages[messages.length - 1];
+        const lastMessage = cleanedMessages[cleanedMessages.length - 1];
         if (lastMessage && lastMessage.role === "user") {
             await upsertMessage(connectionId!, lastMessage as UIMessageLike);
         }
@@ -456,14 +484,15 @@ export async function POST(req: Request) {
         // Client polls for completion via useBackgroundMode hook.
         //
         // Gracefully disabled if Temporal isn't configured - runs inline instead.
+        // Background mode is now OPT-IN via #background hashtag, not automatic
         const temporalConfigured = isBackgroundModeEnabled();
-        if (conciergeResult.backgroundMode?.enabled && !temporalConfigured) {
+        if (userRequestedBackground && !temporalConfigured) {
             logger.info(
-                { connectionId, reason: conciergeResult.backgroundMode.reason },
-                "Background mode requested but Temporal not configured, running inline"
+                { connectionId },
+                "Background mode requested via #background but Temporal not configured, running inline"
             );
         }
-        if (conciergeResult.backgroundMode?.enabled && temporalConfigured) {
+        if (userRequestedBackground && temporalConfigured) {
             const streamId = nanoid();
 
             // Dispatch to Temporal - payloads contain only IDs for security
@@ -493,9 +522,8 @@ export async function POST(req: Request) {
                         connectionId,
                         streamId,
                         userId: dbUser.id,
-                        reason: conciergeResult.backgroundMode.reason,
                     },
-                    "Dispatched to Temporal background mode"
+                    "Dispatched to Temporal background mode (user requested via #background)"
                 );
             } catch (temporalError) {
                 // Temporal is configured but unavailable - fall back to inline
@@ -510,7 +538,6 @@ export async function POST(req: Request) {
                     level: "warning",
                     data: {
                         connectionId,
-                        reason: conciergeResult.backgroundMode?.reason,
                     },
                 });
 
@@ -523,7 +550,6 @@ export async function POST(req: Request) {
                     extra: {
                         connectionId,
                         streamId,
-                        reason: conciergeResult.backgroundMode?.reason,
                     },
                 });
             }
@@ -531,7 +557,7 @@ export async function POST(req: Request) {
             // Only return early if Temporal dispatch succeeded
             if (!temporalDispatchSucceeded) {
                 logger.info(
-                    { connectionId, reason: conciergeResult.backgroundMode.reason },
+                    { connectionId },
                     "Temporal unavailable, continuing with inline execution"
                 );
                 // Fall through to inline execution below
@@ -776,7 +802,8 @@ export async function POST(req: Request) {
         //
         // The UI stream needs the original image data so the frontend can display them.
         // Only the LLM context needs images stripped to avoid context overflow.
-        const messagesWithReasoningFiltered = filterReasoningFromMessages(messages);
+        const messagesWithReasoningFiltered =
+            filterReasoningFromMessages(cleanedMessages);
         const messagesForLLM = filterLargeToolOutputs(messagesWithReasoningFiltered);
 
         // Build system messages with Anthropic prompt caching on static content.
@@ -825,7 +852,7 @@ export async function POST(req: Request) {
         // When user selects a research depth (like "Quick overview ~15s"),
         // pre-execute deepResearch before the AI runs. This ensures the
         // time promise is honored instead of the AI doing manual searches.
-        const depthSelection = detectDepthSelection(messages, connectionId);
+        const depthSelection = detectDepthSelection(cleanedMessages, connectionId);
         let researchSystemContext: string | null = null;
 
         if (
@@ -1162,21 +1189,23 @@ export async function POST(req: Request) {
                                 }
                                 if (connection?.title) {
                                     // Build summary from recent messages for evaluation
-                                    const recentMsgs = messages.slice(-10).map((m) => ({
-                                        role: m.role,
-                                        content:
-                                            m.parts
-                                                ?.filter(
-                                                    (
-                                                        p
-                                                    ): p is {
-                                                        type: "text";
-                                                        text: string;
-                                                    } => p.type === "text"
-                                                )
-                                                .map((p) => p.text)
-                                                .join(" ") ?? "",
-                                    }));
+                                    const recentMsgs = cleanedMessages
+                                        .slice(-10)
+                                        .map((m) => ({
+                                            role: m.role,
+                                            content:
+                                                m.parts
+                                                    ?.filter(
+                                                        (
+                                                            p
+                                                        ): p is {
+                                                            type: "text";
+                                                            text: string;
+                                                        } => p.type === "text"
+                                                    )
+                                                    .map((p) => p.text)
+                                                    .join(" ") ?? "",
+                                        }));
                                     const summary = summarizeRecentMessages(recentMsgs);
 
                                     const evolution = await evaluateTitleEvolution(
@@ -1248,13 +1277,13 @@ export async function POST(req: Request) {
                                         .map((p) => p.text)
                                         .join(" ") ?? "";
 
-                                const userMessages = messages
+                                const userMessages = cleanedMessages
                                     .filter((m) => m.role === "user")
                                     .map(extractText);
 
                                 // Include the just-generated assistant response
                                 const assistantMessages = [
-                                    ...messages
+                                    ...cleanedMessages
                                         .filter((m) => m.role === "assistant")
                                         .map(extractText),
                                     text, // Current response
