@@ -233,21 +233,19 @@ export const SyntaxHighlightInput = forwardRef<
                 const lastSlash = textBeforeCursor.lastIndexOf("/");
 
                 // Check if the slash is part of a URL (don't trigger autocomplete)
-                // URL patterns: http://, https://, or slash after domain-like text
+                // Simple heuristics that cover common cases without exhaustive TLD list
                 const isSlashInUrl = (() => {
                     if (lastSlash === -1) return false;
                     const beforeSlash = textBeforeCursor.slice(0, lastSlash);
-                    // Check for http:// or https:// pattern
-                    if (/https?:$/.test(beforeSlash)) return true;
-                    // Check for URL-like patterns: ...com/ ...org/ ...io/ or IP addresses
-                    if (
-                        /\.(com|org|net|io|ai|co|dev|app|xyz|edu|gov|me|us|uk|ca|de|fr|jp|ru|br|au|in|cn|tv|info|biz|ly|be|gg|to|so|fm|im|ws|es|pl|nl|it|se|no|fi|dk|ch|at|cz|pt|gr|hu|ro|bg|sk|lt|lv|ee|hr|si|rs|ua|by|kz|uz|az|ge|am|md|tm|kg|tj|mn|la|mm|kh|bd|np|lk|bt|af|pk|ir|iq|il|ae|sa|qa|bh|kw|jo|lb|sy|ye|om|ps|eg|ly|tn|dz|ma|ng|za|ke|tz|ug|et|gh|sn|ci|cm|ao|mz|zw|zm|mw|rw|bi|ss|sd|ne|ml|bf|td|gn|sl|lr|mr|tg|bj|cf|cg|cd|ga|gq|st|sc|km|mu|re|mg|yt|cv|gw|dj|er|so|mz|bw|na|sz|ls|th|vn|id|my|sg|ph|tw|hk|mo|kr|nz|au|fj|pg|sb|vu|nc|pf|ws|to|tv|ck|nu|tk|wf|pm|gl|fo|ax|sj|aq)$/.test(
-                            beforeSlash
-                        )
-                    )
+                    // Check for protocol prefix (http:/ or https:/)
+                    if (/^https?:/.test(textBeforeCursor)) return true;
+                    // Check for domain-like pattern with TLD before slash
+                    if (/\.\w{2,}$/.test(beforeSlash)) return true;
+                    // Check for localhost with optional port
+                    if (/localhost(:\d+)?$/.test(beforeSlash)) return true;
+                    // Check for IP address with optional port
+                    if (/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(beforeSlash))
                         return true;
-                    // Already in middle of URL path
-                    if (/https?:\/\/[^\s]+$/.test(beforeSlash)) return true;
                     return false;
                 })();
 

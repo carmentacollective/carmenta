@@ -22,15 +22,9 @@ import { cn } from "@/lib/utils";
  * - idle: Default state
  * - concierge: Model selection phase (sparkles)
  * - streaming: AI is responding (cyan glow)
- * - background: Long-running task in background (violet glow)
  * - complete: Response finished (success pulse)
  */
-export type PipelineState =
-    | "idle"
-    | "concierge"
-    | "streaming"
-    | "background"
-    | "complete";
+export type PipelineState = "idle" | "concierge" | "streaming" | "complete";
 
 export interface ComposerButtonProps extends ComponentProps<"button"> {
     variant?: "ghost" | "send" | "stop" | "queue";
