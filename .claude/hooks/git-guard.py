@@ -10,13 +10,19 @@ Hard blocks (exit 2) - Never bypassable:
 - git push --no-verify (investigate failures, don't bypass them)
 - git commit --no-verify (investigate failures, don't bypass them)
 
-Needs confirmation (exit 2 unless GITGUARD_CONFIRMED=1):
+Needs confirmation (exit 2 unless I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes):
 - Direct pushes to main branch
 - gh pr merge
 
-The GITGUARD_CONFIRMED=1 prefix signals that the user explicitly requested
-this operation. Claude should set this when the user directly asks for
-a push/merge, and omit it when acting autonomously.
+CRITICAL FOR AI ASSISTANTS:
+Think about the user's INTENT, not just their words.
+
+"Create a PR" means create a branch and open a pull request for review.
+"Ship this" probably means they want review first.
+"Commit this" means commit locally, not push to main.
+
+Pushing to main or merging PRs skips code review. Users almost never want that.
+When in doubt, ASK THE USER. Do not rationalize bypassing this guard.
 
 Exit codes:
 - 0: Command allowed
@@ -40,7 +46,7 @@ import sys
 
 class ViolationType(Enum):
     HARD_BLOCK = "block"  # Exit 2, never bypassable
-    NEEDS_CONFIRMATION = "confirm"  # Exit 2 unless GITGUARD_CONFIRMED=1
+    NEEDS_CONFIRMATION = "confirm"  # Exit 2 unless I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes
 
 
 class Violation(NamedTuple):
@@ -51,14 +57,19 @@ class Violation(NamedTuple):
 
 def has_confirmation_flag(command: str) -> bool:
     """
-    Check if command has GITGUARD_CONFIRMED=1 prefix.
+    Check if command has I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes prefix.
 
-    This signals that the user explicitly requested this operation.
-    Claude should set this when the user directly asks for a push/merge.
+    CRITICAL: Think about the user's INTENT before using this bypass.
+
+    "Create a PR" means create a branch and open a PR for review.
+    "Ship this" probably means they want review first.
+    Pushing to main skips code review - users almost never want that.
+
+    When in doubt, ASK THE USER.
 
     Examples:
-        "GITGUARD_CONFIRMED=1 git push origin main" → True
-        "cd /repo && GITGUARD_CONFIRMED=1 git push origin main" → True
+        "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin main" → True
+        "cd /repo && I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push origin main" → True
         "git push origin main" → False
     """
     try:
@@ -66,12 +77,12 @@ def has_confirmation_flag(command: str) -> bool:
 
         # Scan tokens up to the git/gh command, handling cd && ... prefixes
         # We need to check env vars that appear before 'git' or 'gh', even if there's
-        # a cd or other command before them (e.g., "cd /repo && GITGUARD_CONFIRMED=1 git push")
+        # a cd or other command before them (e.g., "cd /repo && I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push")
         for token in tokens:
-            if token == "GITGUARD_CONFIRMED=1":
+            if token == "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes":
                 return True
             # Stop searching once we hit the actual git or gh command
-            # This prevents suffix bypass like "gh pr merge 123 GITGUARD_CONFIRMED=1"
+            # This prevents suffix bypass like "gh pr merge 123 I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes"
             if token in ("git", "gh"):
                 break
             # Continue past command separators like &&
@@ -298,8 +309,20 @@ def check_git_push(
     if pushing_to_main:
         violations.append(
             Violation(
-                "Push to main branch requires explicit user request",
-                "If user asked for this, re-run with: GITGUARD_CONFIRMED=1 git push ...",
+                "BLOCKED: Push to main branch",
+                (
+                    "STOP. Think about what the user actually wants:\n"
+                    "\n"
+                    '"Create a PR" → Create a BRANCH, push it, open a pull request\n'
+                    '"Ship this" → Probably wants a PR for review first\n'
+                    '"Commit this" → Commit locally, not push to main\n'
+                    "\n"
+                    "Pushing to main skips code review. The user almost never wants that.\n"
+                    "If you're unsure, ASK. Do not rationalize bypassing this guard.\n"
+                    "\n"
+                    "Only if user's intent is genuinely to push to main:\n"
+                    "I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes git push ..."
+                ),
                 ViolationType.NEEDS_CONFIRMATION,
             )
         )
@@ -371,8 +394,18 @@ def check_gh_command(command: str) -> list[Violation]:
     if len(remaining) >= 2 and remaining[0] == "pr" and remaining[1] == "merge":
         violations.append(
             Violation(
-                "Merging PRs via CLI requires explicit user request",
-                "If user asked for this, re-run with: GITGUARD_CONFIRMED=1 gh pr merge ...",
+                "BLOCKED: Merging PR via CLI",
+                (
+                    "STOP. Think about what the user actually wants:\n"
+                    "\n"
+                    '"Create a PR" → Open a PR for REVIEW, not merge it\n'
+                    '"Ship this" → Probably wants review first\n'
+                    "\n"
+                    "Merging skips the review process. The user almost never wants that.\n"
+                    "If you're unsure, ASK. Do not rationalize bypassing this guard.\n"
+                    "\n"
+                    "If user explicitly wants to merge: I_FOLLOWED_THE_INSTRUCTIONS_ABOUT_PUSHING_TO_MAIN_AND_I_HAVE_PERMISSION=yes gh pr merge ..."
+                ),
                 ViolationType.NEEDS_CONFIRMATION,
             )
         )
