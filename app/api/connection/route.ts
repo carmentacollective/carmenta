@@ -184,6 +184,8 @@ export async function POST(req: Request) {
         const cleanedUserQuery = userQuery.replace(/#background\b/gi, "").trim();
 
         // Strip #background hashtag from the actual messages array so it doesn't leak to LLM
+        // Only processes text parts - userQuery above is built from text parts only, so detection
+        // and stripping are symmetric. File parts and other non-text parts can't contain #background.
         const cleanedMessages = userRequestedBackground
             ? messages.map((msg) =>
                   msg.role === "user"

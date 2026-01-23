@@ -806,7 +806,7 @@ describe("Connection API Response Paths", () => {
             expect(transientChunk).toBeTruthy();
 
             const data = (transientChunk as { data?: { text?: string } }).data;
-            expect(data?.text).toContain("background");
+            expect(data?.text).toContain("in the background");
         });
 
         it("returns immediately (does not call streamText)", async () => {
