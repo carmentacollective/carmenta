@@ -1453,6 +1453,8 @@ function ConnectRuntimeProviderInner({
     }, [error]);
 
     // Wrap sendMessage to use our simple format
+    // Note: This does NOT clear input - callers should handle that themselves.
+    // This allows queue processing to send messages without wiping user's new typing.
     const append = useCallback(
         async (message: {
             role: "user";
@@ -1460,7 +1462,6 @@ function ConnectRuntimeProviderInner({
             files?: Array<{ url: string; mediaType: string; name: string }>;
         }) => {
             setDisplayError(null);
-            setInput("");
             try {
                 // Build parts array with text and files
                 const parts: Array<
@@ -1496,7 +1497,8 @@ function ConnectRuntimeProviderInner({
                 });
             } catch (err) {
                 logger.error({ error: err }, "Failed to send message");
-                setInput(message.content); // Restore input on error
+                // Note: We don't restore input here anymore.
+                // Callers (composer, queue) handle their own input state.
                 throw err;
             }
         },
@@ -1515,9 +1517,17 @@ function ConnectRuntimeProviderInner({
         async (e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             if (!input.trim() || isLoading) return;
+            const content = input.trim();
+            // Clear input immediately (before async operation) so user sees feedback
+            setInput("");
             // Clear tool state from previous message before starting new one
             clearToolState();
-            await append({ role: "user", content: input.trim() });
+            try {
+                await append({ role: "user", content });
+            } catch {
+                // Restore input on failure so user can retry
+                setInput(content);
+            }
         },
         [input, isLoading, append, clearToolState]
     );
