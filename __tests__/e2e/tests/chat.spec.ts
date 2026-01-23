@@ -75,7 +75,7 @@ test.describe("Chat - Core Functionality", () => {
         }
     });
 
-    // FIXME: Mock API doesn't trigger Vercel AI SDK streaming state properly
+    // FIXME: Mock API doesn't trigger Vercel AI SDK streaming state properly (#854)
     test.fixme("stop button appears during streaming and works", async ({ page }) => {
         // The stop button only appears when isLoading=true during active streaming
         const cleanup = await mockChatApi(
@@ -115,7 +115,7 @@ test.describe("Chat - Error Handling and Retry", () => {
         });
     });
 
-    // FIXME: Mock API returns JSON but UI expects streaming SSE error format
+    // FIXME: Mock API returns JSON but UI expects streaming SSE error format (#854)
     test.fixme("displays error state and retry button on failure", async ({ page }) => {
         const cleanup = await mockChatApi(
             page,
@@ -133,7 +133,7 @@ test.describe("Chat - Error Handling and Retry", () => {
         await cleanup();
     });
 
-    // FIXME: Mock API doesn't support error+retry flow (PR #844 regression test)
+    // FIXME: Mock API doesn't support error+retry flow (#854)
     test.fixme("retry button actually resends the message", async ({ page }) => {
         const cleanup = await mockChatApiWithRetry(
             page,
@@ -165,7 +165,7 @@ test.describe("Chat - Message Queue", () => {
         });
     });
 
-    // FIXME: Mock API doesn't trigger streaming state (queue button needs active streaming)
+    // FIXME: Mock API doesn't trigger streaming state (#854)
     test.fixme("can queue messages while streaming", async ({ page }) => {
         const cleanup = await mockChatApi(
             page,
