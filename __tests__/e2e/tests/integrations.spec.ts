@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { checkCredentials, warnSkippedTests } from "../lib/credentials";
 
 /**
  * Integrations E2E Tests
@@ -9,11 +10,11 @@ import { test, expect } from "@playwright/test";
  * @tags @integrations @authenticated
  */
 
-const hasClerkSecrets =
-    !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const { shouldSkip, skipReason } = checkCredentials({ requireTestUser: false });
 
 test.describe("Integrations Page", () => {
-    test.skip(!hasClerkSecrets, "Skipping: Clerk secrets not available (fork PR)");
+    test.beforeAll(() => warnSkippedTests("Integrations Page"));
+    test.skip(shouldSkip, skipReason);
 
     test.beforeEach(async ({ page }) => {
         await page.goto("/integrations");
@@ -86,7 +87,8 @@ test.describe("Integrations Page", () => {
 });
 
 test.describe("OAuth URL Validation", () => {
-    test.skip(!hasClerkSecrets, "Skipping: Clerk secrets not available (fork PR)");
+    test.beforeAll(() => warnSkippedTests("OAuth URL Validation"));
+    test.skip(shouldSkip, skipReason);
 
     test("authorize route handles OAuth correctly (no internal hostname leak)", async ({
         page,
@@ -126,7 +128,8 @@ test.describe("OAuth URL Validation", () => {
 });
 
 test.describe("Service Card Interactions", () => {
-    test.skip(!hasClerkSecrets, "Skipping: Clerk secrets not available (fork PR)");
+    test.beforeAll(() => warnSkippedTests("Service Card Interactions"));
+    test.skip(shouldSkip, skipReason);
 
     test.beforeEach(async ({ page }) => {
         await page.goto("/integrations");
@@ -156,7 +159,8 @@ test.describe("Service Card Interactions", () => {
 });
 
 test.describe("OAuth Error Handling", () => {
-    test.skip(!hasClerkSecrets, "Skipping: Clerk secrets not available (fork PR)");
+    test.beforeAll(() => warnSkippedTests("OAuth Error Handling"));
+    test.skip(shouldSkip, skipReason);
 
     test("displays error message from OAuth callback", async ({ page }) => {
         // Navigate with error params

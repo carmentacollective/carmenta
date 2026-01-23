@@ -1,5 +1,10 @@
 import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 import { test, expect } from "@playwright/test";
+import {
+    testCredentials,
+    checkCredentials,
+    warnSkippedTests,
+} from "../lib/credentials";
 
 /**
  * Authenticated User Redirect Tests
@@ -7,29 +12,13 @@ import { test, expect } from "@playwright/test";
  * Tests that authenticated users are correctly redirected from the homepage
  * to /connection. This catches production-only proxy bugs like the
  * Next.js 16 export default vs export const proxy issue.
- *
- * Requires environment variables:
- * - CLERK_PUBLISHABLE_KEY (or NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
- * - CLERK_SECRET_KEY
- * - TEST_USER_EMAIL: Test user email
- * - TEST_USER_PASSWORD: Test user password
- *
- * Tests are skipped if any required credentials are not configured.
  */
 
-const testUserEmail = process.env.TEST_USER_EMAIL;
-const testUserPassword = process.env.TEST_USER_PASSWORD;
-const hasClerkKeys =
-    (process.env.CLERK_PUBLISHABLE_KEY ||
-        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
-    process.env.CLERK_SECRET_KEY;
-const hasCredentials = testUserEmail && testUserPassword && hasClerkKeys;
+const { shouldSkip, skipReason } = checkCredentials();
 
 test.describe("Authenticated User Redirects", () => {
-    test.skip(
-        !hasCredentials,
-        "Skipping: Clerk API keys or TEST_USER_* credentials not set"
-    );
+    test.beforeAll(() => warnSkippedTests("Authenticated User Redirects"));
+    test.skip(shouldSkip, skipReason);
 
     test("authenticated users on homepage are redirected to /connection", async ({
         page,
@@ -45,8 +34,8 @@ test.describe("Authenticated User Redirects", () => {
             page,
             signInParams: {
                 strategy: "password",
-                identifier: testUserEmail!,
-                password: testUserPassword!,
+                identifier: testCredentials.testUserEmail!,
+                password: testCredentials.testUserPassword!,
             },
         });
 
@@ -66,8 +55,8 @@ test.describe("Authenticated User Redirects", () => {
             page,
             signInParams: {
                 strategy: "password",
-                identifier: testUserEmail!,
-                password: testUserPassword!,
+                identifier: testCredentials.testUserEmail!,
+                password: testCredentials.testUserPassword!,
             },
         });
 

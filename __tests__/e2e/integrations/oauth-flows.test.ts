@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { checkCredentials, warnSkippedTests } from "../lib/credentials";
 
 /**
  * OAuth URL Validation Tests
@@ -10,15 +11,13 @@ import { test, expect } from "@playwright/test";
  *
  * Tests behavior: Routes should never expose internal hostnames in URLs.
  * Clerk handles authentication and redirects to its own domain - this is expected.
- *
- * Note: These tests require Clerk secrets and will be skipped in fork PRs.
  */
 
-const hasClerkSecrets =
-    !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const { shouldSkip, skipReason } = checkCredentials({ requireTestUser: false });
 
 test.describe("OAuth URL Validation", () => {
-    test.skip(!hasClerkSecrets, "Skipping: Clerk secrets not available (fork PR)");
+    test.beforeAll(() => warnSkippedTests("OAuth URL Validation"));
+    test.skip(shouldSkip, skipReason);
 
     test("authorize route redirects without exposing internal hostnames", async ({
         page,

@@ -75,10 +75,8 @@ test.describe("Chat - Core Functionality", () => {
         }
     });
 
-    // Note: This test requires the mock API to trigger actual streaming behavior.
-    // Currently skipped because the Vercel AI SDK streaming format isn't fully mocked.
-    test.skip("stop button appears during streaming and works", async ({ page }) => {
-        // TODO: Fix mock API to properly trigger streaming state
+    // FIXME: Mock API doesn't trigger Vercel AI SDK streaming state properly
+    test.fixme("stop button appears during streaming and works", async ({ page }) => {
         // The stop button only appears when isLoading=true during active streaming
         const cleanup = await mockChatApi(
             page,
@@ -117,13 +115,8 @@ test.describe("Chat - Error Handling and Retry", () => {
         });
     });
 
-    // Note: These tests require the mock API to properly trigger the real error handling flow.
-    // The RuntimeErrorBanner shows a Retry button when hasFailedMessage is true.
-    // Currently skipped because the mock API doesn't fully simulate the Vercel AI SDK response format.
-
-    test.skip("displays error state and retry button on failure", async ({ page }) => {
-        // TODO: Fix mock API to properly trigger error banner with retry button
-        // The mock returns 500 JSON but the UI expects streaming SSE errors
+    // FIXME: Mock API returns JSON but UI expects streaming SSE error format
+    test.fixme("displays error state and retry button on failure", async ({ page }) => {
         const cleanup = await mockChatApi(
             page,
             MOCK_RESPONSES.error("Connection failed")
@@ -140,11 +133,8 @@ test.describe("Chat - Error Handling and Retry", () => {
         await cleanup();
     });
 
-    test.skip("retry button actually resends the message (PR #844 regression)", async ({
-        page,
-    }) => {
-        // TODO: Fix mock API to properly trigger error+retry flow
-        // This test validates the fix for PR #844 where retry was broken
+    // FIXME: Mock API doesn't support error+retry flow (PR #844 regression test)
+    test.fixme("retry button actually resends the message", async ({ page }) => {
         const cleanup = await mockChatApiWithRetry(
             page,
             MOCK_RESPONSES.error("Temporary failure"),
@@ -175,10 +165,8 @@ test.describe("Chat - Message Queue", () => {
         });
     });
 
-    // Note: This test requires the mock API to trigger actual streaming behavior.
-    // The queue button only appears during active streaming (when stop button is visible).
-    test.skip("can queue messages while streaming", async ({ page }) => {
-        // TODO: Fix mock API to properly trigger streaming state
+    // FIXME: Mock API doesn't trigger streaming state (queue button needs active streaming)
+    test.fixme("can queue messages while streaming", async ({ page }) => {
         const cleanup = await mockChatApi(
             page,
             createMockResponse()
