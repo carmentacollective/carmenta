@@ -22,7 +22,7 @@ jobs:
   # Code Quality Checks (Lint, Format, Type Check)
   quality:
     name: 🔍 Code Quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-4core
     timeout-minutes: 5
 
     steps:
@@ -42,6 +42,9 @@ jobs:
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: 🖥️ Log runner info
+        run: echo "CPU cores: $(nproc) | Memory: $(free -h | grep Mem | awk '{print $2}')"
 
       - name: 🔎 Run ESLint
         run: pnpm run lint
@@ -150,7 +153,7 @@ jobs:
   # Unit Tests
   test:
     name: 🧪 Tests
-    runs-on: ubuntu-4core
+    runs-on: ubuntu-8core
     timeout-minutes: 5
 
     steps:
@@ -170,6 +173,11 @@ jobs:
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: 🖥️ Log runner info
+        run: |
+          echo "CPU cores: $(nproc)"
+          echo "Memory: $(free -h | grep Mem | awk '{print $2}')"
 
       - name: 🧪 Run test suite
         run: pnpm run test
@@ -179,7 +187,7 @@ jobs:
   # Build Verification
   build:
     name: 🏗️ Production Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-8core
     timeout-minutes: 5
 
     steps:
@@ -199,6 +207,9 @@ jobs:
 
       - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: 🖥️ Log runner info
+        run: echo "CPU cores: $(nproc) | Memory: $(free -h | grep Mem | awk '{print $2}')"
 
       - name: 📦 Restore Next.js build cache
         uses: actions/cache@v5
@@ -281,7 +292,7 @@ jobs:
   # Uses production build for consistent, fast page loads
   e2e:
     name: 🎭 E2E Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-4core
     timeout-minutes: 10
     needs: [build]
     if: github.actor != 'dependabot[bot]'
