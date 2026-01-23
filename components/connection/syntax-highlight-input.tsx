@@ -64,6 +64,11 @@ const TOOLS = [
 ];
 
 const MODIFIERS = [
+    {
+        id: "background",
+        name: "Background",
+        description: "Run in background, notify when done",
+    },
     { id: "ultrathink", name: "Ultra Think", description: "Maximum reasoning depth" },
     { id: "quick", name: "Quick", description: "Fast response, less reasoning" },
     { id: "creative", name: "Creative", description: "High temperature, exploratory" },
@@ -227,11 +232,33 @@ export const SyntaxHighlightInput = forwardRef<
                 const lastHash = textBeforeCursor.lastIndexOf("#");
                 const lastSlash = textBeforeCursor.lastIndexOf("/");
 
+                // Check if the slash is part of a URL (don't trigger autocomplete)
+                // URL patterns: http://, https://, or slash after domain-like text
+                const isSlashInUrl = (() => {
+                    if (lastSlash === -1) return false;
+                    const beforeSlash = textBeforeCursor.slice(0, lastSlash);
+                    // Check for http:// or https:// pattern
+                    if (/https?:$/.test(beforeSlash)) return true;
+                    // Check for URL-like patterns: ...com/ ...org/ ...io/ or IP addresses
+                    if (
+                        /\.(com|org|net|io|ai|co|dev|app|xyz|edu|gov|me|us|uk|ca|de|fr|jp|ru|br|au|in|cn|tv|info|biz|ly|be|gg|to|so|fm|im|ws|es|pl|nl|it|se|no|fi|dk|ch|at|cz|pt|gr|hu|ro|bg|sk|lt|lv|ee|hr|si|rs|ua|by|kz|uz|az|ge|am|md|tm|kg|tj|mn|la|mm|kh|bd|np|lk|bt|af|pk|ir|iq|il|ae|sa|qa|bh|kw|jo|lb|sy|ye|om|ps|eg|ly|tn|dz|ma|ng|za|ke|tz|ug|et|gh|sn|ci|cm|ao|mz|zw|zm|mw|rw|bi|ss|sd|ne|ml|bf|td|gn|sl|lr|mr|tg|bj|cf|cg|cd|ga|gq|st|sc|km|mu|re|mg|yt|cv|gw|dj|er|so|mz|bw|na|sz|ls|th|vn|id|my|sg|ph|tw|hk|mo|kr|nz|au|fj|pg|sb|vu|nc|pf|ws|to|tv|ck|nu|tk|wf|pm|gl|fo|ax|sj|aq)$/.test(
+                            beforeSlash
+                        )
+                    )
+                        return true;
+                    // Already in middle of URL path
+                    if (/https?:\/\/[^\s]+$/.test(beforeSlash)) return true;
+                    return false;
+                })();
+
                 // Determine which trigger is active
                 const triggers = [
                     { type: "mention" as const, pos: lastAt },
                     { type: "modifier" as const, pos: lastHash },
-                    { type: "command" as const, pos: lastSlash },
+                    // Only include slash if it's not part of a URL
+                    ...(isSlashInUrl
+                        ? []
+                        : [{ type: "command" as const, pos: lastSlash }]),
                 ].filter((t) => t.pos !== -1);
 
                 if (triggers.length === 0) {
