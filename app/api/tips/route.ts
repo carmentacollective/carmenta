@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { eq, and } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { users, featureTipViews } from "@/lib/db/schema";
-import { findUserByClerkId } from "@/lib/db";
+import { getOrCreateUser } from "@/lib/db";
 import { getConnectPageFeatures, type Feature } from "@/lib/features/feature-catalog";
 import { logger } from "@/lib/logger";
 import {
     serverErrorResponse,
     unauthorizedResponse,
-    notFoundResponse,
     validationErrorResponse,
 } from "@/lib/api/responses";
 
@@ -86,15 +85,20 @@ function weightedRandomSelect<T>(items: Array<{ item: T; weight: number }>): T |
  */
 export async function GET() {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) {
+        const clerkUser = await currentUser();
+        if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
             return unauthorizedResponse();
         }
 
-        const user = await findUserByClerkId(clerkId);
-        if (!user) {
-            return notFoundResponse("User");
-        }
+        const email = clerkUser.emailAddresses[0].emailAddress.toLowerCase();
+
+        // Get or create user - ensures user exists even if Clerk webhook hasn't fired
+        const user = await getOrCreateUser(clerkUser.id, email, {
+            firstName: clerkUser.firstName ?? undefined,
+            lastName: clerkUser.lastName ?? undefined,
+            displayName: clerkUser.fullName ?? undefined,
+            imageUrl: clerkUser.imageUrl ?? undefined,
+        });
 
         // Check session gate - increment session count if new day
         const today = new Date().toISOString().slice(0, 10);
@@ -188,15 +192,20 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
     try {
-        const { userId: clerkId } = await auth();
-        if (!clerkId) {
+        const clerkUser = await currentUser();
+        if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
             return unauthorizedResponse();
         }
 
-        const user = await findUserByClerkId(clerkId);
-        if (!user) {
-            return notFoundResponse("User");
-        }
+        const email = clerkUser.emailAddresses[0].emailAddress.toLowerCase();
+
+        // Get or create user - ensures user exists even if Clerk webhook hasn't fired
+        const user = await getOrCreateUser(clerkUser.id, email, {
+            firstName: clerkUser.firstName ?? undefined,
+            lastName: clerkUser.lastName ?? undefined,
+            displayName: clerkUser.fullName ?? undefined,
+            imageUrl: clerkUser.imageUrl ?? undefined,
+        });
 
         const body = await request.json();
         const { tipId, state } = body;

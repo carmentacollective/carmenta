@@ -88,21 +88,32 @@ test.describe("Integrations Page", () => {
 test.describe("OAuth URL Validation", () => {
     test.skip(!hasClerkSecrets, "Skipping: Clerk secrets not available (fork PR)");
 
-    test("authorize route redirects to provider (authenticated user)", async ({
+    test("authorize route handles OAuth correctly (no internal hostname leak)", async ({
         page,
     }) => {
-        // Navigate to OAuth authorize - authenticated users go to provider
+        // Navigate to OAuth authorize - tests both configured and unconfigured scenarios
         const response = await page.goto("/integrations/oauth/authorize/notion", {
             waitUntil: "commit",
         });
 
+        const status = response?.status() ?? 0;
         const finalUrl = page.url();
 
         // Critical: Verify no internal hostname leak (regression test)
+        // This catches the bug where internal service hostnames like srv-xxx:3000 leak to client
         expect(finalUrl).not.toMatch(/srv-[a-z0-9-]+:[0-9]+/);
 
-        // Should redirect somewhere (Notion OAuth or our callback)
-        expect(response?.status()).toBeLessThan(500);
+        // Handle two valid scenarios:
+        // 1. OAuth credentials configured → redirects to provider (status < 500)
+        // 2. OAuth credentials not configured → returns 500 with specific error message
+        if (status === 500) {
+            // Verify it's the expected "not configured" error, not a real bug
+            const body = await response?.text();
+            expect(body).toContain("OAuth credentials not configured");
+        } else {
+            // Should redirect somewhere (Notion OAuth or our callback)
+            expect(status).toBeLessThan(500);
+        }
     });
 
     test("callback route validates state parameter", async ({ page }) => {
