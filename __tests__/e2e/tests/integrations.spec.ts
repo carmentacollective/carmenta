@@ -12,6 +12,10 @@ import { test, expect } from "@playwright/test";
 const hasClerkSecrets =
     !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
+// OAuth tests require provider credentials (not available in CI by default)
+const hasNotionOAuthCredentials =
+    !!process.env.NOTION_CLIENT_ID && !!process.env.NOTION_CLIENT_SECRET;
+
 test.describe("Integrations Page", () => {
     test.skip(!hasClerkSecrets, "Skipping: Clerk secrets not available (fork PR)");
 
@@ -90,7 +94,14 @@ test.describe("OAuth URL Validation", () => {
 
     test("authorize route redirects to provider (authenticated user)", async ({
         page,
-    }) => {
+    }, testInfo) => {
+        // Skip if Notion OAuth credentials aren't configured
+        // CI doesn't have real OAuth app credentials by default
+        testInfo.skip(
+            !hasNotionOAuthCredentials,
+            "Skipping: Notion OAuth credentials not configured"
+        );
+
         // Navigate to OAuth authorize - authenticated users go to provider
         const response = await page.goto("/integrations/oauth/authorize/notion", {
             waitUntil: "commit",
