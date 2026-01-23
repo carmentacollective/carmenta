@@ -150,7 +150,7 @@ jobs:
   # Unit Tests
   test:
     name: 🧪 Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     timeout-minutes: 5
 
     steps:
