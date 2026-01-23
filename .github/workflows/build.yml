@@ -22,7 +22,7 @@ jobs:
   # Code Quality Checks (Lint, Format, Type Check)
   quality:
     name: 🔍 Code Quality
-    runs-on: ubuntu-4core
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -290,7 +290,7 @@ jobs:
   # Uses production build for consistent, fast page loads
   e2e:
     name: 🎭 E2E Tests
-    runs-on: ubuntu-4core
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [build]
     if: github.actor != 'dependabot[bot]'
