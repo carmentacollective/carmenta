@@ -691,7 +691,7 @@ export class ParallelProvider implements WebIntelligenceProvider {
                     provider: "parallel",
                     operation: "task_result",
                 },
-                extra: { runId },
+                extra: { runId, objective, depth },
             });
             return null;
         }
