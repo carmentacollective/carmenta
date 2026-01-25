@@ -34,6 +34,7 @@
     "build:worker": "tsx scripts/build-worker.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:pull": "./ops/pull-db.sh",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "docs:sync": "tsx scripts/sync-docs.ts",
