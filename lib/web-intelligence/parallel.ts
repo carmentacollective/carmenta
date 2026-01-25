@@ -471,12 +471,11 @@ export class ParallelProvider implements WebIntelligenceProvider {
                 const resultResponse = await this.getTaskResult(runId);
 
                 if (!resultResponse) {
-                    logger.error({ runId, objective }, "Failed to fetch task result");
-                    Sentry.captureMessage("Research result fetch failed", {
-                        level: "error",
-                        tags: { component: "web-intelligence", provider: this.name },
-                        extra: { runId, objective, depth },
-                    });
+                    // Error already logged and captured in getTaskResult() with detailed context
+                    logger.error(
+                        { runId, objective, depth },
+                        "Research completed but result fetch failed"
+                    );
                     return null;
                 }
 
@@ -626,10 +625,24 @@ export class ParallelProvider implements WebIntelligenceProvider {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
                 logger.error(
-                    { runId, status: response.status },
+                    { runId, status: response.status, errorBody: errorText },
                     "Task result fetch returned non-OK response"
                 );
+                Sentry.captureMessage("Research result fetch failed", {
+                    level: "error",
+                    tags: {
+                        component: "web-intelligence",
+                        provider: "parallel",
+                        operation: "task_result",
+                    },
+                    extra: {
+                        runId,
+                        status: response.status,
+                        errorBody: errorText,
+                    },
+                });
                 return null;
             }
 
@@ -641,6 +654,19 @@ export class ParallelProvider implements WebIntelligenceProvider {
                     { runId, error: parsed.error.flatten(), rawResponse },
                     "Task result response validation failed"
                 );
+                Sentry.captureMessage("Research result schema mismatch", {
+                    level: "error",
+                    tags: {
+                        component: "web-intelligence",
+                        provider: "parallel",
+                        operation: "task_result",
+                    },
+                    extra: {
+                        runId,
+                        validationError: parsed.error.flatten(),
+                        rawResponse,
+                    },
+                });
                 return null;
             }
 
