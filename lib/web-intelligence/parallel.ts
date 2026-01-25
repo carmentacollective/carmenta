@@ -468,7 +468,11 @@ export class ParallelProvider implements WebIntelligenceProvider {
 
             if (statusResponse.status === "completed") {
                 // Fetch the actual result from the /result endpoint
-                const resultResponse = await this.getTaskResult(runId);
+                const resultResponse = await this.getTaskResult(
+                    runId,
+                    objective,
+                    depth
+                );
 
                 if (!resultResponse) {
                     // Error already logged and captured in getTaskResult() with detailed context
@@ -613,7 +617,11 @@ export class ParallelProvider implements WebIntelligenceProvider {
         }
     }
 
-    private async getTaskResult(runId: string): Promise<ParallelTaskResult | null> {
+    private async getTaskResult(
+        runId: string,
+        objective: string,
+        depth: string
+    ): Promise<ParallelTaskResult | null> {
         const url = `${PARALLEL_BASE_URL}/v1/tasks/runs/${runId}/result`;
 
         try {
@@ -639,6 +647,8 @@ export class ParallelProvider implements WebIntelligenceProvider {
                     },
                     extra: {
                         runId,
+                        objective,
+                        depth,
                         status: response.status,
                         errorBody: errorText,
                     },
@@ -663,6 +673,8 @@ export class ParallelProvider implements WebIntelligenceProvider {
                     },
                     extra: {
                         runId,
+                        objective,
+                        depth,
                         validationError: parsed.error.flatten(),
                         rawResponse,
                     },
