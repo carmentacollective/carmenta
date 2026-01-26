@@ -72,30 +72,30 @@ const DEPTH_TO_PROCESSOR: Record<ResearchDepth, string> = {
 const ParallelSearchResultSchema = z.object({
     url: z.string(),
     title: z.string(),
-    publish_date: z.string().nullable(),
+    publish_date: z.string().nullish(), // API omits field when not available
     excerpts: z.array(z.string()),
 });
 
 const ParallelSearchResponseSchema = z.object({
     search_id: z.string(),
     results: z.array(ParallelSearchResultSchema),
-    warnings: z.string().nullable(),
+    warnings: z.string().nullish(), // API omits field when no warnings
     usage: z.array(z.object({ name: z.string(), count: z.number() })),
 });
 
 const ParallelExtractResultSchema = z.object({
     url: z.string(),
     title: z.string(),
-    publish_date: z.string().nullable(),
-    excerpts: z.array(z.string()).nullable(),
-    full_content: z.string().nullable(),
+    publish_date: z.string().nullish(), // API may omit or set null
+    excerpts: z.array(z.string()).nullish(), // API may omit or set null
+    full_content: z.string().nullish(), // API may omit or set null
 });
 
 const ParallelExtractResponseSchema = z.object({
     extract_id: z.string(),
     results: z.array(ParallelExtractResultSchema),
     errors: z.array(z.object({ url: z.string(), error: z.string() })),
-    warnings: z.string().nullable(),
+    warnings: z.string().nullish(), // API may omit or set null
     usage: z.array(z.object({ name: z.string(), count: z.number() })),
 });
 
