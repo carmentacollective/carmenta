@@ -63,7 +63,6 @@ import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-co
 import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
 import { ExpandableText } from "@/components/ui/expandable-text";
-import { CollapsibleStreamingContent } from "./collapsible-streaming-content";
 import { Composer } from "./composer";
 import { FeatureTipWhisper } from "./feature-tip";
 import { useFeatureTip } from "@/lib/hooks/use-feature-tip";
@@ -1062,7 +1061,7 @@ export function AssistantMessage({
                             {hasContent && (
                                 <div className="group">
                                     <div className="px-4 pt-4 pb-2 @md:px-5 @md:pt-5 @md:pb-3">
-                                        <CollapsibleStreamingContent
+                                        <MarkdownRenderer
                                             content={content}
                                             isStreaming={isStreaming}
                                         />
