@@ -22,7 +22,7 @@ env:
 jobs:
   eval:
     name: Run Eval Suite
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 45
     # Skip if required secrets aren't available (e.g., forks)
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
