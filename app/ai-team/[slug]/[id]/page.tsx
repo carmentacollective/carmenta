@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -5,6 +6,9 @@ import { loadJob } from "@/lib/actions/jobs";
 import { isValidJobId, generateJobSlug } from "@/lib/sqids";
 
 import { EditAutomationForm } from "./edit-form";
+
+// Deduplicate loadJob calls within a single request
+const cachedLoadJob = cache(loadJob);
 
 interface EditJobPageProps {
     params: Promise<{ slug: string; id: string }>;
@@ -24,7 +28,7 @@ export async function generateMetadata({
         return { title: "Lost · Carmenta" };
     }
 
-    const job = await loadJob(id);
+    const job = await cachedLoadJob(id);
 
     if (!job) {
         return { title: "Lost · Carmenta" };
@@ -43,7 +47,7 @@ export default async function EditJobPage({ params }: EditJobPageProps) {
         notFound();
     }
 
-    const job = await loadJob(id);
+    const job = await cachedLoadJob(id);
 
     if (!job) {
         notFound();

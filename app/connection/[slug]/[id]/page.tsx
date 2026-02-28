@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -5,6 +6,10 @@ import { Chat, ConnectLayout } from "@/components/connection";
 import { HolographicBackground } from "@/components/ui/holographic-background";
 import { loadConnection, getRecentConnections } from "@/lib/actions/connections";
 import { isValidConnectionId, generateSlug } from "@/lib/sqids";
+
+// Deduplicate loadConnection calls within a single request
+// (generateMetadata and page component both call this with the same ID)
+const cachedLoadConnection = cache(loadConnection);
 
 interface ConnectionPageProps {
     params: Promise<{ slug: string; id: string }>;
@@ -33,7 +38,7 @@ export async function generateMetadata({
         return { title: "Lost · Carmenta" };
     }
 
-    const result = await loadConnection(id);
+    const result = await cachedLoadConnection(id);
 
     if (!result) {
         return {
