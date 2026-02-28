@@ -10,7 +10,7 @@
  * - Collapsible panel design
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
     GitBranch,
     PencilSimpleLine,
@@ -150,37 +150,41 @@ export function SessionChangesPanel({
     }, [autoRefresh, projectPath, refresh, refreshInterval]);
 
     // Toggle file expansion and load diff if needed
+    // Use functional setState to avoid stale closure over expandedFiles/fileDiffs
+    const fileDiffsRef = useRef(fileDiffs);
+    fileDiffsRef.current = fileDiffs;
+
     const toggleFile = useCallback(
         async (filePath: string) => {
-            const newExpanded = new Set(expandedFiles);
+            setExpandedFiles((prev) => {
+                const next = new Set(prev);
+                if (next.has(filePath)) {
+                    next.delete(filePath);
+                } else {
+                    next.add(filePath);
+                }
+                return next;
+            });
 
-            if (newExpanded.has(filePath)) {
-                newExpanded.delete(filePath);
-            } else {
-                newExpanded.add(filePath);
+            // Load diff if not already loaded
+            if (!fileDiffsRef.current[filePath] && projectPath) {
+                setLoadingDiffs((prev) => new Set(prev).add(filePath));
 
-                // Load diff if not already loaded
-                if (!fileDiffs[filePath] && projectPath) {
-                    setLoadingDiffs((prev) => new Set(prev).add(filePath));
-
-                    try {
-                        const diff = await fetchFileDiff(projectPath, filePath);
-                        setFileDiffs((prev) => ({ ...prev, [filePath]: diff }));
-                    } catch {
-                        // Silently fail - will show empty diff
-                    } finally {
-                        setLoadingDiffs((prev) => {
-                            const next = new Set(prev);
-                            next.delete(filePath);
-                            return next;
-                        });
-                    }
+                try {
+                    const diff = await fetchFileDiff(projectPath, filePath);
+                    setFileDiffs((prev) => ({ ...prev, [filePath]: diff }));
+                } catch {
+                    // Silently fail - will show empty diff
+                } finally {
+                    setLoadingDiffs((prev) => {
+                        const next = new Set(prev);
+                        next.delete(filePath);
+                        return next;
+                    });
                 }
             }
-
-            setExpandedFiles(newExpanded);
         },
-        [expandedFiles, fileDiffs, projectPath]
+        [projectPath]
     );
 
     // Get file icon based on status

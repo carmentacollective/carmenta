@@ -104,7 +104,8 @@ describe("useVirtualKeyboard", () => {
             );
             expect(mockViewport.addEventListener).toHaveBeenCalledWith(
                 "scroll",
-                expect.any(Function)
+                expect.any(Function),
+                { passive: true }
             );
         });
 

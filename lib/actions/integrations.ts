@@ -360,7 +360,7 @@ export async function connectApiKeyService(
         });
 
         // Log event to audit trail (outside transaction, non-blocking)
-        await logIntegrationEvent({
+        void logIntegrationEvent({
             userEmail,
             service: serviceId,
             accountId,
@@ -416,7 +416,7 @@ export async function disconnectService(
         await dbDisconnectService(userEmail, serviceId, accountId);
 
         // Log disconnection event
-        await logIntegrationEvent({
+        void logIntegrationEvent({
             userEmail,
             service: serviceId,
             accountId: accountId ?? undefined,
@@ -538,7 +538,7 @@ export async function deleteIntegration(
         );
 
         // Log deletion event (using disconnected as closest event type)
-        await logIntegrationEvent({
+        void logIntegrationEvent({
             userEmail,
             service: serviceId,
             accountId,
