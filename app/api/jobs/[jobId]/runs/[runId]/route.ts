@@ -19,8 +19,10 @@ type RouteContext = {
  * GET /api/jobs/:jobId/runs/:runId - Get run with full execution trace
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
-    const { jobId, runId } = await context.params;
-    const { userId: clerkId } = await auth();
+    const [{ jobId, runId }, { userId: clerkId }] = await Promise.all([
+        context.params,
+        auth(),
+    ]);
 
     if (!clerkId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -40,19 +42,19 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
-    // Get the run with all observability data
-    const run = await db.query.jobRuns.findFirst({
-        where: and(eq(jobRuns.id, runId), eq(jobRuns.jobId, jobId)),
-    });
+    // Get run and notifications in parallel (both only need runId/jobId)
+    const [run, notifications] = await Promise.all([
+        db.query.jobRuns.findFirst({
+            where: and(eq(jobRuns.id, runId), eq(jobRuns.jobId, jobId)),
+        }),
+        db.query.jobNotifications.findMany({
+            where: eq(jobNotifications.runId, runId),
+        }),
+    ]);
 
     if (!run) {
         return NextResponse.json({ error: "Run not found" }, { status: 404 });
     }
-
-    // Get notifications generated during this run
-    const notifications = await db.query.jobNotifications.findMany({
-        where: eq(jobNotifications.runId, runId),
-    });
 
     // Build external service links
     const externalLinks = buildExternalLinks({

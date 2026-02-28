@@ -177,9 +177,19 @@ export async function buildSystemMessages(
         },
     });
 
+    // Start async fetches for Layer 2 and Layer 4 in parallel
+    // Both are independent DB-backed operations that can overlap
+    const profileContextPromise = context.userId
+        ? compileProfileContext(context.userId)
+        : null;
+    const retrievedContextPromise =
+        context.userId && context.kbSearch?.shouldSearch
+            ? retrieveContext(context.userId, context.kbSearch)
+            : null;
+
     // Layer 2: Profile Context (NOT cached - can change per-user)
-    if (context.userId) {
-        const profileContext = await compileProfileContext(context.userId);
+    if (profileContextPromise) {
+        const profileContext = await profileContextPromise;
 
         if (profileContext) {
             messages.push({
@@ -205,11 +215,8 @@ export async function buildSystemMessages(
 
     // Layer 4: Retrieved Context (dynamic per-query)
     // Searches knowledge base for relevant documents based on concierge analysis
-    if (context.userId && context.kbSearch?.shouldSearch) {
-        const retrievedContext = await retrieveContext(
-            context.userId,
-            context.kbSearch
-        );
+    if (retrievedContextPromise) {
+        const retrievedContext = await retrievedContextPromise;
 
         const formattedContext = formatRetrievedContext(retrievedContext);
 

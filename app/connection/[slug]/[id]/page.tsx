@@ -82,8 +82,11 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
         );
     }
 
-    // Load the connection, messages, and concierge data
-    const result = await loadConnection(id);
+    // Load connection data and recent connections in parallel
+    const [result, recentConnections] = await Promise.all([
+        loadConnection(id),
+        getRecentConnections(10),
+    ]);
 
     if (!result) {
         notFound();
@@ -97,9 +100,6 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
     if (slug !== expectedSlug) {
         redirect(`/connection/${expectedSlug}/${id}`);
     }
-
-    // Also load recent connections for the header dropdown
-    const recentConnections = await getRecentConnections(10);
 
     return (
         <div className="fixed inset-0 overflow-hidden">
