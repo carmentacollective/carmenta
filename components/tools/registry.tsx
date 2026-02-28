@@ -13,6 +13,7 @@
  */
 
 import type { ReactNode } from "react";
+import dynamic from "next/dynamic";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
 import { ToolRenderer } from "./shared";
@@ -22,12 +23,18 @@ import {
     TerminalOutput,
     FileViewer,
     FileWriter,
-    DiffViewer,
     SearchResults,
     FileList,
     AgentTask,
     AskUserQuestion,
 } from "./code";
+
+// DiffViewer dynamically imported — react-diff-viewer-continued is ~50kB gzipped
+// Only loaded when an Edit tool result is actually rendered
+const DiffViewer = dynamic(
+    () => import("./code/diff-viewer").then((m) => ({ default: m.DiffViewer })),
+    { ssr: false }
+);
 
 /**
  * Standard props passed to all tool renderers
