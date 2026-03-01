@@ -241,6 +241,10 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             // Lazy-load Deepgram SDK — only imported when voice is activated (~40kB gzipped)
             const { createClient, LiveTranscriptionEvents: Events } =
                 await import("@deepgram/sdk");
+
+            // Guard: stopListening() may have been called while SDK was loading
+            if (isCancelledRef.current) return;
+
             const deepgram = createClient(apiKey);
             const connection = deepgram.listen.live({
                 model: "nova-3",
