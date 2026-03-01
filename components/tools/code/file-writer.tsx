@@ -27,15 +27,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import dynamic from "next/dynamic";
-
 import { useConnection } from "@/components/connection/connection-context";
 import type { ToolStatus } from "@/lib/tools/tool-config";
-
-const DiffViewer = dynamic(
-    () => import("./diff-viewer").then((m) => ({ default: m.DiffViewer })),
-    { ssr: false }
-);
+import { LazyDiffViewer as DiffViewer } from "./lazy-diff-viewer";
 
 interface FileWriterProps {
     toolCallId: string;
