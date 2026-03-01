@@ -242,8 +242,14 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             const { createClient, LiveTranscriptionEvents: Events } =
                 await import("@deepgram/sdk");
 
-            // Guard: stopListening() may have been called while SDK was loading
-            if (isCancelledRef.current) return;
+            // Guard: stopListening() may have been called while SDK was loading.
+            // Release the microphone stream — stopListening() may not have seen it
+            // if it ran before getUserMedia resolved.
+            if (isCancelledRef.current) {
+                stream.getTracks().forEach((track) => track.stop());
+                mediaStreamRef.current = null;
+                return;
+            }
 
             const deepgram = createClient(apiKey);
             const connection = deepgram.listen.live({
