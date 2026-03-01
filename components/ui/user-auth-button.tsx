@@ -94,7 +94,7 @@ export function UserAuthButton({ className }: UserAuthButtonProps) {
 
         return () => {
             window.removeEventListener("resize", updatePosition);
-            window.removeEventListener("scroll", updatePosition, true);
+            window.removeEventListener("scroll", updatePosition, { capture: true });
         };
     }, [isOpen]);
 

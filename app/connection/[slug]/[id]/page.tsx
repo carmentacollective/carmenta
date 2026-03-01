@@ -89,7 +89,7 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
 
     // Load connection data and recent connections in parallel
     const [result, recentConnections] = await Promise.all([
-        loadConnection(id),
+        cachedLoadConnection(id),
         getRecentConnections(10),
     ]);
 

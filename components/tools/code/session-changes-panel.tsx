@@ -153,6 +153,8 @@ export function SessionChangesPanel({
     // Use functional setState to avoid stale closure over expandedFiles/fileDiffs
     const fileDiffsRef = useRef(fileDiffs);
     fileDiffsRef.current = fileDiffs;
+    const loadingDiffsRef = useRef(loadingDiffs);
+    loadingDiffsRef.current = loadingDiffs;
 
     const toggleFile = useCallback(
         async (filePath: string) => {
@@ -166,8 +168,12 @@ export function SessionChangesPanel({
                 return next;
             });
 
-            // Load diff if not already loaded
-            if (!fileDiffsRef.current[filePath] && projectPath) {
+            // Load diff if not already loaded or in-flight
+            if (
+                !fileDiffsRef.current[filePath] &&
+                !loadingDiffsRef.current.has(filePath) &&
+                projectPath
+            ) {
                 setLoadingDiffs((prev) => new Set(prev).add(filePath));
 
                 try {

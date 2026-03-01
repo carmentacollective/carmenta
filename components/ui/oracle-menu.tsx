@@ -84,7 +84,7 @@ export function OracleMenu({ className, showLabel = false }: OracleMenuProps) {
 
         return () => {
             window.removeEventListener("resize", updatePosition);
-            window.removeEventListener("scroll", updatePosition, true);
+            window.removeEventListener("scroll", updatePosition, { capture: true });
         };
     }, [isOpen]);
 
