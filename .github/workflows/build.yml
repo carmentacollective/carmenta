@@ -290,7 +290,7 @@ jobs:
   # Uses production build for consistent, fast page loads
   e2e:
     name: 🎭 E2E Tests
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest-m
     timeout-minutes: 10
     needs: [build]
     if: github.actor != 'dependabot[bot]'
