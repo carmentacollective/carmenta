@@ -24,12 +24,18 @@ import { cn } from "@/lib/utils";
 import { ToolIcon } from "../shared";
 import type { ToolStatus } from "@/lib/tools/tool-config";
 
+import dynamic from "next/dynamic";
+
 // Import detailed renderers
 import { TerminalOutput } from "./terminal-output";
 import { FileViewer } from "./file-viewer";
 import { FileWriter } from "./file-writer";
-import { DiffViewer } from "./diff-viewer";
 import { SearchResults } from "./search-results";
+
+const DiffViewer = dynamic(
+    () => import("./diff-viewer").then((m) => ({ default: m.DiffViewer })),
+    { ssr: false }
+);
 import { FileList } from "./file-list";
 import { AgentTask } from "./agent-task";
 

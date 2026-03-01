@@ -25,9 +25,15 @@ import {
     FolderOpen,
 } from "@phosphor-icons/react";
 
+import dynamic from "next/dynamic";
+
 import { cn } from "@/lib/utils";
 import { useConnection } from "@/components/connection/connection-context";
-import { DiffViewer } from "./diff-viewer";
+
+const DiffViewer = dynamic(
+    () => import("./diff-viewer").then((m) => ({ default: m.DiffViewer })),
+    { ssr: false }
+);
 
 interface FileChange {
     path: string;
