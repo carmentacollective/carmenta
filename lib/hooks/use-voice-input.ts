@@ -8,7 +8,6 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import type { LiveClient, LiveTranscriptionEvent } from "@deepgram/sdk";
 
 import { logger } from "@/lib/client-logger";
@@ -115,7 +114,6 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     // Check voice support on mount (client-side only to avoid hydration mismatch)
     // This intentionally triggers a second render to match server (null) then show button
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsSupported(checkVoiceSupport());
     }, []);
 
@@ -240,7 +238,19 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             });
             mediaStreamRef.current = stream;
 
-            // Create Deepgram client and connection
+            // Lazy-load Deepgram SDK — only imported when voice is activated (~40kB gzipped)
+            const { createClient, LiveTranscriptionEvents: Events } =
+                await import("@deepgram/sdk");
+
+            // Guard: stopListening() may have been called while SDK was loading.
+            // Release the microphone stream — stopListening() may not have seen it
+            // if it ran before getUserMedia resolved.
+            if (isCancelledRef.current) {
+                stream.getTracks().forEach((track) => track.stop());
+                mediaStreamRef.current = null;
+                return;
+            }
+
             const deepgram = createClient(apiKey);
             const connection = deepgram.listen.live({
                 model: "nova-3",
@@ -262,7 +272,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             }, CONNECTION_TIMEOUT_MS);
 
             // Handle connection open
-            connection.on(LiveTranscriptionEvents.Open, () => {
+            connection.on(Events.Open, () => {
                 // Check if connection was cancelled before this event fired (race condition)
                 if (isCancelledRef.current) {
                     logger.debug({}, "Connection opened but was cancelled, ignoring");
@@ -313,50 +323,47 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
             });
 
             // Handle transcription results
-            connection.on(
-                LiveTranscriptionEvents.Transcript,
-                (data: LiveTranscriptionEvent) => {
-                    const text = data.channel?.alternatives?.[0]?.transcript || "";
-                    if (!text) return;
+            connection.on(Events.Transcript, (data: LiveTranscriptionEvent) => {
+                const text = data.channel?.alternatives?.[0]?.transcript || "";
+                if (!text) return;
 
-                    const isFinal = data.is_final ?? false;
+                const isFinal = data.is_final ?? false;
 
-                    if (isFinal) {
-                        // Commit finalized text and clear interim
-                        // Note: We always clear interim here because smart_format and punctuate
-                        // mean final text differs from interim (e.g., "hello" vs "Hello."),
-                        // so string matching won't work. Clearing is safe because is_final
-                        // only fires once per utterance.
-                        finalTranscriptRef.current +=
-                            (finalTranscriptRef.current ? " " : "") + text;
-                        interimTranscriptRef.current = "";
-                    } else {
-                        // Interim result - update display but don't commit yet
-                        interimTranscriptRef.current = text;
-                    }
-
-                    // Combine for display
-                    const combined =
-                        finalTranscriptRef.current +
-                        (interimTranscriptRef.current
-                            ? (finalTranscriptRef.current ? " " : "") +
-                              interimTranscriptRef.current
-                            : "");
-
-                    setTranscript(combined);
-                    onTranscriptUpdateRef.current?.(combined, isFinal);
+                if (isFinal) {
+                    // Commit finalized text and clear interim
+                    // Note: We always clear interim here because smart_format and punctuate
+                    // mean final text differs from interim (e.g., "hello" vs "Hello."),
+                    // so string matching won't work. Clearing is safe because is_final
+                    // only fires once per utterance.
+                    finalTranscriptRef.current +=
+                        (finalTranscriptRef.current ? " " : "") + text;
+                    interimTranscriptRef.current = "";
+                } else {
+                    // Interim result - update display but don't commit yet
+                    interimTranscriptRef.current = text;
                 }
-            );
+
+                // Combine for display
+                const combined =
+                    finalTranscriptRef.current +
+                    (interimTranscriptRef.current
+                        ? (finalTranscriptRef.current ? " " : "") +
+                          interimTranscriptRef.current
+                        : "");
+
+                setTranscript(combined);
+                onTranscriptUpdateRef.current?.(combined, isFinal);
+            });
 
             // Handle connection close
-            connection.on(LiveTranscriptionEvents.Close, () => {
+            connection.on(Events.Close, () => {
                 logger.debug({}, "Deepgram connection closed");
                 // stopListening is idempotent, safe to call unconditionally
                 stopListening();
             });
 
             // Handle errors
-            connection.on(LiveTranscriptionEvents.Error, (err) => {
+            connection.on(Events.Error, (err) => {
                 handleError(err instanceof Error ? err : new Error(String(err)));
                 stopListening();
             });

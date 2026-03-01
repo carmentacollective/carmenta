@@ -57,7 +57,7 @@ import {
     getDataParts,
     type ToolPart,
 } from "@/components/chat";
-import { InlineToolActivity } from "@/components/tools";
+import { InlineToolActivity } from "@/components/tools/code/inline-tool-activity";
 import { AskUserInputResult } from "@/components/tools/post-response";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
 import { FilePreview } from "./file-preview";

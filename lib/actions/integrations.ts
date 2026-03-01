@@ -129,9 +129,13 @@ export async function getServicesWithStatus(explicitUserEmail?: string): Promise
     const connected: ConnectedService[] = [];
     const available: ServiceDefinition[] = [];
 
-    for (const service of visibleServices) {
-        const accounts = await listServiceAccounts(userEmail, service.id);
-        const result = categorizeService(service, accounts);
+    // Fetch all service accounts in parallel instead of sequentially
+    const allAccounts = await Promise.all(
+        visibleServices.map((service) => listServiceAccounts(userEmail, service.id))
+    );
+
+    for (const [i, service] of visibleServices.entries()) {
+        const result = categorizeService(service, allAccounts[i]);
 
         connected.push(...result.connected);
         if (result.isAvailable) {
@@ -167,13 +171,14 @@ export async function getGroupedServices(): Promise<GroupedService[]> {
         return false;
     });
 
-    const groupedServices: GroupedService[] = [];
+    // Fetch all service accounts in parallel instead of sequentially
+    const allAccounts = await Promise.all(
+        visibleServices.map((service) => listServiceAccounts(userEmail, service.id))
+    );
 
-    for (const service of visibleServices) {
-        const accounts = await listServiceAccounts(userEmail, service.id);
-        const grouped = groupServiceAccounts(service, accounts);
-        groupedServices.push(grouped);
-    }
+    const groupedServices: GroupedService[] = visibleServices.map((service, i) =>
+        groupServiceAccounts(service, allAccounts[i])
+    );
 
     // Sort: services with accounts first (by most recent), then services without accounts alphabetically
     groupedServices.sort((a, b) => {
@@ -355,7 +360,7 @@ export async function connectApiKeyService(
         });
 
         // Log event to audit trail (outside transaction, non-blocking)
-        await logIntegrationEvent({
+        void logIntegrationEvent({
             userEmail,
             service: serviceId,
             accountId,
@@ -411,7 +416,7 @@ export async function disconnectService(
         await dbDisconnectService(userEmail, serviceId, accountId);
 
         // Log disconnection event
-        await logIntegrationEvent({
+        void logIntegrationEvent({
             userEmail,
             service: serviceId,
             accountId: accountId ?? undefined,
@@ -533,7 +538,7 @@ export async function deleteIntegration(
         );
 
         // Log deletion event (using disconnected as closest event type)
-        await logIntegrationEvent({
+        void logIntegrationEvent({
             userEmail,
             service: serviceId,
             accountId,

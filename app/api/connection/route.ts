@@ -154,17 +154,17 @@ export async function POST(req: Request) {
         // PERSISTENCE: Get or create user and connection
         // ========================================================================
 
-        // Ensure user exists in database
+        // Ensure user exists in database and fetch connected services in parallel
         // In development without auth, we use a dev user ID
-        const dbUser = await getOrCreateUser(user?.id ?? "dev-user-id", userEmail!, {
-            firstName: user?.firstName ?? null,
-            lastName: user?.lastName ?? null,
-            displayName: user?.fullName ?? null,
-            imageUrl: user?.imageUrl ?? null,
-        });
-
-        // Get connected services and find potential integration suggestions
-        const connectedServiceIds = await getConnectedServices(userEmail!);
+        const [dbUser, connectedServiceIds] = await Promise.all([
+            getOrCreateUser(user?.id ?? "dev-user-id", userEmail!, {
+                firstName: user?.firstName ?? null,
+                lastName: user?.lastName ?? null,
+                displayName: user?.fullName ?? null,
+                imageUrl: user?.imageUrl ?? null,
+            }),
+            getConnectedServices(userEmail!),
+        ]);
         const connectedSet = new Set(connectedServiceIds);
 
         // Extract user query for keyword matching
@@ -619,20 +619,14 @@ export async function POST(req: Request) {
         const modelConfig = getModel(concierge.modelId);
         const modelSupportsTools = modelConfig?.supportsTools ?? false;
 
-        // Load integration tools for connected services
-        // These are merged with built-in tools for the request
-        // CRITICAL: Pass userEmail, not dbUser.id (UUID) - connection-manager queries use email
-        const integrationTools = modelSupportsTools
-            ? await getIntegrationTools(userEmail!)
-            : {};
-
-        // Load MCP gateway tools for user-configured MCP servers
-        // Each enabled server becomes a single tool with progressive disclosure
-        // CRITICAL: Use dbUser.email (from database) not userEmail (from Clerk)
-        // MCP servers are stored with dbUser.email, so queries must match
-        const mcpTools = modelSupportsTools
-            ? await getMcpGatewayTools(dbUser.email)
-            : {};
+        // Load integration tools and MCP gateway tools in parallel
+        // CRITICAL: Pass userEmail for integrations, dbUser.email for MCP (different lookup keys)
+        const [integrationTools, mcpTools] = modelSupportsTools
+            ? await Promise.all([
+                  getIntegrationTools(userEmail!),
+                  getMcpGatewayTools(dbUser.email),
+              ])
+            : [{}, {}];
 
         logger.debug(
             {

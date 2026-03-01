@@ -27,8 +27,8 @@ interface RouteContext {
  */
 export async function DELETE(_request: Request, context: RouteContext) {
     try {
-        // Authenticate user
-        const user = await currentUser();
+        // Authenticate user and parse params in parallel
+        const [user, { id }] = await Promise.all([currentUser(), context.params]);
         if (!user) {
             return unauthorizedResponse();
         }
@@ -39,9 +39,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
             logger.warn({ clerkId: user.id }, "User not found in database");
             return unauthorizedResponse();
         }
-
-        // Parse server ID
-        const { id } = await context.params;
         const serverId = parseInt(id, 10);
         if (isNaN(serverId)) {
             return notFoundResponse("Server");

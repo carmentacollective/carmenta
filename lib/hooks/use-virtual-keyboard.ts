@@ -113,7 +113,7 @@ export function useVirtualKeyboard(): UseVirtualKeyboardReturn {
         viewport.addEventListener("resize", handleViewportResize);
 
         // Also listen for scroll (iOS can scroll the viewport when keyboard appears)
-        viewport.addEventListener("scroll", handleViewportResize);
+        viewport.addEventListener("scroll", handleViewportResize, { passive: true });
 
         return () => {
             cancelAnimationFrame(frameId);

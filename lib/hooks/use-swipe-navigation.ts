@@ -116,17 +116,20 @@ export function useSwipeNavigation({
     );
 
     // Touch end - trigger navigation or reset
+    // Read swipeDistance from ref instead of state to avoid recreating this callback
+    // on every frame, which would cause the effect to re-register all 4 listeners
     const handleTouchEnd = useCallback(() => {
         if (!enabled || !isEdgeSwipe.current) return;
 
         try {
             const elapsed = Date.now() - startTime.current;
-            const velocity = swipeDistance / elapsed;
+            const distance = swipeDistanceRef.current;
+            const velocity = distance / elapsed;
 
             // Trigger if exceeded threshold OR fast swipe
             const shouldNavigate =
-                swipeDistance >= threshold ||
-                (velocity >= velocityThreshold && swipeDistance > 30);
+                distance >= threshold ||
+                (velocity >= velocityThreshold && distance > 30);
 
             if (shouldNavigate) {
                 triggerHaptic("success");
@@ -144,15 +147,7 @@ export function useSwipeNavigation({
             setIsSwiping(false);
             isEdgeSwipe.current = false;
         }
-    }, [
-        enabled,
-        swipeDistance,
-        threshold,
-        velocityThreshold,
-        triggerHaptic,
-        onBack,
-        router,
-    ]);
+    }, [enabled, threshold, velocityThreshold, triggerHaptic, onBack, router]);
 
     // Attach listeners
     useEffect(() => {

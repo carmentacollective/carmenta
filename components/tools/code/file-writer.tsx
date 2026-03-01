@@ -28,8 +28,8 @@ import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/components/tool-ui/shared/use-copy-to-clipboard";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useConnection } from "@/components/connection/connection-context";
-import { DiffViewer } from "./diff-viewer";
 import type { ToolStatus } from "@/lib/tools/tool-config";
+import { LazyDiffViewer as DiffViewer } from "./lazy-diff-viewer";
 
 interface FileWriterProps {
     toolCallId: string;

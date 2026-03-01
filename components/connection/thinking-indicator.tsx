@@ -46,13 +46,13 @@ export function ThinkingIndicator({ className }: ThinkingIndicatorProps) {
     const elapsedMsRef = useRef<number>(0);
     const [startTime] = useState(() => Date.now());
 
-    // Track elapsed time
+    // Track elapsed time (1s precision — only displayed as whole seconds)
     useEffect(() => {
         const interval = setInterval(() => {
             const elapsed = Date.now() - startTime;
             elapsedMsRef.current = elapsed;
             setElapsedMs(elapsed);
-        }, 100);
+        }, 1000);
 
         return () => clearInterval(interval);
     }, [startTime]);

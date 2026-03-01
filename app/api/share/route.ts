@@ -136,34 +136,38 @@ export async function POST(request: Request) {
         // Build the shared content
         const sharedFiles: SharedFileMetadata[] = [];
 
-        // Upload any valid files
-        for (const file of files) {
-            // Skip empty file entries (browsers may send empty File objects)
-            if (!file || file.size === 0) continue;
-
-            // Validate file before upload
+        // Validate files, then upload valid ones in parallel
+        const validFiles = files.filter((file) => {
+            if (!file || file.size === 0) return false;
             const validation = validateFile(file);
             if (!validation.valid) {
                 logger.warn(
                     { filename: file.name, error: validation.error },
                     "Skipping invalid shared file"
                 );
-                continue;
+                return false;
             }
+            return true;
+        });
 
-            try {
-                const metadata = await uploadSharedFile(file, dbUser.id);
-                sharedFiles.push(metadata);
+        const uploadResults = await Promise.allSettled(
+            validFiles.map((file) => uploadSharedFile(file, dbUser.id))
+        );
+
+        for (const [i, result] of uploadResults.entries()) {
+            const file = validFiles[i];
+            if (result.status === "fulfilled") {
+                sharedFiles.push(result.value);
                 logger.info(
-                    { filename: file.name, url: metadata.url },
+                    { filename: file.name, url: result.value.url },
                     "Uploaded shared file"
                 );
-            } catch (error) {
+            } else {
                 logger.error(
-                    { error, filename: file.name },
+                    { error: result.reason, filename: file.name },
                     "Failed to upload shared file, skipping"
                 );
-                Sentry.captureException(error, {
+                Sentry.captureException(result.reason, {
                     tags: { component: "share-target", action: "upload" },
                     extra: { filename: file.name, fileSize: file.size },
                 });

@@ -75,8 +75,10 @@ type RouteContext = {
  * GET /api/jobs/:jobId - Get job with recent runs
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
-    const { jobId } = await context.params;
-    const { userId: clerkId } = await auth();
+    const [{ jobId }, { userId: clerkId }] = await Promise.all([
+        context.params,
+        auth(),
+    ]);
     if (!clerkId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -111,8 +113,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  * PATCH /api/jobs/:jobId - Update job configuration
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-    const { jobId } = await context.params;
-    const { userId: clerkId } = await auth();
+    const [{ jobId }, { userId: clerkId }] = await Promise.all([
+        context.params,
+        auth(),
+    ]);
     if (!clerkId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -243,8 +247,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  * DELETE /api/jobs/:jobId - Delete job and its schedule
  */
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-    const { jobId } = await context.params;
-    const { userId: clerkId } = await auth();
+    const [{ jobId }, { userId: clerkId }] = await Promise.all([
+        context.params,
+        auth(),
+    ]);
     if (!clerkId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

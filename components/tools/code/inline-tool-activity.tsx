@@ -28,8 +28,8 @@ import type { ToolStatus } from "@/lib/tools/tool-config";
 import { TerminalOutput } from "./terminal-output";
 import { FileViewer } from "./file-viewer";
 import { FileWriter } from "./file-writer";
-import { DiffViewer } from "./diff-viewer";
 import { SearchResults } from "./search-results";
+import { LazyDiffViewer as DiffViewer } from "./lazy-diff-viewer";
 import { FileList } from "./file-list";
 import { AgentTask } from "./agent-task";
 

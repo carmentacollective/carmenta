@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -5,6 +6,9 @@ import { loadJob } from "@/lib/actions/jobs";
 import { isValidJobId, generateJobSlug } from "@/lib/sqids";
 import { StandardPageLayout } from "@/components/layouts/standard-page-layout";
 import { JobRunDetail } from "@/components/ai-team/job-run-detail";
+
+// Deduplicate loadJob calls within a single request
+const cachedLoadJob = cache(loadJob);
 
 interface RunDetailPageProps {
     params: Promise<{ slug: string; id: string; runId: string }>;
@@ -22,7 +26,7 @@ export async function generateMetadata({
         return { title: "Lost · Carmenta" };
     }
 
-    const job = await loadJob(id);
+    const job = await cachedLoadJob(id);
 
     if (!job) {
         return { title: "Lost · Carmenta" };
@@ -41,7 +45,7 @@ export default async function RunDetailPage({ params }: RunDetailPageProps) {
         notFound();
     }
 
-    const job = await loadJob(id);
+    const job = await cachedLoadJob(id);
 
     if (!job) {
         notFound();

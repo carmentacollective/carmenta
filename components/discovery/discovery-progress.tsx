@@ -97,7 +97,7 @@ export function DiscoveryProgress({
     onComplete,
     onError,
 }: DiscoveryProgressProps) {
-    const [_stats, setStats] = useState<ExtractionStats | null>(null);
+    const statsRef = useRef<ExtractionStats | null>(null);
     const [processedCount, setProcessedCount] = useState(0);
     const [extractions, setExtractions] = useState<PendingExtraction[]>([]);
     const [isComplete, setIsComplete] = useState(false);
@@ -224,7 +224,7 @@ export function DiscoveryProgress({
             }
 
             if (data.stats) {
-                setStats(data.stats);
+                statsRef.current = data.stats;
 
                 // Use job-specific progress when available, otherwise estimate from extraction count
                 const processed = data.processedConversations ?? data.total ?? 0;

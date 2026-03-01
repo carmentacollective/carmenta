@@ -22,12 +22,14 @@ import {
     TerminalOutput,
     FileViewer,
     FileWriter,
-    DiffViewer,
     SearchResults,
     FileList,
     AgentTask,
     AskUserQuestion,
 } from "./code";
+
+// DiffViewer lazily loaded via shared component — react-diff-viewer-continued is ~50kB gzipped
+import { LazyDiffViewer as DiffViewer } from "./code/lazy-diff-viewer";
 
 /**
  * Standard props passed to all tool renderers

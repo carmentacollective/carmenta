@@ -36,7 +36,7 @@ import {
 } from "@/components/tools/integrations";
 import { Plan } from "@/components/tool-ui/plan";
 import type { PlanTodo } from "@/components/tool-ui/plan/schema";
-import { renderCodeTool } from "@/components/tools";
+import { renderCodeTool } from "@/components/tools/registry";
 import {
     SuggestQuestionsResult,
     ShowReferencesResult,

@@ -37,7 +37,8 @@ import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/ui/copy-button";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useTransientChat } from "@/lib/streaming";
-import { DiffViewer, FileViewer, TerminalOutput } from "@/components/tools/code";
+import { FileViewer, TerminalOutput } from "@/components/tools/code";
+import { LazyDiffViewer as DiffViewer } from "@/components/tools/code/lazy-diff-viewer";
 import type { TransientMessage } from "@/lib/streaming";
 import {
     useToolsArray,

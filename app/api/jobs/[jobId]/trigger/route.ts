@@ -24,8 +24,10 @@ type RouteContext = {
  * POST /api/jobs/:jobId/trigger - Run job now
  */
 export async function POST(_request: NextRequest, context: RouteContext) {
-    const { jobId } = await context.params;
-    const { userId: clerkId } = await auth();
+    const [{ jobId }, { userId: clerkId }] = await Promise.all([
+        context.params,
+        auth(),
+    ]);
     if (!clerkId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
