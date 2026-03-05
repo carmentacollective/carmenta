@@ -327,7 +327,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 📥 Download build artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: nextjs-build
 
