@@ -550,9 +550,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 return;
             }
 
-            // Prevent concurrent submits (double-click, rapid Enter)
-            // Use ref for synchronous check before React state updates
-            if (isSubmittingRef.current) return;
+            // Prevent concurrent submits (double-click, rapid Enter).
+            // During streaming, allow through — the gate routes to interrupt-and-send.
+            // Without the isLoading bypass, tapping Send on mobile during streaming
+            // is blocked because isSubmittingRef stays true until append() resolves
+            // (which is when streaming finishes, not when the message is sent).
+            if (isSubmittingRef.current && !isLoading) return;
 
             // Route the user's submit intent based on current composer state.
             // Historically we collapsed these into a single silent `return`,
