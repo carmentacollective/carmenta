@@ -558,12 +558,11 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             // Historically we collapsed these into a single silent `return`,
             // which dropped messages during uploads and during streaming
             // (Anna's feedback, Apr 2026). See composer-submit-gate.ts.
-            const nonTextFilesCount = completedFiles.filter(
-                (f) => !isTextFile(f.mediaType)
-            ).length;
             const gateAction = decideSubmitAction({
                 hasContent:
-                    !!input.trim() || nonTextFilesCount > 0 || pendingFiles.length > 0,
+                    !!input.trim() ||
+                    nonTextFiles.length > 0 ||
+                    pendingFiles.length > 0,
                 isLoading,
                 isComposing,
                 isUploading,
@@ -829,9 +828,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
     // useLayoutEffect runs after every commit (before paint), ensuring the ref
     // always holds the latest closure. Inline assignment would be stale in
     // React's concurrent mode where renders may be discarded before commit.
+    // Deps on handleInterrupt skips work on unrelated re-renders (keystrokes, etc.)
+    // while still guaranteeing freshness — handleInterrupt is a useCallback that
+    // updates whenever any of its own deps change.
     useLayoutEffect(() => {
         handleInterruptRef.current = handleInterrupt;
-    });
+    }, [handleInterrupt]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1058,7 +1060,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                             Send always means Send. During streaming, it
                             interrupts the current response and sends the
                             new message immediately via handleSubmit → gate. */}
-                        {isLoading && !input.trim() ? (
+                        {isLoading && !input.trim() && completedFiles.length === 0 ? (
                             <ComposerButton
                                 type="button"
                                 variant="stop"
