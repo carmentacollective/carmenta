@@ -60,6 +60,7 @@ import {
 import { InlineToolActivity } from "@/components/tools/code/inline-tool-activity";
 import { AskUserInputResult } from "@/components/tools/post-response";
 import { FileAttachmentProvider, useFileAttachments } from "./file-attachment-context";
+import { useConnectionSafe } from "./connection-context";
 import { FilePreview } from "./file-preview";
 import { DragDropOverlay } from "./drag-drop-overlay";
 import { ExpandableText } from "@/components/ui/expandable-text";
@@ -96,6 +97,7 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
     const { addFiles, addPreUploadedFiles, isUploading } = useFileAttachments();
     const { concierge } = useConcierge();
     const { isCodeMode } = useCodeMode();
+    const hasMoreMessages = useConnectionSafe()?.hasMoreMessages ?? false;
 
     // PWA Share Target: Handle content shared from other apps
     const { sharedText, sharedFiles, hasSharedContent, clearSharedContent } =
@@ -269,6 +271,13 @@ function HoloThreadInner({ hideWelcome }: { hideWelcome: boolean }) {
                         )
                     ) : (
                         <div className="flex w-full flex-col">
+                            {/* Older messages banner — shown when the server capped the
+                                initial load to avoid freezing the browser on large histories */}
+                            {hasMoreMessages && (
+                                <div className="text-foreground/40 mb-4 flex items-center justify-center py-2 text-xs">
+                                    Showing the most recent 100 messages
+                                </div>
+                            )}
                             {messages.map((message, index) => {
                                 const isLastAssistant =
                                     index === messages.length - 1 &&
@@ -505,8 +514,9 @@ function MessageActions({
     /** Callback to enter edit mode (user messages only) */
     onEdit?: () => void;
 }) {
-    // Hide during streaming - content is incomplete
-    if (isStreaming) return null;
+    // Hide during streaming — content is incomplete.
+    // Exception: if the message was stopped, show actions (including the stopped badge).
+    if (isStreaming && !wasStopped) return null;
 
     const handleRegenerate = async () => {
         if (messageId && onRegenerate) {

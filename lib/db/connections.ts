@@ -159,7 +159,18 @@ export async function findImportedConnection(
 }
 
 /**
- * Gets a connection by ID with all messages and parts
+ * Maximum number of messages loaded per connection.
+ *
+ * Loading all messages for old or imported conversations can transfer
+ * megabytes of tool outputs and parsed document content to the browser,
+ * freezing the tab. We fetch the most recent N messages instead.
+ * Callers can check `messages.length >= MESSAGE_LOAD_LIMIT` to detect
+ * truncation and surface a "load earlier messages" affordance.
+ */
+export const MESSAGE_LOAD_LIMIT = 100;
+
+/**
+ * Gets a connection by ID with its most recent messages and parts
  *
  * @param connectionId - ID of the connection
  * @returns Connection with messages, or null if not found
@@ -171,7 +182,10 @@ export async function getConnectionWithMessages(
         where: eq(connections.id, connectionId),
         with: {
             messages: {
-                orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+                // Fetch in DESC order so the LIMIT keeps the most-recent rows.
+                // mapConnectionMessagesToUI re-sorts to ASC for rendering.
+                orderBy: (messages, { desc }) => [desc(messages.createdAt)],
+                limit: MESSAGE_LOAD_LIMIT,
                 with: {
                     parts: {
                         orderBy: (parts, { asc }) => [asc(parts.order)],

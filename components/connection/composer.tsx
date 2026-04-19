@@ -18,6 +18,7 @@ import {
     useState,
     useRef,
     useEffect,
+    useLayoutEffect,
     useCallback,
     forwardRef,
     type FormEvent,
@@ -25,7 +26,7 @@ import {
     type ComponentProps,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SquareIcon, ArrowElbowDownLeftIcon, PlusIcon } from "@phosphor-icons/react";
+import { SquareIcon, ArrowElbowDownLeftIcon } from "@phosphor-icons/react";
 
 import { toast } from "sonner";
 
@@ -51,6 +52,7 @@ import { useConnectionSafe } from "./connection-context";
 import { DraftRecoveryBanner } from "./draft-recovery-banner";
 import { UploadProgressDisplay } from "./upload-progress";
 import { MessageQueueDisplay } from "./message-queue-display";
+import { decideSubmitAction } from "./composer-submit-gate";
 import {
     SyntaxHighlightInput,
     type SyntaxHighlightInputHandle,
@@ -143,11 +145,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
     // Message queue - allows queuing messages while AI is streaming
     const {
         queue: messageQueue,
-        enqueue: enqueueMessage,
         remove: removeFromQueue,
         edit: editQueuedMessage,
         retry: retryQueuedMessage,
-        isFull: isQueueFull,
         processingIndex: queueProcessingIndex,
     } = useMessageQueue({
         connectionId: activeConnectionId,
@@ -194,8 +194,18 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
     // Prevent double-submit race condition - set synchronously before async append
     const isSubmittingRef = useRef(false);
 
+    // User pressed Enter or tapped Send while an upload was in-flight.
+    // Instead of silently dropping (Anna's feedback, Apr 2026), we record the
+    // intent here and auto-fire submit when uploads complete — see the effect
+    // below that watches `isUploading`.
+    const pendingSubmitRef = useRef(false);
+
     // Track if user manually stopped vs natural completion (for button animation)
     const wasStoppedRef = useRef(false);
+
+    // Stable ref to handleInterrupt so handleSubmit (defined first) can call it
+    // without a circular useCallback dependency.
+    const handleInterruptRef = useRef<(message?: QueuedMessage) => void>(() => {});
 
     // Flash state for input when send clicked without text
     const [shouldFlash, setShouldFlash] = useState(false);
@@ -525,21 +535,63 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 }
             }
 
-            // If no text and no non-text files, flash the input area and focus it
+            // If no text and no non-text files, flash the input area and focus it.
+            // pendingFiles check: skip flash when uploads are in-flight so defer
+            // can do its job without a spurious empty-input flash.
             const nonTextFiles = completedFiles.filter((f) => !isTextFile(f.mediaType));
-            if (!input.trim() && nonTextFiles.length === 0) {
+            if (
+                !input.trim() &&
+                nonTextFiles.length === 0 &&
+                pendingFiles.length === 0
+            ) {
                 setShouldFlash(true);
                 setTimeout(() => setShouldFlash(false), 300); // Brief hint, not punitive
                 inputRef.current?.focus();
                 return;
             }
 
-            // Prevent concurrent submits (double-click, rapid Enter)
-            // Use ref for synchronous check before React state updates
-            if (isSubmittingRef.current) return;
+            // Prevent concurrent submits (double-click, rapid Enter).
+            // During streaming, allow through — the gate routes to interrupt-and-send.
+            // Without the isLoading bypass, tapping Send on mobile during streaming
+            // is blocked because isSubmittingRef stays true until append() resolves
+            // (which is when streaming finishes, not when the message is sent).
+            if (isSubmittingRef.current && !isLoading) return;
 
-            // Don't send while uploading or already loading
-            if (isLoading || isComposing || isUploading) return;
+            // Route the user's submit intent based on current composer state.
+            // Historically we collapsed these into a single silent `return`,
+            // which dropped messages during uploads and during streaming
+            // (Anna's feedback, Apr 2026). See composer-submit-gate.ts.
+            const gateAction = decideSubmitAction({
+                hasContent:
+                    !!input.trim() ||
+                    nonTextFiles.length > 0 ||
+                    pendingFiles.length > 0,
+                isLoading,
+                isComposing,
+                isUploading,
+            });
+
+            switch (gateAction) {
+                case "block-composing":
+                case "block-empty":
+                    return;
+                case "interrupt-and-send":
+                    // Stop the current response and send the new message now.
+                    // Users type during streaming to redirect, not to wait.
+                    triggerHaptic();
+                    handleInterruptRef.current();
+                    return;
+                case "defer-until-uploads-complete":
+                    // User wants to send but an upload is still in-flight.
+                    // Record the intent; the effect on `isUploading` will
+                    // re-fire submit once uploads settle. Haptic confirms
+                    // the tap landed even though the send is deferred.
+                    triggerHaptic();
+                    pendingSubmitRef.current = true;
+                    return;
+                case "allow":
+                    break;
+            }
 
             // Signal user engagement (dismisses feature tips whisper)
             emitUserEngaged();
@@ -629,6 +681,21 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         ]
     );
 
+    // Auto-fire a deferred submit once uploads complete.
+    // Set by handleSubmit when the user hit Send while uploads were in-flight
+    // (Anna's Bug 1, Apr 2026). When `isUploading` flips to false, we
+    // re-submit the form so the attachment lands with the message.
+    useEffect(() => {
+        if (isUploading) return;
+        if (!pendingSubmitRef.current) return;
+        pendingSubmitRef.current = false;
+        // requestSubmit() routes through handleSubmit's normal path, so all
+        // the usual guards (empty input, composing, etc.) apply. If the user
+        // cancelled the uploads and there's nothing to send, handleSubmit's
+        // empty-input check will flash the input and no-op.
+        formRef.current?.requestSubmit();
+    }, [isUploading]);
+
     const handleStop = useCallback(() => {
         if (!isLoading) return;
         triggerHaptic();
@@ -682,6 +749,11 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 onMarkMessageStopped(lastMessage.id);
             }
 
+            // Yield to let the AI SDK finish abort cleanup before starting a new request.
+            // Without this, append() races with stop()'s internal abort handlers,
+            // causing "Cannot read properties of undefined (reading 'state')" errors.
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
             // If interrupting with a queued message, send it
             if (message) {
                 try {
@@ -697,8 +769,8 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     // Message stays in queue on failure so user can retry
                 }
             }
-            // If interrupting with current input, send that
-            else if (input.trim()) {
+            // If interrupting with current input or files, send them
+            else if (input.trim() || getFilesToSend(completedFiles).length > 0) {
                 const userText = input.trim();
                 setInput("");
 
@@ -712,6 +784,17 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 // Filter to files that can be sent as attachments
                 // (excludes text files and documents with parsed content)
                 const filesToSend = getFilesToSend(completedFiles);
+
+                // Update stop-restore refs so Stop during the new response
+                // restores this message, not a stale one from before the interrupt
+                lastSentMessageRef.current = userText;
+                lastSentFilesRef.current = filesToSend.map((f) => ({
+                    url: f.url,
+                    name: f.name,
+                    mediaType: f.mediaType,
+                    size: f.size,
+                }));
+                wasStoppedRef.current = false;
 
                 try {
                     await append({
@@ -744,6 +827,17 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         ]
     );
 
+    // Keep ref in sync so handleSubmit can call it without circular deps.
+    // useLayoutEffect runs after every commit (before paint), ensuring the ref
+    // always holds the latest closure. Inline assignment would be stale in
+    // React's concurrent mode where renders may be discarded before commit.
+    // Deps on handleInterrupt skips work on unrelated re-renders (keystrokes, etc.)
+    // while still guaranteeing freshness — handleInterrupt is a useCallback that
+    // updates whenever any of its own deps change.
+    useLayoutEffect(() => {
+        handleInterruptRef.current = handleInterrupt;
+    }, [handleInterrupt]);
+
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
             if (isComposing) return;
@@ -766,19 +860,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 // Exception: Cmd/Ctrl+Enter always sends (power user shortcut)
                 if (e.metaKey || e.ctrlKey) {
                     e.preventDefault();
-                    if (isLoading) {
-                        if (input.trim() && !isQueueFull) {
-                            enqueueMessage(
-                                input.trim(),
-                                completedFiles.map((f) => ({
-                                    url: f.url,
-                                    mediaType: f.mediaType,
-                                    name: f.name,
-                                }))
-                            );
-                            setInput("");
-                            clearFiles();
-                        }
+                    if (isLoading && (input.trim() || completedFiles.length > 0)) {
+                        // Interrupt: stop the current response and send now
+                        handleInterrupt();
                     } else if (input.trim() || completedFiles.length > 0) {
                         handleSubmit(e as unknown as FormEvent);
                     }
@@ -787,36 +871,30 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 return;
             }
 
-            // Desktop keyboard behavior: Enter = send, Shift+Enter = newline
-            // This is the established desktop convention.
+            // Desktop keyboard behavior:
+            //   Enter = send (or interrupt during streaming)
+            //   Shift+Enter = newline (always, regardless of streaming state)
 
-            // Shift+Enter during streaming = interrupt (stop + send now)
-            if (e.key === "Enter" && e.shiftKey && isLoading && input.trim()) {
+            // Shift+Enter is always newline — let the default behavior through
+            if (e.key === "Enter" && e.shiftKey) {
+                return;
+            }
+
+            // Enter during streaming = interrupt (stop + send now)
+            // Users type during streaming to redirect, not to wait in a queue.
+            // Include completedFiles so files-only messages interrupt correctly.
+            if (
+                e.key === "Enter" &&
+                isLoading &&
+                (input.trim() || completedFiles.length > 0)
+            ) {
                 e.preventDefault();
                 handleInterrupt();
                 return;
             }
 
-            // Enter during streaming = queue message
-            if (e.key === "Enter" && !e.shiftKey && isLoading) {
-                if (input.trim() && !isQueueFull) {
-                    e.preventDefault();
-                    enqueueMessage(
-                        input.trim(),
-                        completedFiles.map((f) => ({
-                            url: f.url,
-                            mediaType: f.mediaType,
-                            name: f.name,
-                        }))
-                    );
-                    setInput("");
-                    clearFiles();
-                }
-                return;
-            }
-
             // Enter when not streaming = send immediately
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter") {
                 if (input.trim() || completedFiles.length > 0) {
                     e.preventDefault();
                     handleSubmit(e as unknown as FormEvent);
@@ -829,13 +907,9 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
             isMobile,
             input,
             completedFiles,
-            isQueueFull,
             handleStop,
             handleInterrupt,
             handleSubmit,
-            enqueueMessage,
-            setInput,
-            clearFiles,
         ]
     );
 
@@ -983,51 +1057,13 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 
                     {/* Right group: Send/Queue/Stop + Voice */}
                     <div className="flex items-center gap-2 @xl:order-first @xl:gap-3">
-                        {/* Button transforms based on state:
-                            - Not streaming → Send (arrow)
-                            - Streaming + empty input → Stop (square)
-                            - Streaming + has input → Queue (plus) */}
-                        {!isLoading ? (
-                            <ComposerButton
-                                type="submit"
-                                variant="send"
-                                aria-label="Send message"
-                                disabled={isUploading}
-                                data-testid="send-button"
-                                className={isMobile === true ? "h-11 w-11" : ""}
-                            >
-                                <ArrowElbowDownLeftIcon className="h-5 w-5 @md:h-6 @md:w-6" />
-                            </ComposerButton>
-                        ) : input.trim() ? (
-                            <ComposerButton
-                                type="button"
-                                variant="queue"
-                                pipelineState={pipelineState}
-                                aria-label="Queue message"
-                                onClick={() => {
-                                    if (!isQueueFull) {
-                                        enqueueMessage(
-                                            input.trim(),
-                                            completedFiles.map((f) => ({
-                                                url: f.url,
-                                                mediaType: f.mediaType,
-                                                name: f.name,
-                                            }))
-                                        );
-                                        setInput("");
-                                        clearFiles();
-                                    }
-                                }}
-                                disabled={isQueueFull}
-                                data-testid="queue-button"
-                                className={isMobile === true ? "h-11 w-11" : ""}
-                            >
-                                <PlusIcon
-                                    className="h-5 w-5 @md:h-6 @md:w-6"
-                                    weight="bold"
-                                />
-                            </ComposerButton>
-                        ) : (
+                        {/* Two button states:
+                            - Streaming + no input → Stop (square)
+                            - Everything else → Send (arrow)
+                            Send always means Send. During streaming, it
+                            interrupts the current response and sends the
+                            new message immediately via handleSubmit → gate. */}
+                        {isLoading && !input.trim() && completedFiles.length === 0 ? (
                             <ComposerButton
                                 type="button"
                                 variant="stop"
@@ -1038,6 +1074,22 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                                 className={isMobile === true ? "h-11 w-11" : ""}
                             >
                                 <SquareIcon className="h-4 w-4 @md:h-5 @md:w-5" />
+                            </ComposerButton>
+                        ) : (
+                            <ComposerButton
+                                type="submit"
+                                variant="send"
+                                aria-label={
+                                    isUploading
+                                        ? "Send after upload completes"
+                                        : isLoading
+                                          ? "Send and interrupt"
+                                          : "Send message"
+                                }
+                                data-testid="send-button"
+                                className={isMobile === true ? "h-11 w-11" : ""}
+                            >
+                                <ArrowElbowDownLeftIcon className="h-5 w-5 @md:h-6 @md:w-6" />
                             </ComposerButton>
                         )}
                         <VoiceInputButton

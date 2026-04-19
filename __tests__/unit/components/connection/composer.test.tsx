@@ -513,13 +513,13 @@ describe("Composer", () => {
             expect(screen.getByTestId("stop-button")).toBeInTheDocument();
         });
 
-        it("shows queue button when loading with input", () => {
+        it("shows send button when loading with input", () => {
             mockIsLoading = true;
             mockInput = "New message";
 
             render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
 
-            expect(screen.getByTestId("queue-button")).toBeInTheDocument();
+            expect(screen.getByTestId("send-button")).toBeInTheDocument();
         });
 
         it("stops generation when stop button clicked", () => {
@@ -567,18 +567,26 @@ describe("Composer", () => {
             expect(mockOnMarkMessageStopped).toHaveBeenCalledWith("msg-2");
         });
 
-        it("queues message when queue button clicked", () => {
+        it("interrupts when send button clicked during streaming", async () => {
             mockIsLoading = true;
-            mockInput = "Queued message";
+            mockInput = "Interrupt message";
+            mockMessages = [
+                { id: "msg-1", role: "user", parts: [{ type: "text", text: "Hi" }] },
+                {
+                    id: "msg-2",
+                    role: "assistant",
+                    parts: [{ type: "text", text: "Hello" }],
+                },
+            ];
 
             render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
 
-            const queueButton = screen.getByTestId("queue-button");
-            fireEvent.click(queueButton);
+            const sendButton = screen.getByTestId("send-button");
+            fireEvent.click(sendButton);
 
-            expect(mockEnqueueMessage).toHaveBeenCalledWith("Queued message", []);
-            expect(mockSetInput).toHaveBeenCalledWith("");
-            expect(mockClearFiles).toHaveBeenCalled();
+            await waitFor(() => {
+                expect(mockStop).toHaveBeenCalled();
+            });
         });
 
         it("disables voice input during streaming", () => {
@@ -661,10 +669,10 @@ describe("Composer", () => {
     });
 
     describe("Message Queue During Streaming", () => {
-        it("queues message on Enter during streaming (desktop)", () => {
+        it("interrupts on Enter during streaming (desktop)", () => {
             // Set up streaming state with input text
             mockIsLoading = true;
-            mockInput = "Queued via keyboard";
+            mockInput = "Interrupt via keyboard";
             mockIsMobile.mockReturnValue(false);
 
             render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
@@ -672,22 +680,23 @@ describe("Composer", () => {
             const input = screen.getByTestId("composer-input");
             fireEvent.keyDown(input, { key: "Enter" });
 
-            // On desktop, Enter during streaming queues the message
-            expect(mockEnqueueMessage).toHaveBeenCalledWith("Queued via keyboard", []);
-            expect(mockSetInput).toHaveBeenCalledWith("");
+            // On desktop, Enter during streaming interrupts (stops + sends)
+            expect(mockStop).toHaveBeenCalled();
         });
 
-        it("queues message even without files", () => {
+        it("interrupts on send during streaming even without files", async () => {
             mockIsLoading = true;
-            mockInput = "Message to queue";
+            mockInput = "Message to send";
 
             render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
 
-            const queueButton = screen.getByTestId("queue-button");
-            fireEvent.click(queueButton);
+            const sendButton = screen.getByTestId("send-button");
+            fireEvent.click(sendButton);
 
-            // Queue is called with message and empty files array
-            expect(mockEnqueueMessage).toHaveBeenCalledWith("Message to queue", []);
+            // Send during streaming triggers interrupt (stop + send)
+            await waitFor(() => {
+                expect(mockStop).toHaveBeenCalled();
+            });
         });
     });
 
@@ -728,7 +737,7 @@ describe("Composer", () => {
             });
         });
 
-        it("does not submit when already loading", async () => {
+        it("interrupts when submitting during loading", async () => {
             mockInput = "Test message";
             mockIsLoading = true;
 
@@ -737,8 +746,10 @@ describe("Composer", () => {
             const form = screen.getByTestId("composer-input").closest("form")!;
             fireEvent.submit(form);
 
-            // isLoading guard prevents submission
-            expect(mockAppend).not.toHaveBeenCalled();
+            // Submit during loading triggers interrupt (stop + send)
+            await waitFor(() => {
+                expect(mockStop).toHaveBeenCalled();
+            });
         });
     });
 });
@@ -828,18 +839,18 @@ describe("Interrupt Flow", () => {
         cleanup();
     });
 
-    it("interrupts on Shift+Enter during streaming with input", () => {
+    it("Shift+Enter during streaming inserts newline, does not interrupt", () => {
         render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
 
         const input = screen.getByTestId("composer-input");
 
-        // Shift+Enter during streaming = interrupt
+        // Shift+Enter is always newline, never interrupt
         fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
 
-        // Should stop current generation
-        expect(mockStop).toHaveBeenCalled();
-        // Should mark last message as stopped
-        expect(mockOnMarkMessageStopped).toHaveBeenCalledWith("msg-2");
+        // Should NOT stop current generation
+        expect(mockStop).not.toHaveBeenCalled();
+        // Should NOT mark any message as stopped
+        expect(mockOnMarkMessageStopped).not.toHaveBeenCalled();
     });
 
     it("restores message text when stopping with empty input", () => {
@@ -1053,14 +1064,14 @@ describe("ComposerButton Variants", () => {
         expect(stopButton).toBeInTheDocument();
     });
 
-    it("shows queue button with accent styling when streaming with input", () => {
+    it("shows send button when streaming with input", () => {
         mockIsLoading = true;
-        mockInput = "Queued message";
+        mockInput = "Interrupt message";
 
         render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
 
-        const queueButton = screen.getByTestId("queue-button");
-        expect(queueButton).toBeInTheDocument();
+        const sendButton = screen.getByTestId("send-button");
+        expect(sendButton).toBeInTheDocument();
     });
 
     // Upload state disabling is tested via integration tests
@@ -1081,23 +1092,24 @@ describe("Mobile Queue Behavior", () => {
         cleanup();
     });
 
-    it("queues on Cmd+Enter during streaming on mobile", () => {
+    it("interrupts on Cmd+Enter during streaming on mobile", () => {
         render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
 
         const input = screen.getByTestId("composer-input");
         fireEvent.keyDown(input, { key: "Enter", metaKey: true });
 
-        expect(mockEnqueueMessage).toHaveBeenCalledWith("Mobile queue test", []);
-        expect(mockSetInput).toHaveBeenCalledWith("");
+        // Cmd+Enter on mobile during streaming interrupts (stop + send)
+        expect(mockStop).toHaveBeenCalled();
     });
 
-    it("queues on Ctrl+Enter during streaming on mobile", () => {
+    it("interrupts on Ctrl+Enter during streaming on mobile", () => {
         render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
 
         const input = screen.getByTestId("composer-input");
         fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
 
-        expect(mockEnqueueMessage).toHaveBeenCalledWith("Mobile queue test", []);
+        // Ctrl+Enter on mobile during streaming interrupts (stop + send)
+        expect(mockStop).toHaveBeenCalled();
     });
 });
 
@@ -1302,11 +1314,9 @@ describe("Queue Full State", () => {
         cleanup();
     });
 
-    // Note: Testing queue full state requires overriding the useMessageQueue mock
-    // which would need a more complex setup. This is documented for future expansion.
-    it("queue button exists when loading with input", () => {
+    it("send button exists when loading with input", () => {
         render(<Composer onMarkMessageStopped={mockOnMarkMessageStopped} />);
 
-        expect(screen.getByTestId("queue-button")).toBeInTheDocument();
+        expect(screen.getByTestId("send-button")).toBeInTheDocument();
     });
 });

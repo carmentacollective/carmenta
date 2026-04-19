@@ -16,6 +16,7 @@ import {
     getRecentConnections as dbGetRecentConnections,
     getConnectionsWithStats as dbGetConnectionsWithStats,
     getConnectionWithMessages,
+    MESSAGE_LOAD_LIMIT,
     updateConnection as dbUpdateConnection,
     archiveConnection as dbArchiveConnection,
     deleteConnection as dbDeleteConnection,
@@ -255,6 +256,8 @@ export async function loadConnection(connectionId: string): Promise<{
     connection: PublicConnectionWithMessages;
     messages: UIMessageLike[];
     concierge: PersistedConciergeData | null;
+    /** True when the conversation has more messages than the load limit */
+    hasMoreMessages: boolean;
 } | null> {
     const dbUser = await getDbUser();
     if (!dbUser) {
@@ -270,8 +273,12 @@ export async function loadConnection(connectionId: string): Promise<{
     const publicConnection: PublicConnectionWithMessages =
         toPublicConnection(connection);
     const concierge = extractConciergeData(connection);
+    // Heuristic: if we got exactly the limit, there are almost certainly more.
+    // The edge case (exactly 100 messages, no more) is acceptable — the notice
+    // just won't appear after the user loads older messages.
+    const hasMoreMessages = connection.messages.length >= MESSAGE_LOAD_LIMIT;
 
-    return { connection: publicConnection, messages, concierge };
+    return { connection: publicConnection, messages, concierge, hasMoreMessages };
 }
 
 /**

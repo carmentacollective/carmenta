@@ -282,6 +282,8 @@ interface ConnectLayoutProps {
     activeConnection?: PublicConnection | null;
     /** Initial messages for the active connection */
     initialMessages?: UIMessageLike[];
+    /** True when the server truncated older messages due to the load limit */
+    hasMoreMessages?: boolean;
     /** Initial concierge data for hydrating the display on page load */
     initialConcierge?: PersistedConciergeData | null;
     /** Optional project path for code mode (used for new sessions before connection exists) */
@@ -293,6 +295,7 @@ export function ConnectLayout({
     initialConnections = [],
     activeConnection = null,
     initialMessages = [],
+    hasMoreMessages = false,
     initialConcierge = null,
     projectPath = null,
 }: ConnectLayoutProps) {
@@ -301,6 +304,7 @@ export function ConnectLayout({
             initialConnections={initialConnections}
             activeConnection={activeConnection}
             initialMessages={initialMessages}
+            hasMoreMessages={hasMoreMessages}
             initialConcierge={initialConcierge}
             projectPath={projectPath}
         >
