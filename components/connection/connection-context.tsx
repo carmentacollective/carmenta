@@ -53,6 +53,8 @@ interface ConnectionContextValue {
     isPending: boolean;
     error: Error | null;
     initialMessages: UIMessageLike[];
+    /** True when the server truncated older messages due to the load limit */
+    hasMoreMessages: boolean;
     /** Persisted concierge data for hydrating UI on page load */
     initialConcierge: PersistedConciergeData | null;
     /** Project path for code mode (from prop OR from activeConnection) */
@@ -77,6 +79,8 @@ interface ConnectionProviderProps {
     initialConnections?: PublicConnection[];
     activeConnection?: PublicConnection | null;
     initialMessages?: UIMessageLike[];
+    /** True when the server truncated older messages due to the load limit */
+    hasMoreMessages?: boolean;
     /** Persisted concierge data for hydrating UI on page load */
     initialConcierge?: PersistedConciergeData | null;
     /** Project path for code mode (used for new sessions before connection exists) */
@@ -88,6 +92,7 @@ export function ConnectionProvider({
     initialConnections = [],
     activeConnection = null,
     initialMessages = [],
+    hasMoreMessages = false,
     initialConcierge = null,
     projectPath: propProjectPath = null,
 }: ConnectionProviderProps) {
@@ -390,6 +395,7 @@ export function ConnectionProvider({
             isPending,
             error,
             initialMessages,
+            hasMoreMessages,
             initialConcierge,
             projectPath,
             setActiveConnection: setActiveConnectionNav,
@@ -417,6 +423,7 @@ export function ConnectionProvider({
             isPending,
             error,
             initialMessages,
+            hasMoreMessages,
             initialConcierge,
             projectPath,
             setActiveConnectionNav,

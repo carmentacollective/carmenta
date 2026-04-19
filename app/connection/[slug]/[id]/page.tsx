@@ -97,7 +97,7 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
         notFound();
     }
 
-    const { connection, messages, concierge } = result;
+    const { connection, messages, concierge, hasMoreMessages } = result;
 
     // If the slug doesn't match the current connection slug, redirect to canonical URL
     // This handles cases where the title changed and old URLs need updating
@@ -115,6 +115,7 @@ export default async function ConnectionPage({ params }: ConnectionPageProps) {
                     initialConnections={recentConnections}
                     activeConnection={connection}
                     initialMessages={messages}
+                    hasMoreMessages={hasMoreMessages}
                     initialConcierge={concierge}
                 >
                     <Chat />

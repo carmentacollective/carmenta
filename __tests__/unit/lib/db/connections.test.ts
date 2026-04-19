@@ -775,8 +775,10 @@ describe("Background Save - Window Close Simulation", () => {
         const completed = await getConnectionWithMessages(connection.id);
         expect(completed!.status).toBe("active");
         expect(completed!.streamingStatus).toBe("completed");
-        // DB format uses textContent, not text
-        expect(completed!.messages[1].parts[0]).toMatchObject({
+        // DB format uses textContent, not text.
+        // getConnectionWithMessages returns messages in DESC order (newest first)
+        // so messages[0] is the assistant reply, messages[1] is the user query.
+        expect(completed!.messages[0].parts[0]).toMatchObject({
             textContent: "Hi! Let me help with that. Here's my complete response.",
         });
     });

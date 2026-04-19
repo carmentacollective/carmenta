@@ -69,6 +69,7 @@ export {
     markAsBackground,
     findInterruptedConnections,
     mapConnectionMessagesToUI,
+    MESSAGE_LOAD_LIMIT,
     type ConciergeData,
     type ConnectionWithMessages,
     type ConnectionWithStats,

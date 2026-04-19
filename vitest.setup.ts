@@ -447,6 +447,7 @@ vi.mock("./lib/db/index", async () => {
         markAsBackground: connectionsModule.markAsBackground,
         findInterruptedConnections: connectionsModule.findInterruptedConnections,
         mapConnectionMessagesToUI: connectionsModule.mapConnectionMessagesToUI,
+        MESSAGE_LOAD_LIMIT: connectionsModule.MESSAGE_LOAD_LIMIT,
         // Re-export notification functions
         createNotification: notificationsModule.createNotification,
         getUnreadNotifications: notificationsModule.getUnreadNotifications,
