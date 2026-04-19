@@ -18,6 +18,7 @@ import {
     useState,
     useRef,
     useEffect,
+    useLayoutEffect,
     useCallback,
     forwardRef,
     type FormEvent,
@@ -534,9 +535,15 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 }
             }
 
-            // If no text and no non-text files, flash the input area and focus it
+            // If no text and no non-text files, flash the input area and focus it.
+            // pendingFiles check: skip flash when uploads are in-flight so defer
+            // can do its job without a spurious empty-input flash.
             const nonTextFiles = completedFiles.filter((f) => !isTextFile(f.mediaType));
-            if (!input.trim() && nonTextFiles.length === 0) {
+            if (
+                !input.trim() &&
+                nonTextFiles.length === 0 &&
+                pendingFiles.length === 0
+            ) {
                 setShouldFlash(true);
                 setTimeout(() => setShouldFlash(false), 300); // Brief hint, not punitive
                 inputRef.current?.focus();
@@ -555,7 +562,8 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 (f) => !isTextFile(f.mediaType)
             ).length;
             const gateAction = decideSubmitAction({
-                hasContent: !!input.trim() || nonTextFilesCount > 0,
+                hasContent:
+                    !!input.trim() || nonTextFilesCount > 0 || pendingFiles.length > 0,
                 isLoading,
                 isComposing,
                 isUploading,
@@ -754,8 +762,8 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                     // Message stays in queue on failure so user can retry
                 }
             }
-            // If interrupting with current input, send that
-            else if (input.trim()) {
+            // If interrupting with current input or files, send them
+            else if (input.trim() || getFilesToSend(completedFiles).length > 0) {
                 const userText = input.trim();
                 setInput("");
 
@@ -769,6 +777,17 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 // Filter to files that can be sent as attachments
                 // (excludes text files and documents with parsed content)
                 const filesToSend = getFilesToSend(completedFiles);
+
+                // Update stop-restore refs so Stop during the new response
+                // restores this message, not a stale one from before the interrupt
+                lastSentMessageRef.current = userText;
+                lastSentFilesRef.current = filesToSend.map((f) => ({
+                    url: f.url,
+                    name: f.name,
+                    mediaType: f.mediaType,
+                    size: f.size,
+                }));
+                wasStoppedRef.current = false;
 
                 try {
                     await append({
@@ -801,8 +820,13 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
         ]
     );
 
-    // Keep ref in sync so handleSubmit can call it without circular deps
-    handleInterruptRef.current = handleInterrupt;
+    // Keep ref in sync so handleSubmit can call it without circular deps.
+    // useLayoutEffect runs after every commit (before paint), ensuring the ref
+    // always holds the latest closure. Inline assignment would be stale in
+    // React's concurrent mode where renders may be discarded before commit.
+    useLayoutEffect(() => {
+        handleInterruptRef.current = handleInterrupt;
+    });
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -826,7 +850,7 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 // Exception: Cmd/Ctrl+Enter always sends (power user shortcut)
                 if (e.metaKey || e.ctrlKey) {
                     e.preventDefault();
-                    if (isLoading && input.trim()) {
+                    if (isLoading && (input.trim() || completedFiles.length > 0)) {
                         // Interrupt: stop the current response and send now
                         handleInterrupt();
                     } else if (input.trim() || completedFiles.length > 0) {
@@ -848,7 +872,12 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
 
             // Enter during streaming = interrupt (stop + send now)
             // Users type during streaming to redirect, not to wait in a queue.
-            if (e.key === "Enter" && isLoading && input.trim()) {
+            // Include completedFiles so files-only messages interrupt correctly.
+            if (
+                e.key === "Enter" &&
+                isLoading &&
+                (input.trim() || completedFiles.length > 0)
+            ) {
                 e.preventDefault();
                 handleInterrupt();
                 return;

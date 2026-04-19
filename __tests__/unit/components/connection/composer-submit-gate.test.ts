@@ -93,4 +93,17 @@ describe("decideSubmitAction", () => {
             })
         ).toBe("block-empty");
     });
+
+    // Files-only interrupt: attaching a file while streaming (no typed text) should
+    // interrupt, not silently drop. The caller signals hasContent=true when files
+    // are ready to send even if input.trim() is empty.
+    it("interrupts with files only — no text required to stop streaming", () => {
+        expect(
+            decideSubmitAction({
+                ...base,
+                hasContent: true, // files present, no text
+                isLoading: true,
+            })
+        ).toBe("interrupt-and-send");
+    });
 });
