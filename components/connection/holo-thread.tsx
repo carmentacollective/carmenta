@@ -514,8 +514,9 @@ function MessageActions({
     /** Callback to enter edit mode (user messages only) */
     onEdit?: () => void;
 }) {
-    // Hide during streaming - content is incomplete
-    if (isStreaming) return null;
+    // Hide during streaming — content is incomplete.
+    // Exception: if the message was stopped, show actions (including the stopped badge).
+    if (isStreaming && !wasStopped) return null;
 
     const handleRegenerate = async () => {
         if (messageId && onRegenerate) {

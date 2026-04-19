@@ -747,6 +747,11 @@ export function Composer({ onMarkMessageStopped }: ComposerProps) {
                 onMarkMessageStopped(lastMessage.id);
             }
 
+            // Yield to let the AI SDK finish abort cleanup before starting a new request.
+            // Without this, append() races with stop()'s internal abort handlers,
+            // causing "Cannot read properties of undefined (reading 'state')" errors.
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
             // If interrupting with a queued message, send it
             if (message) {
                 try {
