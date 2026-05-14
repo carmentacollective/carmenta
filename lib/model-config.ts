@@ -12,7 +12,8 @@
  * - The API for validation
  *
  * SYNC REQUIREMENTS - When adding/removing models, also update:
- * - knowledge/model-rubric.md (detailed model documentation)
+ * - knowledge/model-rubric.md (slim routing rubric)
+ * - knowledge/model-rubric-detailed.md (full reference)
  * - lib/tips/tips-config.ts (multi-model tip mentions model names)
  */
 
@@ -43,7 +44,7 @@ export type ModelTag =
     | "Tools";
 
 export interface ModelConfig {
-    /** Model ID in provider/model format (e.g., "anthropic/claude-sonnet-4.5") */
+    /** Model ID in provider/model format (e.g., "anthropic/claude-sonnet-4.6") */
     id: string;
     /** Human-friendly display name */
     displayName: string;
@@ -81,7 +82,7 @@ export interface ModelConfig {
  */
 export const MODELS: readonly ModelConfig[] = [
     {
-        id: "anthropic/claude-sonnet-4.5",
+        id: "anthropic/claude-sonnet-4.6",
         displayName: "Claude Sonnet",
         shortName: "Sonnet",
         provider: "anthropic",
@@ -89,7 +90,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "versatile",
         tags: ["Deep thinking", "Long docs"],
         contextWindow: 1_000_000,
-        tokensPerSecond: 60,
+        tokensPerSecond: 69,
         inputCostPerMillion: 3,
         outputCostPerMillion: 15,
         attachments: ["image", "pdf"],
@@ -101,15 +102,15 @@ export const MODELS: readonly ModelConfig[] = [
         temperatureRange: [0.3, 0.9],
     },
     {
-        id: "anthropic/claude-opus-4.5",
+        id: "anthropic/claude-opus-4.7",
         displayName: "Claude Opus",
         shortName: "Opus",
         provider: "anthropic",
-        description: "Maximum capability for complex research and deep thinking",
+        description: "Maximum capability for complex research and long-running agents",
         speedQuality: "deep",
-        tags: ["Deep thinking"],
-        contextWindow: 200_000,
-        tokensPerSecond: 40,
+        tags: ["Deep thinking", "Long docs"],
+        contextWindow: 1_000_000,
+        tokensPerSecond: 61,
         inputCostPerMillion: 5,
         outputCostPerMillion: 25,
         attachments: ["image", "pdf"],
@@ -129,7 +130,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "fast",
         tags: ["Deep thinking"],
         contextWindow: 200_000,
-        tokensPerSecond: 100,
+        tokensPerSecond: 86,
         inputCostPerMillion: 1,
         outputCostPerMillion: 5,
         attachments: ["image", "pdf"],
@@ -141,7 +142,7 @@ export const MODELS: readonly ModelConfig[] = [
         temperatureRange: [0.2, 0.5],
     },
     {
-        id: "google/gemini-3-pro-preview",
+        id: "google/gemini-3.1-pro-preview",
         displayName: "Gemini Pro",
         shortName: "Gemini",
         provider: "google",
@@ -149,7 +150,7 @@ export const MODELS: readonly ModelConfig[] = [
         speedQuality: "versatile",
         tags: ["Video", "Audio", "Long docs"],
         contextWindow: 1_000_000,
-        tokensPerSecond: 124,
+        tokensPerSecond: 133,
         inputCostPerMillion: 2,
         outputCostPerMillion: 12,
         attachments: ["image", "pdf", "audio", "video"],
@@ -160,6 +161,8 @@ export const MODELS: readonly ModelConfig[] = [
     {
         id: "google/gemini-3-flash",
         displayName: "Gemini Flash",
+        // Note: OpenRouter exposes this as "google/gemini-3-flash-preview"; we use the
+        // Vercel AI Gateway slug as our canonical internal ID.
         shortName: "Gemini",
         provider: "google",
         description: "Fastest model with automatic prompt caching",
@@ -167,45 +170,45 @@ export const MODELS: readonly ModelConfig[] = [
         tags: ["Tools", "Long docs"],
         contextWindow: 1_000_000,
         tokensPerSecond: 218,
-        inputCostPerMillion: 0.15,
-        outputCostPerMillion: 0.6,
+        inputCostPerMillion: 0.5,
+        outputCostPerMillion: 3,
         attachments: ["image", "pdf"],
         supportsTools: true,
         reasoning: { type: "none" },
         temperatureRange: [0.2, 0.5],
     },
     {
-        id: "x-ai/grok-4.1-fast",
+        id: "x-ai/grok-4.3",
         displayName: "Grok",
         shortName: "Grok",
         provider: "x-ai",
-        description: "Massive 2M token context for extreme-length scenarios",
-        speedQuality: "fast",
+        description: "Reasoning model with direct engagement on sensitive topics",
+        speedQuality: "versatile",
         tags: ["Deep thinking", "Long docs"],
-        contextWindow: 2_000_000,
-        tokensPerSecond: 151,
-        inputCostPerMillion: 0.2,
-        outputCostPerMillion: 0.5,
-        attachments: ["image", "pdf"],
+        contextWindow: 1_000_000,
+        tokensPerSecond: 81,
+        inputCostPerMillion: 1.25,
+        outputCostPerMillion: 2.5,
+        attachments: ["image"],
         supportsTools: true,
         reasoning: {
             type: "effort-based",
             options: { efforts: ["high", "medium", "low", "minimal", "none"] },
         },
-        temperatureRange: [0.4, 0.6],
+        temperatureRange: [0.4, 0.8],
     },
     {
-        id: "openai/gpt-5.2",
+        id: "openai/gpt-5.5",
         displayName: "ChatGPT",
         shortName: "ChatGPT",
         provider: "openai",
-        description: "Frontier model for professional work with adaptive reasoning",
-        speedQuality: "versatile",
+        description: "Frontier model for complex professional workloads",
+        speedQuality: "deep",
         tags: ["Deep thinking", "Tools", "Long docs"],
-        contextWindow: 400_000,
-        tokensPerSecond: 95,
-        inputCostPerMillion: 1.75,
-        outputCostPerMillion: 14,
+        contextWindow: 1_050_000,
+        tokensPerSecond: 72,
+        inputCostPerMillion: 5,
+        outputCostPerMillion: 30,
         attachments: ["image", "pdf"],
         supportsTools: true,
         reasoning: {
@@ -412,59 +415,59 @@ export function getSpeedTier(model: ModelConfig): "fast" | "moderate" | "deliber
  */
 export const MODEL_FALLBACKS: Record<ModelId, readonly ModelId[]> = {
     // Sonnet → Gemini (versatile multimodal) → GPT (versatile frontier)
-    "anthropic/claude-sonnet-4.5": [
-        "anthropic/claude-sonnet-4.5",
-        "google/gemini-3-pro-preview",
-        "openai/gpt-5.2",
+    "anthropic/claude-sonnet-4.6": [
+        "anthropic/claude-sonnet-4.6",
+        "google/gemini-3.1-pro-preview",
+        "openai/gpt-5.5",
     ],
 
     // Opus → GPT (frontier professional) → Sonnet (same provider, still capable)
-    "anthropic/claude-opus-4.5": [
-        "anthropic/claude-opus-4.5",
-        "openai/gpt-5.2",
-        "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-opus-4.7": [
+        "anthropic/claude-opus-4.7",
+        "openai/gpt-5.5",
+        "anthropic/claude-sonnet-4.6",
     ],
 
-    // Haiku → Grok (fastest) → Gemini (fast multimodal)
+    // Haiku → Gemini Flash (fastest) → Grok (budget reasoning)
     "anthropic/claude-haiku-4.5": [
         "anthropic/claude-haiku-4.5",
-        "x-ai/grok-4.1-fast",
-        "google/gemini-3-pro-preview",
+        "google/gemini-3-flash",
+        "x-ai/grok-4.3",
     ],
 
     // Gemini → Sonnet (versatile) → GPT (versatile)
-    "google/gemini-3-pro-preview": [
-        "google/gemini-3-pro-preview",
-        "anthropic/claude-sonnet-4.5",
-        "openai/gpt-5.2",
+    "google/gemini-3.1-pro-preview": [
+        "google/gemini-3.1-pro-preview",
+        "anthropic/claude-sonnet-4.6",
+        "openai/gpt-5.5",
     ],
 
-    // Grok → Gemini (fast, different provider) → Haiku (fast Anthropic)
-    "x-ai/grok-4.1-fast": [
-        "x-ai/grok-4.1-fast",
-        "google/gemini-3-pro-preview",
+    // Grok → Gemini (different provider, capable) → Haiku (fast Anthropic)
+    "x-ai/grok-4.3": [
+        "x-ai/grok-4.3",
+        "google/gemini-3.1-pro-preview",
         "anthropic/claude-haiku-4.5",
     ],
 
     // GPT → Sonnet (capable, Anthropic values) → Gemini (versatile multimodal)
-    "openai/gpt-5.2": [
-        "openai/gpt-5.2",
-        "anthropic/claude-sonnet-4.5",
-        "google/gemini-3-pro-preview",
+    "openai/gpt-5.5": [
+        "openai/gpt-5.5",
+        "anthropic/claude-sonnet-4.6",
+        "google/gemini-3.1-pro-preview",
     ],
 
     // Perplexity → Sonnet (can't do live web, but capable) → Gemini (versatile)
     "perplexity/sonar-pro": [
         "perplexity/sonar-pro",
-        "anthropic/claude-sonnet-4.5",
-        "google/gemini-3-pro-preview",
+        "anthropic/claude-sonnet-4.6",
+        "google/gemini-3.1-pro-preview",
     ],
 
-    // Gemini Flash → Grok Fast (speed tier) → Haiku (Anthropic fast)
+    // Gemini Flash → Haiku (Anthropic fast) → Grok (budget reasoning)
     "google/gemini-3-flash": [
         "google/gemini-3-flash",
-        "x-ai/grok-4.1-fast",
         "anthropic/claude-haiku-4.5",
+        "x-ai/grok-4.3",
     ],
 } as const;
 
@@ -502,15 +505,15 @@ export const CONCIERGE_FALLBACK_CHAIN: readonly string[] = [
 
 /**
  * Model with native audio support.
- * Currently only Gemini 3 Pro supports audio file processing.
+ * Currently only Gemini 3.1 Pro supports audio file processing.
  */
-export const AUDIO_CAPABLE_MODEL: ModelId = "google/gemini-3-pro-preview";
+export const AUDIO_CAPABLE_MODEL: ModelId = "google/gemini-3.1-pro-preview";
 
 /**
  * Model with native video support.
- * Currently only Gemini 3 Pro supports video file processing.
+ * Currently only Gemini 3.1 Pro supports video file processing.
  */
-export const VIDEO_CAPABLE_MODEL: ModelId = "google/gemini-3-pro-preview";
+export const VIDEO_CAPABLE_MODEL: ModelId = "google/gemini-3.1-pro-preview";
 
 /**
  * Librarian model fallback chain.
@@ -524,12 +527,12 @@ export const VIDEO_CAPABLE_MODEL: ModelId = "google/gemini-3-pro-preview";
  */
 export const LIBRARIAN_FALLBACK_CHAIN: readonly ModelId[] = [
     "anthropic/claude-haiku-4.5",
-    "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-sonnet-4.6",
 ] as const;
 
 /**
  * Benchmark judge model for evals.
  * Used by scoring-runner and competitive-runner for LLM-as-judge evaluation.
- * GPT-5.2 chosen for reliable structured JSON output.
+ * GPT-5.5 chosen for reliable structured JSON output and frontier judgment.
  */
-export const BENCHMARK_JUDGE_MODEL = "openai/gpt-5.2" as const;
+export const BENCHMARK_JUDGE_MODEL = "openai/gpt-5.5" as const;

@@ -292,7 +292,7 @@ export const connections = pgTable(
             .notNull()
             .default("idle"),
 
-        /** Model used for this connection (e.g., "anthropic/claude-sonnet-4.5") */
+        /** Model used for this connection (e.g., "anthropic/claude-sonnet-4.6") */
         modelId: varchar("model_id", { length: 255 }),
 
         // ---- Concierge Data (persisted for display on page refresh) ----

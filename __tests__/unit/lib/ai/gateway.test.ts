@@ -17,16 +17,14 @@ import type { UnifiedProviderOptions } from "@/lib/ai/types";
 
 describe("translateModelId", () => {
     it("returns mapped ID for xAI models", () => {
-        expect(translateModelId("x-ai/grok-4.1-fast")).toBe(
-            "xai/grok-4.1-fast-non-reasoning"
-        );
+        expect(translateModelId("x-ai/grok-4.3")).toBe("xai/grok-4.3");
     });
 
     it("passes through unmapped model IDs unchanged", () => {
-        expect(translateModelId("anthropic/claude-sonnet-4.5")).toBe(
-            "anthropic/claude-sonnet-4.5"
+        expect(translateModelId("anthropic/claude-sonnet-4.6")).toBe(
+            "anthropic/claude-sonnet-4.6"
         );
-        expect(translateModelId("openai/gpt-5.2")).toBe("openai/gpt-5.2");
+        expect(translateModelId("openai/gpt-5.5")).toBe("openai/gpt-5.5");
         expect(translateModelId("perplexity/sonar-pro")).toBe("perplexity/sonar-pro");
     });
 
@@ -47,7 +45,7 @@ describe("translateModelId", () => {
 describe("translateReasoningOptions (via translateOptions)", () => {
     describe("Anthropic provider", () => {
         it("returns thinking config with budget when reasoning enabled with maxTokens", () => {
-            const result = translateOptions("anthropic/claude-sonnet-4.5", {
+            const result = translateOptions("anthropic/claude-sonnet-4.6", {
                 reasoning: { enabled: true, maxTokens: 8000 },
             });
 
@@ -57,7 +55,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         });
 
         it("returns empty object when reasoning enabled but no maxTokens", () => {
-            const result = translateOptions("anthropic/claude-sonnet-4.5", {
+            const result = translateOptions("anthropic/claude-sonnet-4.6", {
                 reasoning: { enabled: true },
             });
 
@@ -66,7 +64,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         });
 
         it("returns empty object when reasoning disabled", () => {
-            const result = translateOptions("anthropic/claude-sonnet-4.5", {
+            const result = translateOptions("anthropic/claude-sonnet-4.6", {
                 reasoning: { enabled: false, maxTokens: 8000 },
             });
 
@@ -76,7 +74,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
 
     describe("OpenAI provider", () => {
         it("returns reasoningEffort when reasoning enabled with effort level", () => {
-            const result = translateOptions("openai/gpt-5.2", {
+            const result = translateOptions("openai/gpt-5.5", {
                 reasoning: { enabled: true, effort: "high" },
             });
 
@@ -86,7 +84,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         });
 
         it("returns empty when reasoning enabled with effort 'none'", () => {
-            const result = translateOptions("openai/gpt-5.2", {
+            const result = translateOptions("openai/gpt-5.5", {
                 reasoning: { enabled: true, effort: "none" },
             });
 
@@ -94,7 +92,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         });
 
         it("returns empty when reasoning disabled", () => {
-            const result = translateOptions("openai/gpt-5.2", {
+            const result = translateOptions("openai/gpt-5.5", {
                 reasoning: { enabled: false, effort: "high" },
             });
 
@@ -102,7 +100,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         });
 
         it("returns empty when no effort specified", () => {
-            const result = translateOptions("openai/gpt-5.2", {
+            const result = translateOptions("openai/gpt-5.5", {
                 reasoning: { enabled: true },
             });
 
@@ -112,7 +110,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         it.each(["high", "medium", "low"] as const)(
             "handles effort level '%s'",
             (effort) => {
-                const result = translateOptions("openai/gpt-5.2", {
+                const result = translateOptions("openai/gpt-5.5", {
                     reasoning: { enabled: true, effort },
                 });
 
@@ -125,7 +123,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
 
     describe("xAI provider", () => {
         it("returns reasoningEffort when reasoning enabled with effort level", () => {
-            const result = translateOptions("x-ai/grok-4.1-fast", {
+            const result = translateOptions("x-ai/grok-4.3", {
                 reasoning: { enabled: true, effort: "medium" },
             });
 
@@ -135,7 +133,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         });
 
         it("returns empty when reasoning disabled", () => {
-            const result = translateOptions("x-ai/grok-4.1-fast", {
+            const result = translateOptions("x-ai/grok-4.3", {
                 reasoning: { enabled: false, effort: "high" },
             });
 
@@ -143,7 +141,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         });
 
         it("returns empty when effort is 'none'", () => {
-            const result = translateOptions("x-ai/grok-4.1-fast", {
+            const result = translateOptions("x-ai/grok-4.3", {
                 reasoning: { enabled: true, effort: "none" },
             });
 
@@ -153,7 +151,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
 
     describe("Google provider", () => {
         it("returns empty - Google does not support explicit reasoning config", () => {
-            const result = translateOptions("google/gemini-3-pro-preview", {
+            const result = translateOptions("google/gemini-3.1-pro-preview", {
                 reasoning: { enabled: true, maxTokens: 4000 },
             });
 
@@ -161,7 +159,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
         });
 
         it("returns empty even with effort specified", () => {
-            const result = translateOptions("google/gemini-3-pro-preview", {
+            const result = translateOptions("google/gemini-3.1-pro-preview", {
                 reasoning: { enabled: true, effort: "high" },
             });
 
@@ -191,14 +189,14 @@ describe("translateReasoningOptions (via translateOptions)", () => {
 
     describe("no reasoning options", () => {
         it("returns empty when reasoning options not provided", () => {
-            const result = translateOptions("anthropic/claude-sonnet-4.5", {});
+            const result = translateOptions("anthropic/claude-sonnet-4.6", {});
 
             expect(result).toEqual({});
         });
 
         it("returns empty when options object is empty", () => {
             const result = translateOptions(
-                "openai/gpt-5.2",
+                "openai/gpt-5.5",
                 {} as UnifiedProviderOptions
             );
 
@@ -209,7 +207,7 @@ describe("translateReasoningOptions (via translateOptions)", () => {
 
 describe("translateCacheControlOptions (via translateOptions)", () => {
     it("returns cacheControl for Anthropic models", () => {
-        const result = translateOptions("anthropic/claude-sonnet-4.5", {
+        const result = translateOptions("anthropic/claude-sonnet-4.6", {
             cacheControl: { type: "ephemeral" },
         });
 
@@ -219,17 +217,17 @@ describe("translateCacheControlOptions (via translateOptions)", () => {
     });
 
     it("ignores cacheControl for non-Anthropic models", () => {
-        const googleResult = translateOptions("google/gemini-3-pro-preview", {
+        const googleResult = translateOptions("google/gemini-3.1-pro-preview", {
             cacheControl: { type: "ephemeral" },
         });
         expect(googleResult.google).toBeUndefined();
 
-        const openaiResult = translateOptions("openai/gpt-5.2", {
+        const openaiResult = translateOptions("openai/gpt-5.5", {
             cacheControl: { type: "ephemeral" },
         });
         expect(openaiResult.openai).toBeUndefined();
 
-        const xaiResult = translateOptions("x-ai/grok-4.1-fast", {
+        const xaiResult = translateOptions("x-ai/grok-4.3", {
             cacheControl: { type: "ephemeral" },
         });
         expect(xaiResult.xai).toBeUndefined();
@@ -241,7 +239,7 @@ describe("translateCacheControlOptions (via translateOptions)", () => {
     });
 
     it("returns empty when cacheControl not provided", () => {
-        const result = translateOptions("anthropic/claude-sonnet-4.5", {});
+        const result = translateOptions("anthropic/claude-sonnet-4.6", {});
 
         expect(result).toEqual({});
     });
@@ -249,25 +247,25 @@ describe("translateCacheControlOptions (via translateOptions)", () => {
 
 describe("translateFallbackOptions (via translateOptions)", () => {
     it("returns gateway.models with translated fallback IDs", () => {
-        const result = translateOptions("anthropic/claude-sonnet-4.5", {
+        const result = translateOptions("anthropic/claude-sonnet-4.6", {
             fallbackModels: [
-                "anthropic/claude-sonnet-4.5",
-                "google/gemini-3-pro-preview",
-                "x-ai/grok-4.1-fast",
+                "anthropic/claude-sonnet-4.6",
+                "google/gemini-3.1-pro-preview",
+                "x-ai/grok-4.3",
             ],
         });
 
         expect(result.gateway).toEqual({
             models: [
-                "anthropic/claude-sonnet-4.5", // No translation needed
-                "google/gemini-3-pro-preview", // No translation needed
-                "xai/grok-4.1-fast-non-reasoning", // Translated (x-ai → xai)
+                "anthropic/claude-sonnet-4.6", // No translation needed
+                "google/gemini-3.1-pro-preview", // No translation needed
+                "xai/grok-4.3", // Translated (x-ai → xai)
             ],
         });
     });
 
     it("returns empty when fallbackModels is empty array", () => {
-        const result = translateOptions("anthropic/claude-sonnet-4.5", {
+        const result = translateOptions("anthropic/claude-sonnet-4.6", {
             fallbackModels: [],
         });
 
@@ -275,7 +273,7 @@ describe("translateFallbackOptions (via translateOptions)", () => {
     });
 
     it("returns empty when fallbackModels not provided", () => {
-        const result = translateOptions("anthropic/claude-sonnet-4.5", {});
+        const result = translateOptions("anthropic/claude-sonnet-4.6", {});
 
         expect(result.gateway).toBeUndefined();
     });
@@ -283,7 +281,7 @@ describe("translateFallbackOptions (via translateOptions)", () => {
 
 describe("translateOptions (integration of all options)", () => {
     it("merges reasoning and cache control for Anthropic", () => {
-        const result = translateOptions("anthropic/claude-sonnet-4.5", {
+        const result = translateOptions("anthropic/claude-sonnet-4.6", {
             reasoning: { enabled: true, maxTokens: 8000 },
             cacheControl: { type: "ephemeral" },
         });
@@ -295,10 +293,10 @@ describe("translateOptions (integration of all options)", () => {
     });
 
     it("merges all option types correctly", () => {
-        const result = translateOptions("anthropic/claude-sonnet-4.5", {
+        const result = translateOptions("anthropic/claude-sonnet-4.6", {
             reasoning: { enabled: true, maxTokens: 8000 },
             cacheControl: { type: "ephemeral" },
-            fallbackModels: ["google/gemini-3-pro-preview"],
+            fallbackModels: ["google/gemini-3.1-pro-preview"],
         });
 
         expect(result).toEqual({
@@ -307,13 +305,13 @@ describe("translateOptions (integration of all options)", () => {
                 cacheControl: { type: "ephemeral" },
             },
             gateway: {
-                models: ["google/gemini-3-pro-preview"],
+                models: ["google/gemini-3.1-pro-preview"],
             },
         });
     });
 
     it("handles OpenAI with fallbacks", () => {
-        const result = translateOptions("openai/gpt-5.2", {
+        const result = translateOptions("openai/gpt-5.5", {
             reasoning: { enabled: true, effort: "high" },
             fallbackModels: ["anthropic/claude-haiku-4.5"],
         });
@@ -329,7 +327,7 @@ describe("translateOptions (integration of all options)", () => {
     });
 
     it("returns only gateway options when no provider-specific config needed", () => {
-        const result = translateOptions("google/gemini-3-pro-preview", {
+        const result = translateOptions("google/gemini-3.1-pro-preview", {
             fallbackModels: ["anthropic/claude-haiku-4.5"],
         });
 
@@ -360,15 +358,15 @@ describe("gatewayProvider", () => {
         const options: UnifiedProviderOptions = {
             reasoning: { enabled: true, maxTokens: 8000 },
             cacheControl: { type: "ephemeral" },
-            fallbackModels: ["google/gemini-3-pro-preview"],
+            fallbackModels: ["google/gemini-3.1-pro-preview"],
         };
 
         const providerResult = gatewayProvider.translateOptions(
-            "anthropic/claude-sonnet-4.5",
+            "anthropic/claude-sonnet-4.6",
             options
         );
         const standaloneResult = translateOptions(
-            "anthropic/claude-sonnet-4.5",
+            "anthropic/claude-sonnet-4.6",
             options
         );
 

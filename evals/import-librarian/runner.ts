@@ -18,8 +18,8 @@ import type { ExtractionOutput } from "./scorer";
  */
 export const EXTRACTION_MODEL_CANDIDATES = [
     {
-        id: "anthropic/claude-sonnet-4.5",
-        name: "Claude Sonnet 4.5",
+        id: "anthropic/claude-sonnet-4.6",
+        name: "Claude Sonnet 4.6",
         costPer1M: 3.0,
     },
     {

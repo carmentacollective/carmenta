@@ -376,7 +376,7 @@ const kbSearchSchema = z.object({
 const conciergeSchema = z.object({
     modelId: z
         .string()
-        .describe("The OpenRouter model ID (e.g., anthropic/claude-sonnet-4.5)"),
+        .describe("The OpenRouter model ID (e.g., anthropic/claude-sonnet-4.6)"),
     temperature: z
         .number()
         .min(0)

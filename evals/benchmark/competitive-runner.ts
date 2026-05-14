@@ -40,11 +40,11 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Models to compare against (OpenRouter model IDs - queried Dec 2025)
 const COMPETITOR_MODELS = [
-    { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5" },
-    { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5" },
-    { id: "openai/gpt-5.2-pro", name: "GPT-5.2 Pro" },
-    { id: "google/gemini-3-pro-preview", name: "Gemini 3 Pro" },
-    { id: "x-ai/grok-4.1-fast", name: "Grok 4.1" },
+    { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6" },
+    { id: "anthropic/claude-opus-4.7", name: "Claude Opus 4.7" },
+    { id: "openai/gpt-5.5-pro", name: "GPT-5.5 Pro" },
+    { id: "google/gemini-3.1-pro-preview", name: "Gemini 3 Pro" },
+    { id: "x-ai/grok-4.3", name: "Grok 4.3" },
 ] as const;
 
 // ============================================================================

@@ -18,7 +18,7 @@ import { z } from "zod";
 import type { CompetitiveOutput } from "./eval";
 import type { CompetitiveQuery } from "./queries";
 
-const JUDGE_MODEL = "anthropic/claude-opus-4.5";
+const JUDGE_MODEL = "anthropic/claude-opus-4.7";
 
 // Note: Anthropic's structured output doesn't support min/max on numbers,
 // so we rely on the prompt to constrain scores to 0-1 range

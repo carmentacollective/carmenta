@@ -85,7 +85,7 @@ vi.mock("@/lib/concierge", () => ({
     }),
     getAttachmentTypesFromInput: vi.fn().mockReturnValue([]),
     CONCIERGE_DEFAULTS: {
-        modelId: "anthropic/claude-sonnet-4.5",
+        modelId: "anthropic/claude-sonnet-4.6",
         temperature: 0.5,
         reasoning: { enabled: false },
     },
@@ -94,9 +94,9 @@ vi.mock("@/lib/concierge", () => ({
 // Mock context routing rules
 vi.mock("@/lib/context", () => ({
     applyRoutingRules: vi.fn().mockReturnValue({
-        modelId: "anthropic/claude-sonnet-4.5",
+        modelId: "anthropic/claude-sonnet-4.6",
         wasChanged: false,
-        originalModelId: "anthropic/claude-sonnet-4.5",
+        originalModelId: "anthropic/claude-sonnet-4.6",
     }),
 }));
 
@@ -324,7 +324,7 @@ describe("Connection API Response Paths", () => {
 
         // Default concierge response (normal path)
         vi.mocked(runConcierge).mockResolvedValue({
-            modelId: "anthropic/claude-sonnet-4.5",
+            modelId: "anthropic/claude-sonnet-4.6",
             temperature: 0.5,
             explanation: "Standard task.",
             reasoning: { enabled: false },
@@ -408,7 +408,7 @@ describe("Connection API Response Paths", () => {
             const response = await POST(request);
 
             expect(response.headers.get("X-Concierge-Model-Id")).toBe(
-                "anthropic/claude-sonnet-4.5"
+                "anthropic/claude-sonnet-4.6"
             );
             expect(response.headers.get("X-Concierge-Temperature")).toBe("0.5");
             expect(response.headers.get("X-Concierge-Explanation")).toBe(
@@ -518,7 +518,7 @@ describe("Connection API Response Paths", () => {
 
         it("includes reasoning headers when reasoning is enabled", async () => {
             vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Complex task requiring deep thinking.",
                 reasoning: { enabled: true, effort: "medium", maxTokens: 8000 },
@@ -539,9 +539,9 @@ describe("Connection API Response Paths", () => {
         it("includes auto-switch headers when routing rules change model", async () => {
             const { applyRoutingRules } = await import("@/lib/context");
             vi.mocked(applyRoutingRules).mockReturnValueOnce({
-                modelId: "google/gemini-3-pro-preview",
+                modelId: "google/gemini-3.1-pro-preview",
                 wasChanged: true,
-                originalModelId: "anthropic/claude-sonnet-4.5",
+                originalModelId: "anthropic/claude-sonnet-4.6",
                 reason: "Audio file detected - routing to Gemini for native audio processing",
             });
 
@@ -562,7 +562,7 @@ describe("Connection API Response Paths", () => {
         beforeEach(() => {
             // Configure concierge to return clarifying questions
             vi.mocked(runConcierge).mockResolvedValue({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Research task - need more context.",
                 reasoning: { enabled: false },
@@ -593,7 +593,7 @@ describe("Connection API Response Paths", () => {
             const response = await POST(request);
 
             expect(response.headers.get("X-Concierge-Model-Id")).toBe(
-                "anthropic/claude-sonnet-4.5"
+                "anthropic/claude-sonnet-4.6"
             );
             expect(response.headers.get("X-Concierge-Temperature")).toBe("0.5");
             expect(response.headers.get("X-Connection-Id")).toBeTruthy();
@@ -724,7 +724,7 @@ describe("Connection API Response Paths", () => {
 
             // Standard concierge response (background mode is now opt-in via hashtag)
             vi.mocked(runConcierge).mockResolvedValue({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Deep research task.",
                 reasoning: { enabled: true, effort: "high", maxTokens: 16000 },
@@ -762,7 +762,7 @@ describe("Connection API Response Paths", () => {
             const response = await POST(request);
 
             expect(response.headers.get("X-Concierge-Model-Id")).toBe(
-                "anthropic/claude-sonnet-4.5"
+                "anthropic/claude-sonnet-4.6"
             );
             expect(response.headers.get("X-Concierge-Temperature")).toBe("0.5");
             expect(response.headers.get("X-Connection-Id")).toBeTruthy();
@@ -787,7 +787,7 @@ describe("Connection API Response Paths", () => {
                 connectionId: expect.any(Number),
                 userId: "db-user-123",
                 streamId: expect.any(String),
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 reasoning: { enabled: true, effort: "high", maxTokens: 16000 },
             });
@@ -986,7 +986,7 @@ describe("Connection API Response Paths", () => {
 
             // Reset mocks and test clarifying questions path
             vi.mocked(runConcierge).mockResolvedValue({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Research task.",
                 reasoning: { enabled: false },
@@ -1012,7 +1012,7 @@ describe("Connection API Response Paths", () => {
 
         it("new connection headers are URL-encoded properly", async () => {
             vi.mocked(runConcierge).mockResolvedValue({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Task with special chars & quotes 'test'",
                 reasoning: { enabled: false },

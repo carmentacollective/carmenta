@@ -331,9 +331,9 @@ describe("loadConnection", () => {
         const connection = await dbCreateConnection(
             dbUser.id,
             "Test Connection",
-            "anthropic/claude-sonnet-4.5",
+            "anthropic/claude-sonnet-4.6",
             {
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.7,
                 explanation: "Standard task",
                 reasoning: { enabled: true, maxTokens: 1000 },
@@ -345,7 +345,7 @@ describe("loadConnection", () => {
 
         expect(result).not.toBeNull();
         expect(result!.concierge).not.toBeNull();
-        expect(result!.concierge!.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result!.concierge!.modelId).toBe("anthropic/claude-sonnet-4.6");
         expect(result!.concierge!.temperature).toBe(0.7);
         expect(result!.concierge!.explanation).toBe("Standard task");
         expect(result!.concierge!.reasoning).toEqual({

@@ -414,7 +414,7 @@ export const REASONING_TOKEN_BUDGETS: Record<ReasoningEffort, number> = {
  * Default fallback values if concierge fails.
  */
 export const CONCIERGE_DEFAULTS: ConciergeResult = {
-    modelId: "anthropic/claude-sonnet-4.5",
+    modelId: "anthropic/claude-sonnet-4.6",
     temperature: 0.5,
     explanation: "Using our balanced default model.",
     reasoning: {
@@ -436,38 +436,38 @@ export const CONCIERGE_MODEL = "meta/llama-3.3-70b";
  * Prevents routing to unexpected or expensive models.
  */
 export const ALLOWED_MODELS = [
-    "anthropic/claude-opus-4.5",
-    "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-opus-4.7",
+    "anthropic/claude-sonnet-4.6",
     "anthropic/claude-haiku-4.5",
-    "google/gemini-3-pro-preview",
-    "openai/gpt-5.2",
-    "x-ai/grok-4.1-fast",
+    "google/gemini-3.1-pro-preview",
+    "openai/gpt-5.5",
+    "x-ai/grok-4.3",
 ] as const;
 
 /**
  * Models that support extended reasoning with visible reasoning tokens.
  */
 export const REASONING_CAPABLE_MODELS = [
-    "anthropic/claude-opus-4.5",
-    "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-opus-4.7",
+    "anthropic/claude-sonnet-4.6",
     "anthropic/claude-haiku-4.5",
-    "openai/gpt-5.2",
-    "x-ai/grok-4.1-fast",
+    "openai/gpt-5.5",
+    "x-ai/grok-4.3",
 ] as const;
 
 /**
  * Models that use token-budget reasoning (Anthropic).
  */
 export const TOKEN_BUDGET_MODELS = [
-    "anthropic/claude-opus-4.5",
-    "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-opus-4.7",
+    "anthropic/claude-sonnet-4.6",
     "anthropic/claude-haiku-4.5",
 ] as const;
 
 /**
  * Models that use effort-based reasoning (Grok, OpenAI).
  */
-export const EFFORT_BASED_MODELS = ["openai/gpt-5.2", "x-ai/grok-4.1-fast"] as const;
+export const EFFORT_BASED_MODELS = ["openai/gpt-5.5", "x-ai/grok-4.3"] as const;
 
 /**
  * Maximum length for explanation text.

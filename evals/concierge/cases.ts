@@ -372,7 +372,7 @@ export const conciergeTestData: ConciergeTestCase[] = [
             attachments: [{ type: "image", mimeType: "image/png" }],
         },
         expected: {
-            // Per prompt: images → prefer anthropic/claude-sonnet-4.5
+            // Per prompt: images → prefer anthropic/claude-sonnet-4.6
             model: "sonnet|claude",
             reasoningEnabled: false,
         },

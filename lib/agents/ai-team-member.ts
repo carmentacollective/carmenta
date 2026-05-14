@@ -43,7 +43,7 @@ import { getFallbackChain } from "@/lib/model-config";
  * Fallback chain for AI Team member execution
  * Sonnet for balanced cost/capability, with fallbacks from model-config
  */
-const AI_TEAM_MODEL_CHAIN = getFallbackChain("anthropic/claude-sonnet-4.5");
+const AI_TEAM_MODEL_CHAIN = getFallbackChain("anthropic/claude-sonnet-4.6");
 
 /**
  * Maximum steps per job execution

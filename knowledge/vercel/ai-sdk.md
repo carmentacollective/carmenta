@@ -18,7 +18,7 @@ V6 introduces a formal Agent abstraction: `ToolLoopAgent` class that encapsulate
 import { ToolLoopAgent, createAgentUIStreamResponse } from "ai";
 
 const agent = new ToolLoopAgent({
-  model: "anthropic/claude-sonnet-4.5",
+  model: "anthropic/claude-sonnet-4.6",
   instructions: "You are a helpful assistant.",
   tools: { weather: weatherTool, calculator: calculatorTool },
   stopWhen: stepCountIs(10),

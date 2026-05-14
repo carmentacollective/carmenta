@@ -26,7 +26,7 @@ export interface UploadedFile {
 export interface AttachmentMeta {
     /** MIME type of the attachment */
     mediaType: string;
-    /** Required model for this attachment type (e.g., "google/gemini-3-pro-preview" for audio) */
+    /** Required model for this attachment type (e.g., "google/gemini-3.1-pro-preview" for audio) */
     requiredModel?: string;
 }
 

@@ -21,7 +21,7 @@ vi.mock("ai", async (importOriginal) => {
 vi.mock("fs/promises", () => {
     const mockReadFile = vi.fn().mockResolvedValue(`# Test Rubric
 ## Primary Models
-### anthropic/claude-sonnet-4.5
+### anthropic/claude-sonnet-4.6
 Our default model.
 **Choose when**: Most requests
 `);
@@ -81,7 +81,7 @@ describe("runConcierge integration", () => {
                     toolCallId: "test-1",
                     toolName: "selectModelTool",
                     input: {
-                        modelId: "anthropic/claude-opus-4.5",
+                        modelId: "anthropic/claude-opus-4.7",
                         temperature: 0.6,
                         explanation: "Complex analysis needs deeper reasoning.",
                         reasoning: { enabled: true, effort: "high" },
@@ -97,7 +97,7 @@ describe("runConcierge integration", () => {
             createUserMessage("Analyze this complex problem"),
         ]);
 
-        expect(result.modelId).toBe("anthropic/claude-opus-4.5");
+        expect(result.modelId).toBe("anthropic/claude-opus-4.7");
         expect(result.temperature).toBe(0.6);
         expect(result.explanation).toBe("Complex analysis needs deeper reasoning.");
         expect(result.reasoning.enabled).toBe(true);
@@ -114,7 +114,7 @@ describe("runConcierge integration", () => {
                     toolCallId: "test-2",
                     toolName: "selectModelTool",
                     input: {
-                        modelId: "anthropic/claude-sonnet-4.5",
+                        modelId: "anthropic/claude-sonnet-4.6",
                         temperature: 0.4,
                         explanation:
                             "Code review is well-suited for our balanced default.",
@@ -129,7 +129,7 @@ describe("runConcierge integration", () => {
 
         const result = await runConcierge([createUserMessage("Review my code")]);
 
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.6");
         expect(result.temperature).toBeLessThanOrEqual(0.5);
     });
 
@@ -221,7 +221,7 @@ describe("runConcierge integration", () => {
                     toolCallId: "test-4",
                     toolName: "selectModelTool",
                     input: {
-                        modelId: "anthropic/claude-sonnet-4.5",
+                        modelId: "anthropic/claude-sonnet-4.6",
                         temperature: 0.7,
                         explanation:
                             "Creative writing benefits from higher temperature.",
@@ -270,7 +270,7 @@ describe("runConcierge integration", () => {
                     toolCallId: "test-5",
                     toolName: "selectModelTool",
                     input: {
-                        modelId: "anthropic/claude-sonnet-4.5",
+                        modelId: "anthropic/claude-sonnet-4.6",
                         temperature: 0.5,
                         explanation: "Default choice.",
                         reasoning: { enabled: false },
@@ -306,7 +306,7 @@ describe("runConcierge integration", () => {
                     toolCallId: "test-gpt52",
                     toolName: "selectModelTool",
                     input: {
-                        modelId: "openai/gpt-5.2",
+                        modelId: "openai/gpt-5.5",
                         temperature: 0.5,
                         explanation:
                             "Fetching and summarizing conversations needs tool-calling accuracy",
@@ -325,7 +325,7 @@ describe("runConcierge integration", () => {
             ),
         ]);
 
-        expect(result.modelId).toBe("openai/gpt-5.2");
+        expect(result.modelId).toBe("openai/gpt-5.5");
         expect(result.temperature).toBe(0.5);
         expect(result.reasoning.enabled).toBe(false);
         expect(result.title).toBe("📝 Yesterday's highlights");
@@ -340,7 +340,7 @@ describe("runConcierge integration", () => {
                     toolCallId: "test-research",
                     toolName: "selectModelTool",
                     input: {
-                        modelId: "openai/gpt-5.2",
+                        modelId: "openai/gpt-5.5",
                         temperature: 0.5,
                         explanation:
                             "Research with analysis needs accurate tool calling",
@@ -359,7 +359,7 @@ describe("runConcierge integration", () => {
             ),
         ]);
 
-        expect(result.modelId).toBe("openai/gpt-5.2");
+        expect(result.modelId).toBe("openai/gpt-5.5");
         expect(result.reasoning.enabled).toBe(true);
         expect(result.reasoning.effort).toBe("medium");
         // GPT 5.2 uses effort-based reasoning, not token budget

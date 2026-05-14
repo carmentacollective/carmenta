@@ -252,8 +252,8 @@ export const LIBRARIAN_MODEL_CANDIDATES = [
         costPer1M: { input: 1.0, output: 5.0 },
     },
     {
-        id: "x-ai/grok-4.1-fast",
-        name: "Grok 4.1 Fast",
+        id: "x-ai/grok-4.3",
+        name: "Grok 4.3 Fast",
         description: "Fastest model, massive 2M context, cheapest",
         costPer1M: { input: 0.2, output: 0.5 },
     },
@@ -265,27 +265,27 @@ export const LIBRARIAN_MODEL_CANDIDATES = [
     },
     // Balanced tier - if fast models underperform
     {
-        id: "anthropic/claude-sonnet-4.5",
-        name: "Claude Sonnet 4.5",
+        id: "anthropic/claude-sonnet-4.6",
+        name: "Claude Sonnet 4.6",
         description: "Balanced - strong reasoning, reliable tool use",
         costPer1M: { input: 3.0, output: 15.0 },
     },
     {
-        id: "google/gemini-3-pro-preview",
+        id: "google/gemini-3.1-pro-preview",
         name: "Gemini 3 Pro",
         description: "Flagship multimodal with 1M context",
         costPer1M: { input: 2.0, output: 12.0 },
     },
     {
-        id: "openai/gpt-5.2",
+        id: "openai/gpt-5.5",
         name: "GPT-5.2",
         description: "Frontier model with adaptive reasoning",
         costPer1M: { input: 1.75, output: 14.0 },
     },
     // Premium tier - only if significantly better
     {
-        id: "anthropic/claude-opus-4.5",
-        name: "Claude Opus 4.5",
+        id: "anthropic/claude-opus-4.7",
+        name: "Claude Opus 4.7",
         description: "Maximum capability - expensive, use only if way better",
         costPer1M: { input: 5.0, output: 25.0 },
     },

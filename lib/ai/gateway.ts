@@ -1,7 +1,7 @@
 /**
  * Vercel AI Gateway provider.
  *
- * Model IDs use format: "provider/model-name" (e.g., "anthropic/claude-sonnet-4.5")
+ * Model IDs use format: "provider/model-name" (e.g., "anthropic/claude-sonnet-4.6")
  * Full model list: https://ai-gateway.vercel.sh/v1/models
  *
  * @see https://vercel.com/docs/ai-gateway
@@ -189,9 +189,9 @@ export function translateOptions(
  *
  * Usage:
  * ```ts
- * const model = gatewayProvider.chat('anthropic/claude-sonnet-4.5');
+ * const model = gatewayProvider.chat('anthropic/claude-sonnet-4.6');
  * const providerOptions = gatewayProvider.translateOptions(modelId, {
- *     fallbackModels: ['google/gemini-3-pro', 'openai/gpt-5.2'],
+ *     fallbackModels: ['google/gemini-3.1-pro-preview', 'openai/gpt-5.5'],
  *     reasoning: { enabled: true, maxTokens: 8000 },
  * });
  * ```
@@ -219,10 +219,10 @@ export const gatewayProvider: AIProvider = {
  * Only add mappings where our internal ID differs from Gateway's ID.
  */
 export const MODEL_ID_MAPPINGS: Record<string, string> = {
-    // xAI uses different provider prefix in Gateway
-    // Internal: "x-ai/grok-4.1-fast"
-    // Gateway: "xai/grok-4.1-fast-non-reasoning" (reasoning mode explicit)
-    "x-ai/grok-4.1-fast": "xai/grok-4.1-fast-non-reasoning",
+    // xAI uses different provider prefix in Gateway (x-ai/ → xai/)
+    // Grok 4.3 doesn't split reasoning/non-reasoning variants — reasoning is controlled
+    // by API params, so we use the unified model ID.
+    "x-ai/grok-4.3": "xai/grok-4.3",
 };
 
 /**

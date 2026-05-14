@@ -97,7 +97,7 @@ describe("ModelSelectorModal", () => {
 
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    modelId: "anthropic/claude-sonnet-4.5",
+                    modelId: "anthropic/claude-sonnet-4.6",
                 })
             );
         });
@@ -110,7 +110,7 @@ describe("ModelSelectorModal", () => {
                     onChange={onChange}
                     overrides={{
                         ...DEFAULT_OVERRIDES,
-                        modelId: "anthropic/claude-opus-4.5",
+                        modelId: "anthropic/claude-opus-4.7",
                     }}
                 />
             );
@@ -153,7 +153,7 @@ describe("ModelSelectorModal", () => {
                         onChange={onChange}
                         onOpenChange={onOpenChange}
                         overrides={{
-                            modelId: "anthropic/claude-opus-4.5",
+                            modelId: "anthropic/claude-opus-4.7",
                             temperature: 0.7,
                             reasoning: "high",
                         }}

@@ -109,9 +109,9 @@ describeIf("Vercel AI Gateway Integration", () => {
         const modelsToTest: Array<{ id: ModelId; name: string; fast: boolean }> = [
             { id: "anthropic/claude-haiku-4.5", name: "Claude Haiku", fast: true },
             { id: "google/gemini-3-flash", name: "Gemini Flash", fast: true },
-            { id: "openai/gpt-5.2", name: "GPT-5.2", fast: true },
+            { id: "openai/gpt-5.5", name: "GPT-5.2", fast: true },
             // xAI model ID needs translation
-            { id: "x-ai/grok-4.1-fast", name: "Grok", fast: true },
+            { id: "x-ai/grok-4.3", name: "Grok", fast: true },
             { id: "perplexity/sonar-pro", name: "Perplexity Sonar", fast: true },
         ];
 
@@ -166,9 +166,9 @@ describeIf("Vercel AI Gateway Integration", () => {
             "enables effort-based reasoning for OpenAI",
             async () => {
                 const gateway = getGatewayClient();
-                const modelId = translateModelId("openai/gpt-5.2");
+                const modelId = translateModelId("openai/gpt-5.5");
 
-                const providerOptions = translateOptions("openai/gpt-5.2", {
+                const providerOptions = translateOptions("openai/gpt-5.5", {
                     reasoning: { enabled: true, effort: "medium" },
                 });
 
@@ -186,7 +186,7 @@ describeIf("Vercel AI Gateway Integration", () => {
 
         it("translates reasoning options correctly for each provider", () => {
             // Anthropic: should use thinking.budgetTokens
-            const anthropicOptions = translateOptions("anthropic/claude-sonnet-4.5", {
+            const anthropicOptions = translateOptions("anthropic/claude-sonnet-4.6", {
                 reasoning: { enabled: true, maxTokens: 8000 },
             });
             expect(anthropicOptions.anthropic).toEqual({
@@ -194,7 +194,7 @@ describeIf("Vercel AI Gateway Integration", () => {
             });
 
             // OpenAI: should use reasoningEffort
-            const openaiOptions = translateOptions("openai/gpt-5.2", {
+            const openaiOptions = translateOptions("openai/gpt-5.5", {
                 reasoning: { enabled: true, effort: "high" },
             });
             expect(openaiOptions.openai).toEqual({
@@ -202,7 +202,7 @@ describeIf("Vercel AI Gateway Integration", () => {
             });
 
             // xAI: should use reasoningEffort
-            const xaiOptions = translateOptions("x-ai/grok-4.1-fast", {
+            const xaiOptions = translateOptions("x-ai/grok-4.3", {
                 reasoning: { enabled: true, effort: "medium" },
             });
             expect(xaiOptions.xai).toEqual({
@@ -210,7 +210,7 @@ describeIf("Vercel AI Gateway Integration", () => {
             });
 
             // Google: no reasoning config (not supported)
-            const googleOptions = translateOptions("google/gemini-3-pro-preview", {
+            const googleOptions = translateOptions("google/gemini-3.1-pro-preview", {
                 reasoning: { enabled: true, maxTokens: 4000 },
             });
             expect(googleOptions.google).toBeUndefined();
@@ -219,7 +219,7 @@ describeIf("Vercel AI Gateway Integration", () => {
 
     describe("Prompt Caching", () => {
         it("cache control options translate correctly for Anthropic", () => {
-            const options = translateOptions("anthropic/claude-sonnet-4.5", {
+            const options = translateOptions("anthropic/claude-sonnet-4.6", {
                 cacheControl: { type: "ephemeral" },
             });
 
@@ -229,12 +229,12 @@ describeIf("Vercel AI Gateway Integration", () => {
         });
 
         it("cache control is ignored for non-Anthropic models", () => {
-            const googleOptions = translateOptions("google/gemini-3-pro-preview", {
+            const googleOptions = translateOptions("google/gemini-3.1-pro-preview", {
                 cacheControl: { type: "ephemeral" },
             });
             expect(googleOptions.google).toBeUndefined();
 
-            const openaiOptions = translateOptions("openai/gpt-5.2", {
+            const openaiOptions = translateOptions("openai/gpt-5.5", {
                 cacheControl: { type: "ephemeral" },
             });
             expect(openaiOptions.openai).toBeUndefined();
@@ -248,19 +248,19 @@ describeIf("Vercel AI Gateway Integration", () => {
 
     describe("Fallback Configuration", () => {
         it("translates fallback models correctly", () => {
-            const options = translateOptions("anthropic/claude-sonnet-4.5", {
+            const options = translateOptions("anthropic/claude-sonnet-4.6", {
                 fallbackModels: [
-                    "anthropic/claude-sonnet-4.5",
-                    "google/gemini-3-pro-preview",
-                    "x-ai/grok-4.1-fast",
+                    "anthropic/claude-sonnet-4.6",
+                    "google/gemini-3.1-pro-preview",
+                    "x-ai/grok-4.3",
                 ],
             });
 
             expect(options.gateway).toEqual({
                 models: [
-                    "anthropic/claude-sonnet-4.5",
-                    "google/gemini-3-pro-preview", // No translation needed
-                    "xai/grok-4.1-fast-non-reasoning", // Translated (x-ai → xai)
+                    "anthropic/claude-sonnet-4.6",
+                    "google/gemini-3.1-pro-preview", // No translation needed
+                    "xai/grok-4.3", // Translated (x-ai → xai)
                 ],
             });
         });
@@ -268,31 +268,29 @@ describeIf("Vercel AI Gateway Integration", () => {
 
     describe("Model ID Translation", () => {
         it("translates xAI model IDs", () => {
-            expect(translateModelId("x-ai/grok-4.1-fast")).toBe(
-                "xai/grok-4.1-fast-non-reasoning"
-            );
+            expect(translateModelId("x-ai/grok-4.3")).toBe("xai/grok-4.3");
         });
 
         it("passes through Google Gemini model IDs unchanged", () => {
-            expect(translateModelId("google/gemini-3-pro-preview")).toBe(
-                "google/gemini-3-pro-preview"
+            expect(translateModelId("google/gemini-3.1-pro-preview")).toBe(
+                "google/gemini-3.1-pro-preview"
             );
         });
 
         it("passes through standard model IDs unchanged", () => {
-            expect(translateModelId("anthropic/claude-sonnet-4.5")).toBe(
-                "anthropic/claude-sonnet-4.5"
+            expect(translateModelId("anthropic/claude-sonnet-4.6")).toBe(
+                "anthropic/claude-sonnet-4.6"
             );
-            expect(translateModelId("openai/gpt-5.2")).toBe("openai/gpt-5.2");
+            expect(translateModelId("openai/gpt-5.5")).toBe("openai/gpt-5.5");
         });
     });
 
     describe("Combined Options", () => {
         it("merges reasoning and cache control for Anthropic", () => {
-            const options = translateOptions("anthropic/claude-sonnet-4.5", {
+            const options = translateOptions("anthropic/claude-sonnet-4.6", {
                 reasoning: { enabled: true, maxTokens: 8000 },
                 cacheControl: { type: "ephemeral" },
-                fallbackModels: ["google/gemini-3-pro-preview"],
+                fallbackModels: ["google/gemini-3.1-pro-preview"],
             });
 
             expect(options).toEqual({
@@ -301,7 +299,7 @@ describeIf("Vercel AI Gateway Integration", () => {
                     cacheControl: { type: "ephemeral" },
                 },
                 gateway: {
-                    models: ["google/gemini-3-pro-preview"], // No translation needed
+                    models: ["google/gemini-3.1-pro-preview"], // No translation needed
                 },
             });
         });

@@ -53,17 +53,17 @@ interface Score {
  */
 const MODEL_ALIASES: Record<string, string[]> = {
     haiku: ["anthropic/claude-haiku-4.5", "haiku"],
-    sonnet: ["anthropic/claude-sonnet-4.5", "sonnet"],
-    opus: ["anthropic/claude-opus-4.5", "opus"],
+    sonnet: ["anthropic/claude-sonnet-4.6", "sonnet"],
+    opus: ["anthropic/claude-opus-4.7", "opus"],
     claude: [
-        "anthropic/claude-opus-4.5",
-        "anthropic/claude-sonnet-4.5",
+        "anthropic/claude-opus-4.7",
+        "anthropic/claude-sonnet-4.6",
         "anthropic/claude-haiku-4.5",
         "claude",
     ],
-    gemini: ["google/gemini-3-pro-preview", "gemini"],
-    gpt: ["openai/gpt-5.2", "gpt"],
-    grok: ["x-ai/grok-4.1-fast", "grok"],
+    gemini: ["google/gemini-3.1-pro-preview", "gemini"],
+    gpt: ["openai/gpt-5.5", "gpt"],
+    grok: ["x-ai/grok-4.3", "grok"],
 };
 
 /**

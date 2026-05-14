@@ -118,7 +118,7 @@ pnpm eval:compare-models <model-a> <model-b>
 Example:
 
 ```bash
-pnpm eval:compare-models anthropic/claude-3.5-sonnet anthropic/claude-opus-4.5
+pnpm eval:compare-models anthropic/claude-3.5-sonnet anthropic/claude-opus-4.7
 ```
 
 The script:

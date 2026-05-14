@@ -14,7 +14,7 @@
  *   LIBRARIAN_COMPARE_ALL=true npx tsx evals/librarian/eval.ts
  *
  *   # Test a specific model
- *   LIBRARIAN_MODEL=x-ai/grok-4.1-fast npx tsx evals/librarian/eval.ts
+ *   LIBRARIAN_MODEL=x-ai/grok-4.3 npx tsx evals/librarian/eval.ts
  *
  * Requirements:
  *   - OPENROUTER_API_KEY in .env.local

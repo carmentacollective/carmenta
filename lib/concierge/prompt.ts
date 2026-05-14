@@ -178,9 +178,9 @@ suggestedIntegrations: When query would benefit from an unconnected service
 Selection approach:
 
 1. Select the best model for this request
-   - If attachments include audio → MUST use google/gemini-3-pro-preview (only model with audio support)
-   - If attachments include PDFs → prefer anthropic/claude-sonnet-4.5 (best document understanding)
-   - If attachments include images → prefer anthropic/claude-sonnet-4.5 (excellent vision)
+   - If attachments include audio → MUST use google/gemini-3.1-pro-preview (only model with audio support)
+   - If attachments include PDFs → prefer anthropic/claude-sonnet-4.6 (best document understanding)
+   - If attachments include images → prefer anthropic/claude-sonnet-4.6 (excellent vision)
 2. Choose an appropriate temperature (0.0 to 1.0)
 3. Decide whether to enable extended reasoning, and at what level
 4. Write one warm sentence explaining our choice (appears in the interface)
@@ -367,7 +367,7 @@ How does our Google Calendar integration work?
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.4,
   "explanation": "Let's pull up what we know about your calendar setup 📅",
   "reasoning": { "enabled": false },
@@ -381,7 +381,7 @@ What did we decide about the authentication system?
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.3,
   "explanation": "Searching your knowledge base for our auth decisions 🔐",
   "reasoning": { "enabled": false },
@@ -395,7 +395,7 @@ Tell me about Sarah
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.5,
   "explanation": "Let me check what we know about Sarah 👤",
   "reasoning": { "enabled": false },
@@ -409,7 +409,7 @@ Continue working on the payment integration
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.4,
   "explanation": "Let's pick up where we left off with payments 💳",
   "reasoning": { "enabled": false },
@@ -423,7 +423,7 @@ What were the key points from my meeting with the investors?
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.4,
   "explanation": "Searching for your investor meeting notes 📊",
   "reasoning": { "enabled": false },
@@ -437,7 +437,7 @@ How should I approach the database migration?
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.5,
   "explanation": "Let's check what we know about your database setup first 🗄️",
   "reasoning": { "enabled": true, "effort": "medium" },
@@ -451,7 +451,7 @@ Analyze the pros and cons of microservices vs monolithic architecture for a star
 </user-message>
 
 {
-  "modelId": "anthropic/claude-opus-4.5",
+  "modelId": "anthropic/claude-opus-4.7",
   "temperature": 0.5,
   "explanation": "Deep architectural analysis - let's think this through carefully 🧠",
   "reasoning": { "enabled": true, "effort": "high" },
@@ -465,7 +465,7 @@ Analyze the philosophical implications of the trolley problem and the ethics of 
 </user-message>
 
 {
-  "modelId": "anthropic/claude-opus-4.5",
+  "modelId": "anthropic/claude-opus-4.7",
   "temperature": 0.5,
   "explanation": "Philosophical analysis needs deep reasoning without tools - Claude Opus excels here 🧠",
   "reasoning": { "enabled": true, "effort": "high" },
@@ -511,7 +511,7 @@ Look at my Limitless conversations from yesterday and give me the highlights
 </user-message>
 
 {
-  "modelId": "x-ai/grok-4.1-fast",
+  "modelId": "x-ai/grok-4.3",
   "temperature": 0.5,
   "explanation": "Fetching and summarizing conversations needs multiple tool steps - Grok handles this smoothly 🔍",
   "reasoning": { "enabled": false },
@@ -525,7 +525,7 @@ Hospital A has 90% survival for easy surgeries and 50% for difficult ones. Hospi
 </user-message>
 
 {
-  "modelId": "openai/gpt-5.2",
+  "modelId": "openai/gpt-5.5",
   "temperature": 0.4,
   "explanation": "This needs calculations AND deep reasoning - GPT handles both together well 🧮",
   "reasoning": { "enabled": true, "effort": "medium" },
@@ -539,7 +539,7 @@ What's the probability of getting heads at least 3 times if I flip a fair coin 5
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.3,
   "explanation": "Quick probability calculation - letting the tool do the math! 🎲",
   "reasoning": { "enabled": false },
@@ -553,7 +553,7 @@ Do some deep research on healthy restaurants in Austin
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.5,
   "explanation": "How deep should we go on this? 🔍",
   "reasoning": { "enabled": false },
@@ -578,7 +578,7 @@ Research the AI agent framework landscape for me
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.5,
   "explanation": "How deep should we go on this? 🎯",
   "reasoning": { "enabled": false },
@@ -603,7 +603,7 @@ Research AI coding assistants - I want to understand the full competitive landsc
 </user-message>
 
 {
-  "modelId": "anthropic/claude-opus-4.5",
+  "modelId": "anthropic/claude-opus-4.7",
   "temperature": 0.5,
   "explanation": "Deep competitive research ahead - we'll keep working while you're away 🔬",
   "reasoning": { "enabled": true, "effort": "high" },
@@ -643,7 +643,7 @@ What's on my calendar tomorrow?
 </user-message>
 
 {
-  "modelId": "anthropic/claude-sonnet-4.5",
+  "modelId": "anthropic/claude-sonnet-4.6",
   "temperature": 0.4,
   "explanation": "Let me check your calendar 📅",
   "reasoning": { "enabled": false },

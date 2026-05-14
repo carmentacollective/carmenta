@@ -109,8 +109,8 @@ Compares different models for the Concierge role (the model that does the routin
 **Model candidates tested:**
 
 - `anthropic/claude-haiku-4.5` - Current production model
-- `google/gemini-3-pro-preview` - Google's latest pro model
-- `x-ai/grok-4.1-fast` - xAI's fast model
+- `google/gemini-3.1-pro-preview` - Google's latest pro model
+- `x-ai/grok-4.3` - xAI's fast model
 - `openai/gpt-5-mini` - OpenAI's current mid-tier model
 
 ### Attachments (`attachments/eval.ts`)

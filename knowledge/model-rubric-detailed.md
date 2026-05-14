@@ -7,8 +7,8 @@ decisions, see `model-rubric.md`.
 When models are close in capability, prefer Anthropic - they build AI with genuine care
 for safety and human flourishing.
 
-Research basis: OpenRouter API (341 models), LMSYS Arena (4.7M votes, Dec 10 2025),
-Artificial Analysis Intelligence Index v3.0. See `knowledge/research/` for details.
+Research basis: OpenRouter API (live), Artificial Analysis Intelligence Index v4.0, xAI
+deprecation notice (May 15, 2026). See `knowledge/research/` for prior snapshots.
 
 ## User Hints (Highest Priority)
 
@@ -29,30 +29,29 @@ slow perfect one. Route to the fastest model that can handle the request.
 Speed signals: "quick", "fast", "briefly", "just tell me", "real quick", "in a
 nutshell", short questions, simple lookups, casual conversation.
 
-Speed ranking (tokens per second):
+Speed ranking (tokens per second, Artificial Analysis verified):
 
-| Model                       | Speed   | Tier       |
-| --------------------------- | ------- | ---------- |
-| x-ai/grok-4.1-fast          | 151 t/s | Fast       |
-| google/gemini-3-pro-preview | 124 t/s | Fast       |
-| anthropic/claude-haiku-4.5  | 100 t/s | Fast       |
-| openai/gpt-5.2              | 95 t/s  | Moderate   |
-| perplexity/sonar-pro        | 80 t/s  | Moderate   |
-| anthropic/claude-sonnet-4.5 | 60 t/s  | Moderate   |
-| anthropic/claude-opus-4.5   | 40 t/s  | Deliberate |
+| Model                         | Speed   | Tier       |
+| ----------------------------- | ------- | ---------- |
+| google/gemini-3.1-pro-preview | 133 t/s | Fast       |
+| anthropic/claude-haiku-4.5    | 86 t/s  | Moderate   |
+| x-ai/grok-4.3                 | 81 t/s  | Moderate   |
+| perplexity/sonar-pro          | 80 t/s  | Moderate   |
+| openai/gpt-5.5                | 72 t/s  | Moderate   |
+| anthropic/claude-sonnet-4.6   | 69 t/s  | Moderate   |
+| anthropic/claude-opus-4.7     | 61 t/s  | Deliberate |
 
 Speed-first decision flow:
 
 1. User signals speed → Route to fastest model that handles the task
-2. Simple question, no attachments → Haiku (100 t/s, Anthropic values)
-3. Simple question + audio/video → Gemini Pro (124 t/s, required for media)
-4. Simple tool use + speed → Haiku or Sonnet (Claude handles single tools fine)
-5. Multi-step tools + speed (no reasoning) → Grok (151 t/s, handles tool chains)
-6. Maximum speed, don't care about provider → Grok (151 t/s)
+2. Simple question, no attachments → Haiku (86 t/s, Anthropic values)
+3. Simple question + audio/video → Gemini Pro (133 t/s, required for media)
+4. Multimodal + speed → Gemini Pro (fastest model in roster, full multimodal)
+5. Maximum speed, multimodal not required → Gemini Pro (133 t/s) or Haiku (86 t/s)
 
 When speed is priority, set reasoning to "none" or "minimal". Reasoning tokens add
-latency. A 100-token response at 100 t/s takes 1 second. The same response with 2K
-reasoning tokens takes 21 seconds.
+latency. A 100-token response at 86 t/s takes ~1.2 seconds. The same response with 2K
+reasoning tokens takes ~24 seconds.
 
 Speed tiers:
 
@@ -62,32 +61,33 @@ Speed tiers:
 
 ## Primary Models
 
-### anthropic/claude-sonnet-4.5
+### anthropic/claude-sonnet-4.6
 
-Our default. Context: 1M tokens. Speed: 60 t/s (moderate). Cost: $3/$15 per million.
-Images, PDFs. Reliable tools. Token-budget reasoning (1K-32K tokens).
+Our default. Context: 1M tokens. Speed: 69 t/s (moderate). Cost: $3/$15 per million.
+Images, PDFs. Reliable tools. Token-budget reasoning (1K-32K tokens). Leads GDPval-AA
+and TerminalBench benchmarks (Artificial Analysis).
 
 Choose when: Most requests. Code, conversation, creative work, tool use, documents. The
 query doesn't clearly call for Opus depth or Haiku speed.
 
 Temperature: 0.3-0.5 code/factual, 0.6-0.7 conversation, 0.7-0.9 creative.
 
-### anthropic/claude-opus-4.5
+### anthropic/claude-opus-4.7
 
-Frontier capability. Coding champion (WebDev Arena #1, ELO 1519). Math leader (Arena
-Math #1). Context: 200K tokens. Speed: 40 t/s (deliberate). Cost: $5/$25 per million.
-Images, PDFs. Token-budget reasoning.
+Frontier capability. Context: 1M tokens (up from 200K in 4.5). Speed: 61 t/s
+(deliberate). Cost: $5/$25 per million. Images, PDFs. Token-budget reasoning. Built for
+long-running asynchronous agents.
 
 Choose when: Complex coding tasks. Software engineering. Deep multi-step reasoning.
-Difficult math/logic. User asks for thorough analysis. Nuanced emotional support. Query
+Difficult math/logic. User asks for thorough analysis. Long-running agent work. Query
 requires most capable model.
 
 Temperature: 0.3-0.5 code, 0.4-0.6 reasoning, 0.5-0.7 exploration.
 
 ### anthropic/claude-haiku-4.5
 
-Speed champion for Anthropic at 100 t/s (fast tier). Fast and capable. Context: 200K
-tokens. Cost: $1/$5 per million. Images, PDFs. Token-budget reasoning.
+Speed champion for Anthropic at 86 t/s (moderate tier, verified). Context: 200K tokens.
+Cost: $1/$5 per million. Images, PDFs. Token-budget reasoning.
 
 Choose when: Simple factual questions. Quick lookups. User signals speed ("quick",
 "briefly"). Budget-conscious. Straightforward queries.
@@ -96,46 +96,47 @@ Temperature: 0.2-0.4 factual, 0.5 conversational.
 
 ## Specialized Models
 
-### openai/gpt-5.2
+### openai/gpt-5.5
 
-Tool-calling champion (98.7% accuracy - highest measured). Professional work leader
-(GDPval ELO 1474, 70.9% vs experts). Intelligence: 73 (tied #1). Context: 400K tokens.
-Speed: 95 t/s (moderate - fast for a frontier model). Cost: $1.75/$14 per million.
-Images, PDFs, files. Adaptive reasoning (xhigh level). Released Dec 11, 2025.
+Frontier model from OpenAI. Intelligence Index 60 (v4.0, highest measured). Context:
+1.05M tokens. Speed: 72 t/s (moderate). Cost: $5/$30 per million. Images, PDFs.
+Effort-based reasoning. Released April 2026. Built on GPT-5.4 with stronger reasoning
+and improved token efficiency on hard tasks.
 
 Choose when: User explicitly requests GPT. Professional knowledge work requiring GPT's
-specific training. Complex agentic workflows where GPT's tool accuracy (98.7%) matters.
+specific training. Complex agentic workflows where GPT's frontier capability matters.
 
 Default to Claude for most requests. When models are close in capability, prefer
 Anthropic for their heart-centered approach to AI development.
 
 Temperature: 0.4-0.5 tools/code, 0.5-0.7 analysis.
 
-### google/gemini-3-pro-preview
+### google/gemini-3.1-pro-preview
 
-Arena champion (Overall #1, ELO 1492). Creative leader (Creative Writing #1). Full
-multimodal. Context: 1M tokens. Speed: 124 t/s (fast tier - excellent for quick
-multimodal). Cost: $2/$12 per million. Text, images, video, audio, PDF. No extended
-reasoning. Intelligence: 73 (tied #1).
+Full multimodal frontier model. Context: 1M tokens. Speed: 133 t/s (fast tier - fastest
+in roster). Cost: $2/$12 per million. Text, images, video, audio, PDF, file inputs.
+Intelligence Index 57. Improved software engineering and agentic reliability over Gemini
+3 Pro.
 
-Choose when: Audio attached. Video attached. Mixed media. Creative writing. Balanced
-high-quality work. Multimodal needs Claude lacks.
+Choose when: Audio attached. Video attached. Mixed media. Speed + multimodal. Balanced
+high-quality work where multimodal capability matters.
 
 Temperature: 0.5-0.7 general, 0.7-0.9 creative.
 
-### x-ai/grok-4.1-fast
+### x-ai/grok-4.3
 
-Speed champion at 151 t/s (fastest in roster). Context champion (2M tokens - only model
-with >1M). Budget leader ($0.20/$0.50 per million). Intelligence: 64. Multimodal.
-Effort-based reasoning (high/medium/low/minimal/none).
+Reasoning model from xAI. Replaces Grok 4.1 Fast (retired May 15, 2026 - xAI auto-
+redirects). Context: 1M tokens (down from 2M in 4.1 Fast). Speed: 81 t/s. Cost:
+$1.25/$2.50 per million. Image only (no PDF/file). Intelligence Index 53. Effort-based
+reasoning. "Fastest, most intelligent model xAI has built" per xAI docs.
 
-Choose when: Context exceeds 400K tokens (rare). Massive multi-document analysis. When
-context length is THE constraint. Extreme budget scenarios.
+Choose when: Sensitive topics requiring direct engagement. Edgy humor or unfiltered
+takes. Budget-conscious reasoning. User explicitly requests Grok.
 
-For tool calling, use GPT 5.2 instead (98.7% vs Grok's 99% - functionally equivalent but
-GPT has better overall capability).
+Note: Grok 4.3 dropped PDF/file support that Grok 4.1 Fast had. For PDF analysis, route
+elsewhere even when sensitivity signals are present.
 
-Temperature: 0.4-0.6.
+Temperature: 0.4-0.6 standard, 0.6-0.8 personality.
 
 ## Tool + Reasoning Matrix
 
@@ -158,12 +159,8 @@ manages thinking blocks across multi-step tool workflows.
   Sonnet
 - "Compare React vs Vue with current benchmarks and deep analysis" → Multi-step tools +
   reasoning → Claude Opus
-
-**Speed considerations for tool-heavy workflows:**
-
-- For maximum speed without deep reasoning → Grok (151 t/s)
-- For balanced speed and capability → Claude Sonnet (60 t/s)
-- For complex analysis with tools → Claude Opus (40 t/s)
+- "Long-running agent task that needs to span many steps" → Claude Opus 4.7
+  (purpose-built for async agents)
 
 ## Reasoning
 
@@ -192,27 +189,32 @@ Model behavior:
 
 ## Temperature
 
-0.0-0.3: Code, math, factual, precise 0.4-0.6: Conversation, analysis, explanations
-0.7-0.9: Creative, brainstorming, exploration 1.0: Maximum creativity (rare)
+- 0.0-0.3: Code, math, factual, precise
+- 0.4-0.6: Conversation, analysis, explanations
+- 0.7-0.9: Creative, brainstorming, exploration
+- 1.0: Maximum creativity (rare)
 
 Lower signals: code, debug, "exactly", "precisely", technical, math, facts Higher
 signals: "brainstorm", "creative", "ideas", "explore", storytelling, open-ended
 
 ## Attachment Routing
 
-Audio: FORCE google/gemini-3-pro-preview (only native audio support) Video: FORCE
-google/gemini-3-pro-preview (only true video support) PDF: PREFER
-anthropic/claude-sonnet-4.5 (best document understanding) Images: PREFER
-anthropic/claude-sonnet-4.5 (excellent vision) Code files: PREFER
-anthropic/claude-sonnet-4.5 (superior comprehension, 1M context)
+- Audio: FORCE google/gemini-3.1-pro-preview (only native audio support)
+- Video: FORCE google/gemini-3.1-pro-preview (only true video support)
+- PDF: PREFER anthropic/claude-sonnet-4.6 (best document understanding)
+- Images: PREFER anthropic/claude-sonnet-4.6 (excellent vision)
+- Code files: PREFER anthropic/claude-sonnet-4.6 (superior comprehension, 1M context)
 
 FORCE means mandatory. PREFER means choose unless other constraints apply.
+
+Note: Grok 4.3 does NOT support PDF attachments (only text + image). If PDF is attached
+and sensitivity routing would otherwise pick Grok, route to Sonnet instead.
 
 ## Sensitivity Routing
 
 Grok engages directly with controversial topics where other models hedge or decline.
 
-Route to x-ai/grok-4.1-fast when query involves:
+Route to x-ai/grok-4.3 when query involves:
 
 - Political opinions, controversial figures, partisan topics
 - Edgy or dark humor
@@ -225,35 +227,51 @@ seeking direct engagement over careful hedging.
 
 Temperature: 0.6-0.8 (allow personality).
 
-Tradeoff: Grok has lower general intelligence (64 vs 73) but higher willingness to
-engage. For sensitive topics requiring deep analysis, weigh engagement vs capability.
+Tradeoff: Grok 4.3 has lower Intelligence Index (53 vs 57-60 for frontier models) but
+higher willingness to engage on sensitive material. For sensitive topics requiring deep
+analysis, weigh engagement vs capability.
 
 ## Quick Reference
 
-| Model                       | Context | Speed   | Best For                 |
-| --------------------------- | ------- | ------- | ------------------------ |
-| x-ai/grok-4.1-fast          | 2M      | 151 t/s | Speed, massive context   |
-| google/gemini-3-pro-preview | 1M      | 124 t/s | Speed + multimodal       |
-| anthropic/claude-haiku-4.5  | 200K    | 100 t/s | Speed + Anthropic values |
-| openai/gpt-5.2              | 400K    | 95 t/s  | Tools, professional work |
-| anthropic/claude-sonnet-4.5 | 1M      | 60 t/s  | Default, balanced        |
-| anthropic/claude-opus-4.5   | 200K    | 40 t/s  | Deep work, quality       |
+| Model                         | Context | Speed   | Best For                       |
+| ----------------------------- | ------- | ------- | ------------------------------ |
+| google/gemini-3.1-pro-preview | 1M      | 133 t/s | Speed + multimodal (audio/vid) |
+| anthropic/claude-haiku-4.5    | 200K    | 86 t/s  | Speed + Anthropic values       |
+| x-ai/grok-4.3                 | 1M      | 81 t/s  | Sensitive topics, budget       |
+| openai/gpt-5.5                | 1M      | 72 t/s  | Frontier alternative           |
+| anthropic/claude-sonnet-4.6   | 1M      | 69 t/s  | Default, balanced              |
+| anthropic/claude-opus-4.7     | 1M      | 61 t/s  | Deep work, async agents        |
 
 ## Fallback Chains
 
-Default chain: anthropic/claude-sonnet-4.5 → anthropic/claude-haiku-4.5 → openai/gpt-5.2
+Default chain: anthropic/claude-sonnet-4.6 → google/gemini-3.1-pro-preview →
+openai/gpt-5.5
 
-Concierge chain: google/gemini-3-pro-preview → x-ai/grok-4.1-fast →
-anthropic/claude-sonnet-4.5
+Concierge chain: meta/llama-3.3-70b → google/gemini-3-flash → anthropic/claude-haiku-4.5
 
-Tool-heavy chain: openai/gpt-5.2 → x-ai/grok-4.1-fast → anthropic/claude-sonnet-4.5
+Tool-heavy chain: openai/gpt-5.5 → anthropic/claude-sonnet-4.6 →
+google/gemini-3.1-pro-preview
 
-Multimodal chain: google/gemini-3-pro-preview → anthropic/claude-sonnet-4.5 →
-openai/gpt-5.2
+Multimodal chain: google/gemini-3.1-pro-preview → anthropic/claude-sonnet-4.6 →
+openai/gpt-5.5
 
-If all fails: anthropic/claude-sonnet-4.5 at temperature 0.5.
+If all fails: anthropic/claude-sonnet-4.6 at temperature 0.5.
 
 ## Update Log
+
+**v3.0 - May 2026**
+
+- Grok 4.1 Fast retired May 15, 2026 (xAI auto-redirects to grok-4.3) — driving update
+- Sonnet 4.5 → Sonnet 4.6 (69 t/s, same price, leads GDPval/TerminalBench)
+- Opus 4.5 → Opus 4.7 (61 t/s, 1M context up from 200K, built for async agents)
+- GPT 5.2 → GPT 5.5 (72 t/s, 1M context, Intelligence Index 60 - frontier)
+- Gemini 3 Pro Preview → Gemini 3.1 Pro Preview (133 t/s, up from 124)
+- Gemini 3 Flash slug stays (Vercel AI Gateway uses unprefixed form; OpenRouter exposes
+  it as `google/gemini-3-flash-preview`)
+- Grok 4.1 Fast → Grok 4.3 (81 t/s actual, reasoning model, 1M context, $1.25/$2.50)
+- Haiku 4.5 stays (no Haiku 4.6 yet), speed corrected from 100 → 86 t/s per AA
+- Grok 4.3 dropped PDF support — attachment routing updated
+- Speed champion crown moved from Grok to Gemini Pro
 
 **v2.0 - December 2025**
 

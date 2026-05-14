@@ -5,7 +5,7 @@ import { ConciergeDisplay } from "@/components/connection/concierge-display";
 
 describe("ConciergeDisplay", () => {
     const defaultProps = {
-        modelId: "anthropic/claude-sonnet-4.5",
+        modelId: "anthropic/claude-sonnet-4.6",
         temperature: 0.5,
         explanation: "Balanced default for general tasks.",
         reasoning: { enabled: false },
@@ -172,7 +172,7 @@ describe("ConciergeDisplay", () => {
             const { container } = render(
                 <ConciergeDisplay
                     {...defaultProps}
-                    modelId="anthropic/claude-opus-4.5"
+                    modelId="anthropic/claude-opus-4.7"
                 />
             );
 
@@ -196,7 +196,7 @@ describe("ConciergeDisplay", () => {
             const { container } = render(
                 <ConciergeDisplay
                     {...defaultProps}
-                    modelId="google/gemini-3-pro-preview"
+                    modelId="google/gemini-3.1-pro-preview"
                 />
             );
 
@@ -206,7 +206,7 @@ describe("ConciergeDisplay", () => {
 
         it("displays Grok for grok model", () => {
             const { container } = render(
-                <ConciergeDisplay {...defaultProps} modelId="x-ai/grok-4.1-fast" />
+                <ConciergeDisplay {...defaultProps} modelId="x-ai/grok-4.3" />
             );
 
             const trigger = container.querySelector("button")!;

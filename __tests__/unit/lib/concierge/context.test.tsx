@@ -30,7 +30,7 @@ describe("ConciergeProvider and useConcierge", () => {
 
         act(() => {
             result.current.setConcierge({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.7,
                 explanation: "Creative task requires higher temperature",
                 reasoning: { enabled: true, effort: "medium" },
@@ -38,7 +38,7 @@ describe("ConciergeProvider and useConcierge", () => {
         });
 
         expect(result.current.concierge).toEqual({
-            modelId: "anthropic/claude-sonnet-4.5",
+            modelId: "anthropic/claude-sonnet-4.6",
             temperature: 0.7,
             explanation: "Creative task requires higher temperature",
             reasoning: { enabled: true, effort: "medium" },
@@ -51,7 +51,7 @@ describe("ConciergeProvider and useConcierge", () => {
         // Set data first
         act(() => {
             result.current.setConcierge({
-                modelId: "anthropic/claude-opus-4.5",
+                modelId: "anthropic/claude-opus-4.7",
                 temperature: 0.5,
                 explanation: "Default selection",
                 reasoning: { enabled: false },
@@ -76,7 +76,7 @@ describe("ConciergeProvider and useConcierge", () => {
 describe("parseConciergeHeaders", () => {
     it("parses valid headers successfully", () => {
         const headers = new Headers({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "0.7",
             "X-Concierge-Explanation": "Good%20for%20coding",
             "X-Concierge-Reasoning": encodeURIComponent(
@@ -88,7 +88,7 @@ describe("parseConciergeHeaders", () => {
         const result = parseConciergeHeaders(response);
 
         expect(result).toEqual({
-            modelId: "anthropic/claude-sonnet-4.5",
+            modelId: "anthropic/claude-sonnet-4.6",
             temperature: 0.7,
             explanation: "Good for coding",
             reasoning: { enabled: true, effort: "medium" },
@@ -109,7 +109,7 @@ describe("parseConciergeHeaders", () => {
 
     it("returns null when temperature header is missing", () => {
         const headers = new Headers({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Explanation": "Some explanation",
         });
         const response = new Response(null, { headers });
@@ -121,7 +121,7 @@ describe("parseConciergeHeaders", () => {
 
     it("returns null when explanation header is missing", () => {
         const headers = new Headers({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "0.7",
         });
         const response = new Response(null, { headers });
@@ -133,7 +133,7 @@ describe("parseConciergeHeaders", () => {
 
     it("defaults to 0.5 temperature for NaN values", () => {
         const headers = new Headers({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "not-a-number",
             "X-Concierge-Explanation": "Some explanation",
             "X-Concierge-Reasoning": encodeURIComponent(
@@ -145,7 +145,7 @@ describe("parseConciergeHeaders", () => {
         const result = parseConciergeHeaders(response);
 
         expect(result).toEqual({
-            modelId: "anthropic/claude-sonnet-4.5",
+            modelId: "anthropic/claude-sonnet-4.6",
             temperature: 0.5,
             explanation: "Some explanation",
             reasoning: { enabled: false },
@@ -154,7 +154,7 @@ describe("parseConciergeHeaders", () => {
 
     it("decodes URL-encoded explanation", () => {
         const headers = new Headers({
-            "X-Concierge-Model-Id": "anthropic/claude-opus-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-opus-4.7",
             "X-Concierge-Temperature": "0.3",
             "X-Concierge-Explanation":
                 "Complex%20task%20requiring%20deep%20reasoning%20%26%20analysis",
@@ -199,7 +199,7 @@ describe("parseConciergeHeaders", () => {
 
     it("parses zero temperature correctly", () => {
         const headers = new Headers({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "0",
             "X-Concierge-Explanation": "Deterministic mode",
         });
@@ -212,7 +212,7 @@ describe("parseConciergeHeaders", () => {
 
     it("defaults reasoning to disabled when header missing", () => {
         const headers = new Headers({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "0.5",
             "X-Concierge-Explanation": "Quick task",
         });
@@ -225,7 +225,7 @@ describe("parseConciergeHeaders", () => {
 
     it("defaults reasoning to disabled when header is invalid JSON", () => {
         const headers = new Headers({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "0.5",
             "X-Concierge-Explanation": "Quick task",
             "X-Concierge-Reasoning": "not-valid-json",

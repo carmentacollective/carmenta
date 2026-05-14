@@ -72,13 +72,13 @@ function extractTextFromMessage(message: UIMessage): string {
 
 /**
  * Estimates token count for a string using character approximation.
- * Accepts either provider name ("anthropic") or full model ID ("anthropic/claude-sonnet-4.5").
+ * Accepts either provider name ("anthropic") or full model ID ("anthropic/claude-sonnet-4.6").
  */
 export function estimateTokens(
     text: string,
     providerOrModelId: string = "default"
 ): number {
-    // Extract provider from model ID if needed (e.g., "anthropic/claude-sonnet-4.5" → "anthropic")
+    // Extract provider from model ID if needed (e.g., "anthropic/claude-sonnet-4.6" → "anthropic")
     const provider = providerOrModelId.includes("/")
         ? providerOrModelId.split("/")[0]
         : providerOrModelId;

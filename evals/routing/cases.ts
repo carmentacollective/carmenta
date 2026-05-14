@@ -225,7 +225,7 @@ export const testData: TestCase[] = [
             content: "Hello, this is a simple test",
             category: "overrides",
             overrides: {
-                modelOverride: "anthropic/claude-opus-4.5",
+                modelOverride: "anthropic/claude-opus-4.7",
             },
         },
         expected: {

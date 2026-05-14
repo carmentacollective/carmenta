@@ -134,7 +134,7 @@ Most users never touch these.
 
 The Concierge returns a ConciergeResult with four fields:
 
-- modelId: OpenRouter model identifier (e.g., "anthropic/claude-sonnet-4.5")
+- modelId: OpenRouter model identifier (e.g., "anthropic/claude-sonnet-4.6")
 - temperature: Float 0.0-1.0 for response variability
 - explanation: One warm sentence explaining the routing decision (shown to users)
 - reasoning: Configuration object with { enabled, effort, maxTokens }

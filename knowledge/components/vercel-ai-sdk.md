@@ -170,7 +170,7 @@ const openrouter = createOpenRouter({
 });
 
 // Use with streamText
-model: openrouter.chat("anthropic/claude-sonnet-4.5");
+model: openrouter.chat("anthropic/claude-sonnet-4.6");
 ```
 
 ## Future Capabilities

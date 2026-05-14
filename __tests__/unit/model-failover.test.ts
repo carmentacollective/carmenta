@@ -14,12 +14,12 @@ import { ALLOWED_MODELS, CONCIERGE_MODEL } from "@/lib/concierge/types";
 describe("Model Failover Configuration", () => {
     describe("getFallbackChain", () => {
         it("returns fallback chain for known models", () => {
-            const chain = getFallbackChain("anthropic/claude-sonnet-4.5");
+            const chain = getFallbackChain("anthropic/claude-sonnet-4.6");
 
             expect(chain).toEqual([
-                "anthropic/claude-sonnet-4.5",
-                "google/gemini-3-pro-preview",
-                "openai/gpt-5.2",
+                "anthropic/claude-sonnet-4.6",
+                "google/gemini-3.1-pro-preview",
+                "openai/gpt-5.5",
             ]);
 
             // Verify it's a mutable array (not readonly)
@@ -34,8 +34,8 @@ describe("Model Failover Configuration", () => {
         });
 
         it("returns different arrays on each call (not same reference)", () => {
-            const chain1 = getFallbackChain("anthropic/claude-sonnet-4.5");
-            const chain2 = getFallbackChain("anthropic/claude-sonnet-4.5");
+            const chain1 = getFallbackChain("anthropic/claude-sonnet-4.6");
+            const chain2 = getFallbackChain("anthropic/claude-sonnet-4.6");
 
             expect(chain1).toEqual(chain2);
             expect(chain1).not.toBe(chain2); // Different object references
@@ -45,12 +45,12 @@ describe("Model Failover Configuration", () => {
     describe("MODEL_FALLBACKS configuration", () => {
         it("has fallback chains for all supported models", () => {
             const supportedModels: ModelId[] = [
-                "anthropic/claude-sonnet-4.5",
-                "anthropic/claude-opus-4.5",
+                "anthropic/claude-sonnet-4.6",
+                "anthropic/claude-opus-4.7",
                 "anthropic/claude-haiku-4.5",
-                "google/gemini-3-pro-preview",
-                "x-ai/grok-4.1-fast",
-                "openai/gpt-5.2",
+                "google/gemini-3.1-pro-preview",
+                "x-ai/grok-4.3",
+                "openai/gpt-5.5",
                 "perplexity/sonar-pro",
             ];
 
@@ -62,19 +62,19 @@ describe("Model Failover Configuration", () => {
 
         it("uses different providers for redundancy", () => {
             // Sonnet → Gemini → GPT (Anthropic → Google → OpenAI)
-            const sonnetChain = MODEL_FALLBACKS["anthropic/claude-sonnet-4.5"];
+            const sonnetChain = MODEL_FALLBACKS["anthropic/claude-sonnet-4.6"];
             expect(sonnetChain[0]).toContain("anthropic");
             expect(sonnetChain[1]).toContain("google");
             expect(sonnetChain[2]).toContain("openai");
 
             // Gemini → Sonnet → GPT (Google → Anthropic → OpenAI)
-            const geminiChain = MODEL_FALLBACKS["google/gemini-3-pro-preview"];
+            const geminiChain = MODEL_FALLBACKS["google/gemini-3.1-pro-preview"];
             expect(geminiChain[0]).toContain("google");
             expect(geminiChain[1]).toContain("anthropic");
             expect(geminiChain[2]).toContain("openai");
 
             // Grok → Gemini → Haiku (X.AI → Google → Anthropic)
-            const grokChain = MODEL_FALLBACKS["x-ai/grok-4.1-fast"];
+            const grokChain = MODEL_FALLBACKS["x-ai/grok-4.3"];
             expect(grokChain[0]).toContain("x-ai");
             expect(grokChain[1]).toContain("google");
             expect(grokChain[2]).toContain("anthropic");
@@ -82,12 +82,12 @@ describe("Model Failover Configuration", () => {
 
         it("always includes the primary model as first in chain", () => {
             const models: ModelId[] = [
-                "anthropic/claude-sonnet-4.5",
-                "anthropic/claude-opus-4.5",
+                "anthropic/claude-sonnet-4.6",
+                "anthropic/claude-opus-4.7",
                 "anthropic/claude-haiku-4.5",
-                "google/gemini-3-pro-preview",
-                "x-ai/grok-4.1-fast",
-                "openai/gpt-5.2",
+                "google/gemini-3.1-pro-preview",
+                "x-ai/grok-4.3",
+                "openai/gpt-5.5",
                 "perplexity/sonar-pro",
             ];
 
@@ -99,12 +99,12 @@ describe("Model Failover Configuration", () => {
 
         it("has at least 3 models in each chain for redundancy", () => {
             const models: ModelId[] = [
-                "anthropic/claude-sonnet-4.5",
-                "anthropic/claude-opus-4.5",
+                "anthropic/claude-sonnet-4.6",
+                "anthropic/claude-opus-4.7",
                 "anthropic/claude-haiku-4.5",
-                "google/gemini-3-pro-preview",
-                "x-ai/grok-4.1-fast",
-                "openai/gpt-5.2",
+                "google/gemini-3.1-pro-preview",
+                "x-ai/grok-4.3",
+                "openai/gpt-5.5",
                 "perplexity/sonar-pro",
             ];
 
@@ -144,31 +144,31 @@ describe("Model Failover Configuration", () => {
 
     describe("Failover strategy validation", () => {
         it("speed-focused models fallback to other fast models", () => {
-            // Haiku (fast) → Grok (fastest) → Gemini (fast)
+            // Haiku (fast) → Gemini Flash (fastest) → Grok (budget reasoning)
             const haikuChain = MODEL_FALLBACKS["anthropic/claude-haiku-4.5"];
-            expect(haikuChain).toContain("x-ai/grok-4.1-fast");
-            expect(haikuChain).toContain("google/gemini-3-pro-preview");
+            expect(haikuChain).toContain("google/gemini-3-flash");
+            expect(haikuChain).toContain("x-ai/grok-4.3");
         });
 
         it("capability-focused models fallback to high-capability alternatives", () => {
             // Opus (deep work) → GPT (frontier) → Sonnet (capable)
-            const opusChain = MODEL_FALLBACKS["anthropic/claude-opus-4.5"];
-            expect(opusChain[1]).toBe("openai/gpt-5.2");
-            expect(opusChain[2]).toBe("anthropic/claude-sonnet-4.5");
+            const opusChain = MODEL_FALLBACKS["anthropic/claude-opus-4.7"];
+            expect(opusChain[1]).toBe("openai/gpt-5.5");
+            expect(opusChain[2]).toBe("anthropic/claude-sonnet-4.6");
         });
 
         it("multimodal models fallback to other multimodal-capable models", () => {
             // Gemini (multimodal) → Sonnet (multimodal) → GPT (multimodal)
-            const geminiChain = MODEL_FALLBACKS["google/gemini-3-pro-preview"];
+            const geminiChain = MODEL_FALLBACKS["google/gemini-3.1-pro-preview"];
             // All three support multimodal inputs
-            expect(geminiChain).toContain("anthropic/claude-sonnet-4.5");
-            expect(geminiChain).toContain("openai/gpt-5.2");
+            expect(geminiChain).toContain("anthropic/claude-sonnet-4.6");
+            expect(geminiChain).toContain("openai/gpt-5.5");
         });
     });
 
     describe("OpenRouter API contract", () => {
         it("returns plain arrays suitable for OpenRouter models parameter", () => {
-            const chain = getFallbackChain("anthropic/claude-sonnet-4.5");
+            const chain = getFallbackChain("anthropic/claude-sonnet-4.6");
 
             // Should be a plain array of strings
             expect(Array.isArray(chain)).toBe(true);
@@ -181,7 +181,7 @@ describe("Model Failover Configuration", () => {
         });
 
         it("produces valid OpenRouter model IDs", () => {
-            const chain = getFallbackChain("anthropic/claude-sonnet-4.5");
+            const chain = getFallbackChain("anthropic/claude-sonnet-4.6");
 
             // All IDs should be in provider/model format
             chain.forEach((modelId) => {

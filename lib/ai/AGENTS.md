@@ -28,7 +28,7 @@ handles model ID translation where needed (e.g., `x-ai/` → `xai/`).
 
 ## Common Mistakes
 
-- Using `anthropic/claude-sonnet-4` instead of `anthropic/claude-sonnet-4.5`
+- Using `anthropic/claude-sonnet-4` instead of `anthropic/claude-sonnet-4.6`
 - Using `x-ai/grok-*` instead of `xai/grok-*` (Gateway uses `xai/` prefix)
 - Using `google/gemini-3.0-*` instead of `google/gemini-3-*` (no `.0`)
 - Using old model versions like `claude-3-5-sonnet-20241022`

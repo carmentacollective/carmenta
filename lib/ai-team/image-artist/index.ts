@@ -27,14 +27,14 @@ import {
  * Model for the Image Artist agent
  * Using Sonnet for capable automation
  */
-const IMAGE_ARTIST_MODEL = "anthropic/claude-sonnet-4.5";
+const IMAGE_ARTIST_MODEL = "anthropic/claude-sonnet-4.6";
 
 /**
  * Fallback chain for the agent
  */
 const IMAGE_ARTIST_FALLBACK_CHAIN = [
+    "anthropic/claude-sonnet-4.6",
     "anthropic/claude-sonnet-4.5",
-    "anthropic/claude-sonnet-4",
     "google/gemini-3-flash",
 ];
 

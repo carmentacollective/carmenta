@@ -47,7 +47,7 @@ async function getRubricContent(): Promise<string> {
 const conciergeSchema = z.object({
     modelId: z
         .string()
-        .describe("The OpenRouter model ID (e.g., anthropic/claude-sonnet-4.5)"),
+        .describe("The OpenRouter model ID (e.g., anthropic/claude-sonnet-4.6)"),
     temperature: z
         .number()
         .min(0)
@@ -182,7 +182,7 @@ export async function runConciergeEval(
             const latencyMs = Math.round(performance.now() - startTime);
             const isVideo = input.attachments.some((a) => a.type === "video");
             return {
-                modelId: "google/gemini-3-pro-preview",
+                modelId: "google/gemini-3.1-pro-preview",
                 temperature: 0.5,
                 explanation: isVideo
                     ? "Video file detected - routing to Gemini for native video processing 🎬"
@@ -375,15 +375,15 @@ export const CONCIERGE_MODEL_CANDIDATES = [
         tokensPerSecond: 100,
     },
     {
-        id: "anthropic/claude-sonnet-4.5",
-        name: "Claude Sonnet 4.5",
+        id: "anthropic/claude-sonnet-4.6",
+        name: "Claude Sonnet 4.6",
         description: "Anthropic's capable model - best quality baseline",
         costPer1M: { input: 3.0, output: 15.0 },
         tokensPerSecond: 60,
     },
     {
-        id: "xai/grok-4.1-fast-non-reasoning",
-        name: "Grok 4.1 Fast",
+        id: "xai/grok-4.3",
+        name: "Grok 4.3 Fast",
         description: "xAI's fast model - 2M context",
         costPer1M: { input: 0.2, output: 0.5 },
         tokensPerSecond: 151,

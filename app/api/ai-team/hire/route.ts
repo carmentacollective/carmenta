@@ -211,7 +211,7 @@ export async function POST(request: Request) {
                 try {
                     // Stream the conversational response
                     const result = streamText({
-                        model: gateway(translateModelId("anthropic/claude-sonnet-4.5")),
+                        model: gateway(translateModelId("anthropic/claude-sonnet-4.6")),
                         messages: [
                             { role: "system", content: systemPrompt },
                             ...simpleMessages,
@@ -219,8 +219,8 @@ export async function POST(request: Request) {
                         providerOptions: {
                             gateway: {
                                 models: [
-                                    "anthropic/claude-sonnet-4.5",
-                                    "google/gemini-3-pro-preview",
+                                    "anthropic/claude-sonnet-4.6",
+                                    "google/gemini-3.1-pro-preview",
                                 ].map(translateModelId),
                             },
                         },
@@ -242,7 +242,7 @@ export async function POST(request: Request) {
                                     const extraction = await generateObject({
                                         model: gateway(
                                             translateModelId(
-                                                "anthropic/claude-sonnet-4.5"
+                                                "anthropic/claude-sonnet-4.6"
                                             )
                                         ),
                                         schema: playbookSchema,
@@ -250,8 +250,8 @@ export async function POST(request: Request) {
                                         providerOptions: {
                                             gateway: {
                                                 models: [
-                                                    "anthropic/claude-sonnet-4.5",
-                                                    "google/gemini-3-pro-preview",
+                                                    "anthropic/claude-sonnet-4.6",
+                                                    "google/gemini-3.1-pro-preview",
                                                 ].map(translateModelId),
                                             },
                                         },

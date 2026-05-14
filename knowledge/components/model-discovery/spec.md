@@ -108,7 +108,7 @@ What we need to know about each model for routing decisions:
 ```
 ModelDiscoveryData {
   // Identity
-  id: string                    // OpenRouter model ID (e.g., "anthropic/claude-sonnet-4.5")
+  id: string                    // OpenRouter model ID (e.g., "anthropic/claude-sonnet-4.6")
   provider: string              // anthropic, openai, google, x-ai, etc.
   displayName: string           // Human-friendly name
 

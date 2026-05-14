@@ -54,7 +54,7 @@ describe("ModelSelectorTrigger", () => {
         });
 
         it("shows provider icon when conciergeModel is provided", () => {
-            const conciergeModel = getModel("anthropic/claude-sonnet-4.5");
+            const conciergeModel = getModel("anthropic/claude-sonnet-4.6");
             const { container } = render(
                 <TestWrapper>
                     <ModelSelectorTrigger
@@ -77,7 +77,7 @@ describe("ModelSelectorTrigger", () => {
                         {...defaultProps}
                         overrides={{
                             ...DEFAULT_OVERRIDES,
-                            modelId: "anthropic/claude-opus-4.5",
+                            modelId: "anthropic/claude-opus-4.7",
                         }}
                     />
                 </TestWrapper>
@@ -162,7 +162,7 @@ describe("ModelSelectorTrigger", () => {
 
             expect(onChange).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    modelId: "anthropic/claude-sonnet-4.5",
+                    modelId: "anthropic/claude-sonnet-4.6",
                 })
             );
         });

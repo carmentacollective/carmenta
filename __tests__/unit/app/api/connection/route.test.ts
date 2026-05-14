@@ -69,7 +69,7 @@ vi.mock("@/lib/concierge", () => ({
     }),
     getAttachmentTypesFromInput: vi.fn().mockReturnValue([]),
     CONCIERGE_DEFAULTS: {
-        modelId: "anthropic/claude-sonnet-4.5",
+        modelId: "anthropic/claude-sonnet-4.6",
         temperature: 0.5,
         reasoning: { enabled: false },
     },
@@ -78,9 +78,9 @@ vi.mock("@/lib/concierge", () => ({
 // Mock context routing rules
 vi.mock("@/lib/context", () => ({
     applyRoutingRules: vi.fn().mockReturnValue({
-        modelId: "anthropic/claude-sonnet-4.5",
+        modelId: "anthropic/claude-sonnet-4.6",
         wasChanged: false,
-        originalModelId: "anthropic/claude-sonnet-4.5",
+        originalModelId: "anthropic/claude-sonnet-4.6",
     }),
 }));
 
@@ -183,7 +183,7 @@ describe("POST /api/connection", () => {
 
         // Default concierge response with title
         vi.mocked(runConcierge).mockResolvedValue({
-            modelId: "anthropic/claude-sonnet-4.5",
+            modelId: "anthropic/claude-sonnet-4.6",
             temperature: 0.5,
             explanation: "Standard task.",
             reasoning: { enabled: false },
@@ -416,9 +416,9 @@ describe("POST /api/connection", () => {
             expect(vi.mocked(createConnection)).toHaveBeenCalledWith(
                 "db-user-123",
                 "Fix authentication bug", // Title from concierge mock
-                "anthropic/claude-sonnet-4.5", // Model from concierge mock
+                "anthropic/claude-sonnet-4.6", // Model from concierge mock
                 {
-                    modelId: "anthropic/claude-sonnet-4.5",
+                    modelId: "anthropic/claude-sonnet-4.6",
                     temperature: 0.5,
                     explanation: "Standard task.",
                     reasoning: { enabled: false },
@@ -514,9 +514,9 @@ describe("POST /api/connection", () => {
     describe("Model Selection with Overrides", () => {
         it("applies user model override via headers", async () => {
             vi.mocked(applyRoutingRules).mockReturnValueOnce({
-                modelId: "openai/gpt-5.2",
+                modelId: "openai/gpt-5.5",
                 wasChanged: true,
-                originalModelId: "anthropic/claude-sonnet-4.5",
+                originalModelId: "anthropic/claude-sonnet-4.6",
                 reason: "User selected model",
             });
 
@@ -531,7 +531,7 @@ describe("POST /api/connection", () => {
                             parts: [{ type: "text", text: "Hello" }],
                         },
                     ],
-                    modelOverride: "openai/gpt-5.2",
+                    modelOverride: "openai/gpt-5.5",
                 }),
             });
 
@@ -539,7 +539,7 @@ describe("POST /api/connection", () => {
             expect(response.status).toBe(200);
 
             // Response headers should reflect the override
-            expect(response.headers.get("X-Concierge-Model-Id")).toBe("openai/gpt-5.2");
+            expect(response.headers.get("X-Concierge-Model-Id")).toBe("openai/gpt-5.5");
         });
 
         it("applies temperature override", async () => {
@@ -597,7 +597,7 @@ describe("POST /api/connection", () => {
         it("routing rules can override concierge model selection", async () => {
             // Mock concierge selecting one model
             vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Standard task.",
                 reasoning: { enabled: false },
@@ -608,7 +608,7 @@ describe("POST /api/connection", () => {
             vi.mocked(applyRoutingRules).mockReturnValueOnce({
                 modelId: "google/gemini-2.5-flash",
                 wasChanged: true,
-                originalModelId: "anthropic/claude-sonnet-4.5",
+                originalModelId: "anthropic/claude-sonnet-4.6",
                 reason: "Audio file detected - switching to Gemini",
             });
 
@@ -638,9 +638,9 @@ describe("POST /api/connection", () => {
 
         it("includes context utilization metrics in response headers", async () => {
             vi.mocked(applyRoutingRules).mockReturnValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 wasChanged: false,
-                originalModelId: "anthropic/claude-sonnet-4.5",
+                originalModelId: "anthropic/claude-sonnet-4.6",
                 contextUtilization: {
                     estimatedTokens: 5000,
                     contextLimit: 200000,
@@ -685,7 +685,7 @@ describe("POST /api/connection", () => {
             vi.mocked(isBackgroundModeEnabled).mockReturnValue(true);
             vi.mocked(startBackgroundResponse).mockResolvedValue("workflow-123");
             vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Research task.",
                 reasoning: { enabled: false },
@@ -728,7 +728,7 @@ describe("POST /api/connection", () => {
                 new Error("Temporal connection failed")
             );
             vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Research task.",
                 reasoning: { enabled: false },
@@ -765,7 +765,7 @@ describe("POST /api/connection", () => {
         it("skips background mode when Temporal not configured even with #background", async () => {
             vi.mocked(isBackgroundModeEnabled).mockReturnValue(false);
             vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Research task.",
                 reasoning: { enabled: false },
@@ -797,7 +797,7 @@ describe("POST /api/connection", () => {
         it("does NOT trigger background mode without #background hashtag", async () => {
             vi.mocked(isBackgroundModeEnabled).mockReturnValue(true);
             vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Research task.",
                 reasoning: { enabled: false },
@@ -834,7 +834,7 @@ describe("POST /api/connection", () => {
     describe("Clarifying Questions", () => {
         it("returns clarifying questions on first message when concierge requests them", async () => {
             vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Research task needs clarification.",
                 reasoning: { enabled: false },
@@ -887,7 +887,7 @@ describe("POST /api/connection", () => {
 
         it("skips clarifying questions on follow-up messages", async () => {
             vi.mocked(runConcierge).mockResolvedValueOnce({
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Continuing task.",
                 reasoning: { enabled: false },

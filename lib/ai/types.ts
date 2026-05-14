@@ -85,13 +85,13 @@ export interface AIProvider {
      * ```ts
      * const provider = getAIProvider();
      * const providerOptions = provider.translateOptions({
-     *     fallbackModels: ['google/gemini-3-pro', 'openai/gpt-5.2'],
+     *     fallbackModels: ['google/gemini-3.1-pro-preview', 'openai/gpt-5.5'],
      *     reasoning: { enabled: true, maxTokens: 8000 },
      *     cacheControl: { type: 'ephemeral' },
      * });
      *
      * await streamText({
-     *     model: provider.chat('anthropic/claude-sonnet-4.5'),
+     *     model: provider.chat('anthropic/claude-sonnet-4.6'),
      *     providerOptions,
      *     // ...
      * });

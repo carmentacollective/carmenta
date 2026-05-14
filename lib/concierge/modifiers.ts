@@ -16,11 +16,11 @@ import type { ExplicitOverrides } from "./types";
  * Model modifier mappings to model IDs.
  */
 const MODEL_MODIFIERS: Record<string, string> = {
-    opus: "anthropic/claude-opus-4.5",
-    sonnet: "anthropic/claude-sonnet-4.5",
+    opus: "anthropic/claude-opus-4.7",
+    sonnet: "anthropic/claude-sonnet-4.6",
     haiku: "anthropic/claude-haiku-4.5",
-    grok: "x-ai/grok-4.1-fast",
-    gemini: "google/gemini-3-pro-preview",
+    grok: "x-ai/grok-4.3",
+    gemini: "google/gemini-3.1-pro-preview",
 };
 
 /**

@@ -29,7 +29,7 @@ import type {
 } from "./types";
 
 // Model selection - uses config IDs, not hardcoded dates
-const EXTRACTION_MODEL = "anthropic/claude-sonnet-4.5";
+const EXTRACTION_MODEL = "anthropic/claude-sonnet-4.6";
 
 // Batch processing settings
 const BATCH_SIZE = 10;

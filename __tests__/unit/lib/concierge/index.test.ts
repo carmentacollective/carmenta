@@ -35,7 +35,7 @@ describe("Concierge", () => {
 
     describe("conciergeSchema", () => {
         const validResponse = {
-            modelId: "anthropic/claude-sonnet-4.5",
+            modelId: "anthropic/claude-sonnet-4.6",
             temperature: 0.5,
             explanation: "Test explanation",
             reasoning: { enabled: false },
@@ -46,7 +46,7 @@ describe("Concierge", () => {
             // This test documents the bug fix: title must be required,
             // not optional, to prevent LLMs from omitting it
             const responseWithoutTitle = {
-                modelId: "anthropic/claude-sonnet-4.5",
+                modelId: "anthropic/claude-sonnet-4.6",
                 temperature: 0.5,
                 explanation: "Test explanation",
                 reasoning: { enabled: false },
@@ -96,7 +96,7 @@ describe("Concierge", () => {
 
     describe("CONCIERGE_DEFAULTS", () => {
         it("has sensible default values", () => {
-            expect(CONCIERGE_DEFAULTS.modelId).toBe("anthropic/claude-sonnet-4.5");
+            expect(CONCIERGE_DEFAULTS.modelId).toBe("anthropic/claude-sonnet-4.6");
             expect(CONCIERGE_DEFAULTS.temperature).toBe(0.5);
             expect(CONCIERGE_DEFAULTS.explanation).toBeTruthy();
             expect(CONCIERGE_DEFAULTS.reasoning).toEqual({ enabled: false });
@@ -105,14 +105,14 @@ describe("Concierge", () => {
 
     describe("buildReasoningConfig", () => {
         it("returns disabled config when enabled is false", () => {
-            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.6", {
                 enabled: false,
             });
             expect(result).toEqual({ enabled: false });
         });
 
         it("converts effort to maxTokens for Anthropic models", () => {
-            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.6", {
                 enabled: true,
                 effort: "high",
             });
@@ -122,7 +122,7 @@ describe("Concierge", () => {
         });
 
         it("uses medium effort tokens by default", () => {
-            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.6", {
                 enabled: true,
                 effort: "medium",
             });
@@ -130,7 +130,7 @@ describe("Concierge", () => {
         });
 
         it("uses low effort tokens", () => {
-            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.6", {
                 enabled: true,
                 effort: "low",
             });
@@ -138,7 +138,7 @@ describe("Concierge", () => {
         });
 
         it("keeps effort-only for Grok models", () => {
-            const result = buildReasoningConfig("x-ai/grok-4.1-fast", {
+            const result = buildReasoningConfig("x-ai/grok-4.3", {
                 enabled: true,
                 effort: "high",
             });
@@ -148,7 +148,7 @@ describe("Concierge", () => {
         });
 
         it("defaults to medium effort for invalid effort value", () => {
-            const result = buildReasoningConfig("anthropic/claude-sonnet-4.5", {
+            const result = buildReasoningConfig("anthropic/claude-sonnet-4.6", {
                 enabled: true,
                 effort: "invalid" as any,
             });
@@ -374,7 +374,7 @@ describe("parseConciergeHeaders", () => {
 
     it("parses valid concierge headers with reasoning config", () => {
         const response = createMockResponse({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "0.7",
             "X-Concierge-Explanation": encodeURIComponent("Standard coding task."),
             "X-Concierge-Reasoning": encodeURIComponent(
@@ -385,7 +385,7 @@ describe("parseConciergeHeaders", () => {
         const result = parseConciergeHeaders(response);
 
         expect(result).not.toBeNull();
-        expect(result?.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result?.modelId).toBe("anthropic/claude-sonnet-4.6");
         expect(result?.temperature).toBe(0.7);
         expect(result?.explanation).toBe("Standard coding task.");
         expect(result?.reasoning.enabled).toBe(true);
@@ -395,7 +395,7 @@ describe("parseConciergeHeaders", () => {
 
     it("returns null when headers are missing", () => {
         const response = createMockResponse({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
         });
 
         expect(parseConciergeHeaders(response)).toBeNull();
@@ -403,7 +403,7 @@ describe("parseConciergeHeaders", () => {
 
     it("decodes URI-encoded explanation", () => {
         const response = createMockResponse({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "0.5",
             "X-Concierge-Explanation": encodeURIComponent(
                 "Complex task with special chars: 100% done!"
@@ -420,7 +420,7 @@ describe("parseConciergeHeaders", () => {
 
     it("defaults NaN temperature to 0.5", () => {
         const response = createMockResponse({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "invalid",
             "X-Concierge-Explanation": encodeURIComponent("Test"),
             "X-Concierge-Reasoning": encodeURIComponent(
@@ -435,7 +435,7 @@ describe("parseConciergeHeaders", () => {
 
     it("handles missing reasoning header gracefully", () => {
         const response = createMockResponse({
-            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.5",
+            "X-Concierge-Model-Id": "anthropic/claude-sonnet-4.6",
             "X-Concierge-Temperature": "0.5",
             "X-Concierge-Explanation": encodeURIComponent("Test"),
         });

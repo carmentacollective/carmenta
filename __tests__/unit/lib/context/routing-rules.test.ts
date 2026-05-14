@@ -59,7 +59,7 @@ function createRoutingInput(
     overrides: Partial<RoutingRulesInput> = {}
 ): RoutingRulesInput {
     return {
-        selectedModelId: "anthropic/claude-sonnet-4.5",
+        selectedModelId: "anthropic/claude-sonnet-4.6",
         attachmentTypes: [],
         reasoningEnabled: false,
         toolsEnabled: true,
@@ -71,27 +71,27 @@ function createRoutingInput(
 describe.concurrent("Routing Rules - User Override", () => {
     it("respects user model override above all other rules", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
-            userOverride: "openai/gpt-5.2",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
+            userOverride: "openai/gpt-5.5",
             attachmentTypes: ["audio"], // Would normally force Gemini
         });
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("openai/gpt-5.2");
+        expect(result.modelId).toBe("openai/gpt-5.5");
         expect(result.wasChanged).toBe(true);
         expect(result.reason).toBe("User selected model");
     });
 
     it("marks no change when user override matches selected model", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
-            userOverride: "anthropic/claude-sonnet-4.5",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
+            userOverride: "anthropic/claude-sonnet-4.6",
         });
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.6");
         expect(result.wasChanged).toBe(false);
         expect(result.reason).toBeUndefined();
     });
@@ -103,22 +103,22 @@ describe.concurrent("Routing Rules - User Override", () => {
         );
 
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-opus-4.5", // 200K context
-            userOverride: "anthropic/claude-opus-4.5", // User explicitly wants this
+            selectedModelId: "anthropic/claude-opus-4.7", // 200K context
+            userOverride: "anthropic/claude-opus-4.7", // User explicitly wants this
             messages: longMessages,
         });
 
         const result = applyRoutingRules(input);
 
         // User override wins - no context-based switching
-        expect(result.modelId).toBe("anthropic/claude-opus-4.5");
+        expect(result.modelId).toBe("anthropic/claude-opus-4.7");
     });
 });
 
 describe.concurrent("Routing Rules - Audio Attachments", () => {
     it("routes audio attachments to Gemini", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
             attachmentTypes: ["audio"],
         });
 
@@ -143,7 +143,7 @@ describe.concurrent("Routing Rules - Audio Attachments", () => {
 
     it("handles multiple attachment types including audio", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
             attachmentTypes: ["image", "audio", "pdf"],
         });
 
@@ -157,7 +157,7 @@ describe.concurrent("Routing Rules - Audio Attachments", () => {
 describe.concurrent("Routing Rules - Video Attachments", () => {
     it("routes video attachments to video-capable model", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
             attachmentTypes: ["video"],
         });
 
@@ -170,7 +170,7 @@ describe.concurrent("Routing Rules - Video Attachments", () => {
 
     it("handles both audio and video (both require same model)", () => {
         const input = createRoutingInput({
-            selectedModelId: "openai/gpt-5.2",
+            selectedModelId: "openai/gpt-5.5",
             attachmentTypes: ["audio", "video"],
         });
 
@@ -183,21 +183,21 @@ describe.concurrent("Routing Rules - Video Attachments", () => {
 describe.concurrent("Routing Rules - Anthropic Reasoning + Tools", () => {
     it("allows Anthropic with reasoning and tools", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-opus-4.5",
+            selectedModelId: "anthropic/claude-opus-4.7",
             reasoningEnabled: true,
             toolsEnabled: true,
         });
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("anthropic/claude-opus-4.5");
+        expect(result.modelId).toBe("anthropic/claude-opus-4.7");
         expect(result.wasChanged).toBe(false);
     });
 
     it("allows all Anthropic models with reasoning and tools", () => {
         const anthropicModels: ModelId[] = [
-            "anthropic/claude-opus-4.5",
-            "anthropic/claude-sonnet-4.5",
+            "anthropic/claude-opus-4.7",
+            "anthropic/claude-sonnet-4.6",
             "anthropic/claude-haiku-4.5",
         ];
 
@@ -218,14 +218,14 @@ describe.concurrent("Routing Rules - Anthropic Reasoning + Tools", () => {
 
 describe.concurrent("Routing Rules - Context Overflow", () => {
     it("upgrades to larger model when context is critical", () => {
-        // Claude Opus has 200K context. Fill with ~250K worth of tokens
+        // Claude Haiku has 200K context. Fill with ~250K worth of tokens
         const longMessages = Array.from(
             { length: 300 },
             (_, i) => createMessage("user", "X".repeat(3500)) // ~875 tokens each = 262K tokens
         );
 
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-opus-4.5",
+            selectedModelId: "anthropic/claude-haiku-4.5",
             messages: longMessages,
         });
 
@@ -244,19 +244,19 @@ describe.concurrent("Routing Rules - Context Overflow", () => {
         ];
 
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-opus-4.5",
+            selectedModelId: "anthropic/claude-opus-4.7",
             messages: shortMessages,
         });
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("anthropic/claude-opus-4.5");
+        expect(result.modelId).toBe("anthropic/claude-opus-4.7");
         expect(result.contextUtilization?.isCritical).toBe(false);
     });
 
     it("includes context utilization metrics in result", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
             messages: [createMessage("user", "Test message")],
         });
 
@@ -273,16 +273,16 @@ describe.concurrent("selectLargerContextModel", () => {
     it("prefers same provider when model fits required tokens", () => {
         // Need 250K tokens - Opus is 200K, Sonnet is 1M
         // Should prefer Sonnet (same Anthropic provider) over GPT-5.2 (400K, different provider)
-        const result = selectLargerContextModel("anthropic/claude-opus-4.5", 250_000);
+        const result = selectLargerContextModel("anthropic/claude-opus-4.7", 250_000);
 
         // Sonnet (1M, Anthropic) preferred over GPT-5.2 (400K, OpenAI)
-        expect(result).toBe("anthropic/claude-sonnet-4.5");
+        expect(result).toBe("anthropic/claude-sonnet-4.6");
     });
 
     it("prefers same provider when possible", () => {
         // Need 300K tokens - both GPT-5.2 (400K) and Sonnet (1M) work
         // But since we started with Anthropic, we should prefer Anthropic if it fits
-        const result = selectLargerContextModel("anthropic/claude-opus-4.5", 300_000);
+        const result = selectLargerContextModel("anthropic/claude-opus-4.7", 300_000);
 
         // GPT-5.2 is 400K, Sonnet is 1M - should get GPT as it's smallest that fits
         expect(result).toBeDefined();
@@ -290,7 +290,7 @@ describe.concurrent("selectLargerContextModel", () => {
 
     it("returns undefined when no model can fit the tokens", () => {
         // Need more than the largest model (Grok at 2M)
-        const result = selectLargerContextModel("anthropic/claude-opus-4.5", 3_000_000);
+        const result = selectLargerContextModel("anthropic/claude-opus-4.7", 3_000_000);
 
         expect(result).toBeUndefined();
     });
@@ -298,9 +298,9 @@ describe.concurrent("selectLargerContextModel", () => {
     it("adds 10% buffer when selecting model", () => {
         // Need exactly 200K tokens - with 10% buffer, needs 220K minimum
         // Opus is 200K, won't fit. GPT-5.2 is 400K, will fit
-        const result = selectLargerContextModel("anthropic/claude-opus-4.5", 200_000);
+        const result = selectLargerContextModel("anthropic/claude-opus-4.7", 200_000);
 
-        expect(result).not.toBe("anthropic/claude-opus-4.5");
+        expect(result).not.toBe("anthropic/claude-opus-4.7");
         expect(result).toBeDefined();
     });
 });
@@ -313,7 +313,7 @@ describe.concurrent("Routing Rules - Priority Order", () => {
         );
 
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-opus-4.5", // 200K context
+            selectedModelId: "anthropic/claude-opus-4.7", // 200K context
             attachmentTypes: ["audio"],
             messages: longMessages,
         });
@@ -327,14 +327,14 @@ describe.concurrent("Routing Rules - Priority Order", () => {
 
     it("allows Anthropic with reasoning and tools", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
             reasoningEnabled: true,
             toolsEnabled: true,
         });
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.6");
         expect(result.wasChanged).toBe(false);
     });
 });
@@ -347,7 +347,7 @@ describe.concurrent("Routing Rules - Edge Cases", () => {
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.6");
         expect(result.wasChanged).toBe(false);
     });
 
@@ -358,18 +358,18 @@ describe.concurrent("Routing Rules - Edge Cases", () => {
 
         const result = applyRoutingRules(input);
 
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.6");
     });
 
     it("preserves original model ID in result", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-opus-4.5",
+            selectedModelId: "anthropic/claude-opus-4.7",
             attachmentTypes: ["audio"],
         });
 
         const result = applyRoutingRules(input);
 
-        expect(result.originalModelId).toBe("anthropic/claude-opus-4.5");
+        expect(result.originalModelId).toBe("anthropic/claude-opus-4.7");
         expect(result.modelId).toBe(AUDIO_CAPABLE_MODEL);
     });
 
@@ -381,34 +381,34 @@ describe.concurrent("Routing Rules - Edge Cases", () => {
         const result = applyRoutingRules(input);
 
         // Unknown types shouldn't trigger special routing
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.6");
     });
 });
 
 describe.concurrent("Routing Rules - Image and PDF attachments", () => {
     it("does not force model switch for image-only attachments", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
             attachmentTypes: ["image"],
         });
 
         const result = applyRoutingRules(input);
 
         // Images are supported by many models - no forced switch
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.6");
         expect(result.wasChanged).toBe(false);
     });
 
     it("does not force model switch for PDF-only attachments", () => {
         const input = createRoutingInput({
-            selectedModelId: "anthropic/claude-sonnet-4.5",
+            selectedModelId: "anthropic/claude-sonnet-4.6",
             attachmentTypes: ["pdf"],
         });
 
         const result = applyRoutingRules(input);
 
         // PDFs are supported by many models - no forced switch
-        expect(result.modelId).toBe("anthropic/claude-sonnet-4.5");
+        expect(result.modelId).toBe("anthropic/claude-sonnet-4.6");
         expect(result.wasChanged).toBe(false);
     });
 });

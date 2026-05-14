@@ -48,12 +48,12 @@ function getSelectingMessage(seed: string): string {
  */
 function getModelDisplayName(modelId: string): string {
     const displayNames: Record<string, string> = {
-        "anthropic/claude-opus-4.5": "Claude Opus",
-        "anthropic/claude-sonnet-4.5": "Claude Sonnet",
+        "anthropic/claude-opus-4.7": "Claude Opus",
+        "anthropic/claude-sonnet-4.6": "Claude Sonnet",
         "anthropic/claude-haiku-4.5": "Claude Haiku",
-        "google/gemini-3-pro-preview": "Gemini Pro",
-        "x-ai/grok-4.1-fast": "Grok",
-        "openai/gpt-5.2": "ChatGPT",
+        "google/gemini-3.1-pro-preview": "Gemini Pro",
+        "x-ai/grok-4.3": "Grok",
+        "openai/gpt-5.5": "ChatGPT",
     };
 
     return displayNames[modelId] ?? modelId.split("/").pop() ?? modelId;
